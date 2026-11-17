@@ -247,37 +247,68 @@ export const BLACK_CRUSADE_STATS: StatSet = {
 /**
  * The words of a kind for its psykana in the labels of the sheet: Black
  * Crusade's psychic powers are the spells of Pathfinder Crusade's magic.
+ * A phrase that names a power is whole, a key of its own per kind: Russian
+ * declines the word ("для новой психосилы"), so it is never glued from it.
+ * Black Crusade's phrases are sheet.magic.psykana.*.
  */
 export interface PsykanaTerms {
     /** The tab and the heading of the block. */
     readonly psykana: string;
     readonly psykanaType: string;
-    /** A power in a sentence, and the capitalized forms. */
-    readonly power: string;
-    readonly powers: string;
-    readonly Power: string;
-    readonly Powers: string;
     /** A power without a name. */
     readonly psychicPower: string;
-    /** The powers as a section of the stat block. */
+    /** The powers as a heading: what the block rolls, a section of the stat block. */
     readonly psychicPowers: string;
-    /** Who casts the powers. */
-    readonly psyker: string;
     /** The test of a cast. */
     readonly psychotest: string;
+    /** The label of a roll of a power without a name, sent to the chat. */
+    readonly unknownPower: string;
+    readonly noPRLeft: string;
+    readonly powerTraitsTitle: string;
+    readonly phenomenaModTitle: string;
+    readonly ignoresSustained: string;
+    readonly sustainedPowers: string;
+    readonly sustainedCountedTitle: string;
+    readonly noCastYet: string;
+    readonly sustainPenaltyTitle: string;
+    readonly setUnderGearTitle: string;
+    readonly marksSustainedTitle: string;
+    /** The rules under the ⚙ of the heading, and its title. */
+    readonly sustainedRuleTitle: string;
+    readonly cycleRuleTitle: string;
+    readonly phenomenaRuleTitle: string;
+    readonly headingTitle: string;
+    /** The one-time notice of the rules the sheet counts; `typed`, the Sustained Powers typed before. */
+    readonly countsNotice: string;
+    readonly typedSustainedNotice: (typed: number) => string;
+    /** The title of the Current PR of the stat block. */
+    readonly currentPRTitle: string;
 }
 
 export const BLACK_CRUSADE_PSYKANA_TERMS: PsykanaTerms = {
-    psykana: "Psykana",
-    psykanaType: "Psykana type",
-    power: "power",
-    powers: "powers",
-    Power: "Power",
-    Powers: "Powers",
-    psychicPower: "Psychic Power",
-    psychicPowers: "Psychic powers",
-    psyker: "psyker",
-    psychotest: "Psychotest",
+    psykana: t("sheet.termsPowers.psy.psykana"),
+    psykanaType: t("sheet.termsPowers.psy.psykanaType"),
+    psychicPower: t("sheet.termsPowers.psy.psychicPower"),
+    psychicPowers: t("sheet.magic.psykana.psychicPowers"),
+    psychotest: t("sheet.termsPowers.rollDomain.psychic"),
+    unknownPower: t("sheet.magic.psykana.unknownPower"),
+    noPRLeft: t("sheet.magic.psykana.noPRLeft"),
+    powerTraitsTitle: t("sheet.magic.psykana.powerTraitsTitle"),
+    phenomenaModTitle: t("sheet.magic.psykana.phenomenaModTitle"),
+    ignoresSustained: t("sheet.magic.psykana.ignoresSustained"),
+    sustainedPowers: t("sheet.magic.psykana.sustainedPowers"),
+    sustainedCountedTitle: t("sheet.magic.psykana.sustainedCountedTitle"),
+    noCastYet: t("sheet.magic.psykana.noCastYet"),
+    sustainPenaltyTitle: t("sheet.magic.psykana.sustainPenaltyTitle"),
+    setUnderGearTitle: t("sheet.magic.psykana.setUnderGearTitle"),
+    marksSustainedTitle: t("sheet.magic.psykana.marksSustainedTitle"),
+    sustainedRuleTitle: t("sheet.magic.psykana.sustainedRuleTitle"),
+    cycleRuleTitle: t("sheet.magic.psykana.cycleRuleTitle"),
+    phenomenaRuleTitle: t("sheet.magic.psykana.phenomenaRuleTitle"),
+    headingTitle: t("sheet.magic.psykana.headingTitle"),
+    countsNotice: t("sheet.magic.psykana.countsNotice"),
+    typedSustainedNotice: typed => t("sheet.magic.psykana.typedSustainedNotice", { typed }),
+    currentPRTitle: t("sheet.magic.psykana.currentPRTitle"),
 };
 
 export interface BodyPart {
@@ -588,7 +619,7 @@ export interface RollColumn<K extends string = string> {
     readonly options: readonly Option[];
     /** The option that counts when none is selected; the roll label leaves it out. */
     readonly default: string;
-    /** How the roll label names an option, when not by its value. */
+    /** How the roll label names an option whose label is a short form (rolls/rollParts.ts selectedNames). */
     readonly names?: { readonly [value: string]: string };
 }
 
@@ -605,7 +636,7 @@ const AIM = column({
         { value: "half", label: t("sheet.termsRolls.aim.half.short") },
         { value: "full", label: t("sheet.termsRolls.aim.full.short") },
     ],
-    names: { half: "half aim", full: "full aim" },
+    names: { half: t("sheet.termsRolls.aim.half"), full: t("sheet.termsRolls.aim.full") },
 });
 
 const TARGET = column({
@@ -634,6 +665,13 @@ export const RANGED_ROLL_COLUMNS = [
             { value: "long", label: t("sheet.termsRolls.range.long.short") },
             { value: "extreme", label: t("sheet.termsRolls.range.extreme.short") },
         ],
+        names: {
+            melee: t("sheet.termsRolls.range.melee"),
+            "point-blank": t("sheet.termsRolls.range.pointBlank"),
+            short: t("sheet.termsRolls.range.short"),
+            long: t("sheet.termsRolls.range.long"),
+            extreme: t("sheet.termsRolls.range.extreme"),
+        },
     }),
     column({
         key: "rof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
@@ -643,7 +681,7 @@ export const RANGED_ROLL_COLUMNS = [
             { value: "long", label: t("sheet.termsRolls.rof.long.short") },
             { value: "suppression", label: t("sheet.termsRolls.rof.suppression.short") },
         ],
-        names: { short: "short burst", long: "long burst" },
+        names: { short: t("sheet.termsRolls.rof.short"), long: t("sheet.termsRolls.rof.long"), suppression: t("sheet.termsRolls.rof.suppression") },
     }),
 ] as const;
 
@@ -660,7 +698,12 @@ export const MELEE_ROLL_COLUMNS = [
             { value: "mounted", label: t("sheet.termsRolls.meleeBase.mounted.short") },
             { value: "free", label: t("sheet.termsRolls.meleeBase.free.short") },
         ],
-        names: { full: "full attack" },
+        names: {
+            full: t("sheet.termsRolls.meleeBase.full"),
+            careful: t("sheet.termsRolls.meleeBase.careful"),
+            mounted: t("sheet.termsRolls.meleeBase.mounted"),
+            free: t("sheet.termsRolls.meleeBase.free"),
+        },
     }),
     column({
         key: "rof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
@@ -669,6 +712,6 @@ export const MELEE_ROLL_COLUMNS = [
             { value: "quick", label: t("sheet.termsRolls.meleeRof.quick.short") },
             { value: "lightning", label: t("sheet.termsRolls.meleeRof.lightning.short") },
         ],
-        names: { quick: "quick attack", lightning: "lightning attack" },
+        names: { quick: t("sheet.termsRolls.meleeRof.quick"), lightning: t("sheet.termsRolls.meleeRof.lightning") },
     }),
 ] as const;

@@ -2,10 +2,12 @@
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
 import { computed } from "@preact/signals-core";
+import { t } from "../../i18n";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { giftOf, prVariants } from "./spellcastingRules";
-import { schemaOf, sheetComputed } from "../core/state";
+import { schemaOf, sheetComputed, statsOf } from "../core/state";
+import { optionLabel, optionValue } from "../schema/constants";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -149,7 +151,7 @@ export function sustainedPowers(state: SheetSignals, exceptPath?: string): Susta
     const { marks, freeLimit } = counted(state, exceptPath);
     const powers: SustainedPower[] = marks.map(({ path, tabId, copies, castFree, free, taken }) => ({
         path, tabId, copies, free, taken,
-        name: textAt(state, `${path}.name`).trim() || "Psychic Power",
+        name: textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.psy.psychicPower"),
         pr: numberAt(state, `${path}.sustain.pr`),
         overFree: castFree && !free,
         // Cycle does not spare it (wiki «v магия › механика › Поддержание (Х)»).
@@ -264,7 +266,7 @@ export function phenomena(state: SheetSignals): Phenomena {
     const path = id ? psychicPowers(state).find(p => p.path.endsWith(`.powers.items.${id}`))?.path : undefined;
     const power = path ? {
         path,
-        name: textAt(state, `${path}.name`).trim() || "Psychic Power",
+        name: textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.psy.psychicPower"),
         kick: numberAt(state, `${path}.cast.kick`),
         safe: !!valueAt(state, `${path}.cast.safe`),
         reason: textAt(state, `${path}.cast.phenomena`) as PhenomenaReason,
@@ -275,15 +277,21 @@ export function phenomena(state: SheetSignals): Phenomena {
     const cast = power && !power.safe ? power : null;
     const kick = cast ? cast.kick : 0;
 
+    const gift = statsOf(state).psykanaTypes.find(o => optionValue(o) === nature);
+    const natureLabel = nature ? (gift ? optionLabel(gift) : nature) : t("sheet.magic.phenomena.nature");
     const parts: PhenomenaPart[] = [
-        { key: "nature", label: kick > 0 ? `${nature || "Nature"}, kick ${kick}` : nature || "Nature", value: cast ? natureMod(nature, kick) : 0 },
-        { key: "sustained", label: "Sustained powers", value: sustaining(state).any ? numberAt(state, "psykana.sustainPenalty") : 0 },
-        { key: "power", label: power ? `${power.name}'s own` : "The power's own", value: power ? numberAt(state, `${path}.phenomenaMod`) : 0 },
+        { key: "nature", label: kick > 0 ? t("sheet.magic.phenomena.natureKick", { nature: natureLabel, kick }) : natureLabel, value: cast ? natureMod(nature, kick) : 0 },
+        { key: "sustained", label: t("sheet.magic.psykana.sustainedPowers"), value: sustaining(state).any ? numberAt(state, "psykana.sustainPenalty") : 0 },
+        {
+            key: "power",
+            label: power ? t("sheet.magic.phenomena.powerOwnNamed", { name: power.name }) : t("sheet.magic.phenomena.powerOwn"),
+            value: power ? numberAt(state, `${path}.phenomenaMod`) : 0,
+        },
     ];
     const other = idsInOrder(state, "psykana.phenomenaMods.items")
         .map(mod => `psykana.phenomenaMods.items.${mod}`)
         .filter(mod => valueAt(state, `${mod}.enabled`))
         .reduce((sum, mod) => sum + numberAt(state, `${mod}.value`), 0);
-    parts.push({ key: "other", label: "Other", value: other });
+    parts.push({ key: "other", label: t("common.other"), value: other });
     return { power, parts, total: parts.reduce((sum, p) => sum + p.value, 0) };
 }

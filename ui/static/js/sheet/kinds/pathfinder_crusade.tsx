@@ -120,17 +120,34 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
 const keysOf = (way: SpellcastingVariant["way"]) => SPELLCASTING.filter(v => v.way === way).map(v => v.key);
 
 // The wiki's «Природа Дара» is the gift; PR, kick, phenomena and sustaining keep their names.
+// Its phrases are to become sheet.magicPf.psykana.*, as Black Crusade's are sheet.magic.psykana.*.
 const PSYKANA_TERMS: PsykanaTerms = {
     psykana: "Magic",
     psykanaType: "Gift",
-    power: "spell",
-    powers: "spells",
-    Power: "Spell",
-    Powers: "Spells",
     psychicPower: "Spell",
     psychicPowers: "Spells",
-    psyker: "caster",
     psychotest: "Magic test",
+    unknownPower: "Unknown Spell",
+    noPRLeft: "No PR left for a new spell",
+    powerTraitsTitle: "Traits and talents of the spell",
+    phenomenaModTitle: "What the spell adds to the phenomena of its casts",
+    ignoresSustained: "Talent: ignores the PR the sustained spells take",
+    sustainedPowers: "Sustained Spells",
+    sustainedCountedTitle: "Counted from the spells marked sustained; turn the counting off under ⚙ to type it",
+    noCastYet: "No spell cast yet.",
+    sustainPenaltyTitle: "Added while any spell is sustained; talents and artefacts change it",
+    setUnderGearTitle: "Set under the ⚙ of the spell",
+    marksSustainedTitle: "Marks the spell sustained if the test succeeds",
+    sustainedRuleTitle: "The Current PR drops by one for each spell marked sustained; Sustained Spells is counted, not typed.",
+    cycleRuleTitle: "A Cycle (X) spell cast at ePR X or more may be sustained without taking PR, at most ½I.b▲ of them.",
+    phenomenaRuleTitle: "A Phenomena button rolls d100 with the kick of the last cast, the sustained spells and other modifiers.",
+    headingTitle: "Test options and what the sheet counts for a caster",
+    countsNotice: "The sheet now counts some magic rules: the spells marked sustained lower the Current PR, "
+        + "Cycle spells can be sustained without taking PR, and a Phenomena button rolls with the kick "
+        + "and the sustained spells. Turn any of them off under ⚙ next to the heading.",
+    typedSustainedNotice: typed =>
+        `Sustained Spells was typed as ${typed}. It now counts the spells marked sustained: mark them, or turn the counting off.`,
+    currentPRTitle: "The base PR less what the sustained spells take",
 };
 
 export function PathfinderCrusade() {

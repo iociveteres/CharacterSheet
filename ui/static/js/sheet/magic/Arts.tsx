@@ -20,14 +20,14 @@ export function useArtsClass(path: string): string | null {
 
 /** «Bard, 1 Focus»: the class of an Arts spell and what a cast costs; the class alone without a Level. */
 export function ArtsChip({ path }: { path: string }) {
-    const { state, stats, terms } = useSheet();
+    const { state, stats } = useSheet();
     const cls = useArtsClass(path);
     const level = useComputed(() => artsCost(state, path)).value;
     const pool = useComputed(() => artsPool(state, path)).value;
     if (cls === null) return null;
     return (
         <span class="arts-chip" data-id="artsChip"
-            title={`An Arts ${terms.power} of the ${cls}: tested on a skill, it costs its Level of the ${pool ? poolName(stats, pool) : `${cls} Focus`}`}>
+            title={`An Arts spell of the ${cls}: tested on a skill, it costs its Level of the ${pool ? poolName(stats, pool) : `${cls} Focus`}`}>
             {level > 0 ? `${cls}, ${level} Focus` : cls}
         </span>
     );

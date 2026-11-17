@@ -7,6 +7,7 @@ import { resolvePath } from "../core/sync";
 import { updateSignalAtPath } from "../core/sync";
 import { Psykana } from "./Powers";
 import { TechnoArcana } from "../tech/TechnoArcana";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const tabWith = (power: object) => ({
@@ -83,6 +84,14 @@ describe("the roll total of a power", () => {
 
         const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
         expect(rolls(() => button.click())).toEqual([{ target: 58, bonusSuccesses: 0, label: "Smite, 2 ePR, Focus" }]);
+    });
+
+    it("is labelled in the roller's language, the extras as typed", () => {
+        installDictionary("ru");
+        rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
+        const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
+        expect(rolls(() => button.click())).toMatchObject([{ label: "Smite, 2 эPR, усиление +1, Focus" }]);
     });
 
     it("adds the modifier and the enabled extras to a tech power's test", () => {

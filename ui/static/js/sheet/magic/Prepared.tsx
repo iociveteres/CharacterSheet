@@ -25,11 +25,11 @@ export function usePrepared(path: string | null): boolean | null {
 
 /** The bookmark that prepares the spell of the enclosing Scope for the day, or unprepares it. */
 export function PreparedToggle({ prepared }: { prepared: boolean }) {
-    const { actions, canEdit, terms } = useSheet();
+    const { actions, canEdit } = useSheet();
     const path = usePath();
     return (
         <button type="button" data-id="prepared" class={prepared ? "prepared-toggle active" : "prepared-toggle"} aria-pressed={prepared}
-            disabled={!canEdit} title={prepared ? `Prepared for today: unprepare the ${terms.power}` : `Not prepared: prepare the ${terms.power} for today`}
+            disabled={!canEdit} title={prepared ? "Prepared for today: unprepare the spell" : "Not prepared: prepare the spell for today"}
             onClick={() => actions.change(`${path}.prepared`, !prepared)}>
             <svg viewBox="0 0 10 14" aria-hidden="true"><path d="M1.5 1.5h7v11L5 10 1.5 12.5z" /></svg>
         </button>
@@ -38,18 +38,17 @@ export function PreparedToggle({ prepared }: { prepared: boolean }) {
 
 /** The warning of the roll of an unprepared spell; the roll itself is not stopped, nor its mana spared. */
 export function PreparedRollRow({ path }: { path: string }) {
-    const { terms } = useSheet();
     if (usePrepared(path) !== false) return null;
     return (
         <RollRow label="Prepared" class="prepared-roll-row">
-            <span class="pr-warning" data-id="notPrepared" title={`The ${terms.power} was not prepared today; it can be cast all the same`}>Not prepared</span>
+            <span class="pr-warning" data-id="notPrepared" title="The spell was not prepared today; it can be cast all the same">Not prepared</span>
         </RollRow>
     );
 }
 
 /** Prepared Spells: how many of the day's limit, I.b + Base PR, and Unprepare All. Only the layout of Pathfinder Crusade includes it. */
 export function PreparedRow() {
-    const { state, actions, canEdit, terms } = useSheet();
+    const { state, actions, canEdit } = useSheet();
     const shown = useComputed(() => preparing(state)).value;
     const count = useComputed(() => preparedCount(state)).value;
     const limit = useComputed(() => preparedLimit(state)).value;
@@ -59,12 +58,12 @@ export function PreparedRow() {
         <div class="layout-row prepared-row" data-id="preparedSpells">
             <span class={over ? "prepared-count over" : "prepared-count"} data-id="preparedCount"
                 title={over
-                    ? `More ${terms.powers} prepared than a day allows: I.b + Base PR is ${limit}`
-                    : `A day allows I.b + Base PR ${terms.powers} prepared`}>
-                {`Prepared ${terms.Powers}: ${count} / ${limit}`}
+                    ? `More spells prepared than a day allows: I.b + Base PR is ${limit}`
+                    : "A day allows I.b + Base PR spells prepared"}>
+                {`Prepared Spells: ${count} / ${limit}`}
             </span>
             <button type="button" data-id="unprepareAll" class="unprepare-all" disabled={!canEdit || count === 0}
-                title={count === 0 ? `No ${terms.power} is prepared` : `Unprepare every ${terms.power} for a new day; the sustained stay sustained`}
+                title={count === 0 ? "No spell is prepared" : "Unprepare every spell for a new day; the sustained stay sustained"}
                 onClick={() => unprepareAll({ state, actions })}>Unprepare All</button>
         </div>
     );

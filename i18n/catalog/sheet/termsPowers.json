@@ -6,6 +6,7 @@
   "sheet.termsPowers.psy.psykana": { "en": "Psykana", "ru": "Псайкана", "note": "вкладка и заголовок блока; гл. V «Псайкана»" },
   "sheet.termsPowers.psy.psykanaType": { "en": "Psykana type", "ru": "Природа дара", "note": "в книге «Природа Дара», гл. V › Механика, с. 289" },
   "sheet.termsPowers.psy.psychicPower": { "en": "Psychic power", "ru": "Психосила", "note": "код пишет power / powers / Power / Powers / Psychic Power / Psychic powers — одно слово; формы: мн. психосилы, род. мн. психосил; в тексте книги и просто «сила»" },
+  "sheet.termsPowers.psy.psychicPower.short": { "en": "Power", "ru": "Психосила", "note": "колонка собственного урона психосилы и строка его разбора" },
   "sheet.termsPowers.psy.psyker": { "en": "Psyker", "ru": "Псайкер" },
   "sheet.termsPowers.psy.psyRating": { "en": "Psy Rating", "ru": "Пси-рейтинг", "note": "сокращение PR остаётся латинским; талант Psy Rating в книге по-английски; гл. V › Механика, с. 289" },
   "sheet.termsPowers.psy.basePR": { "en": "Base PR", "ru": "Базовый PR", "note": "в книге «Базовый Пси-Рейтинг (бPR)»: уровень таланта Psy Rating" },
@@ -66,6 +67,7 @@
   "sheet.termsPowers.discipline.amalgams": { "en": "Amalgams", "ru": "Амальгамы", "note": "редкая дисциплина" },
 
   "sheet.termsPowers.tech.techPower": { "en": "Tech power", "ru": "Техночудо", "note": "мн. техночудеса; гл. VI «Мистика» › Техночудеса, с. 367; вариант: «Техно-чудо» (гл. II › Бой, подтип Незримое)" },
+  "sheet.termsPowers.tech.techPower.short": { "en": "Power", "ru": "Техночудо", "note": "колонка собственного урона техночуда и строка его разбора" },
   "sheet.termsPowers.tech.techPriest": { "en": "Tech-priest", "ru": "Техножрец" },
   "sheet.termsPowers.tech.school": { "en": "School", "ru": "Школа", "note": "«школы Техночудес», с. 367" },
   "sheet.termsPowers.tech.price": { "en": "Price", "ru": "Цена", "note": "цена активации и строка профиля «Цена:»; ⚙ снимается до теста, 🗲 после успеха, с. 367" },

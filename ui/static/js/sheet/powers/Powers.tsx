@@ -3,6 +3,7 @@
 // in its PowerSort. Powers move between the tabs of a block by dragging;
 // resting on a tab label opens that tab.
 import type { ComponentType } from "preact";
+import { t } from "../../i18n";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -24,7 +25,8 @@ import type { CastOn, TestBlock } from "../rolls/testOptionRules";
 import { ModdedField, type FieldOwner } from "../rolls/ModdedField";
 import { DamageLabel, RollToggleLabel, TestSelect } from "../rolls/rollParts";
 
-const newTab = () => ({ name: "New Tab" });
+// Written in the creator's language: nothing compares the name of a tab.
+const newTab = () => ({ name: t("sheet.powers.newTab") });
 
 /** The test of a power, one of the test options of its block, and its modifier; a spell reads Cast as `cast`. */
 export function BaseColumn({ label, block, cast }: { label: string; block: TestBlock; cast?: CastOn }) {
@@ -33,7 +35,7 @@ export function BaseColumn({ label, block, cast }: { label: string; block: TestB
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
                 <TestSelect block={block} cast={cast} />
-                <label class="modifier-label">Modifier:</label>
+                <label class="modifier-label">{`${t("common.modifier")}:`}</label>
                 <NumberField field="modifier" />
             </div>
         </div>
@@ -113,20 +115,20 @@ function Power({ sort, itemId, newPower }: { sort: PowerSort; itemId: string; ne
             <div class="collapsible-content">
                 <Fields path={path} />
                 <div class="layout-row">
-                    <Row cls="weapon-range" label="Range:"><TextField field="weaponRange" /></Row>
+                    <Row cls="weapon-range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><TextField field="weaponRange" /></Row>
                     <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => sort.damageLabel(state, path, terms)} />}>
                         <ModdedField stat="damage" owner={field} />
                     </Row>
-                    <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={field} /></Row>
-                    <Row cls="type" label="Type:"><Select field="damageType" options={stats.damageTypes} /></Row>
+                    <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={field} /></Row>
+                    <Row cls="type" label={`${t("sheet.termsArms.weaponField.damageType.short")}:`}><Select field="damageType" options={stats.damageTypes} /></Row>
                 </div>
                 <div class="layout-row">
-                    <Row cls="rof" label="RoF:">
+                    <Row cls="rof" label={`${t("sheet.termsArms.weaponField.rof.short")}:`}>
                         <TextField field="rofSingle" />/
                         <TextField field="rofShort" class="shorter-input" />/
                         <TextField field="rofLong" class="shorter-input" />
                     </Row>
-                    <Row cls="special" label="Special:"><TextField field="special" /></Row>
+                    <Row cls="special" label={`${t("sheet.termsArms.weaponField.special")}:`}><TextField field="special" /></Row>
                 </div>
                 <TextArea field="effect" class="split-description" placeholder=" " />
             </div>

@@ -143,7 +143,7 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
     const sustains = !!choice && !choice.full && sustain.value;
     const overLimit = sustains && sustained.count >= sustained.limit;
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
+        const name = String(peekAt(state, `${path}.name`) || terms.unknownPower);
         const effectivePR = numberAt(state, `${rollPath}.effectivePR`);
         const cost = artsCost(state, path);
         const test = artsTest(state, rollPath);
@@ -169,7 +169,7 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
             {cap.skill && (
                 <RollRow label="Skill level" class="skill-level-row">
                     <span data-id="capSource">{cap.source}</span>
-                    {cap.max === 0 && <Warning id="untrained">{`${cap.skill} is not trained: an Arts ${terms.power} cannot be cast`}</Warning>}
+                    {cap.max === 0 && <Warning id="untrained">{`${cap.skill} is not trained: an Arts spell cannot be cast`}</Warning>}
                     {cap.hint && <Warning id="masteryHint">{cap.hint}</Warning>}
                 </RollRow>
             )}

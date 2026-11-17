@@ -1,6 +1,7 @@
 // Psykana: its bar over the tabs of psychic powers (powers/Powers.tsx), and
 // what a psychic power has of its own.
 import type { ComponentChildren } from "preact";
+import { t } from "../../i18n";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
@@ -44,24 +45,25 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
     const { state, actions, terms } = useSheet();
     const rollPath = `${path}.roll`;
     const cap = useComputed(() => castCap(state, path)).value;
-    const of = valueAt(state, `${path}.ignoreTprPenalty`) ? "the base PR (talent)" : "the current PR";
+    const talent = !!valueAt(state, `${path}.ignoreTprPenalty`);
     return (
         <div class="roll-column pr-column effective-pr">
-            <label class="column-label">Effective PR</label>
+            <label class="column-label">{t("sheet.termsPowers.psy.effectivePR")}</label>
             <div class="roll-column-content">
                 <NumberField field="effectivePR" />
                 <div class="pr-buttons">
                     <button type="button" data-id="safePR" class={safe ? "pr-button active" : "pr-button"}
-                        title={`Safe: ePR ${safePR(cap)}, half ${of} rounded up; no kick, no phenomena`}
+                        title={talent ? t("sheet.magic.pr.safeTitleTalent", { pr: safePR(cap) }) : t("sheet.magic.pr.safeTitle", { pr: safePR(cap) })}
                         onClick={() => actions.batch(rollPath, safe ? { safe: false } : { safe: true, effectivePR: safePR(cap), kickPR: 0 })}>
-                        Safe
+                        {t("sheet.termsPowers.castMode.safe")}
                     </button>
-                    <button type="button" data-id="maxPR" class="pr-button" title={`Normal: ePR ${cap}, ${of}`}
+                    <button type="button" data-id="maxPR" class="pr-button"
+                        title={talent ? t("sheet.magic.pr.maxTitleTalent", { pr: cap }) : t("sheet.magic.pr.maxTitle", { pr: cap })}
                         onClick={() => actions.batch(rollPath, { safe: false, effectivePR: cap })}>
-                        Max
+                        {t("sheet.magic.pr.max")}
                     </button>
                 </div>
-                {cap <= 0 && <span class="pr-warning" data-id="noPR">{`No PR left for a new ${terms.power}`}</span>}
+                {cap <= 0 && <span class="pr-warning" data-id="noPR">{terms.noPRLeft}</span>}
             </div>
         </div>
     );
@@ -71,14 +73,14 @@ function KickColumn({ path, safe }: { path: string; safe: boolean }) {
     const { state, actions } = useSheet();
     const set = (value: number) => actions.change(`${path}.roll.kickPR`, value);
     return (
-        <div class="roll-column pr-column kick" title={safe ? "A safe cast has no kick" : undefined}>
-            <label class="column-label">Kick</label>
+        <div class="roll-column pr-column kick" title={safe ? t("sheet.magic.pr.safeNoKick") : undefined}>
+            <label class="column-label">{t("sheet.termsPowers.psy.kick")}</label>
             <div class="roll-column-content">
                 <NumberField field="kickPR" readOnly={safe} />
                 <div class="pr-buttons">
                     <button type="button" data-id="kickZero" class="pr-button" disabled={safe} onClick={() => set(0)}>0</button>
                     <button type="button" data-id="kickMax" class="pr-button" disabled={safe}
-                        onClick={() => set(int(state, "psykana.maxPush"))}>Max</button>
+                        onClick={() => set(int(state, "psykana.maxPush"))}>{t("sheet.magic.pr.max")}</button>
                 </div>
             </div>
         </div>
@@ -111,13 +113,13 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const sustain = useSignal(true);
     const free = useSignal(true);
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
+        const name = String(peekAt(state, `${path}.name`) || terms.unknownPower);
         const effectivePR = int(state, `${rollPath}.effectivePR`);
         const kickPR = rollKick(state, path);
         const modifiers = [
-            ...(safe ? ["safe"] : []),
-            ...(effectivePR > 0 ? [`${effectivePR} ePR`] : []),
-            ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
+            ...(safe ? [t("sheet.magic.roll.safe")] : []),
+            ...(effectivePR > 0 ? [t("sheet.magic.roll.effectivePR", { pr: effectivePR })] : []),
+            ...(kickPR > 0 ? [t("sheet.magic.roll.kick", { kick: kickPR })] : []),
             ...extraNames(state, rollPath),
         ];
         void castPower({ state, actions, rolls }, path, {
@@ -136,8 +138,8 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             {/* An Arcane gift cannot push. */}
             {canPush(state, path) && <KickColumn path={path} safe={safe} />}
             {note && (
-                <RollRow label="Test" class="test-text-row">
-                    <TestText text={testText} note={note === "mode" ? "Set the Modifier by the mode" : "Pick the test and the Modifier by it"} />
+                <RollRow label={t("common.test")} class="test-text-row">
+                    <TestText text={testText} note={note === "mode" ? t("sheet.magic.testText.mode") : t("sheet.magic.testText.unread")} />
                 </RollRow>
             )}
             {castCost && <castCost.Row cost={pr} />}
@@ -146,7 +148,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             <RollResult total={total} onRoll={roll} disabled={test.value === null || noPR || unpaid !== null}
-                title={noPR ? "Set the effective PR, e.g. with Max or Safe" : unpaid ?? undefined} />
+                title={noPR ? t("sheet.magic.pr.noEffectivePR") : unpaid ?? undefined} />
         </Scope>
     );
 }
@@ -159,7 +161,7 @@ function PowerTraits({ path }: { path: string }) {
     return (
         <span class="power-traits dropdown-parent" ref={ref}>
             <button type="button" class={dropdown.open ? "power-traits-toggle active" : "power-traits-toggle"}
-                title={`Traits and talents of the ${terms.power}`} onClick={dropdown.toggle}>⚙</button>
+                title={terms.powerTraitsTitle} onClick={dropdown.toggle}>⚙</button>
             {dropdown.open && <PowerTraitsDropdown path={path} />}
         </span>
     );
@@ -174,30 +176,30 @@ function PowerTraitsDropdown({ path }: { path: string }) {
     const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
     return (
         <div class="roll-dropdown power-traits-dropdown visible">
-            <span class="column-label">From Subtypes and Sustained</span>
+            <span class="column-label">{t("sheet.magic.traits.heading")}</span>
             <ul class="power-traits-list" data-id="traits">
-                <li>{traits.sustainable ? "Can be sustained" : "Cannot be sustained"}</li>
+                <li>{traits.sustainable ? t("sheet.magic.traits.sustainable") : t("sheet.magic.traits.notSustainable")}</li>
                 {traits.cycle !== undefined && (
-                    <li>{`Cycle (${x(traits.cycle, "?")}): sustaining it may be free when cast at ePR ${x(traits.cycle, "X")} or more`}</li>
+                    <li>{t("sheet.magic.traits.cycle", { n: x(traits.cycle, "?"), x: x(traits.cycle, "X") })}</li>
                 )}
                 {traits.upkeep !== undefined && (
                     <li>{`Upkeep (${x(traits.upkeep, "?")}): while sustained, it costs ${x(traits.upkeep, "X")} mana at the start of each turn, free by Cycle or not`}</li>
                 )}
                 {traits.repeatable !== undefined && (
-                    <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
+                    <li>{t("sheet.magic.traits.repeatable", { n: x(traits.repeatable, "?"), x: x(traits.repeatable, "X") })}</li>
                 )}
                 <ArtsTrait path={path} />
             </ul>
             <SustainFields path={path} />
             {phenomenaShown && (
-                <label class="power-traits-phenomena" title={`What the ${terms.power} adds to the phenomena of its casts`}>
-                    Phenomena mod <NumberField field="phenomenaMod" class="short" />
+                <label class="power-traits-phenomena" title={terms.phenomenaModTitle}>
+                    {t("sheet.magic.traits.phenomenaMod")} <NumberField field="phenomenaMod" class="short" />
                 </label>
             )}
             {!arts && (
-                <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
+                <label class="power-traits-talent" title={t("sheet.magic.traits.ignoresSustainedTitle")}>
                     <Checkbox field="ignoreTprPenalty" class="custom" />
-                    <span>{`Talent: ignores the PR the sustained ${terms.powers} take`}</span>
+                    <span>{terms.ignoresSustained}</span>
                 </label>
             )}
         </div>
@@ -229,14 +231,14 @@ function PsychicFields({ path }: { path: string }) {
     return (
         <>
             <div class="layout-row">
-                <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
+                <Row cls="subtypes" label={`${t("sheet.termsPowers.field.subtypes")}:`}><TextField field="subtypes" /></Row>
                 <ArtsLevel path={path} />
-                <Row cls="range" label="Range:"><TextField field="range" /></Row>
+                <Row cls="range" label={`${t("sheet.termsPowers.field.range")}:`}><TextField field="range" /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="psychotest" label="Test:"><TextField field="psychotest" /></Row>
-                <Row cls="action" label="Action:"><TextField field="action" /></Row>
-                <Row cls="sustained" label="Sustained:"><TextField field="sustained" /></Row>
+                <Row cls="psychotest" label={`${t("common.test")}:`}><TextField field="psychotest" /></Row>
+                <Row cls="action" label={`${t("sheet.termsPowers.field.action")}:`}><TextField field="action" /></Row>
+                <Row cls="sustained" label={`${t("sheet.termsPowers.psy.sustain")}:`}><TextField field="sustained" /></Row>
             </div>
         </>
     );
@@ -247,10 +249,10 @@ function SustainedPowersField() {
     const { state, terms } = useSheet();
     const counting = useComputed(() => psykanaRule(state, "sustained")).value;
     const counted = useComputed(() => sustainedPowers(state).taken);
-    const label = `Sustained ${terms.Powers}:`;
+    const label = `${terms.sustainedPowers}:`;
     if (!counting) return <label>{label} <NumberField field="sustainedPowers" class="short" /></label>;
     return (
-        <label title={`Counted from the ${terms.powers} marked sustained; turn the counting off under ⚙ to type it`}>{label}
+        <label title={terms.sustainedCountedTitle}>{label}
             <ReadonlyField field="sustainedCount" value={counted} type="number" class="short textlike" />
         </label>
     );
@@ -289,19 +291,19 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                                         </label>
                                     )}
                                     {pushes && (
-                                        <label>Max Push:
+                                        <label>{`${t("sheet.termsPowers.psy.maxPush")}:`}
                                             <NumberField field="maxPush" class="short" />
                                         </label>
                                     )}
                                     <PhenomenaRoll />
                                 </div>
                                 <div class="layout-row">
-                                    <label>Base PR:
+                                    <label>{`${t("sheet.termsPowers.psy.basePR")}:`}
                                         <NumberField field="basePR" class="short" />
                                         {prCap}
                                     </label>
                                     <SustainedPowersField />
-                                    <label>Current PR:
+                                    <label>{`${t("sheet.termsPowers.psy.currentPR")}:`}
                                         <ReadonlyField field="effectivePR" type="number" class="short textlike" />
                                     </label>
                                 </div>
@@ -339,22 +341,14 @@ function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
 export const POWER_FIELD: FieldOwner = {
     damage: POWER_DAMAGE,
     noun: "power",
-    label: "Power",
+    label: t("sheet.termsPowers.psy.psychicPower.short"),
     stats: {
-        damage: {
-            own: "The power's own damage, as the rulebook gives it; PR is the PR of its cast",
-            placeholder: "1d10+2×PR",
-            hint: "Add W.b, PR, 1d10 or a number.",
-        },
-        pen: {
-            own: "The power's own penetration, as the rulebook gives it; PR is the PR of its cast",
-            placeholder: "PR",
-            hint: "Add PR, bPR or a number.",
-        },
+        damage: { own: t("sheet.magic.powerField.ownDamage"), placeholder: "1d10+2×PR", hint: t("sheet.magic.powerField.damageHint") },
+        pen: { own: t("sheet.magic.powerField.ownPen"), placeholder: "PR", hint: t("sheet.magic.powerField.penHint") },
     },
     exprPlaceholder: "PR, W.b, 1d10",
-    exprHelp: ["PR — the PR of the cast; PRd10 — d10 as many"],
-    own: (state, path, base) => `Power ${base}, PR ${powerPR(state, path)}`,
+    exprHelp: [t("sheet.magic.powerField.exprHelp")],
+    own: (state, path, base) => t("sheet.magic.powerField.own", { base, pr: powerPR(state, path) }),
     // The total counts the PR even without modifiers.
     explainsOwn: true,
     Extra: CastPR,
@@ -367,11 +361,11 @@ function CastPR({ path }: { path: string }) {
     const cast = Number(valueAt(state, `${path}.cast.pr`)) || 0;
     const kick = Number(valueAt(state, `${path}.cast.kick`)) || 0;
     const cap = useComputed(() => uncastPR(state, path)).value;
-    const note = cast <= 0 ? `No cast yet: PR ${cap} counts`
-        : valueAt(state, `${path}.cast.safe`) ? "Of the last cast, safe"
-            : kick > 0 ? `Of the last cast, +${kick} kick` : "Of the last cast";
+    const note = cast <= 0 ? t("sheet.magic.castPR.uncast", { pr: cap })
+        : valueAt(state, `${path}.cast.safe`) ? t("sheet.magic.castPR.safe")
+            : kick > 0 ? t("sheet.magic.castPR.kick", { kick }) : t("sheet.magic.castPR.last");
     return (
-        <label class="mod-base mod-pr" title="The PR the damage and penetration count. Lower it for this hit; the next cast sets it again.">
+        <label class="mod-base mod-pr" title={t("sheet.magic.castPR.title")}>
             <span class="column-label">PR</span>
             <Scope dataId="cast" as="span" class="mod-pr-field">
                 <NumberField field="pr" />
