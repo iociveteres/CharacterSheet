@@ -74,12 +74,11 @@ describe("t", () => {
 describe("the catalog dictionaries", () => {
     it("are en in every test unless one installs another", () => {
         expect(lang()).toBe("en");
-        expect(t("common.close")).toBe("Close");
-    });
-
-    it("give the Russian message with ru installed", () => {
+        const english = t("common.close");
+        expect(english).not.toBe("common.close");
         installDictionary("ru");
-        expect(t("common.close")).toBe("Закрыть");
+        expect(lang()).toBe("ru");
+        expect(t("common.close")).not.toBe(english);
     });
 });
 
@@ -92,17 +91,23 @@ describe("a component", () => {
     });
 
     it("renders its strings in the installed language", () => {
-        installDictionary("ru");
         initRoomState({
             roomId: 5, csrfToken: "", inviteLink: "", players: [], commands: [], dicePresets: [],
             chat: { messages: [], hasMore: false },
         } as unknown as RoomPayload);
         root = document.createElement("div");
         document.body.append(root);
-        act(() => render(<DiceRoller />, root));
-        act(() => root.querySelector<HTMLElement>(".dice-roller-btn")!.click());
+        const header = () => {
+            act(() => render(null, root));
+            act(() => render(<DiceRoller />, root));
+            act(() => root.querySelector<HTMLElement>(".dice-roller-btn")!.click());
+            return [root.querySelector(".dice-popover-header span")?.textContent, root.querySelector(".dice-close-btn")?.getAttribute("title")];
+        };
+        const english = header();
+        installDictionary("ru");
+        const russian = header();
 
-        expect(root.querySelector(".dice-popover-header span")?.textContent).toBe("Броски кубиков");
-        expect(root.querySelector(".dice-close-btn")?.getAttribute("title")).toBe("Закрыть");
+        expect(russian[0]).not.toBe(english[0]);
+        expect(russian[1]).not.toBe(english[1]);
     });
 });

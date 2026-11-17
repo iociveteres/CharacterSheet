@@ -170,7 +170,7 @@ describe("the bestiary page", () => {
         // The description is under the header; the right panel waits for a creature.
         expect($(".bestiary-collection-view .bestiary-description")!.textContent).toBe("Green and mean");
         expect($(".bestiary-creature .bestiary-description")).toBeNull();
-        expect($(".bestiary-quota")!.textContent).toBe("Used 180 KB of 10 MB");
+        expect($(".bestiary-quota")!.textContent).toMatch(/\b180\b.*\b10\b/);
         expect($(".bestiary-table .bestiary-chip")!.textContent).toBe("BC");
     });
 

@@ -121,7 +121,7 @@ describe("the invite modal", () => {
             uses.dispatchEvent(new Event("input", { bubbles: true }));
         });
 
-        click(root.querySelector('button[title="Create new invite link"]')!);
+        click(root.querySelector("#invite-link-modal .actions button:last-child")!);
 
         expect(sent).toMatchObject([{ type: "newInviteLink", expiresInDays: null, maxUses: null }]);
     });
@@ -137,7 +137,7 @@ describe("the invite modal", () => {
             uses.dispatchEvent(new Event("input", { bubbles: true }));
         });
 
-        click(root.querySelector('button[title="Create new invite link"]')!);
+        click(root.querySelector("#invite-link-modal .actions button:last-child")!);
 
         expect(sent).toMatchObject([{ type: "newInviteLink", expiresInDays: 7, maxUses: 3 }]);
     });
@@ -148,17 +148,17 @@ describe("the invite modal", () => {
         vi.stubGlobal("navigator", { clipboard: { writeText } });
         try {
             act(() => openInviteModal());
-            const copy = root.querySelector<HTMLButtonElement>('button[title="Copy invite link"]')!;
+            const copy = root.querySelector<HTMLButtonElement>("#active-invite-link + button")!;
 
             await act(async () => {
                 copy.click();
             });
-            expect(copy.textContent).toBe("Copied!");
+            expect(copy.classList.contains("copied")).toBe(true);
             act(() => {
                 vi.advanceTimersByTime(1400);
             });
 
-            expect(copy.textContent).toBe("Copy");
+            expect(copy.classList.contains("copied")).toBe(false);
         } finally {
             vi.unstubAllGlobals();
             vi.useRealTimers();

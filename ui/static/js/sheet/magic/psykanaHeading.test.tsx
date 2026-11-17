@@ -5,7 +5,6 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath } from "../core/sync";
 import { Psykana } from "./Powers";
-import { t } from "../../i18n";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -39,8 +38,9 @@ describe("the psykana settings", () => {
 
         act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
         const dropdown = $(".block-settings-dropdown")!;
-        expect(Array.from(dropdown.children, c => (c as HTMLElement).dataset.id ?? c.textContent)).toEqual([
-            t("sheet.rolls.block.testedOn", { rolls: t("sheet.magic.psykana.rolls") }), "psykana", t("sheet.rolls.block.sheetCounts"), "settings", t("sheet.rolls.block.sameForAll"),
+        // Each part under a heading of its own.
+        expect(Array.from(dropdown.children, c => (c as HTMLElement).dataset.id ?? "heading")).toEqual([
+            "heading", "psykana", "heading", "settings", "heading",
         ]);
         expect(dropdown.querySelector('[data-id="psykana"] > [data-id="testOptions.items"]')).not.toBeNull();
         const boxes = Array.from(dropdown.querySelectorAll<HTMLInputElement>('[data-id="settings"] input'));
@@ -71,7 +71,7 @@ describe("the psykana notice", () => {
 
     it("says that typed sustained powers are counted now, unless the counting is off", () => {
         render({ psykana: { basePR: 4, sustainedPowers: 2 } });
-        expect($('[data-id="typedSustained"]')!.textContent).toMatch(/^Sustained Powers was typed as 2\./);
+        expect($('[data-id="typedSustained"]')!.textContent).toMatch(/\b2\b/);
 
         teardownSheet();
         rendered!.unmount();

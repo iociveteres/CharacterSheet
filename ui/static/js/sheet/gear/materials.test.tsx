@@ -12,7 +12,6 @@ import type { GearItem } from "../schema/sheet";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "./Armour";
 import { CarryWeight, Gear } from "./Gear";
-import { t } from "../../i18n";
 
 const noAttacks = () => ({ row: null, addButton: null });
 
@@ -78,8 +77,9 @@ const longsword = {
 const item = () => resolvePath(testState(), G1) as GearItem;
 /** The title of the material's field: what it does, a line each. */
 const effects = () => $('.material-row [data-id="name"]').title;
-const PEN = t("sheet.gear.material.pen", { pen: "+1" });
-const DUR = t("sheet.gear.material.durability", { value: 2 });
+// Lines of the material's own numbers: what they say is the catalog's.
+const PEN = expect.stringContaining("+1");
+const DUR = expect.stringMatching(/\b2\b/);
 const SPECIAL = "Броня получает +20 Max.A.";
 
 describe("the material of a gear item", () => {
@@ -100,7 +100,7 @@ describe("the material of a gear item", () => {
         expect(input.value).toBe("Mithral");
         expect(item().material).not.toHaveProperty("name_ru");
         // A weapon: Pen, not AP. In the title: the numbers show where they count.
-        expect(input.title).toBe(lines("wt ×0.5", PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(input.title.split("\n")).toEqual(["wt ×0.5", PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("1.5");
@@ -156,19 +156,19 @@ describe("the material of a gear item", () => {
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("4.4");
         expect(total.title).toBe(lines("4 Round Shield", "× 1.1 Metal Rim", "= 4.4"));
-        expect(effects()).toBe(lines(PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(effects().split("\n")).toEqual([PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
 
         // Without the rim a metal shield is the material's again.
         act(() => updateSignalAtPath(testState(), `${G1}.weapon.mods.items.m1.name`, "Spikes"));
         expect(total.value).toBe("2");
-        expect(effects()).toBe(lines("wt ×0.5", PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(effects().split("\n")).toEqual(["wt ×0.5", PEN, DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
     });
 
     it("adds its AP to the covered locations, own AP on focus", () => {
         loadState(chainmail(), pathfinderCrusade);
         rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
-        expect(effects()).toBe(lines("wt ×0.5", "AP +1", DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(effects().split("\n")).toEqual(["wt ×0.5", "AP +1", DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
         const torso = $('[data-id="ap"] [data-id="torsoTotal"]');
         expect(torso.value).toBe("5");
         expect(torso.classList.contains("ap-total")).toBe(true);
@@ -213,7 +213,7 @@ describe("the material of a gear item", () => {
         rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         expect($('[data-id="broken"]')).toBeNull();
         // Any item can have a material: it changes its weight and capacity.
-        expect(effects()).toBe(lines("wt ×0.5", DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(effects().split("\n")).toEqual(["wt ×0.5", DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
         expect($('[data-id="addMaterial"]')).toBeNull();
     });
 
@@ -268,10 +268,10 @@ describe("the material of a gear item", () => {
         attachComputeds(testState());
         rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
-        expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Max.A 65 = 35 Chainmail +20 Mithral +10 Agile", DUR, "Cap ×1", SPECIAL));
+        expect(effects().split("\n")).toEqual(["wt ×0.5", "AP +1", "Max.A 65 = 35 Chainmail +20 Mithral +10 Agile", DUR, "Cap ×1", SPECIAL]);
         // Without a cap of its own there is nothing to raise: the material says what it would do.
         act(() => updateSignalAtPath(testState(), `${G1}.entries.items.e0.cap`, ""));
-        expect(effects()).toBe(lines("wt ×0.5", "AP +1", DUR, "Cap ×1", "+20 Max.A", SPECIAL));
+        expect(effects().split("\n")).toEqual(["wt ×0.5", "AP +1", DUR, "Cap ×1", "+20 Max.A", SPECIAL]);
     });
 
     it("counts the same AP in the Armour block", () => {

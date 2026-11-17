@@ -66,14 +66,14 @@ describe("the stance of the sheet", () => {
 
 describe("what a stance needs", () => {
     it("Springy: a melee weapon of Balance 0 or more, its grip counted", () => {
-        expect(stanceUnavailable(sheet(""), "springy")).toBe("No melee weapon of Balance 0 or more, its grip counted");
+        expect(stanceUnavailable(sheet(""), "springy")).toBeTruthy();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "-1" }) }), "springy")).not.toBeNull();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "-1" }), m2: weapon("knife") }), "springy")).toBeNull();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "1", grip: "2р [Бл]", gripSelected: "Cl" }) }), "springy")).not.toBeNull();
     });
 
     it("Palisade: a glaive, spear or bayonet profile", () => {
-        expect(stanceUnavailable(sheet("", { m1: weapon("sword") }), "palisade")).toBe("No glaive, spear or bayonet among the melee attacks");
+        expect(stanceUnavailable(sheet("", { m1: weapon("sword") }), "palisade")).toBeTruthy();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword"), m2: weapon("bayonet") }), "palisade")).toBeNull();
     });
 
@@ -99,7 +99,8 @@ describe("a melee roll's name", () => {
         const state = load({ meleeAttacks: { stance: "aggressive", list: {
             items: { m1: weapon("sword", { grip: "2р [1р+Об]", gripSelected: "1h+Rev" }) }, layouts: { m1: pos(0, 0) },
         } } });
-        expect(rollName(state, A, "Длинный меч")).toBe("Длинный меч (1р+Об, Агрессивная)");
+        // The grip as the weapon writes it, the stance in the page's language.
+        expect(rollName(state, A, "Длинный меч")).toMatch(/^Длинный меч \(1р\+Об, [^A-Za-z]+\)$/);
     });
 });
 

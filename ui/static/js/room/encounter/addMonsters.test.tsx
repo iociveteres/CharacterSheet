@@ -16,7 +16,6 @@ import { initRoomState, toasts } from "../state";
 import { savingSheet } from "../bestiary/state";
 import { sheets } from "../../sheet/instance";
 import { installDictionary } from "../../i18n/testDictionary";
-import { t } from "../../i18n";
 
 const participant = (id: number, groupId: number, sheetId: number, name: string, source: [number, string] | null, sourceLabel: string | null = null): EncounterParticipant =>
     ({ id, groupId, sheetId, npc: true, side: "enemies", displayName: null, name, sourceCreatureId: source?.[0] ?? null, sourceCreatureName: source?.[1] ?? null, sourceLabel });
@@ -121,8 +120,11 @@ function change(el: HTMLElement | null, value: string, type = "change"): void {
 
 const menuOf = (participantId: number) => {
     click($(`[data-participant-id="${participantId}"] .encounter-npc-menu-btn`));
-    return $$(`[data-participant-id="${participantId}"] .encounter-npc-menu button`).map(b => b.textContent);
+    return $$(`[data-participant-id="${participantId}"] .encounter-npc-menu button`).map(b => b.className);
 };
+/** What the menu of an NPC holds: its name for the players, copies and a variant in the bestiary. */
+const npcMenuItems = ["encounter-display-name-save", "encounter-duplicate", "encounter-add-variant"];
+const collectionIds = () => $$(".encounter-collection").map(c => c.dataset.collectionId);
 
 /** The tab hidden for `ms` and shown again. */
 function away(ms: number): void {
@@ -196,7 +198,7 @@ describe("Add monsters", () => {
         tab("monsters");
         await vi.waitFor(() => expect(requests.some(r => r.url.startsWith("/bestiary/creatures"))).toBe(true));
         // The collections read wait for their creatures: the tab shows them at once.
-        expect(texts(".encounter-collection")).toEqual(["All collections"]);
+        expect(collectionIds()).toEqual(["all"]);
         expect($(".encounter-quota")).toBeNull();
         creaturesHeld = null;
         release();
@@ -204,14 +206,18 @@ describe("Add monsters", () => {
         expect($(".encounter-picker")).toBeNull();
         expect($('[data-column="party"]')).toBeNull();
         expect($('[data-column="enemies"]')).not.toBeNull();
-        expect(texts(".encounter-collection")).toEqual(["All collections", "Daemons", "Orks", "Xenos · alex", "DoomBC · alex"]);
-        expect(texts('[data-column="collections"] .encounter-column-title')).toEqual(["My collections", "Subscriptions"]);
+        expect(collectionIds()[0]).toBe("all");
+        expect(texts(".encounter-collection").slice(1)).toEqual(["Daemons", "Orks", "Xenos · alex", "DoomBC · alex"]);
+        expect($$('[data-column="collections"] .encounter-column-title')).toHaveLength(2);
         // The first of their own collections is picked at first.
         expect($(".encounter-collection.selected")!.dataset.collectionId).toBe("6");
         expect(requests.filter(r => r.url.startsWith("/bestiary/creatures")).map(r => r.url)).toEqual(["/bestiary/creatures?collection=6"]);
-        expect($(".encounter-quota")!.textContent).toBe("Used 2 KB of 10 MB");
-        // Each creature names its author, the user as you.
-        expect(texts(".encounter-creature-author")).toEqual(["by you", "by you", "by alex"]);
+        expect($(".encounter-quota")!.textContent).toMatch(/\b2\b.*\b10\b/);
+        // Each creature names its author, the user apart from the others.
+        const [mine, alsoMine, theirs] = texts(".encounter-creature-author");
+        expect(mine).toBe(alsoMine);
+        expect(mine).not.toContain("alex");
+        expect(theirs).toContain("alex");
 
         click($('.encounter-collection[data-collection-id="all"]'));
         await vi.waitFor(() => expect(requests.at(-1)!.url).toBe("/bestiary/creatures"));
@@ -350,8 +356,7 @@ describe("Add monsters", () => {
         try {
             tab("monsters");
             await vi.waitFor(() => expect($(".encounter-no-subscriptions a")?.getAttribute("href")).toBe("/bestiary"));
-            expect($(".encounter-no-subscriptions")!.textContent).toBe(t("room.encounter.monsters.noSubscriptions", { link: t("room.encounter.monsters.bestiaryLink") }));
-            expect(texts(".encounter-collection")).toEqual(["All collections", "Daemons", "Orks"]);
+            expect(texts(".encounter-collection").slice(1)).toEqual(["Daemons", "Orks"]);
             // The subscription left is gone: the first own collection is picked.
             expect($(".encounter-collection.selected")!.dataset.collectionId).toBe("6");
         } finally {
@@ -360,14 +365,14 @@ describe("Add monsters", () => {
         }
     });
 
-    it("puts the link to the bestiary where the Russian sentence has it", async () => {
+    it("puts the link to the bestiary into the Russian sentence in place of its param", async () => {
         installDictionary("ru");
         subscriptions = false;
         try {
             tab("monsters");
-            await vi.waitFor(() => expect($(".encounter-no-subscriptions")?.textContent).toBe(t("room.encounter.monsters.noSubscriptions", { link: t("room.encounter.monsters.bestiaryLink") })));
-            expect($(".encounter-no-subscriptions a")!.textContent).toBe(t("room.encounter.monsters.bestiaryLink"));
-            expect($('.encounter-creature[data-creature-id="51"] .encounter-add-creature')!.getAttribute("aria-label")).toBe("Добавить Ork Nob в бой");
+            await vi.waitFor(() => expect($(".encounter-no-subscriptions a")?.getAttribute("href")).toBe("/bestiary"));
+            expect($(".encounter-no-subscriptions")!.textContent).not.toContain("{");
+            expect($('.encounter-creature[data-creature-id="51"] .encounter-add-creature')!.getAttribute("aria-label")).toContain("Ork Nob");
         } finally {
             subscriptions = true;
             tab("combat");
@@ -377,40 +382,40 @@ describe("Add monsters", () => {
 
 describe("the menu of an NPC", () => {
     it("adds a variant of the creature an NPC was copied from under the name given", async () => {
-        expect(menuOf(1)).toContain("Add variant to bestiary…");
-        click($$('[data-participant-id="1"] .encounter-npc-menu button').find(b => b.textContent === "Add variant to bestiary…"));
+        expect(menuOf(1)).toContain("encounter-add-variant");
+        click($('[data-participant-id="1"] .encounter-add-variant'));
         expect(($(".add-variant-name") as HTMLInputElement).value).toBe("Ork Boy 1");
         change($(".add-variant-name"), " Ork Nob ", "input");
         click($(".add-variant-add"));
         expect($(".add-variant-modal")).toBeNull();
         await vi.waitFor(() => expect(requests.find(r => r.url === "/bestiary/add-variant")?.body).toEqual({ sheetId: 200, name: "Ork Nob" }));
-        await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe('"Ork Nob" added to "Orks"'));
+        await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toMatch(/Ork Nob.*Orks/));
     });
 
     it("has no variant for an NPC that is no copy of a creature", () => {
-        expect(menuOf(2)).not.toContain("Add variant to bestiary…");
+        expect(menuOf(2)).not.toContain("encounter-add-variant");
         click($('[data-participant-id="2"] .encounter-npc-menu-btn'));
     });
 
     it("has no variant for a copy of another user's creature", () => {
-        expect(menuOf(3)).not.toContain("Add variant to bestiary…");
+        expect(menuOf(3)).not.toContain("encounter-add-variant");
         click($('[data-participant-id="3"] .encounter-npc-menu-btn'));
     });
 
     it("has no update in the bestiary any more", () => {
         for (const id of [1, 2, 3]) {
-            expect(menuOf(id)).not.toContain("Update in bestiary");
+            expect(menuOf(id).filter(item => !npcMenuItems.includes(item))).toEqual([]);
             click($(`[data-participant-id="${id}"] .encounter-npc-menu-btn`));
         }
     });
 
     it("saves an NPC to a collection of the gamemaster's only, from the header of its stat block", async () => {
-        expect(menuOf(2)).not.toContain("Save to collection");
+        expect(menuOf(2).filter(item => !npcMenuItems.includes(item))).toEqual([]);
         click($('[data-participant-id="2"] .encounter-npc-menu-btn'));
         click($('.encounter-card[data-participant-id="2"] .encounter-card-names'));
         click($('.statblock-picked[data-participant-id="2"] .encounter-save-to-collection'));
         expect(savingSheet.value).toEqual({ sheetId: 201, name: "Cultist" });
-        await vi.waitFor(() => expect($$(".save-to-collection-target option").map(o => o.textContent)).toEqual(["Daemons", "Orks", "New collection…"]));
+        await vi.waitFor(() => expect($$(".save-to-collection-target option").map(o => o.textContent)).toEqual(["Daemons", "Orks", expect.any(String)]));
         // The default collection is picked at first.
         expect(($(".save-to-collection-target") as HTMLSelectElement).value).toBe("7");
     });

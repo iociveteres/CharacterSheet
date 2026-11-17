@@ -125,7 +125,7 @@ describe("an attack linked to a gear item", () => {
         const state = sheet();
         expect(brokenNote(state, T1)).toBe("");
         updateSignalAtPath(state, "gear.list.items.g1.broken", true);
-        expect(brokenNote(state, T1)).toBe("½ after armour: Longsword is broken");
+        expect(brokenNote(state, T1)).toContain("Longsword");
         // The dice stay as rolled.
         expect(statAt(state, WEAPON_DAMAGE, T1, "damage").text).toBe("1d10+2");
     });

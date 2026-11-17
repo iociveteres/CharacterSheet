@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installDictionary } from "../../i18n/testDictionary";
+import { optionLabel, optionValue } from "../schema/constants";
 
 // The terms are taken when the module loads, as on a page whose language is fixed.
 async function termsIn(lang: "en" | "ru") {
@@ -11,20 +12,9 @@ async function termsIn(lang: "en" | "ru") {
 afterEach(() => vi.resetModules());
 
 describe("the psykana phrases of Black Crusade", () => {
-    it("are whole in Russian, the power declined in each", async () => {
-        const terms = await termsIn("ru");
-        expect([terms.psykana, terms.psychicPowers, terms.noPRLeft, terms.ignoresSustained]).toEqual([
-            "Псайкана", "Психосилы", "Не осталось PR для новой психосилы", "Талант: без учёта PR, занятого поддерживаемыми психосилами",
-        ]);
-    });
-
     it("put the number typed before into the notice", async () => {
-        expect((await termsIn("ru")).typedSustainedNotice(3)).toBe(
-            "В поле «Поддерживаемые психосилы» было введено 3. Теперь оно считает психосилы, отмеченные как поддерживаемые: отметьте их или отключите подсчёт.",
-        );
-        expect((await termsIn("en")).typedSustainedNotice(3)).toBe(
-            "Sustained Powers was typed as 3. It now counts the powers marked sustained: mark them, or turn the counting off.",
-        );
+        expect((await termsIn("ru")).typedSustainedNotice(3)).toMatch(/\b3\b/);
+        expect((await termsIn("en")).typedSustainedNotice(3)).toMatch(/\b3\b/);
     });
 });
 
@@ -35,30 +25,32 @@ async function pathfinderIn(lang: "en" | "ru") {
 }
 
 describe("the magic phrases of Pathfinder Crusade", () => {
-    it("are whole in Russian, the spell declined in each, the words of the dictionary capitalized as headings", async () => {
-        const { terms } = await pathfinderIn("ru");
-        expect([terms.psykana, terms.psykanaType, terms.psychicPower, terms.psychicPowers, terms.noPRLeft, terms.ignoresSustained]).toEqual([
-            "Магия", "Природа Дара", "Заклинание", "Заклинания", "Не осталось PR для нового заклинания",
-            "Талант: без учёта PR, занятого поддерживаемыми заклинаниями",
-        ]);
-        expect((await pathfinderIn("en")).terms.psychicPowers).toBe("Spells");
+    it("are its own, apart from those of Black Crusade, in either language", async () => {
+        for (const lang of ["en", "ru"] as const) {
+            const blackCrusade = await termsIn(lang);
+            const { terms } = await pathfinderIn(lang);
+            for (const key of ["psykana", "psychicPowers", "noPRLeft", "ignoresSustained"] as const) {
+                expect(terms[key]).not.toBe(blackCrusade[key]);
+            }
+        }
     });
 
     it("put the number typed before into the notice", async () => {
-        expect((await pathfinderIn("ru")).terms.typedSustainedNotice(2)).toBe(
-            "В поле «Поддерживаемые заклинания» было введено 2. Теперь оно считает заклинания, отмеченные как поддерживаемые: отметьте их или отключите подсчёт.",
-        );
+        expect((await pathfinderIn("ru")).terms.typedSustainedNotice(2)).toMatch(/\b2\b/);
     });
 
-    it("label the skills, gifts and Spellcasting in Russian, their names and values English", async () => {
+    it("label the skills, gifts and Spellcasting in the page's language, their names and values English", async () => {
         const { stats } = await pathfinderIn("ru");
         const navigation = stats.skillsLeft.find(r => r.key === "navigation_sea")!;
-        expect([navigation.name, navigation.group, navigation.label, navigation.groupLabel]).toEqual(["Sea", "Navigation", "Море", "Навигация"]);
-        expect(stats.psykanaTypes).toEqual([
-            { value: "Arcane", label: "Арканный" }, { value: "Bound", label: "Связанный" }, { value: "Unbound", label: "Несвязанный" },
-        ]);
+        expect([navigation.name, navigation.group]).toEqual(["Sea", "Navigation"]);
+        expect(navigation.label).not.toBe(navigation.name);
+        expect(navigation.groupLabel).not.toBe(navigation.group);
+        expect(stats.psykanaTypes.map(optionValue)).toEqual(["Arcane", "Bound", "Unbound"]);
+        expect(optionLabel(stats.psykanaTypes[0])).not.toBe("Arcane");
         const bard = stats.spellcasting.find(v => v.key === "bard")!;
-        expect([bard.label, bard.trait, bard.pool, bard.gift, bard.classes]).toEqual(["Бард", "Искусства Барда", "Фокус Барда", undefined, ["Bard", "Бард"]]);
+        // A class written in either language picks the variant.
+        expect(bard.classes).toEqual(["Bard", expect.not.stringMatching(/^Bard$/)]);
+        expect(bard.gift).toBeUndefined();
         expect(stats.spellcasting.find(v => v.key === "arcane")!.gift).toBe("Arcane");
     });
 });

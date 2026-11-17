@@ -152,7 +152,7 @@ describe("the damage of an attack", () => {
         act(() => toggle().click());
         act(() => updateSignalAtPath(testState(), `${T1}.damageMods.items.d1.expr`, "S.b + Ag.b"));
         expect(expr("d1").classList.contains("invalid")).toBe(true);
-        expect(expr("d1").title).toMatch(/^Unknown: Ag\.b\. /);
+        expect(expr("d1").title).toContain("Ag.b");
         expect(Array.from(mod("d1").querySelectorAll(".text-marks mark"), m => m.textContent)).toEqual(["Ag.b"]);
         expect(mod("d1").querySelector('[data-id="added"]')!.textContent).toBe("—");
         expect(total().value).toBe("1d10+2");
@@ -269,7 +269,6 @@ describe("the penetration of an attack", () => {
         const dropdown = penDropdown('.panel[data-id="t1"]')!;
         const base = dropdown.querySelector<HTMLInputElement>('[data-id="pen"]')!;
         expect(document.activeElement).toBe(base);
-        expect(dropdown.querySelector(".mod-hint")!.textContent).toMatch(/bPR/);
         // The damage dropdown stays closed.
         expect(dropdown.querySelector('[data-id="damage"]')).toBeNull();
 

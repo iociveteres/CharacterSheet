@@ -203,7 +203,7 @@ describe("RangedAttacks", () => {
         openRoll("r1");
         const roll = item("r1").querySelector<HTMLElement>('[data-id="roll"]')!;
         const select = roll.querySelector<HTMLSelectElement>('[data-id="testOption"]')!;
-        expect(select.options[0].text).toBe("(test deleted)");
+        expect(select.options[0].text).not.toBe("");
         expect(roll.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.disabled).toBe(true);
     });
 

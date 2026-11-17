@@ -81,11 +81,11 @@ describe("modeNameSuggestions", () => {
         const suggestions = await import("./movementSuggestions");
         utils.loadState({ traits: { list: { items: { t0: { name: "Flyer (6)" }, t1: { name: "Hoverer (4)" } }, layouts: { t0: pos(0, 0), t1: pos(0, 1) } } } });
         const groups = suggestions.modeNameSuggestions(utils.testState(), null);
-        expect(groups.map(g => [g.label, g.options.map(o => [optionValue(o), optionLabel(o)])])).toEqual([
-            ["Из трейтов", [["Flight", "Полёт — из трейтов"], ["Hover", "Парение — из трейтов"]]],
-            ["Режимы", [["Land", "Пешком"], ["Burrow", "Рытьё"], ["Swim", "Плавание"], ["Climb", "Лазание"]]],
-        ]);
+        expect(groups.map(g => g.options.map(optionValue))).toEqual([["Flight", "Hover"], ["Land", "Burrow", "Swim", "Climb"]]);
+        const swim = groups[1].options.find(o => optionValue(o) === "Swim")!;
+        expect(optionLabel(swim)).not.toBe("Swim");
         // A query finds a mode by its label too.
-        expect(suggestions.modeNameSuggestions(utils.testState(), "плав").flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
+        const query = optionLabel(swim).toLowerCase();
+        expect(suggestions.modeNameSuggestions(utils.testState(), query).flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
     });
 });

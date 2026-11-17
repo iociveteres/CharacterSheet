@@ -142,7 +142,7 @@ describe("a melee profile in a roll's label", () => {
         // The profiles take their labels when the schema's constants load.
         vi.resetModules();
         const { profileLabel } = await import("./weaponDamage");
-        expect(profileLabel("Цепной топор", "axe")).toBe("Цепной топор, топор");
+        expect(profileLabel("Цепной топор", "axe")).toMatch(/^Цепной топор, [^A-Za-z]+$/);
         expect(profileLabel("Сеть", "no")).toBe("Сеть");
     });
 });

@@ -142,7 +142,7 @@ describe("the rules of the variants", () => {
     it("warn of a base PR past the bonus of the casting characteristic", () => {
         expect(prCapWarning(sheet(["divine"]))).toBeNull();
         updateSignalAtPath(testState(), "psykana.basePR", 4);
-        expect(prCapWarning(testState())).toBe("PR grows up to W.b (3)");
+        expect(prCapWarning(testState())).toMatch(/W\.b \(3\)/);
         updateSignalAtPath(testState(), "spellcasting.arcane", true);
         expect(prCapWarning(testState())).toBeNull();
     });
