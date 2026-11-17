@@ -10,6 +10,7 @@ import { textAt } from "../core/sync";
 import { columnsFromLayout } from "../core/columns";
 import { sheetComputed, statsOf } from "../core/state";
 import type { OptionGroup } from "../schema/constants";
+import { t } from "../../i18n";
 
 export function normalizeSkillName(s: string | null | undefined): string {
     return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
@@ -34,16 +35,16 @@ export function skillGroups(state: SheetSignals, stats: StatSet): OptionGroup[] 
         group.options.push(option);
     };
 
-    for (const row of stats.skillsLeft) add(row.groupLabel ?? "Skills", { value: row.key, label: row.label });
+    for (const row of stats.skillsLeft) add(row.groupLabel ?? t("sheet.terms.block.skills"), { value: row.key, label: row.label });
     for (const row of stats.skillsRight) {
         const name = rightSkillName(state, row.key);
-        if (name) add(row.groupLabel ?? "Skills", { value: row.key, label: name });
+        if (name) add(row.groupLabel ?? t("sheet.terms.block.skills"), { value: row.key, label: name });
     }
     const custom = state.customSkills?.list;
     // One column, so its order is the order of that column.
     for (const id of custom ? columnsFromLayout(1, custom.layouts.value, Object.keys(custom.items))[0] : []) {
         const name = custom!.items[id].name?.value?.trim();
-        if (name) add("Custom skills", { value: CUSTOM_SKILL_PREFIX + id, label: name });
+        if (name) add(t("sheet.terms.block.customSkills"), { value: CUSTOM_SKILL_PREFIX + id, label: name });
     }
     return groups;
 }

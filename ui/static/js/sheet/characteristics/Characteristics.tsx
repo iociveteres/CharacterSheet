@@ -3,6 +3,7 @@
 // puts under them, Conditions. The same parts open from the sheet's controls on
 // every tab (conditions/ConditionsControl.tsx).
 import type { ComponentChildren } from "preact";
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
@@ -65,7 +66,7 @@ export function PermanentCharacteristics({ permRef }: { permRef: PermRef }) {
     const { stats } = useSheet();
     return (
         <Scope dataId="characteristics" class="perm-temp-section">
-            <h4>Permanent</h4>
+            <h4>{t("sheet.terms.block.permanent")}</h4>
             <div class="layout-row">
                 {stats.characteristics.map(({ key, label: name }) => (
                     <Scope key={key} dataId={key} class="characteristic-block">
@@ -90,7 +91,7 @@ export function Characteristics({ children }: { children?: ComponentChildren }) 
     return (
         <div class="characteristics" ref={ref}>
             <h3>
-                Characteristics{" "}
+                {t("sheet.terms.block.characteristics")}{" "}
                 <button
                     class={dropdown.open ? "char-dropdown-toggle active" : "char-dropdown-toggle"}
                     type="button"

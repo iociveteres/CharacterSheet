@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
+import { updateSignalAtPath } from "../core/sync";
 import { loadState, testState } from "../components/testUtils";
 import { characteristicSummary, skillSummary, unnaturalSummary } from "./characteristicSummary";
 import { attachComputeds } from "../kinds/computed";
@@ -83,5 +85,22 @@ describe("skillSummary", () => {
         loadState({ ...content(), characteristics: { BS: { value: "110" } }, fatigue: {} });
         attachComputeds(testState());
         expect(skillSummary(testState(), "skillsLeft.awareness")).toEqual(["Difficulty 80", "BS 110", "Counts 100 of 110", "Untrained -20"]);
+    });
+});
+
+describe("in Russian", () => {
+    it("counts the successes of the unnatural in plural", () => {
+        installDictionary("ru");
+        expect(unnaturalSummary(testState(), "WS")).toEqual(["Сверхъестественная WS 3: +1 успех при пройденном тесте", "Постоянное 2", "Rage +1"]);
+        // 3 + Rage 1 = 4: two successes.
+        updateSignalAtPath(testState(), "characteristics.WS.unnatural", "3");
+        expect(unnaturalSummary(testState(), "WS")[0]).toBe("Сверхъестественная WS 4: +2 успеха при пройденном тесте");
+    });
+
+    it("names the parts of a skill's difficulty", () => {
+        installDictionary("ru");
+        loadState({ ...content(), characteristics: { BS: { value: "110" } }, fatigue: {} });
+        attachComputeds(testState());
+        expect(skillSummary(testState(), "skillsLeft.awareness")).toEqual(["Сложность 80", "BS 110", "Учитывается 100 из 110", "Не обучен -20"]);
     });
 });

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { conditionOf, loadState, testState } from "../components/testUtils";
 import { parseDamage, WEAPON_REFS } from "../rolls/damageExpression";
 import { movementSummary } from "./movementSummary";
@@ -106,5 +107,23 @@ describe("movementSummary", () => {
         updateSignalAtPath(testState(), `${MOVE}.spd`, "A.b+Fly");
         updateSignalAtPath(testState(), `${MOVE}.name`, "");
         expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Mode: Half —", "Unknown: Fly. Set the SPD under ⚙"]);
+    });
+
+    it("shows a mode of the rules and the columns in the page's language, the name kept English", async () => {
+        installDictionary("ru");
+        vi.resetModules();
+        const utils = await import("../components/testUtils");
+        const computeds = await import("../kinds/computed");
+        const sync = await import("../core/sync");
+        const movement = await import("./movement");
+        const summary = await import("./movementSummary");
+        utils.loadState(content());
+        computeds.attachComputeds(utils.testState());
+        sync.updateSignalAtPath(utils.testState(), `${MOVE}.spd`, "A.b - 2×Size - 4");
+        expect(summary.movementSummary(utils.testState(), MOVE, movement.MOVE_COLUMNS[0]))
+            .toEqual(["Пешком: Полудвижение 0.5", "A.b +3", "2×Size -2", "-4", "SPD -3 считается как 0.5"]);
+        expect(sync.valueAt(utils.testState(), `${MOVE}.name`)).toBe("Land");
+        sync.updateSignalAtPath(utils.testState(), `${MOVE}.name`, "Hover board");
+        expect(movement.modeName(utils.testState(), MOVE)).toBe("Hover board");
     });
 });

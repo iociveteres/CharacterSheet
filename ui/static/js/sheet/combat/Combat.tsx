@@ -30,22 +30,23 @@ import { resolveStackExpr } from "../modifiers/entryValues";
 import { signed } from "../components/format";
 import { StatField, type StatTexts } from "../rolls/ResourceField";
 import { stanceOf } from "../weapons/stanceRules";
+import { t } from "../../i18n";
 
 export function Infamy() {
     return (
         <Scope dataId="infamyPoints">
             <div class="layout-row">
                 <div class="layout-row">
-                    <label>Threshold:</label>
+                    <label>{t("sheet.combat.threshold")}:</label>
                     <NumberField field="infamyMax" class="short-input" />
                 </div>
                 <div class="layout-row l">
-                    <label>Current:</label>
+                    <label>{t("sheet.combat.current")}:</label>
                     <NumberField field="infamyCur" class="short-input" />
                 </div>
             </div>
             <div class="layout-row content-center margin-top-small">
-                <label>Temporary:</label>
+                <label>{t("sheet.combat.temporary")}:</label>
                 <NumberField field="infamyTemp" class="short-input" />
             </div>
         </Scope>
@@ -56,32 +57,32 @@ function FatigueIndicator() {
     const { state } = useSheet();
     const cur = Number(valueAt(state, "fatigue.fatigueCur")) || 0;
     const threshold = useComputed(() => fatigueThreshold(state).total).value;
-    const [text, active] = cur <= 0 ? ["Not affected", false]
-        : threshold > 0 && cur >= threshold ? ["Unconscious", true]
-            : ["Taking −10 to affected rolls", true];
+    const [text, active] = cur <= 0 ? [t("sheet.combat.fatigue.notAffected"), false]
+        : threshold > 0 && cur >= threshold ? [t("sheet.combat.fatigue.unconscious"), true]
+            : [t("sheet.combat.fatigue.penalty"), true];
     return <span data-id="fatigueIndicator" class={active ? "fatigue-indicator fatigue-active" : "fatigue-indicator"}>{text}</span>;
 }
 
 const THRESHOLD_TEXTS: StatTexts = {
-    noun: "fatigue threshold",
+    noun: t("sheet.combat.fatigue.thresholdNoun"),
     rule: FATIGUE_THRESHOLD,
-    hint: "A talent or trait, as +1 or ½T.b.",
+    hint: t("sheet.combat.fatigue.thresholdHint"),
 };
 
 export function Fatigue() {
     return (
         <Scope dataId="fatigue">
             <div class="layout-row items-center">
-                <label>Current:
+                <label>{t("sheet.combat.current")}:
                     <NumberField field="fatigueCur" class="short-input" />
                 </label>
                 {/* Not a label: a click in its dropdown would go to the total. */}
-                <span class="resource-stat">Threshold:
+                <span class="resource-stat">{t("sheet.combat.threshold")}:
                     <StatField field="threshold" texts={THRESHOLD_TEXTS} fallback={FATIGUE_THRESHOLD} value={fatigueThreshold} />
                 </span>
             </div>
             <div class="layout-column items-center margin-top-small">
-                <label>Affects:
+                <label>{t("sheet.combat.fatigue.affects")}:
                     <Select field="fatigueMode" options={FATIGUE_MODES} />
                 </label>
                 <FatigueIndicator />
@@ -104,7 +105,7 @@ function InitiativeContributions() {
         .filter(s => s.bonus);
     return (
         <div class="initiative-condition-contributions">
-            {sources.length > 0 && <div class="initiative-contributions-header">Bonuses</div>}
+            {sources.length > 0 && <div class="initiative-contributions-header">{t("sheet.combat.initiative.bonuses")}</div>}
             {sources.map((s, i) => (
                 <div key={i} class="layout-row initiative-contribution-row">
                     <span>{s.name}</span>
@@ -119,10 +120,14 @@ function LastInitiative() {
     const { state } = useSheet();
     const total = initiativeTotal(state);
     const title = total === null ? undefined
-        : `Roll: ${numberAt(state, "initiative.lastInitiative")}, Modifiers: ${signed(numberAt(state, "initiative.modifier"))}, Total: ${total}`;
+        : t("sheet.combat.initiative.lastTitle", {
+            roll: numberAt(state, "initiative.lastInitiative"),
+            modifier: signed(numberAt(state, "initiative.modifier")),
+            total,
+        });
     return (
         <span id="initiativeResult" class={total === null ? undefined : "has-result"} title={title}>
-            <span class="initiative-label">Latest initiative:</span>
+            <span class="initiative-label">{t("sheet.combat.initiative.latest")}:</span>
             <span id="lastInitiativeDisplay">{total === null ? "" : String(total)}</span>
         </span>
     );
@@ -138,10 +143,10 @@ export function InitiativeAndSize() {
     return (
         <>
             <div class="layout-column">
-                <h3>Initiative</h3>
+                <h3>{t("sheet.terms.stat.initiative")}</h3>
                 <div class="initiative-wrapper" ref={wrapper}>
                     <div class="layout-row content-center">
-                        <label class="rollable" onClick={() => void rollInitiative(sheet)}>Initiative:</label>
+                        <label class="rollable" onClick={() => void rollInitiative(sheet)}>{t("sheet.terms.stat.initiative")}:</label>
                         <input
                             class="short-input uneditable textlike"
                             id="initiativeRoll"
@@ -163,11 +168,11 @@ export function InitiativeAndSize() {
                     {dropdown.open && <Scope dataId="initiative" class="initiative-dropdown visible">
                         <div class="layout-row">
                             <label>
-                                Dice:<TextField field="dice" class="short-input" />
+                                {t("sheet.combat.initiative.dice")}:<TextField field="dice" class="short-input" />
                             </label>
                         </div>
                         <fieldset>
-                            <legend>Characteristic Bases</legend>
+                            <legend>{t("sheet.combat.initiative.bases")}</legend>
                             {BASE_ROWS.map((row, i) => (
                                 <div key={i} class="layout-row">
                                     {row.filter(b => isCharacteristic(sheet.stats, b.characteristic)).map(({ characteristic, field }) => (
@@ -178,7 +183,7 @@ export function InitiativeAndSize() {
                         </fieldset>
                         <div class="layout-row">
                             <label>
-                                Flat bonus:<NumberField field="flatBonus" class="short-input" />
+                                {t("sheet.combat.initiative.flatBonus")}:<NumberField field="flatBonus" class="short-input" />
                             </label>
                         </div>
                         <InitiativeContributions />
@@ -187,7 +192,7 @@ export function InitiativeAndSize() {
                 <LastInitiative />
             </div>
             <div class="layout-column items-center">
-                <h3>Size</h3>
+                <h3>{t("sheet.terms.stat.size")}</h3>
                 <Select field="size" options={SIZE_OPTIONS} numeric />
             </div>
         </>
@@ -198,7 +203,7 @@ const MODES = "movement.modes.items";
 
 /** The distances the Palisade stance forbids. */
 const NOT_IN_PALISADE: readonly string[] = ["charge", "run"];
-const PALISADE_NOTE = "Palisade stance: no Charge or Run";
+const PALISADE_NOTE = t("sheet.combat.movement.palisade");
 
 /**
  * The distances of each mode, a row each, with how each is counted on hover.
@@ -236,23 +241,14 @@ export function Movement() {
                     </Scope>
                 ))}
                 {ids.length === 0 && (
-                    <tr><td class="movement-empty" colSpan={MOVE_COLUMNS.length + 1}>No movement modes: add one under ⚙</td></tr>
+                    <tr><td class="movement-empty" colSpan={MOVE_COLUMNS.length + 1}>{t("sheet.combat.movement.empty")}</td></tr>
                 )}
             </tbody>
         </Scope>
     );
 }
 
-const SPD_TITLE = [
-    "The SPD of the mode:",
-    "A.b+Size — on foot, by the rules",
-    "6 — Flyer (6), Hoverer (6), Burrower (6): their number, size ignored",
-    "½S.b — swimming, half the Strength bonus; ½S.b▲ rounds up",
-    "A.b+Size+2 — with a bonus of the mode",
-    "2×A.b+2×Size — twice, as Quadruped",
-    "Case does not matter. SPD of 0 or less counts as 0.5.",
-    "The conditions' movement bonus adds to every mode.",
-].join("\n");
+const SPD_TITLE = t("sheet.combat.movement.spdTitle");
 
 /** A mode under the ⚙ of the movement: its name, SPD and the multipliers of its distances. */
 function ModeRow({ itemId }: { itemId: string }) {
@@ -264,19 +260,19 @@ function ModeRow({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class="movement-mode">
             <div class="weapon-mod movement-mode-head">
                 <span class="mod-name-wrap">
-                    <SuggestField field="name" class="mod-name" placeholder="Mode" title="The way it moves: Land, Flight, Swim…"
+                    <SuggestField field="name" class="mod-name" placeholder={t("sheet.combat.movement.mode")} title={t("sheet.combat.movement.modeTitle")}
                         suggest={query => modeNameSuggestions(state, query)} />
                 </span>
                 <ExprInput path={path} field="spd" keys={refKeys(state)} named={MOVEMENT_REFS} placeholder="A.b+Size" title={SPD_TITLE}
-                    empty={expr.trim() && value === null ? "Reads as no number" : null} off="The mode has no distances."
+                    empty={expr.trim() && value === null ? t("sheet.combat.movement.noNumber") : null} off={t("sheet.combat.movement.noDistances")}
                     suggest={query => movementSuggestions(state, stats.characteristics, query)} insert={movementInsert(state)} />
-                <span class="mod-added" data-id="spdValue" title="The SPD, before the conditions">{value === null ? "—" : `= ${value}`}</span>
+                <span class="mod-added" data-id="spdValue" title={t("sheet.combat.movement.spdBefore")}>{value === null ? "—" : `= ${value}`}</span>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>
             <div class="movement-mults">
                 {MOVE_COLUMNS.map(c => (
-                    <label key={c.key} class="movement-mult" title={`${c.label}: the SPD times this, ${c.byDefault} by the rules`}>
+                    <label key={c.key} class="movement-mult" title={t("sheet.combat.movement.multTitle", { column: c.label, mult: c.byDefault })}>
                         <span class="column-label">{`${c.label} ×`}</span>
                         <NumberField field={c.mult} />
                     </label>
@@ -306,20 +302,20 @@ export function MovementHeading() {
     return (
         <div class="block-heading-block">
             <div class="block-heading">
-                <h3>Movement</h3>
+                <h3>{t("sheet.terms.stat.movement")}</h3>
                 <div class="block-settings dropdown-parent" ref={ref}>
                     <button type="button" class={dropdown.open ? "block-settings-toggle movement-toggle active" : "block-settings-toggle movement-toggle"}
-                        title="Movement modes" onClick={dropdown.toggle}>⚙</button>
+                        title={t("sheet.combat.movement.modes")} onClick={dropdown.toggle}>⚙</button>
                     {dropdown.open && (
                         <div class="roll-dropdown block-settings-dropdown mod-dropdown movement-dropdown visible" ref={listRef}
                             onClickCapture={e => {
                                 if ((e.target as Element).closest(".add-button")) before.current = untracked(() => idsInOrder(state, MODES));
                             }}>
-                            <span class="column-label">Movement modes</span>
-                            {ids.length === 0 && <p class="mod-hint">A mode is a name and its SPD, as Flight and 6.</p>}
+                            <span class="column-label">{t("sheet.combat.movement.modes")}</span>
+                            {ids.length === 0 && <p class="mod-hint">{t("sheet.combat.movement.modesHint")}</p>}
                             <Scope dataId="movement">
                                 <ItemGrid dataId="modes.items" class="movement-modes" itemClass="movement-mode" idPrefix="mode"
-                                    addLabel="＋ Add mode" renderItem={id => <ModeRow itemId={id} />} />
+                                    addLabel={t("sheet.combat.movement.addMode")} renderItem={id => <ModeRow itemId={id} />} />
                             </Scope>
                         </div>
                     )}

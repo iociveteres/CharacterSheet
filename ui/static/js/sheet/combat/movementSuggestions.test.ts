@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadState, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { attachComputeds } from "../kinds/computed";
 import { modeNameSuggestions, movementInsert, movementSuggestions, movementTraits } from "./movementSuggestions";
+import { optionLabel, optionValue } from "../schema/constants";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
@@ -34,10 +36,10 @@ describe("movementTraits", () => {
 describe("movementSuggestions", () => {
     it("leads with what the traits give, then the characteristics and Size, no dice", () => {
         const groups = labels(null);
-        expect(Object.keys(groups)).toEqual(["From traits", "Characteristic bonus", "Size"]);
+        expect(Object.keys(groups)).toEqual(["From traits", "Characteristic Bonus", "Size"]);
         expect(groups["From traits"]).toEqual(["6 — Flyer (6), size ignored", "4 — hoverer(4), size ignored", "+2 — Digitigrade (2), on foot"]);
         expect(groups.Size).toEqual(["Size — size of the character = -1"]);
-        expect(groups["Characteristic bonus"]).toContain("A.b — Agility bonus = 3");
+        expect(groups["Characteristic Bonus"]).toContain("A.b — Agility bonus = 3");
     });
 
     it("offers Size with a factor and the traits by name or number", () => {
@@ -63,11 +65,27 @@ describe("modeNameSuggestions", () => {
             ["From traits", ["Flight", "Hover"]],
             ["Modes", ["Land", "Burrow", "Swim", "Climb"]],
         ]);
-        expect(modeNameSuggestions(testState(), "sw").flatMap(g => g.options)).toEqual(["Swim"]);
+        expect(modeNameSuggestions(testState(), "sw").flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
     });
 
     it("lists every mode without traits", () => {
         withTraits();
-        expect(modeNameSuggestions(testState(), null)).toEqual([{ label: "Modes", options: ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] }]);
+        expect(modeNameSuggestions(testState(), null).map(g => [g.label, g.options.map(optionValue)]))
+            .toEqual([["Modes", ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"]]]);
+    });
+
+    it("shows the names in the page's language and keeps them English", async () => {
+        installDictionary("ru");
+        vi.resetModules();
+        const utils = await import("../components/testUtils");
+        const suggestions = await import("./movementSuggestions");
+        utils.loadState({ traits: { list: { items: { t0: { name: "Flyer (6)" }, t1: { name: "Hoverer (4)" } }, layouts: { t0: pos(0, 0), t1: pos(0, 1) } } } });
+        const groups = suggestions.modeNameSuggestions(utils.testState(), null);
+        expect(groups.map(g => [g.label, g.options.map(o => [optionValue(o), optionLabel(o)])])).toEqual([
+            ["Из трейтов", [["Flight", "Полёт — из трейтов"], ["Hover", "Парение — из трейтов"]]],
+            ["Режимы", [["Land", "Пешком"], ["Burrow", "Рытьё"], ["Swim", "Плавание"], ["Climb", "Лазание"]]],
+        ]);
+        // A query finds a mode by its label too.
+        expect(suggestions.modeNameSuggestions(utils.testState(), "плав").flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
     });
 });

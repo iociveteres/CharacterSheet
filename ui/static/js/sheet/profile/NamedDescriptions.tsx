@@ -7,6 +7,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
+import { t } from "../../i18n";
 
 /** `collection` is the autocomplete of the name, if the list has one. */
 export function NamedDescriptionItem({ itemId, collection }: { itemId: string; collection?: string }) {
@@ -72,7 +73,7 @@ export function MentalDisorders() {
             <Scope dataId="mentalDisorders" class="layout-column centered-bar item-like-height">
                 <div class="layout-row">
                     <label>
-                        Insanity:
+                        {t("sheet.terms.stat.insanity")}:
                         <NumberField field="insanityPoints" class="short" />
                     </label>
                 </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHARACTERISTICS, optionValue } from "../schema/constants";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "./characteristicSuggestions";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const suggest = (text: string, query: string | null) =>
     characteristicSuggestions(CHARACTERISTICS, text, query).map(g => [g.label, g.options.map(optionValue)]);
@@ -41,6 +42,12 @@ describe("characteristicSuggestions", () => {
         expect(anyScope(CHARACTERISTICS)).toBe("all but Inf and Cor");
         expect(anyScope(CHARACTERISTICS.filter(c => c.key !== "Cor"))).toBe("all but Inf");
         expect(anyScope(CHARACTERISTICS.filter(c => c.key !== "Inf" && c.key !== "Cor"))).toBe("all characteristics");
+    });
+
+    it("says it in the page's language, Any and the keys as typed", () => {
+        installDictionary("ru");
+        expect(anyScope(CHARACTERISTICS)).toBe("все, кроме Inf и Cor");
+        expect(characteristicSuggestions(CHARACTERISTICS, "", null)[0]).toEqual({ label: "Все", options: [{ value: "Any", label: "Any — все, кроме Inf и Cor" }] });
     });
 
     it("leaves out what the name has already", () => {

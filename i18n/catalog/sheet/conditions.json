@@ -1,4 +1,14 @@
 {
   "sheet.conditions.openStats": { "en": "Open Stats", "ru": "Открыть характеристики", "note": "кнопка в панели листа: показывает итоговые характеристики и состояния" },
-  "sheet.conditions.closeStats": { "en": "Close Stats", "ru": "Закрыть характеристики", "note": "та же кнопка, когда панель открыта" }
+  "sheet.conditions.closeStats": { "en": "Close Stats", "ru": "Закрыть характеристики", "note": "та же кнопка, когда панель открыта" },
+  "sheet.conditions.statsTitle": { "en": "Characteristics and conditions", "ru": "Характеристики и состояния", "note": "подсказка той же кнопки" },
+  "sheet.conditions.stacksTitle": { "en": "Stack count — uses in place of X in entries", "ru": "Число стаков — подставляется вместо X в записях", "note": "подсказка поля X у состояния" },
+  "sheet.conditions.syntax": { "en": "Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:", "ru": "X — переменная, ▲/▼ после X округляют вверх/вниз (например, 0.5X▲+1). Нажмите, чтобы скопировать:" },
+  "sheet.conditions.summary.unnatural": { "en": "unnatural {value}", "ru": "сверхъест. {value}", "note": "подсказка состояния: прибавка к сверхъестественной характеристике" },
+  "sheet.conditions.summary.unnaturalSet": { "en": "unnatural = {value}", "ru": "сверхъест. = {value}" },
+  "sheet.conditions.summary.atMost": { "en": "{name} at most {cap}", "ru": "{name} не больше {cap}", "note": "предел характеристики" },
+  "sheet.conditions.summary.caps": { "en": "{name} caps {value}", "ru": "{name}: предел {value}", "note": "прибавка к пределу характеристики" },
+  "sheet.conditions.summary.tests": { "en": "Tests on {name} {bonus}", "ru": "Тесты на {name} {bonus}", "note": "бонус броска; name — характеристики записи, WS или Any" },
+  "sheet.conditions.summary.testsOnly": { "en": "Tests on {name} {bonus} (only {domains})", "ru": "Тесты на {name} {bonus} (только {domains})" },
+  "sheet.conditions.summary.testsExcept": { "en": "Tests on {name} {bonus} (except {domains})", "ru": "Тесты на {name} {bonus} (кроме {domains})" }
 }

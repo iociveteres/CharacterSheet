@@ -19,14 +19,14 @@ export function ConditionsControl() {
             <button
                 class={dropdown.open ? "conditions-toggle active" : "conditions-toggle"}
                 type="button"
-                title="Characteristics and conditions"
+                title={t("sheet.conditions.statsTitle")}
                 onClick={dropdown.toggle}
             >
                 {dropdown.open ? t("sheet.conditions.closeStats") : t("sheet.conditions.openStats")}
             </button>
             {dropdown.open && (
                 <div class="controls-dropdown conditions-dropdown layout-column">
-                    <h4>Total</h4>
+                    <h4>{t("common.total")}</h4>
                     <CalculatedCharacteristics onEdit={edit} />
                     <PermanentCharacteristics permRef={permRef} />
                     <Conditions />
