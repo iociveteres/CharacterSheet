@@ -2,7 +2,7 @@
   "bestiary.collections.noSubscriptions": { "en": "No subscriptions yet", "ru": "Подписок пока нет" },
   "bestiary.collections.viewPublic": { "en": "View public collections", "ru": "Публичные коллекции", "note": "ссылка в левой панели, открывает каталог" },
   "bestiary.collections.newCollection": { "en": "New collection", "ru": "Новая коллекция", "note": "кнопка внизу левой панели и заголовок диалога" },
-  "bestiary.collections.default": { "en": "default", "ru": "основная", "note": "метка основной коллекции в списке; было «по умолчанию», сокращено при вёрстке: метка переносилась на две строки и обрезала название; «основная» — как в сообщениях сервера (server.bestiary.defaultKept)" },
+  "bestiary.collections.default": { "en": "default", "ru": "по умолчанию", "note": "метка коллекции, которую сервер заводит при регистрации; её нельзя удалить; не помещаясь, переносится под название" },
   "bestiary.collections.visibility.public": { "en": "public", "ru": "публичная", "note": "метка видимости коллекции" },
   "bestiary.collections.visibility.private": { "en": "private", "ru": "приватная", "note": "метка видимости коллекции" }
 }

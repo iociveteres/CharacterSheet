@@ -45,9 +45,11 @@ function CollectionItem({ collection: c }: { collection: BestiaryCollection }) {
                 {c.name}
                 {!c.own && <span class="bestiary-muted"> · {c.owner}</span>}
             </span>
-            {c.default && <span class="bestiary-chip bestiary-default">{t("bestiary.collections.default")}</span>}
-            {c.own && c.visibility === "public" && <span class="bestiary-chip bestiary-visibility">{t("bestiary.collections.visibility.public")}</span>}
-            <span class="bestiary-muted">{c.creatures}</span>
+            <span class="bestiary-collection-meta">
+                {c.default && <span class="bestiary-chip bestiary-default">{t("bestiary.collections.default")}</span>}
+                {c.own && c.visibility === "public" && <span class="bestiary-chip bestiary-visibility">{t("bestiary.collections.visibility.public")}</span>}
+                <span class="bestiary-muted">{c.creatures}</span>
+            </span>
         </button>
     );
 }

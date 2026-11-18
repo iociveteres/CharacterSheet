@@ -81,10 +81,13 @@ body:has(.bestiary) > header {
   color: var(--text-secondary);
 }
 
+/* The chips move under the name when they do not fit after it, rather than cutting it. */
 .bestiary .bestiary-collection {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 2px 6px;
   width: 100%;
   padding: 4px 6px;
   border-radius: 4px;
@@ -123,6 +126,20 @@ body:has(.bestiary) > header {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Without chips a long name is cut before the count, on one line. */
+.bestiary-collection:has(.bestiary-chip) .bestiary-collection-name {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+/* The chips and the count wrap together and stay at the right. */
+.bestiary-collection-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .bestiary-header {
@@ -294,6 +311,7 @@ body:has(.bestiary) > header {
 
 .bestiary-chip {
   display: inline-flex;
+  white-space: nowrap;
   align-items: center;
   gap: 2px;
   padding: 0 6px;
