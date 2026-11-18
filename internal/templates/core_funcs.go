@@ -7,6 +7,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/ui"
 )
 
 const humanDateLayout = "02 Jan 2006 at 15:04"
@@ -39,6 +40,19 @@ func dict(values ...interface{}) map[string]interface{} {
 		m[k] = values[i+1]
 	}
 	return m
+}
+
+// slideURL is "slide" in templates: the landing slide recorded in the page language
+// (scripts/slides), the English one where that language has none.
+func slideURL(lang, name, theme, ext string) string {
+	path := ""
+	for _, l := range []string{lang, i18n.Default} {
+		path = fmt.Sprintf("img/slides/%s-%s-%s.%s", name, l, theme, ext)
+		if hash, ok := ui.StaticHash(path); ok {
+			return "/static/" + path + "?v=" + hash
+		}
+	}
+	return "/static/" + path
 }
 
 // translate is "t" in templates: {{t .Lang "site.nav.rooms"}}, params as name/value pairs:

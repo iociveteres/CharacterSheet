@@ -3,7 +3,7 @@
 // the showcase seed (cmd/seedtest -showcase), so the next re-shoot after the
 // interface changes is a run of this script.
 //
-//   npm run slides [-- --only 2,9] [--theme dark] [--base http://localhost:4005]
+//   npm run slides [-- --only 2,9] [--theme dark] [--lang ru] [--base http://localhost:4005]
 //
 // Needs a server with fixed rolls, built bundle included:
 //
@@ -24,6 +24,8 @@ const { values: opts } = parseArgs({
         base: { type: 'string', default: 'http://localhost:4005' },
         only: { type: 'string', default: '' },
         theme: { type: 'string', default: '' },
+        // The interface language; the showcase data stays as it is.
+        lang: { type: 'string', default: 'en' },
         out: { type: 'string', default: 'ui/static/img/slides' },
         fixtures: { type: 'string', default: 'scripts/slides/fixtures' },
         // Overrides the scenarios' device pixel ratio, to try one.
@@ -110,7 +112,13 @@ try {
                 bypassCSP: true,
             });
             // The page reads the theme from localStorage, the server from the cookie (base.html).
-            await context.addCookies([{ name: 'theme', value: theme, url: base }]);
+            // The showcase user has no language of their own, so the cookie picks it. The incident
+            // notice of base.html would cover the bestiary.
+            await context.addCookies([
+                { name: 'theme', value: theme, url: base },
+                { name: 'lang', value: opts.lang, url: base },
+                { name: 'incident_notice_closed', value: '1', url: base },
+            ]);
             await context.addInitScript(t => {
                 try {
                     localStorage.setItem('theme', t);
@@ -120,16 +128,16 @@ try {
             await context.addInitScript(installOverlay);
             const page = await context.newPage();
             // An exception in the overlay's animation frame would only stop the cursor.
-            page.on('pageerror', e => console.error(`${scenario.file} (${theme}): ${e.stack ?? e}`));
+            page.on('pageerror', e => console.error(`${scenario.file} (${opts.lang}, ${theme}): ${e.stack ?? e}`));
             const d = new Showcase(page, { theme, scale, takes: TAKES, showcase });
-            const out = join(opts.out, `${scenario.file}-${theme}.${scenario.kind}`);
+            const out = join(opts.out, `${scenario.file}-${opts.lang}-${theme}.${scenario.kind}`);
             try {
                 const result = await scenario.play(d, out);
                 report(scenario, out, result);
             } catch (e) {
-                const shot = join(TAKES, `${scenario.file}-${theme}-failed.png`);
+                const shot = join(TAKES, `${scenario.file}-${opts.lang}-${theme}-failed.png`);
                 await page.screenshot({ path: shot }).catch(() => { });
-                console.error(`${scenario.file} (${theme}) failed, the page as it was: ${shot}`);
+                console.error(`${scenario.file} (${opts.lang}, ${theme}) failed, the page as it was: ${shot}`);
                 throw e;
             } finally {
                 await context.close();
@@ -161,7 +169,7 @@ function report(scenario, out, result) {
     }
     const seconds = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', out], { encoding: 'utf8' }));
     const html = readFileSync('ui/html/pages/home.html', 'utf8');
-    const slide = html.split('<div class="slide').find(chunk => chunk.includes(`${scenario.file}-`));
+    const slide = html.split('<div class="slide').find(chunk => chunk.includes(`"${scenario.file}"`));
     const shown = Number(slide?.match(/data-duration="(\d+)"/)?.[1] ?? 4000) / 1000;
     console.log(`${out}: ${seconds.toFixed(1)} s, ${result.frames} frames, ${result.fps.toFixed(0)} fps in motion`);
     if (slide && shown < seconds) console.warn(`  home.html shows it for ${shown} s: set data-duration="${Math.ceil(seconds * 2) * 500}"`);

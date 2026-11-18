@@ -15,7 +15,7 @@ export default {
         d.pos = { x: frame.x + frame.width * .45, y: frame.y + frame.height * .4 };
 
         const creature = name => page.locator('.encounter-creature', { hasText: name }).locator('.encounter-add-creature');
-        const search = page.getByPlaceholder('Search creatures');
+        const search = page.locator('.encounter-creature-search');
         const statBlock = page.locator('.stat-attack', { hasText: 'Pincer Claws' });
         return d.record(frame, out, async () => {
             await d.pause(250);
@@ -40,13 +40,13 @@ export default {
             await d.pause(250);
             await d.click(page.locator('.encounter-tab[data-tab="combat"]'));
             await d.pause(200);
-            await d.click(page.getByRole('button', { name: 'Roll for NPCs' }));
+            await d.click(page.locator('.encounter-roll-npcs'));
             await d.pause(700);
             await d.click(page.locator('.participant-column[data-column="enemies"] .encounter-card-title', { hasText: 'Демонетка 1' }));
             await d.pause(250);
             await d.click(statBlock.locator('.stat-attack-name > label.rollable'));
             await d.pause(250);
-            await d.click(statBlock.locator('.roll-column.base .radio-option label', { hasText: 'Charge' }));
+            await d.click(statBlock.locator('.roll-column.base .radio-option label').filter({ has: page.locator('input[value="charge"]') }));
             await d.pause(200);
             await d.click(statBlock.locator('[data-id="rollButton"]'));
             await d.pause(250);

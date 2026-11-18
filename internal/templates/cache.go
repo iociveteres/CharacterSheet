@@ -28,6 +28,7 @@ var functions = template.FuncMap{
 	"isGamemaster":      isGamemaster,
 	"str":               str,
 	"t":                 translate,
+	"slide":             slideURL,
 }
 
 // NewTemplateCache returns the page templates by language, then by file name of the page.

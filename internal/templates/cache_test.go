@@ -97,3 +97,20 @@ func TestPagesRenderInEveryLanguage(t *testing.T) {
 		}
 	}
 }
+
+// The landing shows the slides recorded in the page language, the English ones where the
+// language has none.
+func TestHomeSlidesByLanguage(t *testing.T) {
+	cache, err := NewTemplateCache()
+	assert.NilError(t, err)
+	for _, lang := range []string{"en", "ru"} {
+		buf := new(bytes.Buffer)
+		ts := cache[lang]["home.html"]
+		ts.Funcs(template.FuncMap{"reverseRev": func(name string, _ ...string) string { return "/" + name }})
+		assert.NilError(t, ts.ExecuteTemplate(buf, "base", &Data{Lang: lang}))
+		for _, file := range []string{"1-layout-" + lang + "-light.webm?v=", "13-bestiary-" + lang + "-dark.webp?v="} {
+			assert.StringContains(t, buf.String(), "/static/img/slides/"+file)
+		}
+	}
+	assert.StringContains(t, slideURL("de", "2-character-info", "light", "webp"), "/static/img/slides/2-character-info-en-light.webp?v=")
+}

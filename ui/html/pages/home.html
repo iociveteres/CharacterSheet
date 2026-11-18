@@ -6,61 +6,61 @@
         <div class="slide active" data-index="1" data-duration="8500">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/1-layout-light.webm?v={{version "img/slides/1-layout-light.webm"}}'
-                    data-dark='/static/img/slides/1-layout-dark.webm?v={{version "img/slides/1-layout-dark.webm"}}'
+                    data-light='{{slide .Lang "1-layout" "light" "webm"}}'
+                    data-dark='{{slide .Lang "1-layout" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.layout"}}</div>
         </div>
         <div class="slide" data-index="2">
-            <img data-light='/static/img/slides/2-character-info-light.webp?v={{version "img/slides/2-character-info-light.webp"}}'
-                data-dark='/static/img/slides/2-character-info-dark.webp?v={{version "img/slides/2-character-info-dark.webp"}}'
+            <img data-light='{{slide .Lang "2-character-info" "light" "webp"}}'
+                data-dark='{{slide .Lang "2-character-info" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 2}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.characterInfo"}}</div>
         </div>
         <div class="slide" data-index="3">
-            <img data-light='/static/img/slides/3-combat-light.webp?v={{version "img/slides/3-combat-light.webp"}}'
-                data-dark='/static/img/slides/3-combat-dark.webp?v={{version "img/slides/3-combat-dark.webp"}}'
+            <img data-light='{{slide .Lang "3-combat" "light" "webp"}}'
+                data-dark='{{slide .Lang "3-combat" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 3}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.combat"}}</div>
         </div>
         <div class="slide" data-index="4">
-            <img data-light='/static/img/slides/4-talents-light.webp?v={{version "img/slides/4-talents-light.webp"}}'
-                data-dark='/static/img/slides/4-talents-dark.webp?v={{version "img/slides/4-talents-dark.webp"}}'
+            <img data-light='{{slide .Lang "4-talents" "light" "webp"}}'
+                data-dark='{{slide .Lang "4-talents" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 4}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.talents"}}</div>
         </div>
         <div class="slide" data-index="5">
-            <img data-light='/static/img/slides/5-gear-light.webp?v={{version "img/slides/5-gear-light.webp"}}'
-                data-dark='/static/img/slides/5-gear-dark.webp?v={{version "img/slides/5-gear-dark.webp"}}' alt='{{t .Lang "site.home.slideAlt" "n" 5}}'
+            <img data-light='{{slide .Lang "5-gear" "light" "webp"}}'
+                data-dark='{{slide .Lang "5-gear" "dark" "webp"}}' alt='{{t .Lang "site.home.slideAlt" "n" 5}}'
                 class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.gear"}}</div>
         </div>
         <div class="slide" data-index="6">
-            <img data-light='/static/img/slides/6-advancements-light.webp?v={{version "img/slides/6-advancements-light.webp"}}'
-                data-dark='/static/img/slides/6-advancements-dark.webp?v={{version "img/slides/6-advancements-dark.webp"}}'
+            <img data-light='{{slide .Lang "6-advancements" "light" "webp"}}'
+                data-dark='{{slide .Lang "6-advancements" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 6}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.advancements"}}</div>
         </div>
         <div class="slide" data-index="7">
-            <img data-light='/static/img/slides/7-psykana-light.webp?v={{version "img/slides/7-psykana-light.webp"}}'
-                data-dark='/static/img/slides/7-psykana-dark.webp?v={{version "img/slides/7-psykana-dark.webp"}}'
+            <img data-light='{{slide .Lang "7-psykana" "light" "webp"}}'
+                data-dark='{{slide .Lang "7-psykana" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 7}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.psykana"}}</div>
         </div>
         <div class="slide" data-index="8" data-duration="5000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/8-drag-n-drop-light.webm?v={{version "img/slides/8-drag-n-drop-light.webm"}}'
-                    data-dark='/static/img/slides/8-drag-n-drop-dark.webm?v={{version "img/slides/8-drag-n-drop-dark.webm"}}'
+                    data-light='{{slide .Lang "8-drag-n-drop" "light" "webm"}}'
+                    data-dark='{{slide .Lang "8-drag-n-drop" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.dragDrop"}}</div>
         </div>
         <div class="slide" data-index="9" data-duration="10000">
             <video class="theme-video" muted loop playsinline preload="auto">
-                <source data-light='/static/img/slides/9-roll-light.webm?v={{version "img/slides/9-roll-light.webm"}}'
-                    data-dark='/static/img/slides/9-roll-dark.webm?v={{version "img/slides/9-roll-dark.webm"}}'
+                <source data-light='{{slide .Lang "9-roll" "light" "webm"}}'
+                    data-dark='{{slide .Lang "9-roll" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.roll"}}</div>
@@ -68,8 +68,8 @@
         <div class="slide" data-index="10" data-duration="8000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/10-attack-roll-light.webm?v={{version "img/slides/10-attack-roll-light.webm"}}'
-                    data-dark='/static/img/slides/10-attack-roll-dark.webm?v={{version "img/slides/10-attack-roll-dark.webm"}}'
+                    data-light='{{slide .Lang "10-attack-roll" "light" "webm"}}'
+                    data-dark='{{slide .Lang "10-attack-roll" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.attackRoll"}}</div>
@@ -77,8 +77,8 @@
         <div class="slide" data-index="11" data-duration="12000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/11-autocomplete-light.webm?v={{version "img/slides/11-autocomplete-light.webm"}}'
-                    data-dark='/static/img/slides/11-autocomplete-dark.webm?v={{version "img/slides/11-autocomplete-dark.webm"}}'
+                    data-light='{{slide .Lang "11-autocomplete" "light" "webm"}}'
+                    data-dark='{{slide .Lang "11-autocomplete" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.autocomplete"}}</div>
@@ -86,15 +86,15 @@
         <div class="slide" data-index="12" data-duration="15500">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/12-gm-mode-light.webm?v={{version "img/slides/12-gm-mode-light.webm"}}'
-                    data-dark='/static/img/slides/12-gm-mode-dark.webm?v={{version "img/slides/12-gm-mode-dark.webm"}}'
+                    data-light='{{slide .Lang "12-gm-mode" "light" "webm"}}'
+                    data-dark='{{slide .Lang "12-gm-mode" "dark" "webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">{{t .Lang "site.home.slide.gmMode"}}</div>
         </div>
         <div class="slide" data-index="13">
-            <img data-light='/static/img/slides/13-bestiary-light.webp?v={{version "img/slides/13-bestiary-light.webp"}}'
-                data-dark='/static/img/slides/13-bestiary-dark.webp?v={{version "img/slides/13-bestiary-dark.webp"}}'
+            <img data-light='{{slide .Lang "13-bestiary" "light" "webp"}}'
+                data-dark='{{slide .Lang "13-bestiary" "dark" "webp"}}'
                 alt='{{t .Lang "site.home.slideAlt" "n" 13}}' class="theme-img">
             <div class="slide-caption">{{t .Lang "site.home.slide.bestiary"}}</div>
         </div>
