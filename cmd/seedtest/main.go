@@ -273,7 +273,7 @@ func ensureChat(ctx context.Context, db *pgxpool.Pool, m models.Models, roomID i
 	}
 	for i := count; i < chatMessages; i++ {
 		author := members[i%len(members)]
-		if _, _, err := m.RoomMessages.Create(ctx, author.ID, roomID, fmt.Sprintf("Seed message %d", i+1), nil, nil, nil); err != nil {
+		if _, _, err := m.RoomMessages.Create(ctx, author.ID, roomID, fmt.Sprintf("Seed message %d", i+1), nil, nil, nil, nil); err != nil {
 			return err
 		}
 	}

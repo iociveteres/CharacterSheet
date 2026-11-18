@@ -563,7 +563,7 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	// in its viewer's language; the English body and lines are what messages
 	// without data and older clients show.
 	result := strings.Join(lines, "\n")
-	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, data, nil) {
+	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, data, nil, nil) {
 		return
 	}
 	reply, err := json.Marshal(encounterRolledMsg{Type: "encounterRolled", EventID: msg.EventID, Totals: totals})

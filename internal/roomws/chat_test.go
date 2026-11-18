@@ -34,3 +34,40 @@ func TestChatRollCarriesResultData(t *testing.T) {
 		t.Errorf("got %v, want a plain result without data", got)
 	}
 }
+
+// A roll from a sheet with its label as data is stored and sent to the room
+// with the body cut before its ">>" lines and the label as data; a label that
+// is no label leaves the body whole, as from a client without labelData.
+func TestChatRollKeepsLabelAsData(t *testing.T) {
+	dial, _ := newEncounterRoom(t)
+	sender, other := dial(playerID), dial(gmID)
+	send := func(eventID, body string, label json.RawMessage) {
+		roll, _ := json.Marshal(map[string]any{"type": "chatMessage", "eventID": eventID, "messageBody": body, "labelData": label})
+		sender.send(string(roll))
+	}
+
+	label := json.RawMessage(`{"n":["name:initiative"]}`)
+	send("l", "/r 1d1+2\n>> Initiative", label)
+	for _, p := range []*peer{other, sender} {
+		got := p.expect("chatMessage", "l")
+		stored, _ := json.Marshal(got["labelData"])
+		if got["messageBody"] != "/r 1d1+2" || string(stored) != string(label) || got["commandResult"] != "1d1+2:\n1 + 2 = 3" {
+			t.Errorf("got %v, want the body without its label, the label as data and the result of the roll", got)
+		}
+	}
+
+	for _, c := range []struct {
+		eventID, body string
+		label         json.RawMessage
+	}{
+		{"bad", "/r 1d1\n>> Bolter", json.RawMessage(`{"n":["aim: full"]}`)},
+		{"none", "/r 1d1\n>> Bolter", nil},
+		{"no lines", "/r 1d1", label},
+		{"no roll", "hello\n>> Bolter", label},
+	} {
+		send(c.eventID, c.body, c.label)
+		if got := other.expect("chatMessage", c.eventID); got["messageBody"] != c.body || got["labelData"] != nil {
+			t.Errorf("%s: got %v, want the body whole without label data", c.eventID, got)
+		}
+	}
+}

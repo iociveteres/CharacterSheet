@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
@@ -34,7 +35,7 @@ func (m *RoomDicePresetsModel) GetForUser(ctx context.Context, userID, roomID in
 
 type RoomMessagesModel struct{}
 
-func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, characterName *string) (int, time.Time, error) {
+func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (int, time.Time, error) {
 	return 1, time.Now(), nil
 }
 func (m *RoomMessagesModel) Get(ctx context.Context, id int) (*models.Message, error) {
@@ -43,7 +44,7 @@ func (m *RoomMessagesModel) Get(ctx context.Context, id int) (*models.Message, e
 func (m *RoomMessagesModel) Remove(ctx context.Context, callerID, roomID, messageID int) error {
 	return nil
 }
-func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, characterName *string) (models.MessageWithName, error) {
+func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (models.MessageWithName, error) {
 	return models.MessageWithName{}, nil
 }
 func (m *RoomMessagesModel) GetMessagePage(ctx context.Context, roomID int, offset int, limit int) (*models.MessagePage, error) {

@@ -2,14 +2,15 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/commands"
 )
 
-// The result of a roll as data comes back as it was stored, from the insert
-// and from the history; a message without it has none.
+// The result and the label of a roll as data come back as they were stored,
+// from the insert and from the history; a message without them has none.
 func TestRoomMessagesKeepResultData(t *testing.T) {
 	if testing.Short() {
 		t.Skip("models: skipping integration test")
@@ -32,14 +33,20 @@ func TestRoomMessagesKeepResultData(t *testing.T) {
 		Rolls: []commands.VersusRoll{{Roll: 11, Success: true, Degrees: 6, Doubles: true}, {Roll: 99, Degrees: 6, Crit: true}},
 	}
 	result := "2x(d100 vs 50 [+1]):\n…"
-	created, err := m.CreateWithUsername(ctx, user, room, "/r 2x(d100 vs 50 [+1])", &result, data, nil)
+	label := json.RawMessage(`{"n":"Lasgun","m":[["aim:full"],["mod:effectivePR",{"pr":3}]]}`)
+	// JSONB keeps the value, not its spelling.
+	sameLabel := func(got json.RawMessage) bool {
+		var a, b any
+		return json.Unmarshal(got, &a) == nil && json.Unmarshal(label, &b) == nil && reflect.DeepEqual(a, b)
+	}
+	created, err := m.CreateWithUsername(ctx, user, room, "/r 2x(d100 vs 50 [+1])", &result, data, label, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(created.Message.ResultData, data) || created.Username != "roller" {
-		t.Errorf("created %+v, want the data %+v", created, data)
+	if !reflect.DeepEqual(created.Message.ResultData, data) || !sameLabel(created.Message.LabelData) || created.Username != "roller" {
+		t.Errorf("created %+v, want the data %+v and the label %s", created, data, label)
 	}
-	if _, _, err := m.Create(ctx, user, room, "hello", nil, nil, nil); err != nil {
+	if _, _, err := m.Create(ctx, user, room, "hello", nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -51,10 +58,10 @@ func TestRoomMessagesKeepResultData(t *testing.T) {
 		t.Fatalf("page %+v", page)
 	}
 	roll, hello := page.Messages[0].Message, page.Messages[1].Message
-	if !reflect.DeepEqual(roll.ResultData, data) || *roll.CommandResult != result {
-		t.Errorf("roll %+v, want the data %+v", roll, data)
+	if !reflect.DeepEqual(roll.ResultData, data) || *roll.CommandResult != result || !sameLabel(roll.LabelData) {
+		t.Errorf("roll %+v, want the data %+v and the label %s", roll, data, label)
 	}
-	if hello.ResultData != nil || hello.CommandResult != nil {
+	if hello.ResultData != nil || hello.CommandResult != nil || hello.LabelData != nil {
 		t.Errorf("hello %+v, want no result", hello)
 	}
 
@@ -63,7 +70,7 @@ func TestRoomMessagesKeepResultData(t *testing.T) {
 		Initiative: []commands.InitiativeRoll{{Name: "Orcs", Expression: "1d10+1", Total: 7}},
 	}
 	lines := "Orcs: 1d10+1 = 7"
-	if _, err := m.CreateWithUsername(ctx, user, room, "Initiative", &lines, initiative, nil); err != nil {
+	if _, err := m.CreateWithUsername(ctx, user, room, "Initiative", &lines, initiative, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	page, err = m.GetMessagePage(ctx, room, 0, 1)

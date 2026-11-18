@@ -27,7 +27,7 @@ type countedMessages struct {
 	created atomic.Int32
 }
 
-func (m *countedMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, characterName *string) (models.MessageWithName, error) {
+func (m *countedMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (models.MessageWithName, error) {
 	m.created.Add(1)
 	return models.MessageWithName{}, nil
 }

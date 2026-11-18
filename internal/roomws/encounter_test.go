@@ -2,6 +2,7 @@ package roomws
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"slices"
@@ -178,9 +179,9 @@ type echoMessages struct {
 	mocks.RoomMessagesModel
 }
 
-func (*echoMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, characterName *string) (models.MessageWithName, error) {
+func (*echoMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (models.MessageWithName, error) {
 	return models.MessageWithName{
-		Message:  models.Message{ID: 1, RoomID: roomID, UserID: userID, MessageBody: messageBody, CommandResult: commandResult, ResultData: resultData, CharacterName: characterName},
+		Message:  models.Message{ID: 1, RoomID: roomID, UserID: userID, MessageBody: messageBody, CommandResult: commandResult, ResultData: resultData, LabelData: labelData, CharacterName: characterName},
 		Username: "gm",
 	}, nil
 }
