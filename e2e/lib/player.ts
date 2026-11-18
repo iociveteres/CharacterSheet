@@ -82,12 +82,17 @@ export class Player {
         page.on("pageerror", e => this.errors.push(`pageerror: ${e.message}`));
     }
 
-    /** A player signed in with `auth`, or as the seeded user of `role` (config.seed). */
-    static async create(browser: Browser, name: string, { base = config.base, auth = config.auth, role }: { base?: string; auth?: string; role?: SeedRole } = {}): Promise<Player> {
+    /**
+     * A player signed in with `auth`, or as the seeded user of `role` (config.seed),
+     * whose pages are in `lang`.
+     */
+    static async create(browser: Browser, name: string, { base = config.base, auth = config.auth, role, lang = "en" }: {
+        base?: string; auth?: string; role?: SeedRole; lang?: "en" | "ru";
+    } = {}): Promise<Player> {
         if (role) auth = seedUser(role).auth;
         const context = await browser.newContext({ storageState: auth, viewport: { width: 1280, height: 1000 } });
         // Scenarios read English text; a user's saved language (users.locale) would still win over it.
-        await context.addCookies([{ name: "lang", value: "en", url: base }]);
+        await context.addCookies([{ name: "lang", value: lang, url: base }]);
         await context.addInitScript(installProbes);
         const page = await context.newPage();
         return new Player(name, context, page, base);
