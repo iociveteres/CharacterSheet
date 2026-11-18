@@ -26,7 +26,7 @@ function Label({ keyName, name, onClick }: { keyName: string; name: string; onCl
 export function rollCharacteristic({ state, rolls }: { state: SheetSignals; rolls: SheetRolls }, key: string, name: string): void {
     const target = Number(peekAt(state, `characteristics.${key}.valueForRolls`));
     if (Number.isNaN(target)) return;
-    void rolls.versus(target, bonusSuccessesOf(state, key), name);
+    void rolls.versus(target, bonusSuccessesOf(state, key), { n: name });
 }
 
 /** A click on a computed value opens the dropdown at the permanent value behind it. */

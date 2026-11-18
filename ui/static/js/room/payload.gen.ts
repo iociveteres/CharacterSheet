@@ -4,6 +4,7 @@
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import type { EncounterList, InitiativeView } from "./encounter/types.gen";
 import type { ResultData } from "./commands.gen";
+import type { Label } from "../sheet/api";
 
 //////////
 // source: room_funcs.go
@@ -80,6 +81,11 @@ export interface ChatMessage {
    * viewer's language; null for a message without it.
    */
   resultData?: ResultData | null;
+  /**
+   * LabelData is the label of a roll from a sheet, cut from MessageBody;
+   * null for other messages.
+   */
+  labelData?: Label | null;
   characterName: string | null;
   createdAt: string /* RFC 3339 */;
 }

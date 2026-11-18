@@ -16,7 +16,7 @@ function PowerShield({ itemId }: { itemId: string }) {
         hasContent: () => hasText(state, `${path}.rating`) || hasText(state, `${path}.description`),
     });
     const text = (field: string) => String(peekAt(state, `${path}.${field}`) ?? "").trim();
-    const roll = () => void rolls.exact("d100", [text("name"), text("rating")].filter(Boolean).join(" "));
+    const roll = () => void rolls.exact("d100", { n: [text("name"), text("rating")].filter(Boolean).join(" ") });
 
     return (
         <Scope dataId={itemId} class={collapsed ? "power-shield item-with-description collapsed" : "power-shield item-with-description"} elRef={elRef}>

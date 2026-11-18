@@ -37,7 +37,7 @@ export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<vo
     const requestId = nanoid();
     actions.batch(path, { cast: { pr, kick, safe, phenomena: called, requestId } });
     if (!cast.arts) actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
-    return sheet.rolls.versus(cast.target, cast.bonusSuccesses, cast.label, requestId).then(outcome => {
+    return sheet.rolls.versus(cast.target, cast.bonusSuccesses, { n: cast.label }, requestId).then(outcome => {
         // A test that never comes back (the sheet closed, the connection lost) pays nothing either.
         if (outcome?.success) cast.pay?.();
         // From the sustaining as it is now: casts of a Repeatable power may have come back meanwhile.

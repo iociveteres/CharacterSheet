@@ -6,7 +6,7 @@ import { rollExactCommand, rollVersusCommand } from "../room/dice";
 import { versusOutcome } from "../room/commandResult";
 import type { ResultData } from "../room/commands.gen";
 import type { SheetRollExact, SheetRollVersus, VersusOutcome } from "../room/messages";
-import { sendToRoom } from "../sheet/api";
+import { labelText, sendToRoom } from "../sheet/api";
 import { addRoll } from "./actions";
 
 /** What the server answers a roll with: a chat message nobody else sees. */
@@ -48,11 +48,11 @@ function roll(command: string, characterName: string | null, requestId: string):
 export function listenRolls(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const { target, bonusSuccesses, label, requestId, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
-        roll(rollVersusCommand(target, bonusSuccesses, label), characterName, requestId);
+        roll(rollVersusCommand(target, bonusSuccesses, labelText(label)), characterName, requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label, requestId, characterName } = (e as CustomEvent<SheetRollExact>).detail;
-        roll(rollExactCommand(expression, label), characterName, requestId);
+        roll(rollExactCommand(expression, labelText(label)), characterName, requestId);
     });
     document.addEventListener("ws:rollResult", e => {
         const msg = (e as CustomEvent<RollResultMessage>).detail;

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render } from "preact";
 import { ChatMessage } from "./ChatMessage";
 import type { ResultData } from "../commands.gen";
-import { renderResult } from "../commandResult";
+import { messageText, renderResult } from "../commandResult";
+import { labelText } from "../../sheet/api";
 import { installDictionary } from "../../i18n/testDictionary";
 
 let root: HTMLElement;
@@ -44,5 +45,18 @@ describe("the result of a chat command", () => {
         expect(resultOf({ commandResult, resultData: null })).toBe(commandResult);
         expect(resultOf({ commandResult })).toBe(commandResult);
         expect(resultOf({ commandResult: null })).toBeUndefined();
+    });
+});
+
+describe("the label of a roll stored as data", () => {
+    it("follows the body in the reader's language", () => {
+        const labelData = { n: ["name:initiative"] as [string] };
+        const body = () => {
+            render(<ChatMessage msg={{ messageBody: "/r 1d10", commandResult: null, labelData, createdAt: "2026-10-01T12:00:00Z" }} own={false} />, root);
+            return root.querySelector(".message-body")?.textContent;
+        };
+        expect(body()).toBe(messageText("/r 1d10", null, labelData));
+        installDictionary("ru");
+        expect(body()).toBe(`/r 1d10\n>> ${labelText(labelData)}`);
     });
 });

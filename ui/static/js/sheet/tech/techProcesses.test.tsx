@@ -4,6 +4,8 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 import { TechnoArcana } from "./TechnoArcana";
+import { labelText } from "../rollLabelText";
+import type { Label } from "../rollLabel";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const P = "technoArcana.tabs.items.t1.powers.items";
@@ -80,7 +82,7 @@ describe("the activation of a tech power", () => {
         expect(text('[data-id="p2"] [data-id="noCognition"]')).toBeNull();
         expect(power("p2", ".process-row")!.textContent).toBe("ProcessRun, unique");
         const rolls: string[] = [];
-        const listener = (e: Event) => rolls.push((e as CustomEvent).detail.label);
+        const listener = (e: Event) => rolls.push(labelText((e as CustomEvent).detail.label));
         document.addEventListener("sheet:rollVersus", listener);
         act(() => (power("p2", '[data-id="rollButton"]') as HTMLButtonElement).click());
         document.removeEventListener("sheet:rollVersus", listener);
@@ -210,12 +212,12 @@ describe("the Compensation Roll", () => {
         act(() => toggle().click());
         expect(text('[data-id="compensationDue"] span')).toMatch(/^Litany, .*\(1\).*\b1 🗲.*\b1\b/);
 
-        let request: { requestId: string; label: string } | null = null;
+        let request: { requestId: string; label: Label } | null = null;
         const listener = (e: Event) => { request = (e as CustomEvent).detail; };
         document.addEventListener("sheet:rollVersus", listener);
         act(() => $<HTMLButtonElement>('[data-id="compensationRoll"] [data-id="rollButton"]')!.click());
         document.removeEventListener("sheet:rollVersus", listener);
-        expect(request!.label).toBe("Compensator, Litany, X = 0");
+        expect(labelText(request!.label)).toBe("Compensator, Litany, X = 0");
 
         document.dispatchEvent(new CustomEvent("sheet:rollResult", {
             detail: { requestId: request!.requestId, outcome: { roll: 12, target: 30, success: true, degrees: 2, crit: false, doubles: false } },

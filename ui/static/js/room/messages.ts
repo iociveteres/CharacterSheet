@@ -3,6 +3,7 @@
 import type { RoomPlayer, RoomSheet } from "./payload.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import type { ResultData } from "./commands.gen";
+import type { Label } from "../sheet/api";
 
 export type RoomRole = RoomPlayer["role"];
 export type Visibility = RoomSheet["visibility"];
@@ -44,6 +45,8 @@ export interface ChatMessageMessage {
     commandResult?: string;
     /** commandResult as data, drawn in the viewer's language (commandResult.ts). */
     resultData?: ResultData;
+    /** The label of a roll from a sheet, cut from the body: messageText() of commandResult.ts. */
+    labelData?: Label;
     characterName?: string;
     created: string;
 }
@@ -86,6 +89,7 @@ export interface StoredChatMessage {
     characterName?: string;
     commandResult?: string;
     resultData?: ResultData;
+    labelData?: Label;
     createdAt: string;
 }
 
@@ -147,10 +151,15 @@ export interface DicePresetUpdatedMessage {
 
 // — To the server —————————————————————————
 
+/**
+ * A roll from a sheet has its label in the body as `>>` lines too: the server
+ * stores labelData in place of them when it takes it, the body whole when not.
+ */
 export interface ChatMessageRequest {
     type: "chatMessage";
     messageBody: string;
     characterName?: string;
+    labelData?: Label;
 }
 
 /** `offset` counts from the newest message. */
@@ -248,7 +257,7 @@ interface SheetRoll {
     sheetID: string;
     /** The name the roll is signed with; null for none. */
     characterName: string | null;
-    label: string;
+    label: Label;
 }
 
 /** sheet:rollVersus: a d100 test. */

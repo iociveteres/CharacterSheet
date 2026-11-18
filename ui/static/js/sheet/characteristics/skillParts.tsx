@@ -59,7 +59,7 @@ export function Difficulty({ rowPath, label }: { rowPath: string; label: () => s
         const target = Number(peekAt(state, `${rowPath}.difficulty`));
         if (Number.isNaN(target)) return;
         const characteristic = String(peekAt(state, `${rowPath}.characteristic`) ?? "");
-        void rolls.versus(target, bonusSuccessesOf(state, characteristic), label());
+        void rolls.versus(target, bonusSuccessesOf(state, characteristic), { n: label() });
     };
     return <ReadonlyField field="difficulty" class="short rollable" onClick={roll} {...title} />;
 }

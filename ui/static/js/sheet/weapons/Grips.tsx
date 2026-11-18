@@ -249,7 +249,7 @@ function ParryField({ attackPath }: { attackPath: string }) {
     const roll = () => {
         const { value } = parry.peek();
         const name = String(peekAt(state, `${attackPath}.name`) || t("sheet.weapons.meleeAttack"));
-        void rolls.versus(value, parryBonusSuccesses(state), `${meleeRollName(state, attackPath, name)}, ${t("sheet.termsSkills.skill.parry")}`);
+        void rolls.versus(value, parryBonusSuccesses(state), { n: `${meleeRollName(state, attackPath, name)}, ${t("sheet.termsSkills.skill.parry")}` });
     };
     const dim = canParry ? undefined : "dimmed";
     return (

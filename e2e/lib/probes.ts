@@ -91,15 +91,31 @@ export function installProbes(): void {
     }
     window.WebSocket = RecordedWebSocket as typeof WebSocket;
 
+    // The label of a roll event is data (sheet/rollLabel.ts). A roll keeps it
+    // as the roller's chat words it: the ">>" lines of the command that the
+    // room or the bestiary sends while the event is dispatched.
+    let labelling: Roll | null = null;
+    const record = (roll: Roll) => {
+        rolls.push(roll);
+        labelling = roll;
+        queueMicrotask(() => { labelling = null; });
+    };
+    document.addEventListener("room:sendMessage", e => {
+        const body = parse((e as CustomEvent).detail)[0]?.messageBody;
+        if (!labelling || typeof body !== "string" || !body.startsWith("/r ")) return;
+        const at = body.indexOf("\n>> ");
+        labelling.label = at < 0 ? "" : body.slice(at + 4).replaceAll("\n>> ", "\n");
+        labelling = null;
+    });
     document.addEventListener("sheet:rollVersus", e => {
         const d = (e as CustomEvent).detail;
-        rolls.push({ kind: "versus", target: d.target, bonusSuccesses: d.bonusSuccesses, label: d.label });
+        record({ kind: "versus", target: d.target, bonusSuccesses: d.bonusSuccesses, label: "" });
         rollRequests.push(d.requestId);
     });
     document.addEventListener("sheet:rollResult", e => rollResults.push((e as CustomEvent).detail));
     document.addEventListener("sheet:rollExact", e => {
         const d = (e as CustomEvent).detail;
-        rolls.push({ kind: "exact", expression: d.expression, label: d.label });
+        record({ kind: "exact", expression: d.expression, label: "" });
     });
 
     document.addEventListener("sheet:notice", e => notices.push((e as CustomEvent).detail.message));

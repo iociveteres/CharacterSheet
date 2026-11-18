@@ -15,6 +15,8 @@ export type { SheetPayload } from "./payload";
 export { renderSheetView, renderStatBlockView } from "./view";
 export { useSheetView } from "./useSheetView";
 export { editFailedNotice, sendToRoom } from "./network";
+export type { Label, Part } from "./rollLabel";
+export { labelText, parseLabel, hasCodes } from "./rollLabelText";
 
 /** The character name the sheet has now. */
 export function nameOf({ state }: SheetInstance): string {

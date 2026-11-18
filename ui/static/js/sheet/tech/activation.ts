@@ -70,7 +70,7 @@ export function activateTechPower(sheet: SheetOps, path: string, activation: Act
     if (untracked(() => peekAt(state, `${COMPENSATION}.power`))) actions.batch(COMPENSATION, { power: "", x: 0, energy: 0, fatigue: 0 });
     if (paid) spend(sheet, COGNITION, price.cognition);
     const { test } = activation;
-    const outcome = test ? sheet.rolls.versus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
+    const outcome = test ? sheet.rolls.versus(test.target, test.bonusSuccesses, { n: test.label }) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
         // A Litany is used up by its activation, not by a failed one.

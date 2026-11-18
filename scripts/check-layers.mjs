@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 // The files at the sheet's root that the layers read: below core, they import
 // only the schema and each other. Every other root file wires the sheet
 // together (main.ts, instance.ts, api.ts...) and sits above sheet/kinds.
-const BASE = ["autocomplete.ts", "connection.ts", "lifecycle.ts", "payload.ts", "rollEvents.ts", "versions.ts"];
+const BASE = ["autocomplete.ts", "connection.ts", "lifecycle.ts", "payload.ts", "rollEvents.ts", "rollLabel.ts", "versions.ts"];
 
 const LAYERS = [
     ["schema"],

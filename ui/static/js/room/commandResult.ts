@@ -5,6 +5,8 @@ import { t } from "../i18n";
 import type { ResultData, VersusRoll } from "./commands.gen";
 import type { VersusOutcome } from "./messages";
 import { nameText } from "./encounter/order";
+import { labelLines } from "./dice";
+import { labelText, parseLabel } from "../sheet/api";
 
 function outcomeOf(roll: VersusRoll): string {
     const degrees = roll.success ? t("room.roll.success", { count: roll.degrees }) : t("room.roll.fail", { count: roll.degrees });
@@ -14,9 +16,13 @@ function outcomeOf(roll: VersusRoll): string {
 /**
  * The body of a message as the viewer reads it. The roll for NPCs of an
  * encounter is stored with the English body "Initiative", written by the server.
+ * The label of a roll from a sheet is stored apart from the body, as data
+ * (sheet/rollLabel.ts); one this client can't read is left out.
  */
-export function messageText(body: string, data: ResultData | null | undefined): string {
-    return data?.kind === "initiative" ? t("sheet.terms.stat.initiative") : body;
+export function messageText(body: string, data: ResultData | null | undefined, labelData?: unknown): string {
+    if (data?.kind === "initiative") return t("sheet.terms.stat.initiative");
+    const label = labelData == null ? null : parseLabel(labelData);
+    return label ? body + labelLines(labelText(label)) : body;
 }
 
 /** The text of the result; null for a kind this client does not know, which shows commandResult instead. */

@@ -155,7 +155,7 @@ export function DamageLabel({ owner, itemPath, label, children = `${t("sheet.ter
     if (preview) return <label>{children}</label>;
     const roll = () => {
         const expression = untracked(() => damageRoll(state, owner, itemPath));
-        if (expression) void rolls.exact(expression, label());
+        if (expression) void rolls.exact(expression, { n: label() });
     };
     return <label class="rollable" onClick={roll}>{children}</label>;
 }

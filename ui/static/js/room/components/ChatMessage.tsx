@@ -7,13 +7,15 @@ import { messageText, renderResult } from "../commandResult";
 
 /** `own` puts the message on the right; `menu` goes before its time. */
 export function ChatMessage({ msg, own, menu }: {
-    msg: Pick<Message, "messageBody" | "commandResult" | "resultData" | "createdAt">; own: boolean; menu?: ComponentChildren;
+    msg: Pick<Message, "messageBody" | "commandResult" | "resultData" | "createdAt"> & Partial<Pick<Message, "labelData">>;
+    own: boolean;
+    menu?: ComponentChildren;
 }) {
     // Messages stored before result_data have the English text only.
     const result = (msg.resultData && renderResult(msg.resultData)) || msg.commandResult;
     return (
         <div class={own ? "message own-message" : "message"}>
-            <div class="message-body">{messageText(msg.messageBody, msg.resultData)}</div>
+            <div class="message-body">{messageText(msg.messageBody, msg.resultData, msg.labelData)}</div>
             {result && <div class="command-result">{result}</div>}
             <div class="message-footer">
                 <div class="message-time-wrapper">

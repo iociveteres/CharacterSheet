@@ -67,7 +67,7 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
         const name = melee ? meleeRollName(state, path, typed) : typed;
         const hit = melee ? meleeHitLines(state, path, tab.peek()) : hitLines(state, path);
         const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...hit.map(line => line.label), ...extraNames(state, rollPath)]);
-        void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
+        void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), { n: label });
         close();
     };
     const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";

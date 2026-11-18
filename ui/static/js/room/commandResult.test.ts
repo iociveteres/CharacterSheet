@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { messageText, renderResult, versusOutcome } from "./commandResult";
 import type { ResultData } from "./commands.gen";
+import { rollExactCommand } from "./dice";
+import { labelText } from "../sheet/api";
+import { t } from "../i18n";
+import { installDictionary } from "../i18n/testDictionary";
 
 // Rolls with what the server made of them (TestVersusResultsGolden in
 // internal/commands/result_data_test.go).
@@ -52,5 +56,28 @@ describe("the outcome of a versus roll for the sheet", () => {
             .toBeNull();
         expect(versusOutcome(undefined)).toBeNull();
         expect(versusOutcome(null)).toBeNull();
+    });
+});
+
+describe("the label of a roll from a sheet, stored as data", () => {
+    const initiative = { n: ["name:initiative"] };
+
+    it("follows the command in the reader's language", () => {
+        for (const lang of ["en", "ru"] as const) {
+            installDictionary(lang);
+            expect(messageText("/r 1d10+2", null, initiative)).toBe(`/r 1d10+2\n>> ${labelText({ n: ["name:initiative"] })}`);
+            expect(labelText({ n: ["name:initiative"] })).toBe(t("sheet.terms.stat.initiative"));
+        }
+    });
+
+    it("is cut at 200 characters, as the roller's command is", () => {
+        const long = { n: "a".repeat(150), m: ["b".repeat(100)] };
+        expect(messageText("/r d10", null, long)).toBe(rollExactCommand("d10", labelText(long)));
+        expect(messageText("/r d10", null, long)).toBe(`/r d10\n>> ${"a".repeat(150)}, ${"b".repeat(48)}…`);
+    });
+
+    it("is left out when this client can't read it", () => {
+        expect(messageText("/r d10", null, { n: ["aim: full"] })).toBe("/r d10");
+        expect(messageText("/r d10", null, null)).toBe("/r d10");
     });
 });

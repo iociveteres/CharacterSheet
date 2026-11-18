@@ -11,6 +11,7 @@ import type {
     UpdateFolderRequest, Visibility,
 } from "./messages";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import type { Label } from "../sheet/api";
 import { rememberInput } from "./chat";
 import { playerFolders, reorderedFolders, sheetName } from "./characters";
 import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSettings } from "./dice";
@@ -137,8 +138,10 @@ export function runToastAction(toast: Toast): void {
  * eventID, null when it did not go. The input is the chat's own: a roll goes past it and leaves a
  * draft there.
  */
-export function sendChat(messageBody: string, character: string | null = null): string | null {
-    const request: ChatMessageRequest = { type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}) };
+export function sendChat(messageBody: string, character: string | null = null, labelData?: Label): string | null {
+    const request: ChatMessageRequest = {
+        type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}), ...(labelData ? { labelData } : {}),
+    };
     const eventID = send(request);
     rememberInput(roomId, messageBody);
     return eventID;
@@ -205,9 +208,13 @@ export function rollPreset(index: number): void {
     if (command) sendChat(command);
 }
 
-/** A roll a sheet asks for, signed with the character the sheet names; returns the eventID of its message, null when it did not go. */
-export function rollFromSheet(command: string, character: string | null): string | null {
-    return sendChat(command, character);
+/**
+ * A roll a sheet asks for, signed with the character the sheet names, with
+ * the label of the command as data when it has some; returns the eventID of
+ * its message, null when it did not go.
+ */
+export function rollFromSheet(command: string, character: string | null, labelData?: Label): string | null {
+    return sendChat(command, character, labelData);
 }
 
 // — Characters ————————————————————————————

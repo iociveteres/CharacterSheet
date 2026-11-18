@@ -7,7 +7,7 @@
 import type { SheetSignals } from "../schema/sheet";
 import type { SheetOps } from "../core/actions";
 import { numberAt, peekAt } from "../core/sync";
-import { t } from "../../i18n";
+import { code, label, NAME, SPACE } from "../rollLabel";
 
 /** The initiative roll of the sheet, "1d10+7"; "" when it has none. */
 export function initiativeExpression(state: SheetSignals): string {
@@ -32,7 +32,7 @@ export function initiativeTotal(state: SheetSignals): number | null {
 export async function rollInitiative({ state, actions, rolls }: SheetOps): Promise<void> {
     const expression = initiativeExpression(state);
     if (!expression) return;
-    const total = await rolls.exact(expression, t("sheet.terms.stat.initiative"));
+    const total = await rolls.exact(expression, label(code(SPACE.name, NAME.initiative)));
     if (total === null) return;
     actions.change("initiative.lastInitiative", initiativeRollFor(state, total));
 }

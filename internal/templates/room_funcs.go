@@ -72,9 +72,12 @@ type ChatMessage struct {
 	CommandResult *string `json:"commandResult" tstype:"string | null,required"`
 	// ResultData is CommandResult as data, which the client renders in the
 	// viewer's language; null for a message without it.
-	ResultData    *commands.ResultData `json:"resultData" tstype:"ResultData | null"`
-	CharacterName *string              `json:"characterName" tstype:"string | null,required"`
-	CreatedAt     time.Time            `json:"createdAt"`
+	ResultData *commands.ResultData `json:"resultData" tstype:"ResultData | null"`
+	// LabelData is the label of a roll from a sheet, cut from MessageBody;
+	// null for other messages.
+	LabelData     json.RawMessage `json:"labelData,omitempty" tstype:"Label | null"`
+	CharacterName *string         `json:"characterName" tstype:"string | null,required"`
+	CreatedAt     time.Time       `json:"createdAt"`
 }
 
 type RoomDicePreset struct {
@@ -142,6 +145,7 @@ func NewRoomPayload(data *Data) RoomPayload {
 			MessageBody:   m.Message.MessageBody,
 			CommandResult: m.Message.CommandResult,
 			ResultData:    m.Message.ResultData,
+			LabelData:     m.Message.LabelData,
 			CharacterName: m.Message.CharacterName,
 			CreatedAt:     m.Message.CreatedAt,
 		})

@@ -27,6 +27,7 @@ packages:
       import type { SheetKind } from "../sheet/kinds/kinds.gen";
       import type { EncounterList, InitiativeView } from "./encounter/types.gen";
       import type { ResultData } from "./commands.gen";
+      import type { Label } from "../sheet/api";
   # The result of a chat command as data (room_messages.result_data).
   - path: "charactersheet.iociveteres.net/internal/commands"
     output_path: "ui/static/js/room/commands.gen.ts"

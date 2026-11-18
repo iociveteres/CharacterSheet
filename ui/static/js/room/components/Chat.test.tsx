@@ -126,7 +126,7 @@ describe("the input", () => {
         type("half a sentence");
 
         act(() => {
-            document.dispatchEvent(new CustomEvent("sheet:rollExact", { detail: { expression: "2d10", label: "" } }));
+            document.dispatchEvent(new CustomEvent("sheet:rollExact", { detail: { expression: "2d10", label: { n: "" } } }));
         });
 
         expect(sent.map(m => m.messageBody)).toEqual(["/r 2d10"]);
