@@ -235,8 +235,13 @@ function ChatInput() {
 
             <div class="layout-column">
                 <Commands onPick={insertCommand} />
-                <button onClick={sendInput} class="button-colored button-wide send-btn" disabled={!draft.trim()} type="button">
-                    {t("room.chat.send")}
+                <button onClick={sendInput} class="button-colored button-wide send-btn" disabled={!draft.trim()} type="button"
+                    title={t("room.chat.send")} aria-label={t("room.chat.send")}>
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1.5 7.5 14.5 1.5 10 14.5 7.5 9z" />
+                        <path d="M7.5 9 14.5 1.5" />
+                    </svg>
                 </button>
             </div>
         </div>

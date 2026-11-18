@@ -4,7 +4,7 @@
   "room.chat.messageActions": { "en": "Message actions", "ru": "Действия с сообщением", "note": "подсказка у кнопки ⋮ сообщения" },
   "room.chat.deleteMessage": { "en": "Delete message", "ru": "Удалить сообщение" },
   "room.chat.placeholder": { "en": "Type a message...", "ru": "Введите сообщение…" },
-  "room.chat.send": { "en": "Send", "ru": "Отпр.", "note": "кнопка отправки в чате; полностью «Отправить», сокращено при вёрстке: кнопка шире «Send» растягивала чат за край панели (поле ввода не сжимается)" },
+  "room.chat.send": { "en": "Send", "ru": "Отправить", "note": "подсказка и имя кнопки-иконки отправки в чате" },
   "room.chat.today": { "en": "Today", "ru": "Сегодня", "note": "разделитель дней в чате" },
   "room.chat.yesterday": { "en": "Yesterday", "ru": "Вчера", "note": "разделитель дней в чате" },
   "room.chat.commands": { "en": "Available commands", "ru": "Доступные команды", "note": "подсказка у кнопки «/» и заголовок списка команд чата" }
