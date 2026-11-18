@@ -656,10 +656,9 @@ const TARGET = column({
         { value: "leg", label: t("sheet.terms.bodyPart.leg") },
         { value: "arm", label: t("sheet.terms.bodyPart.arm") },
         { value: "head", label: t("sheet.terms.bodyPart.head") },
-        { value: "joint", label: t("sheet.termsRolls.target.joint.short") },
+        { value: "joint", label: t("sheet.termsRolls.target.joint") },
         { value: "eyes", label: t("sheet.termsRolls.target.eyes") },
     ],
-    names: { joint: t("sheet.termsRolls.target.joint") },
 });
 
 export const RANGED_ROLL_COLUMNS = [

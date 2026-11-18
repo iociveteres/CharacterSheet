@@ -2113,40 +2113,39 @@ label {
 }
 
 /* The stat block takes the columns and places the dropdown itself. */
+/*
+ * As wide as its options at full length, at the right edge of the attack and
+ * over the left column of the sheet; never wider than twice the attack, which
+ * the left column always has room for.
+ */
 .ranged-attack .roll-dropdown,
-.stat-ranged .roll-dropdown {
-    left: -60%;
+.melee-attack .roll-dropdown {
+    left: auto;
     right: 0;
-
-    /* Each column from the width of its longest option, so the short ones are not cut first. */
-    .roll-column,
-    .roll-result {
-        flex: 1 1 auto;
-    }
-
-    .radio-option label {
-        white-space: nowrap;
-    }
+    width: max-content;
+    max-width: 200%;
 }
 
-.melee-attack .roll-dropdown,
+/* Placed and sized by the stat block (StatBlock.tsx). */
+.stat-ranged .roll-dropdown {
+    left: -60%;
+    right: 10%;
+}
+
 .stat-melee .roll-dropdown {
     left: -65%;
     right: 5%;
+}
 
-    .aim {
-        flex: 0.9;
-    }
-
-    .base,
-    .stance,
-    .rof {
-        flex: 1.2;
-    }
-
-    .extra-modifier {
-        flex: 0.4;
-    }
+/*
+ * The four columns of options grow from one minimum towards their longest
+ * option by equal steps: a narrow sheet leaves the short labels whole and cuts
+ * the long ones with an ellipsis. The extras keep their width, the total takes
+ * what is left.
+ */
+:is(.ranged-attack, .stat-ranged, .melee-attack, .stat-melee) .roll-dropdown.visible {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(7em, max-content)) auto auto minmax(max-content, 1fr);
 }
 
 /* The damage or penetration of an attack or melee profile and its modifiers (ModdedField.tsx). */
@@ -2531,6 +2530,13 @@ select.quality-select:hover {
     font-size: 12px;
 }
 
+/* Labels are flex boxes, whose bare text takes no ellipsis: the text has a box of its own. */
+.roll-dropdown .radio-option .radio-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .roll-dropdown .radio-option input[type="radio"] {
     flex-shrink: 0;
     width: 14px;
@@ -2542,7 +2548,7 @@ select.quality-select:hover {
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
     cursor: pointer;
     user-select: none;
     align-items: end;

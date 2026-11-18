@@ -51,7 +51,7 @@ export function RadioColumn({ column: { key, label, options } }: { column: RollC
                     options={options}
                     renderOption={(radio, value, text) => (
                         <div class="radio-option">
-                            <label>{radio}{text}</label>
+                            <label title={text}>{radio}<span class="radio-text">{text}</span></label>
                             <NumberField field={modifierField(value)} />
                         </div>
                     )}

@@ -1237,7 +1237,6 @@ export interface I18nParams {
     "sheet.termsRolls.rollColumn.target": {};
     "sheet.termsRolls.target.eyes": {};
     "sheet.termsRolls.target.joint": {};
-    "sheet.termsRolls.target.joint.short": {};
     "sheet.termsRolls.target.no.short": {};
     "sheet.termsRolls.target.torso": {};
     "sheet.termsSkills.skill.acrobatics": {};
