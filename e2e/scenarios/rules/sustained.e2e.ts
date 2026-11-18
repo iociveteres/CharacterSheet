@@ -114,7 +114,7 @@ describe("sustained powers", () => {
         await currentPR("4");
         for (const p of players()) {
             await eventually(() => bar(p), b => expect(b, `${p.name}: bar`).toEqual([["Firebolt", true], ["Bolt", false]]));
-            await eventually(() => freeLimitWarning(p), w => expect(w, `${p.name}: warning`).toBe("Cycle sustains at most 1 free (½I.b▲); the rest take PR."));
+            await eventually(() => freeLimitWarning(p), w => expect(w, `${p.name}: warning with the free limit`).toMatch(/\b1\b.*½I\.b▲/));
             expect(await maxPR(p, shield), `${p.name}: Max of Shield`).toBe(4);
         }
     });

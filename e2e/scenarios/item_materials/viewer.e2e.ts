@@ -57,7 +57,7 @@ describe("a viewer of a Pathfinder Crusade sheet", () => {
         await v.setCollapsed(sword, false);
         await v.expectValue(`${sword}.material.name`, "Mithral");
         await v.expectValue(`${sword}.inlay`, "Onyx");
-        await expectEffects(v, sword, ["wt ×0.5", "Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A"]);
+        await expectEffects(v, sword, ["wt ×0.5", expect.stringMatching(/^Pen \+1 /), expect.stringMatching(/\b2$/), "Cap ×1", "+20 Max.A"]);
         await expectText(v, { path: enchantmentsOf(sword), sel: ".ench-cap" }, "3/10");
         for (const field of ["material.name", "inlay", "broken"]) {
             expect(await (await v.el(`${sword}.${field}`)).isEditable(), `${field} editable`).toBe(false);

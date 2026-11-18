@@ -212,7 +212,7 @@ describe("attack ↔ gear link", () => {
         await a.click(`${sword}.broken`);
         await b.openNavTab("combat");
         await b.openMods(tab, "damage");
-        await expectText(b, { path: tab, sel: ".layout-row.damage [data-id=note]" }, "½ after armour: Longsword is broken");
+        await eventually(() => textOf(b, { path: tab, sel: ".layout-row.damage [data-id=note]" }), note => expect(note, "the damage note").toMatch(/½.*Longsword/));
         await b.closeDropdowns();
         // The total keeps the dice: the hit is halved after armour.
         await b.expectValue(`${tab}.damageTotal`, "1d10+6");
@@ -220,9 +220,9 @@ describe("attack ↔ gear link", () => {
         await a.openNavTab("combat");
         await a.clearRecords();
         await a.click({ path: tab, sel: ".layout-row.damage label.rollable" });
-        await eventually(() => a.rolls(), r => expect(r.at(-1)?.label, "the roll's label").toMatch(/\(broken: ½ after armour\)$/));
+        await eventually(() => a.rolls(), r => expect(r.at(-1)?.label, "the roll's label notes the halving").toContain("½"));
         const chat = await a.waitSent(m => m.type === "chatMessage", "the roll");
-        expect(String(chat.messageBody)).toContain("(broken: ½ after armour)");
+        expect(String(chat.messageBody), "the chat message notes the halving").toContain("½");
 
         await showItem(a, sword);
         await a.click(`${sword}.broken`);

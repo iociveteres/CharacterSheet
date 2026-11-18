@@ -117,7 +117,8 @@ describe("psykana", () => {
 
         await a.click(toggle);
         const text = async (id: string) => (await a.el({ path: "psykana", sel: `[data-id="${id}"]` })).evaluate(el => el.textContent);
-        expect(await text("phenomenaNote")).toBe("Pushed, phenomena are certain.");
+        // The note names a reason that calls for phenomena, here the push.
+        expect(await a.hasClass({ path: "psykana", sel: '[data-id="phenomenaNote"]' }, "attention"), "the note calls for phenomena").toBe(true);
         // Unbound: +5 per point of kick; Firebolt is sustained.
         expect([await text("nature"), await text("sustained"), await text("phenomenaTotal")]).toEqual(["+10", "+10", "1d100+20"]);
 

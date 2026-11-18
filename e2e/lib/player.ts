@@ -174,17 +174,6 @@ export class Player {
         });
     }
 
-    /** Waits until the sheet has shown `message` as a toast of the room page. */
-    async expectNotice(message: string, timeout = 5000): Promise<void> {
-        await eventually(async () => ({
-            notices: await this.page.evaluate(() => window.__e2e.notices),
-            toasts: await this.page.locator(".toasts > .toast").allTextContents(),
-        }), ({ notices, toasts }) => {
-            expect(notices, `${this.name}: notices`).toContain(message);
-            expect(toasts.map(s => s.trim()), `${this.name}: toasts`).toContain(message);
-        }, timeout);
-    }
-
     /**
      * Waits until the sheet has sent `count` notices since the last clearRecords,
      * each shown as a toast of the room page, and returns them. It reads no

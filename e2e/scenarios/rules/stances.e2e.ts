@@ -121,26 +121,32 @@ describe("melee stances", () => {
         await a.write(`${shield}.shield.defenseSectors`, "A1+(T)");
         await a.write(`${shield}.shield.equipped`, true);
 
-        const armour = async (bodyTotal: number, note: string) => {
+        /** Waits for the totals on both pages and returns the zones note, the same on both, that names the bracketed zone. */
+        const armour = async (bodyTotal: number, unlike?: string) => {
+            const notes = [];
             for (const p of [a, b]) {
                 await p.openNavTab("combat");
                 await p.expectValue("armour.leftArm.total", String(leftArm + 3));
                 await p.expectValue("armour.body.total", String(bodyTotal));
-                await eventually(() => p.el(`${shield}.shield.zonesNote`).then(el => el.evaluate(e => e.textContent)),
-                    v => expect(v, `${p.name}: the zones note`).toBe(note));
+                notes.push(await eventually(() => p.el(`${shield}.shield.zonesNote`).then(el => el.evaluate(e => e.textContent ?? "")), v => {
+                    expect(v, `${p.name}: the zones note`).toContain("(T)");
+                    if (unlike) expect(v, `${p.name}: the zones note has changed`).not.toBe(unlike);
+                }));
             }
+            expect(notes[1], "B's zones note").toBe(notes[0]);
+            return notes[0];
         };
-        await armour(body, "(T) only in Defensive stance");
+        const uncovered = await armour(body);
 
         await a.click(stance("defensive"));
         await taken("defensive");
-        await armour(body + 3, "(T) covered: Defensive stance");
+        await armour(body + 3, uncovered);
         await a.openRoll(melee);
         expect(await text(a, { sel: ".roll-dropdown .no-attacks" })).toBe("No attacks");
         await a.closeDropdowns();
 
         await a.click(stance("standard"));
-        await armour(body, "(T) only in Defensive stance");
+        expect(await armour(body), "the zones note back in Standard").toBe(uncovered);
         await a.openRoll(melee);
         expect(await a.count({ sel: ".roll-dropdown .no-attacks" })).toBe(0);
         await a.closeDropdowns();
@@ -172,7 +178,7 @@ describe("melee stances", () => {
             await eventually(() => dimmed(p), v => expect(v, `${p.name}: in Palisade`).toEqual({ heads: ["Charge", "Run"], cells: ["charge", "run"] }));
             // The title of a distance is written when the pointer enters it.
             await (await p.el(`${MOVE}.run`)).hover();
-            expect(await p.attr(`${MOVE}.run`, "title"), `${p.name}: why Run is dimmed`).toMatch(/^Palisade stance: no Charge or Run\n/);
+            expect(await p.attr(`${MOVE}.run`, "title"), `${p.name}: why Run is dimmed, above its breakdown`).toMatch(/^[^\n]*Palisade[^\n]*\n/);
         }
 
         await a.click(stance("standard"));

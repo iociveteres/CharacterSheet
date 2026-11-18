@@ -121,7 +121,7 @@ describe("shared collections", () => {
             mimeType: "application/json",
             buffer: Buffer.from(JSON.stringify({ sheetKind: "black_crusade", characterInfo: { characterName: KROOT } })),
         });
-        await expectToast(page, "kroot.json: 1 creature");
+        await expectToast(page, "kroot.json", 1);
         await eventually(() => page.locator(".bestiary-creature-name").allTextContents(), names => expect(names).toEqual([KROOT]));
         creature = Number(await page.locator(".bestiary-table tbody tr").getAttribute("data-creature-id"));
 
@@ -156,7 +156,7 @@ describe("shared collections", () => {
             await page.locator(".bestiary-dialog-target").selectOption({ label: "New collection…" });
             await page.locator(".bestiary-new-collection-name").fill(COPIES);
             await page.locator(".bestiary-dialog-ok").click();
-            await expectToast(page, `"${KROOT}" copied to "${COPIES}"`);
+            await expectToast(page, KROOT, COPIES);
 
             const copies = (await listCollections(page)).find(c => c.own && c.name === COPIES)!;
             await page.locator(`.bestiary-collection[data-collection-id="${copies.id}"]`).click();

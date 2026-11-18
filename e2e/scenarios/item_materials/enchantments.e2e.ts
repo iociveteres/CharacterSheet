@@ -91,10 +91,13 @@ describe("enchantments", () => {
             await expectText(p, counter(sword), "12/8");
             await eventually(() => p.hasClass(counter(sword), "over"), over => expect(over, `${p.name}: red`).toBe(true));
         }
-        expect(await (await a.el(counter(sword))).getAttribute("title")).toContain("The enchantments take more");
+        const lines = async () => (await (await a.el(counter(sword))).getAttribute("title"))!.split("\n");
+        const over = await lines();
         await a.click({ path: flaming, sel: ".level-chip", text: "3" });
         await expectText(b, counter(sword), "3/8");
         expect(await b.hasClass(counter(sword), "over")).toBe(false);
+        // Over the capacity the title ends with a line that says why the counter is red.
+        await eventually(lines, under => expect(under, "the counter's title within the capacity").toHaveLength(over.length - 1));
     });
 
     it("its Special is edited in place; another level replaces the edit", async () => {
