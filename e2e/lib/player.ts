@@ -146,6 +146,25 @@ export class Player {
         return gate;
     }
 
+    /**
+     * Routes the page's room connections so that, while `held()` is true, the
+     * server's messages of `type` never reach the page, as news still on its
+     * way. Call it before the page is opened: Playwright's mock socket only
+     * goes into documents loaded after the route. received() still lists the
+     * dropped messages: the probe records the real socket under the mock.
+     */
+    async dropIncoming(type: string, held: () => boolean): Promise<void> {
+        await this.context.routeWebSocket(/\/room\/ws\//, ws => {
+            const server = ws.connectToServer();
+            // The server may send several messages in one frame, a line each (socket.ts).
+            server.onMessage(frame => {
+                if (typeof frame !== "string" || !held()) return ws.send(frame);
+                const kept = frame.split("\n").filter(line => !line.includes(`"type":"${type}"`));
+                if (kept.length) ws.send(kept.join("\n"));
+            });
+        });
+    }
+
     /** Closes the room's socket from the page; room/socket.js then reconnects as after a dropped connection. */
     async dropSocket(): Promise<void> {
         await this.page.evaluate(() => {
@@ -164,6 +183,23 @@ export class Player {
             expect(notices, `${this.name}: notices`).toContain(message);
             expect(toasts.map(s => s.trim()), `${this.name}: toasts`).toContain(message);
         }, timeout);
+    }
+
+    /**
+     * Waits until the sheet has sent `count` notices since the last clearRecords,
+     * each shown as a toast of the room page, and returns them. It reads no
+     * wording: a scenario tells notices apart by comparing them with each other.
+     */
+    async waitNotices(count: number, timeout = 5000): Promise<string[]> {
+        const { notices } = await eventually(async () => ({
+            notices: await this.page.evaluate(() => window.__e2e.notices),
+            toasts: await this.page.locator(".toasts > .toast").allTextContents(),
+        }), ({ notices, toasts }) => {
+            expect(notices, `${this.name}: notices`).toHaveLength(count);
+            for (const n of notices) expect(n, `${this.name}: a notice with text`).not.toBe("");
+            expect(toasts.map(s => s.trim()), `${this.name}: toasts`).toContain(notices.at(-1));
+        }, timeout);
+        return notices;
     }
 
     private async goto(path: string): Promise<void> {
