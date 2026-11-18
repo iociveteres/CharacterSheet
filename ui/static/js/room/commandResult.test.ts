@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { messageText, renderResult, versusOutcome } from "./commandResult";
+import { messageText, renderResult } from "./commandResult";
+import { versusOutcome } from "./messages";
 import type { ResultData } from "./commands.gen";
 import { rollExactCommand } from "./dice";
 import { labelText } from "../sheet/api";

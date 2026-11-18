@@ -3,7 +3,6 @@
 // stores as commandResult, which messages without data show.
 import { t } from "../i18n";
 import type { ResultData, VersusRoll } from "./commands.gen";
-import type { VersusOutcome } from "./messages";
 import { nameText } from "./encounter/order";
 import { labelLines } from "./dice";
 import { labelText, parseLabel } from "../sheet/api";
@@ -48,13 +47,4 @@ export function renderResult(data: ResultData): string | null {
         `${sum} = ${total}`,
         total < 0 ? t("room.roll.totalFail", { count: -total }) : t("room.roll.total", { count: total }),
     ].join("\n");
-}
-
-/** What a single roll against a target came to, for the sheet that rolled it; null for anything else. */
-export function versusOutcome(data: ResultData | null | undefined): VersusOutcome | null {
-    if (data?.kind !== "versus" || data.repeat || data.rolls.length !== 1) return null;
-    const roll = data.rolls[0];
-    return {
-        roll: roll.roll, target: data.target, success: roll.success, degrees: roll.degrees, crit: !!roll.crit, doubles: !!roll.doubles,
-    };
 }

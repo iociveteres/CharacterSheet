@@ -51,7 +51,7 @@ export interface ChatMessageMessage {
     created: string;
 }
 
-/** What a single roll against a target came to, for the sheet that rolled it: versusOutcome() of commandResult.ts. */
+/** What a single roll against a target came to, for the sheet that rolled it. */
 export interface VersusOutcome {
     roll: number;
     target: number;
@@ -61,6 +61,18 @@ export interface VersusOutcome {
     crit: boolean;
     /** 11, 22 … 99 and 100 of a plain d100. */
     doubles: boolean;
+}
+
+/**
+ * What a single roll against a target came to, for the sheet that rolled it; null for anything else.
+ * Here, not in commandResult.ts: e2e scenarios import it in node, where the sheet's modules can't load.
+ */
+export function versusOutcome(data: ResultData | null | undefined): VersusOutcome | null {
+    if (data?.kind !== "versus" || data.repeat || data.rolls.length !== 1) return null;
+    const roll = data.rolls[0];
+    return {
+        roll: roll.roll, target: data.target, success: roll.success, degrees: roll.degrees, crit: !!roll.crit, doubles: !!roll.doubles,
+    };
 }
 
 /** The server hands on the gamemaster's request as it is. */

@@ -10,7 +10,7 @@ import {
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
-import { versusOutcome } from "./commandResult";
+import { versusOutcome } from "./messages";
 import { hasCodes, labelText } from "../sheet/api";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";

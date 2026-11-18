@@ -3,9 +3,8 @@
 // and answers this tab only (roll in internal/roomws/bestiary.go); the answer
 // goes back to the sheet and into the page's roll feed.
 import { rollExactCommand, rollVersusCommand } from "../room/dice";
-import { versusOutcome } from "../room/commandResult";
 import type { ResultData } from "../room/commands.gen";
-import type { SheetRollExact, SheetRollVersus, VersusOutcome } from "../room/messages";
+import { versusOutcome, type SheetRollExact, type SheetRollVersus, type VersusOutcome } from "../room/messages";
 import { labelText, sendToRoom } from "../sheet/api";
 import { addRoll } from "./actions";
 

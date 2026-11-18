@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { versusOutcome } from "../../../ui/static/js/room/commandResult";
+import { versusOutcome } from "../../../ui/static/js/room/messages";
 
 describe("psykana", () => {
     const t = useTable("psykana");
