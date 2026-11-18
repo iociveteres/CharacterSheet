@@ -2116,20 +2116,16 @@ label {
 .ranged-attack .roll-dropdown,
 .stat-ranged .roll-dropdown {
     left: -60%;
-    right: 10%;
+    right: 0;
 
-    .aim,
-    .target {
-        flex: 0.8;
+    /* Each column from the width of its longest option, so the short ones are not cut first. */
+    .roll-column,
+    .roll-result {
+        flex: 1 1 auto;
     }
 
-    .range,
-    .rof {
-        flex: 1.2;
-    }
-
-    .extra-modifier {
-        flex: 0.3;
+    .radio-option label {
+        white-space: nowrap;
     }
 }
 
@@ -2680,9 +2676,10 @@ select.quality-select:hover {
         width: auto;
     }
 
+    /* As wide as the other numbers of the roll, not as the select above it. */
     .base input[type="number"] {
-        width: 0;
-        min-width: 100%;
+        width: 4em;
+        justify-self: start;
         padding: 2px 4px;
         font-size: 12px;
         text-align: center;
@@ -2753,7 +2750,7 @@ select.quality-select:hover {
 }
 
 /*
- * The effective PR and the kick: their label, their number as wide as their
+ * The effective PR and the kick: their label, their number centred over their
  * buttons, the buttons. Their columns share one width, the wider one's.
  */
 .roll-dropdown.psychic-roll.visible {
@@ -2776,8 +2773,8 @@ select.quality-select:hover {
     }
     .pr-column input[type="number"] {
         grid-row: 2;
-        width: 0;
-        min-width: 100%;
+        width: 4em;
+        justify-self: center;
         text-align: center;
     }
     .pr-buttons {
@@ -2873,8 +2870,8 @@ select.quality-select:hover {
     }
     .pr-column input[type="number"] {
         grid-row: 2;
-        width: 0;
-        min-width: 100%;
+        width: 4em;
+        justify-self: center;
         text-align: center;
     }
     .pr-buttons {
