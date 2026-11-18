@@ -48,7 +48,9 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   (`ui/html/content/<name>.<lang>.html`, `internal/mailer/templates`).
 - Stored values never depend on the language: translate the label, not what goes into the sheet;
   rules compare the stored value. What the server sends to the whole room is a code that each client
-  words in its own language; a roll label stays in the roller's language.
+  words in its own language. So is a roll label: what the sheet takes from the catalog goes as a code
+  (`sheet/rollLabel.ts`), worded by the reader's client (`sheet/rollLabelText.ts`); only what the
+  player typed stays text. Codes are stored in `room_messages.label_data`: never rename one, alias it.
 
 ## Game data: the DoomBC Core rulebook (Russian), prepared in `../BookParser`
 
