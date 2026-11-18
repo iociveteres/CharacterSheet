@@ -9,7 +9,8 @@ import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../modifiers/entries";
 import { idsInOrder } from "../core/gridOrder";
 import { balanceAt, heldGrip } from "./melee";
-import { gripText } from "./gripRules";
+import { gripPart } from "./gripRules";
+import { code, SPACE, SRC, type Part } from "../rollLabel";
 import { textAt } from "../core/sync";
 
 export type StanceKey = "standard" | "aggressive" | "defensive" | "covering" | "springy" | "palisade";
@@ -78,8 +79,8 @@ export const storedStance = (key: StanceKey) => (key === "standard" ? "" : key);
 const ENTRIES = new Map(STANCES.map(s => [s.key, s.entries.map(fields =>
     Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, signal(v)])) as unknown as Entry)]));
 
-/** The source the entries of a stance count from, as a condition is. */
-const SOURCES = new Map(STANCES.map(s => [s.key, { name: signal(s.source) }]));
+/** The source the entries of a stance count from, as a condition is; a roll label words its name in the reader's language. */
+const SOURCES = new Map(STANCES.map(s => [s.key, { name: signal(s.source), labelPart: code(SPACE.src, `${SRC.stance}.${s.key}`) }]));
 
 /** The entries the stance of the sheet adds, with the source to name them by. */
 export function stanceEntries(state: SheetSignals) {
@@ -88,15 +89,17 @@ export function stanceEntries(state: SheetSignals) {
 }
 
 /**
- * The name of the rolls of the melee attack at `attackPath`: with its grip
- * when not the primary and the stance when not Standard, as
- * "Longsword (1h, Aggressive)".
+ * The tags of the rolls of the melee attack at `attackPath`, which follow its
+ * name in brackets: its grip when not the primary and the stance when not
+ * Standard, as "Longsword (1h, Aggressive)".
  */
-export function meleeRollName(state: SheetSignals, attackPath: string, name: string): string {
+export function meleeRollTags(state: SheetSignals, attackPath: string): Part[] {
     const { grips, held } = heldGrip(state, attackPath);
     const stance = stanceOf(state);
-    const tags = [held && held !== grips[0] ? gripText(held) : "", stance.key === "standard" ? "" : stance.name].filter(Boolean);
-    return tags.length ? `${name} (${tags.join(", ")})` : name;
+    return [
+        ...(held && held !== grips[0] ? [gripPart(held)] : []),
+        ...(stance.key === "standard" ? [] : [code(SPACE.stance, stance.key)]),
+    ];
 }
 
 /** The melee profiles Palisade needs one of. */

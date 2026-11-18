@@ -3,6 +3,7 @@
 // grip held changes in its profile. weapons/melee.ts applies the effects to the
 // weapon's Range, Balance, damage and attacks.
 import { t } from "../../i18n";
+import { code, SPACE, type Part } from "../rollLabel";
 
 export type GripKey = "1h" | "2h" | "Fa" | "Pa" | "Rev" | "Cl" | "Fist" | "Mh" | "Leg" | "Head" | "Tail";
 
@@ -171,6 +172,9 @@ const GRIP_TITLES: { [K in GripKey]: string } = {
 
 /** The grip as the chip shows it, in the page's language; the string as typed when it reads as no grip. */
 export const gripText = (grip: Grip): string => (grip.keys.length ? grip.keys.map(key => GRIP_SHORT[key]).join("+") : grip.id);
+
+/** The grip in a roll label: the code of its keys, which each reader words as gripText does; the string as typed when it reads as no grip. */
+export const gripPart = (grip: Grip): Part => (grip.keys.length ? code(SPACE.grip, grip.id) : grip.id);
 
 /** What a chip's title says of `grip`: each of its grips; an unread string says so. */
 export const gripTitle = (grip: Grip): string =>

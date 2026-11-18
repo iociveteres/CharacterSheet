@@ -11,7 +11,8 @@ import { GRIP_SHORT, MACE_PROFILE, gripEffects, parseGrips, type GripEffects, ty
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
 import { openTab } from "../core/ui";
-import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
+import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps, type HitLine } from "./weaponBonus";
+import { code, SPACE } from "../rollLabel";
 
 /** The label of the melee profile `value`, lowercase as it goes inside a phrase: "Chainaxe, axe". */
 export const profileName = (value: string) => optionLabel(MELEE_PROFILES.find(o => optionValue(o) === value) ?? value).toLowerCase();
@@ -190,13 +191,14 @@ export const attackHasProperty = (state: SheetSignals, attackPath: string, name:
  * Hook −10, or −15 aimed. The profile is the open tab, `selectedTab` as
  * ui.selectedTabSignal holds it; in Mordhau it is the Mace's.
  */
-export function profileHit(state: SheetSignals, attackPath: string, selectedTab: string | null): { label: string; add: number } | null {
+export function profileHit(state: SheetSignals, attackPath: string, selectedTab: string | null): HitLine | null {
     const tabs = `${attackPath}.tabs.items`;
     const tab = openTab(idsInOrder(state, tabs), selectedTab);
     const profile = heldGrip(state, attackPath).effects.mace ? MACE_PROFILE.profile : tab ? textAt(state, `${tabs}.${tab}.profile`) : "";
     const aimed = (textAt(state, `${attackPath}.roll.target.selected`) || "no") !== "no";
-    if (profile === "mace") return aimed ? null : { label: profileName(profile), add: 10 };
-    if (profile === "hook") return { label: profileName(profile), add: aimed ? -15 : -10 };
+    const line = (add: number) => ({ label: profileName(profile), part: code(SPACE.profile, profile), add });
+    if (profile === "mace") return aimed ? null : line(10);
+    if (profile === "hook") return line(aimed ? -15 : -10);
     return null;
 }
 
@@ -205,7 +207,7 @@ export function profileHit(state: SheetSignals, attackPath: string, selectedTab:
  * at `attackPath`: the profile's type, then the weapon entries of Hit of its
  * open tab, so a profile word counts for that profile only.
  */
-export function meleeHitLines(state: SheetSignals, attackPath: string, selectedTab: string | null): { label: string; add: number }[] {
+export function meleeHitLines(state: SheetSignals, attackPath: string, selectedTab: string | null): HitLine[] {
     const tabs = `${attackPath}.tabs.items`;
     const tab = openTab(idsInOrder(state, tabs), selectedTab);
     const profile = profileHit(state, attackPath, selectedTab);

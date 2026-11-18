@@ -74,7 +74,7 @@ const valueForRolls = (state: ReturnType<typeof sheet>, key: string) =>
 describe("the Quality of a melee weapon", () => {
     it("adds to its attacks and its Parry as a line named by the Quality and the item", () => {
         const good = sheet({ quality: "Good" });
-        expect(meleeHitLines(good, M1, null)).toEqual([{ label: "Good.Q (Longsword) +5", add: 5 }]);
+        expect(meleeHitLines(good, M1, null)).toMatchObject([{ label: "Good.Q (Longsword) +5", add: 5 }]);
         expect(meleeAttackBonus(good, M1)).toBe(5);
         const common = parryAt(sheet(), M1).value;
         teardownSheet();

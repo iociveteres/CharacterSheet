@@ -36,3 +36,13 @@ describe("the labels of the sheet's fixed lists", () => {
         expect(SKILLS_RIGHT[0].groupLabel).not.toBe("Linguistics");
     });
 });
+
+describe("the roll columns", () => {
+    it("name every option but the default for the roll label", async () => {
+        const { MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, optionValue } = await constantsIn("en");
+        for (const column of [...RANGED_ROLL_COLUMNS, ...MELEE_ROLL_COLUMNS]) {
+            const values = column.options.map(optionValue).filter(v => v !== column.default);
+            expect(Object.keys(column.names).sort(), column.key).toEqual(values.sort());
+        }
+    });
+});

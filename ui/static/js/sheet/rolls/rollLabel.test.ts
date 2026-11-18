@@ -7,9 +7,9 @@ import type { SheetSignals } from "../schema/sheet";
 // language loads the modules anew.
 async function load() {
     vi.resetModules();
-    const [{ RANGED_ROLL_COLUMNS, MELEE_ROLL_COLUMNS }, { selectedNames, rollLabel }] =
-        await Promise.all([import("../schema/constants"), import("./rollParts")]);
-    return { RANGED_ROLL_COLUMNS, MELEE_ROLL_COLUMNS, selectedNames, rollLabel };
+    const [{ RANGED_ROLL_COLUMNS, MELEE_ROLL_COLUMNS }, { selectedCodes, rollLabel }, { labelText }] =
+        await Promise.all([import("../schema/constants"), import("./rollParts"), import("../rollLabelText")]);
+    return { RANGED_ROLL_COLUMNS, MELEE_ROLL_COLUMNS, selectedCodes, rollLabel, labelText };
 }
 
 const rollOf = (selected: { [column: string]: string }) => ({
@@ -17,28 +17,36 @@ const rollOf = (selected: { [column: string]: string }) => ({
 }) as unknown as SheetSignals;
 
 describe("the roll label", () => {
-    it("names the selected options but the defaults, in lower case after the name", async () => {
-        const { RANGED_ROLL_COLUMNS, selectedNames, rollLabel } = await load();
+    it("codes the selected options but the defaults, worded in lower case after the name", async () => {
+        const { RANGED_ROLL_COLUMNS, selectedCodes, rollLabel, labelText } = await load();
         const state = rollOf({ aim: "half", target: "torso", range: "point-blank", rof: "single" });
-        expect(rollLabel("Lasgun", selectedNames(state, "r.roll", RANGED_ROLL_COLUMNS)))
-            .toBe("Lasgun, half aim, torso, point-blank");
+        const codes = selectedCodes(state, "r.roll", RANGED_ROLL_COLUMNS);
+        expect(codes).toEqual([["aim:half"], ["target:torso"], ["range:point-blank"]]);
+        expect(labelText(rollLabel("Lasgun", codes))).toBe("Lasgun, half aim, torso, point-blank");
     });
 
-    it("is in the language of the one who rolls", async () => {
+    it("codes the melee columns apart from the ranged ones whose keys they share", async () => {
+        const { MELEE_ROLL_COLUMNS, selectedCodes } = await load();
+        expect(selectedCodes(rollOf({ aim: "full", base: "charge", rof: "lightning" }), "r.roll", MELEE_ROLL_COLUMNS))
+            .toEqual([["aim:full"], ["meleeBase:charge"], ["meleeRof:lightning"]]);
+    });
+
+    it("keeps the same codes in every language and is worded in the reader's", async () => {
         const ranged = rollOf({ aim: "full", target: "head", range: "combat", rof: "suppression" });
         const english = await load();
-        const englishNames = english.selectedNames(ranged, "r.roll", english.RANGED_ROLL_COLUMNS);
+        const englishCodes = english.selectedCodes(ranged, "r.roll", english.RANGED_ROLL_COLUMNS);
+        const englishText = english.labelText(english.rollLabel("Lasgun", englishCodes));
         installDictionary("ru");
-        const { RANGED_ROLL_COLUMNS, MELEE_ROLL_COLUMNS, selectedNames, rollLabel } = await load();
-        const names = selectedNames(ranged, "r.roll", RANGED_ROLL_COLUMNS);
-        expect(names).toHaveLength(3);
-        expect(names).not.toEqual(englishNames);
-        expect(rollLabel("Лазган", names)).toMatch(/^Лазган, /);
-        expect(selectedNames(rollOf({ base: "charge", rof: "lightning" }), "r.roll", MELEE_ROLL_COLUMNS)).toHaveLength(2);
+        const { RANGED_ROLL_COLUMNS, selectedCodes, rollLabel, labelText } = await load();
+        const codes = selectedCodes(ranged, "r.roll", RANGED_ROLL_COLUMNS);
+        expect(codes).toEqual(englishCodes);
+        const text = labelText(rollLabel("Lasgun", codes));
+        expect(text).not.toBe(englishText);
+        expect(text).toMatch(/^Lasgun, [^A-Za-z]+$/);
     });
 
-    it("names an option the column does not know by its value", async () => {
-        const { RANGED_ROLL_COLUMNS, selectedNames } = await load();
-        expect(selectedNames(rollOf({ range: "orbital" }), "r.roll", RANGED_ROLL_COLUMNS)).toEqual(["orbital"]);
+    it("words an option the column does not know as its value", async () => {
+        const { RANGED_ROLL_COLUMNS, selectedCodes, rollLabel, labelText } = await load();
+        expect(labelText(rollLabel("Lasgun", selectedCodes(rollOf({ range: "orbital" }), "r.roll", RANGED_ROLL_COLUMNS)))).toBe("Lasgun, orbital");
     });
 });

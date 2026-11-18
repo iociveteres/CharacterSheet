@@ -23,7 +23,7 @@ beforeEach(() => {
 afterEach(() => teardownSheet());
 
 const cast = (over: Partial<Cast> = {}): Cast =>
-    ({ effectivePR: 3, kick: 0, safe: false, target: 50, bonusSuccesses: 0, label: "Shield", sustain: { free: false }, ...over });
+    ({ effectivePR: 3, kick: 0, safe: false, target: 50, bonusSuccesses: 0, label: { n: "Shield" }, sustain: { free: false }, ...over });
 
 /** Casts with `over`; returns the cast's promise and its test's requestId. */
 function send(over: Partial<Cast> = {}): { done: Promise<void>; requestId: string } {

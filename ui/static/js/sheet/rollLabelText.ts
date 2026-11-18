@@ -5,7 +5,19 @@
 // shared examples of internal/roomws/testdata/roll_labels.json.
 import { t } from "../i18n";
 import { kindOf } from "./kinds";
-import { MOD, NAME, SPACE, WRAP, type Label, type Params, type Part } from "./rollLabel";
+import { MOD, NAME, SPACE, SRC, WRAP, type Label, type Params, type Part } from "./rollLabel";
+import { columnCode, MELEE_PROFILES, MELEE_ROLL_COLUMNS, optionValue, RANGED_ROLL_COLUMNS, type RollColumn } from "./schema/constants";
+import { GRIP_KEYS, GRIP_SHORT, type GripKey } from "./weapons/gripRules";
+import { STANCES } from "./weapons/stanceRules";
+import { profileName } from "./weapons/melee";
+import { qualityName, type Quality } from "./gear/quality";
+import { signed } from "./components/format";
+
+/**
+ * The entry of `table` named `key`, none for a name only its prototype has:
+ * a stored label is anyone's, and "constructor" passes the code mask.
+ */
+const own = <T>(table: { readonly [key: string]: T }, key: string): T | undefined => (Object.hasOwn(table, key) ? table[key] : undefined);
 
 /** The words of `<space>:<value>`; null for a value the space doesn't know. */
 type Words = (value: string, params: Params, kind: string | undefined) => string | null;
@@ -17,12 +29,14 @@ function param(params: Params, name: string, kind: string | undefined): string |
 }
 
 const NAMES: Record<string, (kind: string | undefined) => string> = {
+    [NAME.unknown]: () => t("common.unknown"),
     [NAME.initiative]: () => t("sheet.terms.stat.initiative"),
     [NAME.unknownPower]: kind => (kind === "pathfinder_crusade" ? t("sheet.magicPf.psykana.unknownPower") : t("sheet.magic.psykana.unknownPower")),
     [NAME.techPower]: () => t("sheet.termsPowers.tech.techPower"),
     [NAME.rangedAttack]: () => t("sheet.weapons.rangedAttack"),
     [NAME.meleeAttack]: () => t("sheet.weapons.meleeAttack"),
     [NAME.phenomena]: () => t("sheet.magic.phenomena.label"),
+    [NAME.compensator]: () => t("sheet.termsPowers.techType.compensator"),
 };
 
 const MODS: Record<string, (params: Params, kind: string | undefined) => string> = {
@@ -33,21 +47,71 @@ const MODS: Record<string, (params: Params, kind: string | undefined) => string>
     [MOD.parry]: () => t("sheet.termsSkills.skill.parry"),
 };
 
+// The tables below are the sheet's own, whose words are taken when their
+// modules load: the page's language is fixed, and so the reader's.
+
+/** The roll columns by the namespace of their codes; the ranged and melee ones share aim and target. */
+const COLUMNS = new Map<string, RollColumn>([...RANGED_ROLL_COLUMNS, ...MELEE_ROLL_COLUMNS].map(c => [columnCode(c), c]));
+
+/** A grip is its keys joined by "+", each worded as the chip writes it (gripRules.ts gripText). */
+function gripWords(value: string): string | null {
+    const keys = value.split("+");
+    return keys.every(key => GRIP_KEYS.includes(key as GripKey)) ? keys.map(key => GRIP_SHORT[key as GripKey]).join("+") : null;
+}
+
+const STANCE = new Map(STANCES.map(s => [s.key as string, s]));
+const STANCE_SOURCE = `${SRC.stance}.`;
+
+/** What the sheet calls a source that has no name of its own, or a stance by its full name. */
+function sourceWords(value: string): string | null {
+    if (value === SRC.condition) return t("sheet.weapons.condition");
+    if (value === SRC.item) return t("sheet.gear.item");
+    return value.startsWith(STANCE_SOURCE) ? STANCE.get(value.slice(STANCE_SOURCE.length))?.source ?? null : null;
+}
+
+const PROFILES = new Set(MELEE_PROFILES.map(optionValue));
+const QUALITIES = new Set<string>(["Poor", "Common", "Good", "Best"] satisfies Quality[]);
+
 const SPACES: Record<string, Words> = {
-    [SPACE.name]: (value, _, kind) => NAMES[value]?.(kind) ?? null,
-    [SPACE.mod]: (value, params, kind) => MODS[value]?.(params, kind) ?? null,
+    [SPACE.name]: (value, _, kind) => own(NAMES, value)?.(kind) ?? null,
+    [SPACE.mod]: (value, params, kind) => own(MODS, value)?.(params, kind) ?? null,
+    // In lower case: they follow the roll's name inside the phrase.
+    ...Object.fromEntries([...COLUMNS].map(([space, column]) => [space, (value: string) => own(column.names, value)?.toLowerCase() ?? null])),
+    [SPACE.grip]: gripWords,
+    [SPACE.stance]: value => STANCE.get(value)?.name ?? null,
+    [SPACE.profile]: value => (value && value !== "no" && PROFILES.has(value) ? profileName(value) : null),
+    [SPACE.quality]: value => (QUALITIES.has(value) ? qualityName(value as Quality) : null),
+    [SPACE.src]: sourceWords,
+    // What adds to the roll, by its source: "Aggressive stance +10".
+    [SPACE.hit]: (_, params, kind) => `${param(params, "s", kind)} ${signed(Number(params.n ?? 0))}`,
+    // A line a gear item gives the weapon: its source, and the item unless the item is the source (itemLinkRules.ts linkedLabel).
+    [SPACE.linked]: (_, params, kind) => {
+        const source = String(param(params, "s", kind));
+        const item = String(param(params, "i", kind));
+        return source === item ? source : `${source} (${item})`;
+    },
 };
 
 /** Codes that were renamed or merged: old code → the code it reads as now. */
 const ALIASES: Record<string, string> = {};
 
+/** The space and the value of a code, through its alias. */
+function split(code: string): [space: string, value: string] {
+    const name = own(ALIASES, code) ?? code;
+    const colon = name.indexOf(":");
+    return colon < 0 ? [name, ""] : [name.slice(0, colon), name.slice(colon + 1)];
+}
+
+/** The words of a code; null when no space knows it. */
+export function codeWords(code: string, params: Params, kind: string | undefined): string | null {
+    const [space, value] = split(code);
+    return own(SPACES, space)?.(value, params, kind) ?? null;
+}
+
 /** The words of a code; a code no space knows shows its value, or itself without one. */
 function codeText(code: string, params: Params, kind: string | undefined): string {
-    const name = ALIASES[code] ?? code;
-    const colon = name.indexOf(":");
-    const space = colon < 0 ? name : name.slice(0, colon);
-    const value = colon < 0 ? "" : name.slice(colon + 1);
-    return SPACES[space]?.(value, params, kind) ?? (value || space);
+    const [space, value] = split(code);
+    return codeWords(code, params, kind) ?? (value || space);
 }
 
 function partText(part: Part, kind: string | undefined): string {
@@ -63,7 +127,7 @@ export function labelText(label: Label): string {
     const words = (p: Part) => partText(p, label.k);
     const name = label.t?.length ? `${words(label.n)} (${label.t.map(words).join(", ")})` : words(label.n);
     const text = label.m?.length ? `${name}, ${label.m.map(words).join(", ")}` : name;
-    return (label.w && WRAPPERS[label.w]?.(text)) || text;
+    return (label.w && own(WRAPPERS, label.w)?.(text)) || text;
 }
 
 /** Whether the label has anything to word in the reader's language; one without is sent as text alone. */

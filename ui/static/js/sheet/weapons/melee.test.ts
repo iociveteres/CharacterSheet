@@ -114,7 +114,7 @@ describe("the type of the profile attacked with", () => {
         expect(meleeAttackBonus(weapon({}, { profile: "mace" }), A)).toBe(10);
         expect(meleeAttackBonus(weapon(aimedAt("no"), { profile: "mace" }), A)).toBe(10);
         expect(meleeAttackBonus(weapon(aimedAt("head"), { profile: "mace" }), A)).toBe(0);
-        expect(profileHit(weapon({}, { profile: "mace" }), A, null)).toEqual({ label: "mace", add: 10 });
+        expect(profileHit(weapon({}, { profile: "mace" }), A, null)).toMatchObject({ label: "mace", add: 10 });
     });
 
     it("takes 10 of the Hook, 15 aimed", () => {

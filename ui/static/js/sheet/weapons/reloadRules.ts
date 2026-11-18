@@ -71,7 +71,7 @@ export function reloadAt(state: SheetSignals, path: string, unit: ReloadUnit): R
     const rapid = talentNames(state).find(name => RAPID_RELOAD.includes(nameKey(name)));
     const bonuses: WeaponBonus[] = [
         ...weaponBonuses(state, path, "reload"),
-        ...(rapid ? [{ factor: 0.5, roundUp: false, label: rapid }] : []),
+        ...(rapid ? [{ factor: 0.5, roundUp: false, label: rapid, part: rapid }] : []),
     ];
     const lines: BreakdownLine[] = [];
     let halves = own;

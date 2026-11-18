@@ -628,9 +628,17 @@ export interface RollColumn<K extends string = string> {
     readonly options: readonly Option[];
     /** The option that counts when none is selected; the roll label leaves it out. */
     readonly default: string;
-    /** How the roll label names an option whose label is a short form (rolls/rollParts.ts selectedNames). */
-    readonly names?: { readonly [value: string]: string };
+    /** How the roll label names each option but the default, in place of its label, which may be a short form. */
+    readonly names: { readonly [value: string]: string };
+    /**
+     * The namespace of its options' codes in a roll label (sheet/rollLabel.ts), when
+     * not its key: the melee columns whose keys ranged ones share. Stored data: never change it.
+     */
+    readonly code?: string;
 }
+
+/** The namespace of the codes of `column`'s options in a roll label. */
+export const columnCode = (column: RollColumn): string => column.code ?? column.key;
 
 /** The field of a roll column that holds an option's modifier: "point-blank" is "pointBlank". */
 export const modifierField = (value: string): string => value.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -659,6 +667,14 @@ const TARGET = column({
         { value: "joint", label: t("sheet.termsRolls.target.joint") },
         { value: "eyes", label: t("sheet.termsRolls.target.eyes") },
     ],
+    names: {
+        torso: t("sheet.termsRolls.target.torso"),
+        leg: t("sheet.terms.bodyPart.leg"),
+        arm: t("sheet.terms.bodyPart.arm"),
+        head: t("sheet.terms.bodyPart.head"),
+        joint: t("sheet.termsRolls.target.joint"),
+        eyes: t("sheet.termsRolls.target.eyes"),
+    },
 });
 
 export const RANGED_ROLL_COLUMNS = [
@@ -698,7 +714,7 @@ export const MELEE_ROLL_COLUMNS = [
     AIM,
     TARGET,
     column({
-        key: "base", label: t("sheet.termsRolls.rollColumn.base"), default: "standard",
+        key: "base", code: "meleeBase", label: t("sheet.termsRolls.rollColumn.base"), default: "standard",
         options: [
             { value: "standard", label: t("sheet.termsRolls.meleeBase.standard") },
             { value: "charge", label: t("sheet.termsRolls.meleeBase.charge") },
@@ -708,6 +724,7 @@ export const MELEE_ROLL_COLUMNS = [
             { value: "free", label: t("sheet.termsRolls.meleeBase.free") },
         ],
         names: {
+            charge: t("sheet.termsRolls.meleeBase.charge"),
             full: t("sheet.termsRolls.meleeBase.full"),
             careful: t("sheet.schema.rollName.meleeBase.careful"),
             mounted: t("sheet.schema.rollName.meleeBase.mounted"),
@@ -715,7 +732,7 @@ export const MELEE_ROLL_COLUMNS = [
         },
     }),
     column({
-        key: "rof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
+        key: "rof", code: "meleeRof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
         options: [
             { value: "single", label: t("sheet.termsRolls.meleeRof.single") },
             { value: "quick", label: t("sheet.termsRolls.meleeRof.quick.short") },

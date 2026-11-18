@@ -31,7 +31,8 @@ import { armourComputeds, woundsLeft, type ArmourComputeds } from "../gear/armou
 import { gridSpecOf } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { powerPR } from "../magic/powerDamage";
-import { profileLabel } from "../weapons/weaponDamage";
+import { profileRollLabel } from "../weapons/weaponDamage";
+import { code, label as rollLabelOf, NAME, SPACE, type Label, type Part } from "../rollLabel";
 import { statAt } from "../rolls/damage";
 import { characteristicSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
 import { movementSummary } from "../combat/movementSummary";
@@ -316,7 +317,7 @@ function StatSkills() {
  * Damage, pen and type of the attack, melee profile or power at `itemPath`;
  * the damage label rolls the damage.
  */
-function DamageLine({ owner, itemPath, label }: { owner: FieldOwner; itemPath: string; label: () => string }) {
+function DamageLine({ owner, itemPath, label }: { owner: FieldOwner; itemPath: string; label: () => Label }) {
     const { state } = useSheet();
     const damage = statAt(state, owner.damage, itemPath, "damage").text;
     const pen = statAt(state, owner.damage, itemPath, "pen").text;
@@ -393,6 +394,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const name = textAt(state, `${path}.name`) || (domain === "ranged" ? t("sheet.weapons.rangedAttack") : t("sheet.weapons.meleeAttack"));
+    const rollName: Part = textAt(state, `${path}.name`) || code(SPACE.name, domain === "ranged" ? NAME.rangedAttack : NAME.meleeAttack);
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const special = textAt(state, `${path}.special`);
     const shield = domain === "melee" && valueAt(state, `${path}.group`) === "primary (shield)";
@@ -411,7 +413,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
             {domain === "ranged" ? (
                 <>
                     <div class="stat-line">
-                        <DamageLine owner={WEAPON_FIELD} itemPath={path} label={() => name} />
+                        <DamageLine owner={WEAPON_FIELD} itemPath={path} label={() => rollLabelOf(rollName)} />
                         {special && <span class="stat-special">{special}</span>}
                     </div>
                     <div class="stat-line">
@@ -419,7 +421,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
                         <span class="stat-clip">{t("sheet.termsArms.weaponField.clip.short")} <TextField field="clipCur" class="shorter-input" /> / {textAt(state, `${path}.clipMax`)}</span>
                     </div>
                 </>
-            ) : <MeleeProfiles path={path} name={name} />}
+            ) : <MeleeProfiles path={path} name={rollName} />}
         </Scope>
     );
 }
@@ -440,7 +442,7 @@ function StatShield({ path }: { path: string }) {
 }
 
 /** A line for each profile of the melee attack at `path`. */
-function MeleeProfiles({ path, name }: { path: string; name: string }) {
+function MeleeProfiles({ path, name }: { path: string; name: Part }) {
     const { state } = useSheet();
     const tabs = `${path}.tabs.items`;
     // In Mordhau every profile is the one-handed Mace's (weapons/gripRules.ts).
@@ -455,7 +457,7 @@ function MeleeProfiles({ path, name }: { path: string; name: string }) {
                     <Scope key={tabId} dataId={tabId} class="stat-line stat-profile">
                         {/* An empty profile is Other; "no" is no profile at all. */}
                         {profile !== "no" && <span class="stat-profile-name">{PROFILE_LABELS.get(profile) ?? profile}</span>}
-                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, profile)} />
+                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileRollLabel(name, profile)} />
                         {special && <span class="stat-special">{special}</span>}
                     </Scope>
                 );
@@ -536,7 +538,7 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                 <div class="stat-line">
                     {action && <span data-id="action">{action}</span>}
                     {range && <span data-id="range">{t("sheet.termsPowers.field.range")} {range}</span>}
-                    {hasDamage && <DamageLine owner={owner} itemPath={path} label={() => (psychic ? `${name}, PR ${pr}` : name)} />}
+                    {hasDamage && <DamageLine owner={owner} itemPath={path} label={() => rollLabelOf(psychic ? `${name}, PR ${pr}` : name)} />}
                 </div>
             )}
             {special && <div class="stat-line stat-special">{special}</div>}

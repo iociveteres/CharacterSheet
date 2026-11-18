@@ -5,7 +5,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ComponentChildren } from "preact";
 import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
-import { modifierField, optionLabel, optionValue, type RollColumn, type RollDomain } from "../schema/constants";
+import { columnCode, modifierField, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
@@ -14,6 +14,7 @@ import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
 import { onDeletedSkill, rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
 import { t } from "../../i18n";
+import { code, label as labelOf, type Label, type Part } from "../rollLabel";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -81,24 +82,21 @@ export function extraNames(state: SheetSignals, rollPath: string): string[] {
 }
 
 /**
- * Names of the non-default options selected in the columns, for the roll label:
- * the name or label of the option in lower case, as they follow the roll's
- * name; an option the column does not know by its value.
+ * The codes of the non-default options selected in the columns, for the roll
+ * label, which words them in lower case (rollLabelText.ts); an option the
+ * column does not know reads as its value.
  */
-export function selectedNames(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): string[] {
-    const out: string[] = [];
-    for (const { key, default: def, names, options } of columns) {
-        const selected = String(peekAt(state, `${rollPath}.${key}.selected`) ?? "");
-        if (!selected || selected === def) continue;
-        const option = options.find(o => optionValue(o) === selected);
-        const name = names?.[selected] ?? (option && optionLabel(option));
-        out.push(name ? name.toLowerCase() : selected);
+export function selectedCodes(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): Part[] {
+    const out: Part[] = [];
+    for (const column of columns) {
+        const selected = String(peekAt(state, `${rollPath}.${column.key}.selected`) ?? "");
+        if (selected && selected !== column.default) out.push(code(columnCode(column), selected));
     }
     return out;
 }
 
-/** `name, modifier, modifier` or just the name. */
-export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
+/** `name (tag, tag), modifier, modifier`, without the brackets when there are no tags. */
+export const rollLabel = (name: Part, modifiers: Part[], tags: Part[] = []): Label => labelOf(name, { t: tags, m: modifiers });
 
 /** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
 export function useRollTest(block: TestBlock, rollPath: string, cast?: CastOn) {
@@ -149,13 +147,13 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
 
 /** A damage label that rolls the damage of the item of `owner` at `itemPath` with its modifiers. */
 export function DamageLabel({ owner, itemPath, label, children = `${t("sheet.termsArms.weaponField.dmg")}:` }: {
-    owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
+    owner: DamageOwner; itemPath: string; label: () => Label; children?: ComponentChildren;
 }) {
     const { state, rolls, preview } = useSheet();
     if (preview) return <label>{children}</label>;
     const roll = () => {
         const expression = untracked(() => damageRoll(state, owner, itemPath));
-        if (expression) void rolls.exact(expression, { n: label() });
+        if (expression) void rolls.exact(expression, label());
     };
     return <label class="rollable" onClick={roll}>{children}</label>;
 }

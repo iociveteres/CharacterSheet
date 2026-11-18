@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import type { SheetOps } from "../core/actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { peekAt } from "../core/sync";
+import type { Label } from "../rollLabel";
 
 export interface Cast {
     effectivePR: number;
@@ -14,7 +15,7 @@ export interface Cast {
     /** The test: its target, bonus successes and label in the chat. */
     target: number;
     bonusSuccesses: number;
-    label: string;
+    label: Label;
     /** Sustain the power once its test succeeds, free by Cycle or not; null leaves its sustaining alone. */
     sustain: { free: boolean } | null;
     /** Pays the cast once its test succeeds: a failed one costs nothing; a kind's (SheetKindDef.castCost). */
@@ -37,7 +38,7 @@ export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<vo
     const requestId = nanoid();
     actions.batch(path, { cast: { pr, kick, safe, phenomena: called, requestId } });
     if (!cast.arts) actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
-    return sheet.rolls.versus(cast.target, cast.bonusSuccesses, { n: cast.label }, requestId).then(outcome => {
+    return sheet.rolls.versus(cast.target, cast.bonusSuccesses, cast.label, requestId).then(outcome => {
         // A test that never comes back (the sheet closed, the connection lost) pays nothing either.
         if (outcome?.success) cast.pay?.();
         // From the sustaining as it is now: casts of a Repeatable power may have come back meanwhile.

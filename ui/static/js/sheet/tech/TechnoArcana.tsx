@@ -153,7 +153,7 @@ export function CompensationRoll() {
         const modifier = parseInt(String(peekAt(state, `${rollPath}.modifier`)), 10) || 0;
         const compensator = t("sheet.termsPowers.techType.compensator");
         const label = rollLabel(due ? `${compensator}, ${due.name}` : compensator, [`X = ${modifier}`, ...extraNames(state, rollPath)]);
-        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), { n: label });
+        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), label);
         const power = String(peekAt(state, `${COMPENSATION}.power`) ?? "");
         if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
         dropdown.close();

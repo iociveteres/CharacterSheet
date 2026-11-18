@@ -36,6 +36,11 @@ describe("the words of a label", () => {
         expect(labelText(label("Lasgun", { m: [["aim:fullAim"], ["nosuch"]] }))).toBe("Lasgun, fullAim, nosuch");
     });
 
+    it("show a code named like a property of every object by its value too", () => {
+        expect(labelText(label(["constructor"], { m: [["aim:toString"], ["name:constructor"], ["mod:hasOwnProperty"]], w: "constructor" })))
+            .toBe("constructor, toString, constructor, hasOwnProperty");
+    });
+
     it("fill a phrase with the parameters of its code", () => {
         installDictionary("ru");
         expect(labelText(label(code(SPACE.mod, MOD.effectivePR, { pr: 3 })))).toBe(t("sheet.magic.roll.effectivePR", { pr: 3 }));

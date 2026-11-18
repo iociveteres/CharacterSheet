@@ -21,8 +21,10 @@ import { isStackExpr, resolveStackExpr } from "../modifiers/entryValues";
 import { signed } from "../components/format";
 import { collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
 import { gearItemEntries } from "../gear/gearItem";
+import type { GearItem } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
-import { linkedItem, linkedLabel } from "../gear/itemLinkRules";
+import { linkedItem, linkedLabel, linkedPart } from "../gear/itemLinkRules";
+import { code, SPACE, SRC, type Part } from "../rollLabel";
 import { qualityAdds } from "../gear/quality";
 import type { RangeStep, Step } from "./gripRules";
 import { textAt } from "../core/sync";
@@ -66,6 +68,8 @@ export interface WeaponAdd {
     /** The value as typed when it is no number nor stack expression, as "½WS.b▲": Dmg and Pen count it as a damage modifier. */
     expr?: string;
     label: string;
+    /** The label in a roll's label: what of it the sheet names goes in as codes. */
+    part: Part;
     /** An entry of the linked item that names "This item", as an enchantment of the weapon. */
     ofItem?: boolean;
 }
@@ -75,6 +79,7 @@ export interface WeaponFactor {
     factor: number;
     roundUp: boolean;
     label: string;
+    part: Part;
     ofItem?: boolean;
 }
 
@@ -85,12 +90,24 @@ const isAdd = (b: WeaponBonus): b is WeaponAdd => "add" in b;
 const isFactor = (b: WeaponBonus): b is WeaponFactor => "factor" in b;
 
 /** What the value of `entry` does at `stacks`: "×2" multiplies, anything else adds as the stacks resolve it. */
-function bonusOf(entry: Entry, stacks: number, label: string): WeaponBonus {
+function bonusOf(entry: Entry, stacks: number, label: string, part: Part): WeaponBonus {
     const value = String(entry.weaponBonus?.value ?? "");
     const factor = readMultiplier(value);
-    if (factor) return { ...factor, label };
+    if (factor) return { ...factor, label, part };
     const add = resolveStackExpr(value, stacks);
-    return isStackExpr(value) ? { add, label } : { add, expr: value.trim(), label };
+    return isStackExpr(value) ? { add, label, part } : { add, expr: value.trim(), label, part };
+}
+
+/** The source of a condition's, implant's or stance's entry: its name, the code of a stance's, "Condition" without one. */
+function sourceOf(ref: EntryRef): { label: string; part: Part } {
+    const name = String(ref.source.name?.value ?? "");
+    return { label: name || t("sheet.weapons.condition"), part: ref.source.labelPart ?? (name || code(SPACE.src, SRC.condition)) };
+}
+
+/** The source of an entry of the linked `item`: its name, "Item" without one; and the item, unless it is the source. */
+function itemSourceOf(ref: EntryRef, item: GearItem): { label: string; part: Part } {
+    const name = String(ref.source.name?.value ?? "").trim();
+    return { label: linkedLabel(item, name || t("sheet.gear.item")), part: linkedPart(item, name || code(SPACE.src, SRC.item)) };
 }
 
 const ofField = (field: WeaponField) => (e: Entry) => (e.weaponField?.value || "rng") === field;
@@ -116,9 +133,14 @@ export function weaponBonuses(state: SheetSignals, weaponPath: string, field: We
         return !unknownWeaponWords(state, name, inItem).length && (inItem || weaponWords(name).some(w => names(w, is)));
     };
     return [
-        ...entries.filter(ref => counts(ref, false)).map(ref => bonusOf(ref.entry, ref.stacks, String(ref.source.name?.value || t("sheet.weapons.condition")))),
-        ...own.filter(ref => counts(ref, true))
-            .map(ref => ({ ...bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || t("sheet.gear.item"))), ofItem: true })),
+        ...entries.filter(ref => counts(ref, false)).map(ref => {
+            const source = sourceOf(ref);
+            return bonusOf(ref.entry, ref.stacks, source.label, source.part);
+        }),
+        ...own.filter(ref => counts(ref, true)).map(ref => {
+            const source = itemSourceOf(ref, item!);
+            return { ...bonusOf(ref.entry, ref.stacks, source.label, source.part), ofItem: true };
+        }),
         ...quality,
     ];
 }
@@ -146,13 +168,25 @@ export const rangeBonusSteps = (state: SheetSignals, tabPath: string): RangeStep
 export const meleeRangeFactors = (state: SheetSignals, tabPath: string): WeaponFactor[] =>
     (["rng", "rngMin", "rngMax"] as const).flatMap(field => weaponFactors(state, tabPath, field));
 
+/** A line of a roll's label that adds to the roll: `label` for the title, `part` for the label. */
+export interface HitLine {
+    label: string;
+    part: Part;
+    add: number;
+}
+
 /**
  * What the weapon entries add to the attack rolls of the weapon at
  * `weaponPath`, a melee profile tab or a ranged attack, each named with its
  * value for the roll's label.
  */
-export const hitLines = (state: SheetSignals, weaponPath: string): { label: string; add: number }[] =>
-    weaponAdds(state, weaponPath, "hit").map(b => ({ label: `${b.label} ${signed(b.add)}`, add: b.add }));
+export const hitLines = (state: SheetSignals, weaponPath: string): HitLine[] =>
+    weaponAdds(state, weaponPath, "hit").map(b => ({
+        label: `${b.label} ${signed(b.add)}`,
+        // Text alone stays text: there is nothing in it for the reader to word.
+        part: typeof b.part === "string" ? `${b.part} ${signed(b.add)}` : code(SPACE.hit, null, { s: b.part, n: b.add }),
+        add: b.add,
+    }));
 
 /** The steps the weapon entries add to the Balance of the melee attack at `attackPath`. */
 export const balanceBonusSteps = (state: SheetSignals, attackPath: string): Step[] =>

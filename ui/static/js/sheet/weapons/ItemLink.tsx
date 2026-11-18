@@ -20,6 +20,7 @@ import { qualitySpecial, shownSpecial } from "../gear/quality";
 import { traitLinkOf } from "./traitLinkRules";
 import { materialOf } from "../gear/materialRules";
 import { textAt } from "../core/sync";
+import { WRAP, type Label } from "../rollLabel";
 
 const ITEM_TITLE = t("sheet.weapons.link.itemTitle");
 const TRAIT_TITLE = t("sheet.weapons.link.traitTitle");
@@ -158,8 +159,8 @@ export function SpecialField({ weaponPath }: { weaponPath: string }) {
 }
 
 /** The roll label of a damage, marked while the linked item is broken: the GM halves what armour lets through. */
-export const damageRollLabel = (state: SheetSignals, weaponPath: string, label: string) =>
-    (brokenItem(state, weaponPath) ? t("sheet.weapons.link.brokenRoll", { label }) : label);
+export const damageRollLabel = (state: SheetSignals, weaponPath: string, label: Label): Label =>
+    (brokenItem(state, weaponPath) ? { ...label, w: WRAP.broken } : label);
 
 /** The entry of `collection` named `name` exactly, in any case; null when the rulebook has none or no answer comes. */
 export async function findEntry(autocomplete: Autocomplete, kind: string, collection: string, name: string): Promise<AutocompleteResult | null> {

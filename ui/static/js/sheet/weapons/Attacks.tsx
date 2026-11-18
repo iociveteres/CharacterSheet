@@ -26,8 +26,9 @@ import { MELEE_ATTACKS, RANGED_ATTACKS } from "../gear/itemLinkRules";
 import { MACE_PROFILE, gripText } from "./gripRules";
 import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines, profileName } from "./melee";
 import { hitLines } from "./weaponBonus";
-import { meleeRollName, stanceOf, stanceTitle } from "./stanceRules";
-import { STRENGTH_BONUS, WEAPON_DAMAGE, WEAPON_FIELD, profileLabel } from "./weaponDamage";
+import { meleeRollTags, stanceOf, stanceTitle } from "./stanceRules";
+import { STRENGTH_BONUS, WEAPON_DAMAGE, WEAPON_FIELD, profileRollLabel } from "./weaponDamage";
+import { code, label, NAME, SPACE, type Label } from "../rollLabel";
 import { modsAt, modsGrid } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { peekAt, textAt, valueAt } from "../core/sync";
@@ -39,7 +40,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { RollDefaults } from "../payload";
 import {
     DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel, TestSelect,
-    attackTotal, extraNames, rollLabel, selectedNames, useRollTest,
+    attackTotal, extraNames, rollLabel, selectedCodes, useRollTest,
 } from "../rolls/rollParts";
 
 export interface AttackRollProps {
@@ -62,12 +63,7 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
         ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged") + hitLines(state, path).reduce((sum, line) => sum + line.add, 0)
         : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path, tab.value)));
     const roll = () => {
-        const typed = String(peekAt(state, `${path}.name`) || t("common.unknown"));
-        const melee = block === "meleeAttacks";
-        const name = melee ? meleeRollName(state, path, typed) : typed;
-        const hit = melee ? meleeHitLines(state, path, tab.peek()) : hitLines(state, path);
-        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...hit.map(line => line.label), ...extraNames(state, rollPath)]);
-        void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), { n: label });
+        void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), attackRollLabel(state, path, columns, block, tab.peek()));
         close();
     };
     const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";
@@ -81,6 +77,21 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
                 <TestSelect block={block} />
             </RollResult>
         </Scope>
+    );
+}
+
+/**
+ * The label of an attack roll of the attack at `path` of `block`, with the
+ * profile tab `tab` open: its name, a melee attack's grip and stance, the
+ * options selected in `columns`, what adds to the roll and the extra modifiers.
+ */
+export function attackRollLabel(state: SheetSignals, path: string, columns: readonly RollColumn[], block: AttackRollProps["block"], tab: string | null): Label {
+    const melee = block === "meleeAttacks";
+    const hit = melee ? meleeHitLines(state, path, tab) : hitLines(state, path);
+    return rollLabel(
+        String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.unknown),
+        [...selectedCodes(state, `${path}.roll`, columns), ...hit.map(line => line.part), ...extraNames(state, `${path}.roll`)],
+        melee ? meleeRollTags(state, path) : [],
     );
 }
 
@@ -125,7 +136,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><RangeField /></Row>
-                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, String(peekAt(state, `${path}.name`) || t("sheet.weapons.rangedAttack")))} />}>
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.rangedAttack)))} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
                 <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
@@ -264,8 +275,8 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
         const grip = heldGrip(state, attackPath).held;
         return grip ? gripText(grip) : "";
     }).value;
-    const damageLabel = () => damageRollLabel(state, tabPath, profileLabel(
-        String(peekAt(state, `${attackPath}.name`) || t("sheet.weapons.meleeAttack")),
+    const damageLabel = () => damageRollLabel(state, tabPath, profileRollLabel(
+        String(peekAt(state, `${attackPath}.name`) ?? "") || code(SPACE.name, NAME.meleeAttack),
         mace ? MACE_PROFILE.profile : String(peekAt(state, `${tabPath}.profile`) ?? ""),
     ));
     return (

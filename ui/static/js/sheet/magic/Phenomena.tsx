@@ -100,7 +100,7 @@ export function PhenomenaRoll() {
     const roll = () => {
         const { total, power } = summary.peek();
         const kick = power && !power.safe && power.kick > 0 ? [t("sheet.magic.roll.kick", { kick: power.kick })] : [];
-        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, { n: rollLabel(t("sheet.magic.phenomena.label"), power ? [power.name, ...kick] : []) });
+        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, rollLabel(t("sheet.magic.phenomena.label"), power ? [power.name, ...kick] : []));
         settle();
     };
     return (

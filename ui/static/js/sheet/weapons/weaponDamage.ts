@@ -16,6 +16,7 @@ import { textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "../rolls/damage";
 import type { SheetSignals } from "../schema/sheet";
 import type { FieldOwner } from "../rolls/ModdedField";
+import { code, label, SPACE, type Label, type Part } from "../rollLabel";
 
 /**
  * The Special of the item at `itemPath` as it counts: its own (the Mace's in
@@ -37,6 +38,10 @@ export const STRENGTH_BONUS: WeaponMod = { expr: "S.b", enabled: true };
 
 /** The label of a melee profile's rolls: the weapon, and the profile `value` unless it is none. */
 export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profileName(profile)}` : weapon);
+
+/** profileLabel as a roll's label, the profile as its code. */
+export const profileRollLabel = (weapon: Part, profile: string): Label =>
+    label(weapon, { m: profile && profile !== "no" ? [code(SPACE.profile, profile)] : [] });
 
 /** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item, X of a linked trait and talents (talentBonus.ts) add to them. */
 export const WEAPON_DAMAGE: DamageOwner = {

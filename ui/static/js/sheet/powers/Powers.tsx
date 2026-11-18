@@ -116,7 +116,7 @@ function Power({ sort, itemId, newPower }: { sort: PowerSort; itemId: string; ne
                 <Fields path={path} />
                 <div class="layout-row">
                     <Row cls="weapon-range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><TextField field="weaponRange" /></Row>
-                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => sort.damageLabel(state, path, terms)} />}>
+                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => ({ n: sort.damageLabel(state, path, terms) })} />}>
                         <ModdedField stat="damage" owner={field} />
                     </Row>
                     <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={field} /></Row>

@@ -19,10 +19,12 @@ import { WEAPON_DAMAGE } from "./weaponDamage";
 import { damageSuggestions } from "../rolls/damageSuggestions";
 import { GRIP_SHORT, gripText, gripTitle, type Grip } from "./gripRules";
 import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "./melee";
-import { meleeRollName } from "./stanceRules";
+import { meleeRollTags } from "./stanceRules";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
 import { parryAt, parryBonusSuccesses, parryModValue } from "./parry";
 import { peekAt, textAt, valueAt } from "../core/sync";
 import { ExprInput } from "../rolls/ModdedField";
+import type { SheetSignals } from "../schema/sheet";
 
 /** What a breakdown shows: the value's own base, the lines that changed it and the total. */
 export interface Breakdown {
@@ -235,6 +237,11 @@ function ParryModRow({ itemId, attackPath }: { itemId: string; attackPath: strin
     );
 }
 
+/** The label of a Parry with the melee attack at `attackPath`: its name with its grip and stance, then Parry. */
+export const parryRollLabel = (state: SheetSignals, attackPath: string): Label =>
+    label(String(peekAt(state, `${attackPath}.name`) ?? "") || code(SPACE.name, NAME.meleeAttack),
+        { t: meleeRollTags(state, attackPath), m: [code(SPACE.mod, MOD.parry)] });
+
 /**
  * Parry with the melee attack at `attackPath`: "Parry:" rolls it; the total's
  * ⚙ breaks it down and holds the weapon's modifiers. At Balance −2 the
@@ -248,8 +255,7 @@ function ParryField({ attackPath }: { attackPath: string }) {
     const title = canParry ? [...lines.map(l => `${l.text} ${l.label}`), `= ${text}`].join("\n") : t("sheet.weapons.parry.cannot");
     const roll = () => {
         const { value } = parry.peek();
-        const name = String(peekAt(state, `${attackPath}.name`) || t("sheet.weapons.meleeAttack"));
-        void rolls.versus(value, parryBonusSuccesses(state), { n: `${meleeRollName(state, attackPath, name)}, ${t("sheet.termsSkills.skill.parry")}` });
+        void rolls.versus(value, parryBonusSuccesses(state), parryRollLabel(state, attackPath));
     };
     const dim = canParry ? undefined : "dimmed";
     return (

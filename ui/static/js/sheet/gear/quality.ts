@@ -16,7 +16,8 @@ import { computed, signal, type Signal } from "@preact/signals-core";
 import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../modifiers/entries";
-import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
+import { itemName, linkedItem, linkedLabel, linkedPart } from "./itemLinkRules";
+import { code, SPACE, type Part } from "../rollLabel";
 import type { GearItem } from "../schema/sheet";
 import { textAt } from "../core/sync";
 
@@ -58,7 +59,13 @@ function qualityItem(state: SheetSignals, weaponPath: string): { item: GearItem;
 export interface QualityAdd {
     add: number;
     label: string;
+    /** The label in a roll's label: the code of the Quality. */
+    part: Part;
 }
+
+/** A modifier the Quality of the linked `item` gives, named by the Quality and the item. */
+const qualityAdd = (item: GearItem, quality: Quality, add: number): QualityAdd =>
+    ({ add, label: linkedLabel(item, qualityName(quality)), part: linkedPart(item, code(SPACE.quality, quality)) });
 
 /**
  * What the Quality of the linked item adds to the field of the melee weapon
@@ -72,13 +79,13 @@ export function qualityAdds(state: SheetSignals, weaponPath: string, field: stri
     const add = field === "hit" || field === "parry" ? TEST_MODS[linked.quality]
         : field === "dmg" && linked.quality === "Best" && !isShield(state, weaponPath) ? 1
         : 0;
-    return add ? [{ add, label: linkedLabel(linked.item, qualityName(linked.quality)) }] : [];
+    return add ? [qualityAdd(linked.item, linked.quality, add)] : [];
 }
 
 /** The shield AP the Quality of the shield's linked item adds: +1 of Best. */
 export function shieldQualityAp(state: SheetSignals, attackPath: string): QualityAdd | null {
     const linked = qualityItem(state, attackPath);
-    return linked?.quality === "Best" ? { add: 1, label: linkedLabel(linked.item, qualityName("Best")) } : null;
+    return linked?.quality === "Best" ? qualityAdd(linked.item, "Best", 1) : null;
 }
 
 /** The properties of a Special, without their values in brackets: "Reliable, Tearing (2)" is reliable and tearing. */

@@ -64,6 +64,13 @@ export const MOD = {
     parry: "parry",
 } as const;
 
+/** The codes of src:*, the names of sources that have none of their own; `src:stance.<key>` names a stance. */
+export const SRC = {
+    condition: "condition",
+    item: "item",
+    stance: "stance",
+} as const;
+
 /** The wrappers of a whole label. */
 export const WRAP = {
     broken: "broken",

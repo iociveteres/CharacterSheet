@@ -4,13 +4,14 @@ import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
 import { numberAt, peekAt } from "../core/sync";
 import { FATIGUE, spend } from "../powers/spend";
+import type { Label } from "../rollLabel";
 import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "./tech";
 
 export interface Activation {
     /** X of a price of X ⚙. */
     x: number;
     /** The test: its target, bonus successes and label in the chat; null for a power activated without one. */
-    test: { target: number; bonusSuccesses: number; label: string } | null;
+    test: { target: number; bonusSuccesses: number; label: Label } | null;
     /** Hold the power in a Process once it is activated. */
     process: boolean;
     /** How much of the 🗲 to pay with Fatigue rather than energy. */
@@ -70,7 +71,7 @@ export function activateTechPower(sheet: SheetOps, path: string, activation: Act
     if (untracked(() => peekAt(state, `${COMPENSATION}.power`))) actions.batch(COMPENSATION, { power: "", x: 0, energy: 0, fatigue: 0 });
     if (paid) spend(sheet, COGNITION, price.cognition);
     const { test } = activation;
-    const outcome = test ? sheet.rolls.versus(test.target, test.bonusSuccesses, { n: test.label }) : Promise.resolve({ success: true });
+    const outcome = test ? sheet.rolls.versus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
         // A Litany is used up by its activation, not by a failed one.
