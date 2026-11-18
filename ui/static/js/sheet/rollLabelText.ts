@@ -66,13 +66,10 @@ function gripWords(value: string): string | null {
 }
 
 const STANCE = new Map(STANCES.map(s => [s.key as string, s]));
-const STANCE_SOURCE = `${SRC.stance}.`;
-
-/** What the sheet calls a source that has no name of its own, or a stance by its full name. */
+/** What the sheet calls a source that has no name of its own. */
 function sourceWords(value: string): string | null {
     if (value === SRC.condition) return t("sheet.weapons.condition");
-    if (value === SRC.item) return t("sheet.gear.item");
-    return value.startsWith(STANCE_SOURCE) ? STANCE.get(value.slice(STANCE_SOURCE.length))?.source ?? null : null;
+    return value === SRC.item ? t("sheet.gear.item") : null;
 }
 
 /** A row of the skill table of the label's kind, by its key. */
@@ -94,6 +91,8 @@ const SPACES: Record<string, Words> = {
     [SPACE.profile]: value => (value && value !== "no" && PROFILES.has(value) ? profileName(value) : null),
     [SPACE.quality]: value => (QUALITIES.has(value) ? qualityName(value as Quality) : null),
     [SPACE.src]: sourceWords,
+    // A stance by its full name, as the source of what it adds.
+    [SPACE.stanceSource]: value => STANCE.get(value)?.source ?? null,
     [SPACE.char]: (value, _, kind) => kindDef(kind)?.stats.characteristics.find(c => c.key === value)?.label ?? null,
     [SPACE.skill]: (value, _, kind) => skillRow(value, kind)?.label ?? null,
     [SPACE.skillGroup]: (value, _, kind) => skillRow(value, kind)?.groupLabel ?? null,
@@ -157,7 +156,7 @@ const MAX_PARTS = 64;
 const MAX_DEPTH = 3;
 const MAX_TEXT = 200;
 const MAX_BYTES = 2048;
-const CODE = /^[A-Za-z]+(:[A-Za-z0-9_.+\-]+)?$/;
+const CODE = /^[A-Za-z]+(:[A-Za-z0-9_+\-]+)?$/;
 const NAME_RE = /^[A-Za-z]+$/;
 const LABEL_KEYS = new Set(["n", "t", "m", "w", "k"]);
 

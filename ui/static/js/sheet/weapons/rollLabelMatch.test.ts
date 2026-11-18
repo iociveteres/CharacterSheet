@@ -184,7 +184,7 @@ describe.each([["en", "black_crusade"], ["ru", "black_crusade"], ["en", "pathfin
         const {
             constants: { MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, columnCode, optionValue },
             gripRules: { GRIP_KEYS, gripPart, gripText }, stanceRules: { STANCES }, weaponDamage: { profileLabel, profileRollLabel },
-            rollLabel: { code, label, SPACE, SRC }, registry: { labelText },
+            rollLabel: { code, label, SPACE }, registry: { labelText },
         } = await load(lang, kind);
         for (const key of GRIP_KEYS) {
             const grip = { id: key, keys: [key] };
@@ -194,7 +194,7 @@ describe.each([["en", "black_crusade"], ["ru", "black_crusade"], ["en", "pathfin
         expect(labelText(label("W", { t: [gripPart({ ...combined, keys: [...combined.keys] })] }))).toBe(`W (${gripText({ ...combined, keys: [...combined.keys] })})`);
         for (const stance of STANCES) {
             expect(labelText(label(code(SPACE.stance, stance.key)))).toBe(stance.name);
-            expect(labelText(label(code(SPACE.src, `${SRC.stance}.${stance.key}`)))).toBe(stance.source);
+            expect(labelText(label(code(SPACE.stanceSource, stance.key)))).toBe(stance.source);
         }
         for (const profile of MELEE_PROFILES.map(optionValue)) {
             expect(labelText(profileRollLabel("W", profile))).toBe(profileLabel("W", profile));

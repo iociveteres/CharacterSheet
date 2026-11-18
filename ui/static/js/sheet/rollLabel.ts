@@ -39,6 +39,7 @@ export const SPACE = {
     skill: "skill",
     skillGroup: "skillGroup",
     src: "src",
+    stanceSource: "stanceSource",
     hit: "hit",
     linked: "linked",
 } as const;
@@ -67,11 +68,10 @@ export const MOD = {
     parry: "parry",
 } as const;
 
-/** The codes of src:*, the names of sources that have none of their own; `src:stance.<key>` names a stance. */
+/** The codes of src:*, the names of sources that have none of their own. A stance as a source is `stanceSource:<key>`. */
 export const SRC = {
     condition: "condition",
     item: "item",
-    stance: "stance",
 } as const;
 
 /** The wrappers of a whole label. */

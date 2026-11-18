@@ -48,7 +48,7 @@ async function derivable(): Promise<Golden> {
         // A combined grip is worded key by key, so the keys alone stand for every combination.
         ...grips.GRIP_KEYS.map(key => `${SPACE.grip}:${key}`),
         ...stances.STANCES.filter(s => s.key !== "standard").map(s => `${SPACE.stance}:${s.key}`),
-        ...stances.STANCES.map(s => `${SPACE.src}:${SRC.stance}.${s.key}`),
+        ...stances.STANCES.map(s => `${SPACE.stanceSource}:${s.key}`),
         `${SPACE.src}:${SRC.condition}`, `${SPACE.src}:${SRC.item}`,
         ...MELEE_PROFILES.map(optionValue).filter(value => value && value !== "no").map(value => `${SPACE.profile}:${value}`),
         ...QUALITIES.map(optionValue).filter(value => value !== "Common").map(value => `${SPACE.quality}:${value}`),

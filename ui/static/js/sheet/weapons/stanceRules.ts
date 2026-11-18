@@ -10,7 +10,7 @@ import type { Entry } from "../modifiers/entries";
 import { idsInOrder } from "../core/gridOrder";
 import { balanceAt, heldGrip } from "./melee";
 import { gripPart } from "./gripRules";
-import { code, SPACE, SRC, type Part } from "../rollLabel";
+import { code, SPACE, type Part } from "../rollLabel";
 import { textAt } from "../core/sync";
 
 export type StanceKey = "standard" | "aggressive" | "defensive" | "covering" | "springy" | "palisade";
@@ -80,7 +80,7 @@ const ENTRIES = new Map(STANCES.map(s => [s.key, s.entries.map(fields =>
     Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, signal(v)])) as unknown as Entry)]));
 
 /** The source the entries of a stance count from, as a condition is; a roll label words its name in the reader's language. */
-const SOURCES = new Map(STANCES.map(s => [s.key, { name: signal(s.source), labelPart: code(SPACE.src, `${SRC.stance}.${s.key}`) }]));
+const SOURCES = new Map(STANCES.map(s => [s.key, { name: signal(s.source), labelPart: code(SPACE.stanceSource, s.key) }]));
 
 /** The entries the stance of the sheet adds, with the source to name them by. */
 export function stanceEntries(state: SheetSignals) {

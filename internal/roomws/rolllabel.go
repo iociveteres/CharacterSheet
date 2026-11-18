@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	labelCode = regexp.MustCompile(`^[A-Za-z]+(:[A-Za-z0-9_.+\-]+)?$`)
+	labelCode = regexp.MustCompile(`^[A-Za-z]+(:[A-Za-z0-9_+\-]+)?$`)
 	labelName = regexp.MustCompile(`^[A-Za-z]+$`)
 )
 
