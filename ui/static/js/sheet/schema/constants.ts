@@ -36,7 +36,7 @@ export const BASE_CHARACTERISTICS: readonly Characteristic[] = [
     { key: "I", label: t("sheet.terms.characteristic.i.short") },
     { key: "P", label: t("sheet.terms.characteristic.p") },
     { key: "W", label: t("sheet.terms.characteristic.w") },
-    { key: "F", label: t("sheet.terms.characteristic.f") },
+    { key: "F", label: t("sheet.terms.characteristic.f.short") },
 ];
 
 export const CHARACTERISTICS: readonly Characteristic[] = [
@@ -453,10 +453,10 @@ export const AP_TYPES: readonly Option[] = [
 
 /** The quality of an implant or item, which the tests of the tech powers that need it take (tech/tech.ts). */
 export const QUALITIES: readonly Option[] = [
-    { value: "Poor", label: t("sheet.termsArms.craftsmanship.poor") },
+    { value: "Poor", label: t("sheet.termsArms.craftsmanship.poor.short") },
     { value: "Common", label: t("sheet.termsArms.craftsmanship.common.short") },
-    { value: "Good", label: t("sheet.termsArms.craftsmanship.good") },
-    { value: "Best", label: t("sheet.termsArms.craftsmanship.best") },
+    { value: "Good", label: t("sheet.termsArms.craftsmanship.good.short") },
+    { value: "Best", label: t("sheet.termsArms.craftsmanship.best.short") },
 ];
 
 /** The resources of a tech-priest: cognition and energy, as their signs. */
@@ -656,9 +656,10 @@ const TARGET = column({
         { value: "leg", label: t("sheet.terms.bodyPart.leg") },
         { value: "arm", label: t("sheet.terms.bodyPart.arm") },
         { value: "head", label: t("sheet.terms.bodyPart.head") },
-        { value: "joint", label: t("sheet.termsRolls.target.joint") },
+        { value: "joint", label: t("sheet.termsRolls.target.joint.short") },
         { value: "eyes", label: t("sheet.termsRolls.target.eyes") },
     ],
+    names: { joint: t("sheet.termsRolls.target.joint") },
 });
 
 export const RANGED_ROLL_COLUMNS = [

@@ -935,6 +935,7 @@ export interface I18nParams {
     "sheet.terms.characteristic.bs": {};
     "sheet.terms.characteristic.cor": {};
     "sheet.terms.characteristic.f": {};
+    "sheet.terms.characteristic.f.short": {};
     "sheet.terms.characteristic.i": {};
     "sheet.terms.characteristic.i.short": {};
     "sheet.terms.characteristic.inf": {};
@@ -1023,10 +1024,13 @@ export interface I18nParams {
     "sheet.termsArms.armour.superArmour": {};
     "sheet.termsArms.armour.superArmour.short": {};
     "sheet.termsArms.craftsmanship.best": {};
+    "sheet.termsArms.craftsmanship.best.short": {};
     "sheet.termsArms.craftsmanship.common": {};
     "sheet.termsArms.craftsmanship.common.short": {};
     "sheet.termsArms.craftsmanship.good": {};
+    "sheet.termsArms.craftsmanship.good.short": {};
     "sheet.termsArms.craftsmanship.poor": {};
+    "sheet.termsArms.craftsmanship.poor.short": {};
     "sheet.termsArms.damageType.c": {};
     "sheet.termsArms.damageType.cTx": {};
     "sheet.termsArms.damageType.e": {};
@@ -1488,6 +1492,7 @@ export interface I18nParams {
     "sheet.termsRolls.rollColumn.target": {};
     "sheet.termsRolls.target.eyes": {};
     "sheet.termsRolls.target.joint": {};
+    "sheet.termsRolls.target.joint.short": {};
     "sheet.termsRolls.target.no": {};
     "sheet.termsRolls.target.no.short": {};
     "sheet.termsRolls.target.torso": {};

@@ -52,7 +52,7 @@
   "sheet.magic.powerField.own": { "en": "Power {base}, PR {pr}", "ru": "Психосила {base}, PR {pr}", "note": "первая строка разбора урона" },
   "sheet.magic.profile.sustained": { "en": "Sustained", "ru": "Поддержание", "note": "строка профиля психосилы «Sustained:»" },
 
-  "sheet.magic.castPR.uncast": { "en": "No cast yet: PR {pr} counts", "ru": "Манифестаций ещё не было: считается PR {pr}" },
+  "sheet.magic.castPR.uncast": { "en": "No cast yet: PR {pr} counts", "ru": "Без манифестаций: PR {pr}", "note": "полностью «Манифестаций ещё не было: считается PR {pr}»; сокращено при вёрстке: обрезалось в окне урона психосилы" },
   "sheet.magic.castPR.safe": { "en": "Of the last cast, safe", "ru": "Последней манифестации, безопасной" },
   "sheet.magic.castPR.kick": { "en": "Of the last cast, +{kick} kick", "ru": "Последней манифестации, усиление +{kick}" },
   "sheet.magic.castPR.last": { "en": "Of the last cast", "ru": "Последней манифестации" },

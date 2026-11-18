@@ -9,6 +9,7 @@
   "sheet.terms.characteristic.p": { "en": "Perception", "ru": "Восприятие" },
   "sheet.terms.characteristic.w": { "en": "Willpower", "ru": "Воля", "note": "с. 56; вариант: Сила воли (таблица склонностей, с. 24)" },
   "sheet.terms.characteristic.f": { "en": "Fellowship", "ru": "Товарищество" },
+  "sheet.terms.characteristic.f.short": { "en": "Fellowship", "ru": "Товарищ.", "note": "подпись в блоке характеристик и в броске; полностью «Товарищество», сокращено при вёрстке: в шапке характеристик сливалось с «Бесчестье»" },
   "sheet.terms.characteristic.inf": { "en": "Infamy", "ru": "Бесчестье", "note": "с. 56; вариант: Бесчестие (глава VII БЕСЧЕСТИЕ И ПОРЧА)" },
   "sheet.terms.characteristic.cor": { "en": "Corruption", "ru": "Порча" },
   "sheet.terms.aptitude.off": { "en": "Offence", "ru": "Нападение", "note": "I › СКЛОННОСТИ, с. 24; склонности характеристик берут ключи characteristic.*" },

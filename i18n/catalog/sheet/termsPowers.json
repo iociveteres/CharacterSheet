@@ -23,7 +23,7 @@
   "sheet.termsPowers.psy.perils": { "en": "Perils of the Warp", "ru": "Варп-прорыв", "note": "в книге «Прорывы», таблица «Варп-Прорывы», гл. V › Феномены и прорывы; мн. варп-прорывы" },
   "sheet.termsPowers.psy.discipline": { "en": "Discipline", "ru": "Дисциплина", "note": "группа психосил; части дисциплины — «суб-дисциплины»; гл. V › Психосилы, с. 293" },
 
-  "sheet.termsPowers.castMode.safe": { "en": "Safe", "ru": "Безопасный", "note": "Режим манифестации: эPR = ½тPR, без Феноменов; гл. V › Механика, с. 289" },
+  "sheet.termsPowers.castMode.safe": { "en": "Safe", "ru": "Безоп.", "note": "полностью «Безопасный»; сокращено при вёрстке: кнопка в броске психосилы; Режим манифестации: эPR = ½тPR, без Феноменов; гл. V › Механика, с. 289" },
   "sheet.termsPowers.castMode.normal": { "en": "Normal", "ru": "Обычный", "note": "Режим манифестации: эPR = тPR; с. 289" },
   "sheet.termsPowers.castMode.pushed": { "en": "Pushed", "ru": "Усиленный", "note": "Режим манифестации: эPR = тPR + бонус, Феномен гарантирован; с. 289" },
 
