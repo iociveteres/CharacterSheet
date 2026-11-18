@@ -9,10 +9,6 @@ import { DEFAULT_ROOTS, covers, findUsage } from "./usage.mjs";
 const LOADER_FIELDS = ["key", "file", "prefix", "line"];
 const FIELDS = new Set([...LOADER_FIELDS, ...LANGS, "note"]);
 
-// The glossary (block 2 of _prd/i18n) comes before the code that uses it: keys of
-// files whose prefix starts with one of these may stay unused. Block 7 empties the list.
-export const UNUSED_ALLOWED = ["sheet.terms", "common"];
-
 const isForms = message => message !== null && typeof message === "object" && !Array.isArray(message);
 const textsOf = message => (isForms(message) ? Object.values(message) : [message]);
 const placeholdersOf = message => [...new Set(textsOf(message).flatMap(text => [...String(text).matchAll(/\{(\w+)\}/g)].map(m => m[1])))].sort();
@@ -66,7 +62,7 @@ export function checkEntries({ entries, problems: loaderProblems }) {
 }
 
 /** Keys the code uses that the catalog lacks, catalog keys nothing uses, markers that cover nothing. */
-export function checkUsage({ entries, byKey }, { uses, markers }, unusedAllowed = UNUSED_ALLOWED) {
+export function checkUsage({ entries, byKey }, { uses, markers }) {
     const problems = [];
     for (const use of uses) {
         if (!byKey.has(use.key)) problems.push(`${use.file}:${use.line}: "${use.key}" is not in the catalog`);
@@ -76,7 +72,6 @@ export function checkUsage({ entries, byKey }, { uses, markers }, unusedAllowed 
     }
     const used = new Set(uses.map(u => u.key));
     for (const e of entries) {
-        if (unusedAllowed.some(p => e.prefix.startsWith(p))) continue;
         if (!used.has(e.key) && !markers.some(m => covers(m.pattern, e.key))) {
             problems.push(`${e.file}:${e.line}: ${e.key}: not used in the code (a key built at run time needs an i18n-keys marker, see scripts/i18n/usage.mjs)`);
         }
@@ -101,12 +96,12 @@ export function checkLargeTexts(dirs = LARGE_TEXT_DIRS) {
 
 /**
  * All the checks of `npm run check:i18n`.
- * @param {{ catalogDir?: string, roots?: typeof DEFAULT_ROOTS, largeTextDirs?: Record<string, string>, unusedAllowed?: string[] }} [options]
+ * @param {{ catalogDir?: string, roots?: typeof DEFAULT_ROOTS, largeTextDirs?: Record<string, string> }} [options]
  */
-export function checkAll({ catalogDir = CATALOG_DIR, roots = DEFAULT_ROOTS, largeTextDirs = LARGE_TEXT_DIRS, unusedAllowed = UNUSED_ALLOWED } = {}) {
+export function checkAll({ catalogDir = CATALOG_DIR, roots = DEFAULT_ROOTS, largeTextDirs = LARGE_TEXT_DIRS } = {}) {
     const catalog = loadCatalog(catalogDir);
     return {
         catalog,
-        problems: [...checkEntries(catalog), ...checkUsage(catalog, findUsage(roots), unusedAllowed), ...checkLargeTexts(largeTextDirs)],
+        problems: [...checkEntries(catalog), ...checkUsage(catalog, findUsage(roots)), ...checkLargeTexts(largeTextDirs)],
     };
 }

@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { checkAll } from "./rules.mjs";
 
-const fixture = (name, unusedAllowed = []) => {
+const fixture = name => {
     const dir = `scripts/i18n/testdata/${name}`;
     return checkAll({
         catalogDir: `${dir}/catalog`,
         roots: { client: [`${dir}/src`], go: [`${dir}/src`], templates: [`${dir}/src`] },
         largeTextDirs: { content: `${dir}/content`, mail: `${dir}/mail` },
-        unusedAllowed,
     });
 };
 
@@ -54,10 +53,6 @@ describe("check:i18n", () => {
         it("reports unused keys, but not those an i18n-keys marker covers", () => {
             reported("common.unused: not used in the code");
             expect(problems.filter(p => p.includes("common.dynamic.a"))).toEqual([]);
-        });
-        it("lets keys of an allowed file prefix stay unused", () => {
-            const { problems } = fixture("broken", ["common"]);
-            expect(problems.filter(p => p.includes("not used in the code"))).toEqual([]);
         });
         it("reports a marker that covers no key", () => {
             reported("App.tsx:1: i18n-keys common.nothing.* covers no catalog key");
