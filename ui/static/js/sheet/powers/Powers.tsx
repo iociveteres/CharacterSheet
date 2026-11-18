@@ -15,7 +15,7 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import type { SheetSignals } from "../schema/sheet";
-import type { PsykanaTerms } from "../schema/constants";
+import type { Label } from "../rollLabel";
 import type { SheetOps } from "../core/actions";
 import type { RollDefaults } from "../payload";
 import { valueAt } from "../core/sync";
@@ -63,8 +63,8 @@ export interface PowerSort {
     Fields: AtPath;
     /** Its damage and penetration. */
     field: FieldOwner;
-    /** The label of a roll of its damage. */
-    damageLabel: (state: SheetSignals, path: string, terms: PsykanaTerms) => string;
+    /** The label of a roll of its damage on a sheet of `kind`. */
+    damageLabel: (state: SheetSignals, path: string, kind: string) => Label;
     /** The autocomplete collection of its name. */
     collection: string;
     /** What a pick of the collection makes of a new power. */
@@ -79,7 +79,7 @@ export interface PowerSort {
 }
 
 function Power({ sort, itemId, newPower }: { sort: PowerSort; itemId: string; newPower: () => NewPower }) {
-    const { state, actions, terms, stats } = useSheet();
+    const { state, actions, stats, kindName } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
@@ -116,7 +116,7 @@ function Power({ sort, itemId, newPower }: { sort: PowerSort; itemId: string; ne
                 <Fields path={path} />
                 <div class="layout-row">
                     <Row cls="weapon-range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><TextField field="weaponRange" /></Row>
-                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => ({ n: sort.damageLabel(state, path, terms) })} />}>
+                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => sort.damageLabel(state, path, kindName)} />}>
                         <ModdedField stat="damage" owner={field} />
                     </Row>
                     <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={field} /></Row>

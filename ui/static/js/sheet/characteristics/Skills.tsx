@@ -7,8 +7,9 @@ import { Scope } from "../components/Scope";
 import type { SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 import { useSheet } from "../components/context";
+import { code, label as rollLabel, SPACE, type Label } from "../rollLabel";
 
-function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }) {
+function SkillCells({ rowPath, label }: { rowPath: string; label: () => Label }) {
     const { stats } = useSheet();
     return (
         <>
@@ -22,7 +23,7 @@ function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }
 
 /** Rows of `rows`, with a heading row before each group. */
 function SkillRows({ table, rows, editableName }: { table: string; rows: readonly SkillRow[]; editableName: boolean }) {
-    const { state } = useSheet();
+    const { state, kindName } = useSheet();
     return (
         <>
             {rows.map((row, i) => {
@@ -37,7 +38,9 @@ function SkillRows({ table, rows, editableName }: { table: string; rows: readonl
                             <td>{editableName ? <TextField field="name" /> : row.label}</td>
                             <SkillCells
                                 rowPath={rowPath}
-                                label={() => (editableName ? String(peekAt(state, `${rowPath}.name`) ?? "") : row.label)}
+                                label={() => (editableName
+                                    ? rollLabel(String(peekAt(state, `${rowPath}.name`) ?? ""))
+                                    : rollLabel(code(SPACE.skill, row.key), { k: kindName }))}
                             />
                         </Scope>
                     </Fragment>

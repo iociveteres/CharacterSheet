@@ -6,7 +6,7 @@
 import { t } from "../i18n";
 import { kindOf } from "./kinds";
 import { MOD, NAME, SPACE, SRC, WRAP, type Label, type Params, type Part } from "./rollLabel";
-import { columnCode, MELEE_PROFILES, MELEE_ROLL_COLUMNS, optionValue, RANGED_ROLL_COLUMNS, type RollColumn } from "./schema/constants";
+import { columnCode, MELEE_PROFILES, MELEE_ROLL_COLUMNS, optionValue, RANGED_ROLL_COLUMNS, type RollColumn, type SkillRow } from "./schema/constants";
 import { GRIP_KEYS, GRIP_SHORT, type GripKey } from "./weapons/gripRules";
 import { STANCES } from "./weapons/stanceRules";
 import { profileName } from "./weapons/melee";
@@ -28,11 +28,17 @@ function param(params: Params, name: string, kind: string | undefined): string |
     return typeof value === "number" ? value : value === undefined ? "" : partText(value, kind);
 }
 
-const NAMES: Record<string, (kind: string | undefined) => string> = {
+/** The definition of the label's kind: a label without one is of Black Crusade. */
+const kindDef = (kind: string | undefined) => kindOf(kind ?? "black_crusade");
+
+const NAMES: Record<string, (kind: string | undefined) => string | null> = {
     [NAME.unknown]: () => t("common.unknown"),
     [NAME.initiative]: () => t("sheet.terms.stat.initiative"),
-    [NAME.unknownPower]: kind => (kind === "pathfinder_crusade" ? t("sheet.magicPf.psykana.unknownPower") : t("sheet.magic.psykana.unknownPower")),
+    [NAME.unknownPower]: kind => kindDef(kind)?.terms.unknownPower ?? null,
+    [NAME.psychicPower]: kind => kindDef(kind)?.terms.psychicPower ?? null,
     [NAME.techPower]: () => t("sheet.termsPowers.tech.techPower"),
+    [NAME.unknownTechPower]: () => t("sheet.tech.roll.unknownPower"),
+    [NAME.deletedTechPower]: () => t("sheet.tech.deletedPower"),
     [NAME.rangedAttack]: () => t("sheet.weapons.rangedAttack"),
     [NAME.meleeAttack]: () => t("sheet.weapons.meleeAttack"),
     [NAME.phenomena]: () => t("sheet.magic.phenomena.label"),
@@ -69,6 +75,12 @@ function sourceWords(value: string): string | null {
     return value.startsWith(STANCE_SOURCE) ? STANCE.get(value.slice(STANCE_SOURCE.length))?.source ?? null : null;
 }
 
+/** A row of the skill table of the label's kind, by its key. */
+function skillRow(value: string, kind: string | undefined): SkillRow | undefined {
+    const stats = kindDef(kind)?.stats;
+    return stats && [...stats.skillsLeft, ...stats.skillsRight].find(row => row.key === value);
+}
+
 const PROFILES = new Set(MELEE_PROFILES.map(optionValue));
 const QUALITIES = new Set<string>(["Poor", "Common", "Good", "Best"] satisfies Quality[]);
 
@@ -82,6 +94,9 @@ const SPACES: Record<string, Words> = {
     [SPACE.profile]: value => (value && value !== "no" && PROFILES.has(value) ? profileName(value) : null),
     [SPACE.quality]: value => (QUALITIES.has(value) ? qualityName(value as Quality) : null),
     [SPACE.src]: sourceWords,
+    [SPACE.char]: (value, _, kind) => kindDef(kind)?.stats.characteristics.find(c => c.key === value)?.label ?? null,
+    [SPACE.skill]: (value, _, kind) => skillRow(value, kind)?.label ?? null,
+    [SPACE.skillGroup]: (value, _, kind) => skillRow(value, kind)?.groupLabel ?? null,
     // What adds to the roll, by its source: "Aggressive stance +10".
     [SPACE.hit]: (_, params, kind) => `${param(params, "s", kind)} ${signed(Number(params.n ?? 0))}`,
     // A line a gear item gives the weapon: its source, and the item unless the item is the source (itemLinkRules.ts linkedLabel).

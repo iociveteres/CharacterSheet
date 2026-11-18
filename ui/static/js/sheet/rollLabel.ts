@@ -47,7 +47,10 @@ export const SPACE = {
 export const NAME = {
     unknown: "unknown",
     unknownPower: "unknownPower",
+    psychicPower: "psychicPower",
     techPower: "techPower",
+    unknownTechPower: "unknownTechPower",
+    deletedTechPower: "deletedTechPower",
     rangedAttack: "rangedAttack",
     meleeAttack: "meleeAttack",
     compensator: "compensator",

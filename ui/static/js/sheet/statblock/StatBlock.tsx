@@ -51,8 +51,8 @@ import { BODY_ROWS } from "../gear/Armour";
 import { AttackRoll } from "../weapons/Attacks";
 import { rollCharacteristic } from "../characteristics/Characteristics";
 import { PhenomenaRoll } from "../magic/Phenomena";
-import { PsychicRoll } from "../magic/Powers";
-import { CompensationRoll, TechRoll } from "../tech/TechnoArcana";
+import { PsychicRoll, psychicDamageLabel } from "../magic/Powers";
+import { CompensationRoll, TechRoll, techDamageLabel } from "../tech/TechnoArcana";
 import { ArtsChip } from "../magic/Arts";
 import { ArtsRoll } from "../magic/ArtsRoll";
 import { showsPR } from "../magic/artsRules";
@@ -130,7 +130,7 @@ function StatCharacteristics() {
                 <Scope key={key} dataId={key} {...(sheet.preview
                     ? { class: "stat-characteristic", ...hoverTitle(() => characteristicSummary(sheet.state, key)) }
                     : {
-                        class: "stat-characteristic rollable", onClick: () => rollCharacteristic(sheet, key, label),
+                        class: "stat-characteristic rollable", onClick: () => rollCharacteristic(sheet, key),
                         ...hoverTitle(() => [t("sheet.statblock.testCharacteristic", { name: label }), ...characteristicSummary(sheet.state, key)]),
                     })}>
                     <label>{key}</label>
@@ -264,28 +264,38 @@ function StatMovement() {
     );
 }
 
-/** A skill: its name, cut short with the whole on hover, and difficulty, which rolls the test. */
-function StatSkill({ rowPath, name }: { rowPath: string; name: string }) {
+/** A skill: its name, cut short with the whole on hover, and difficulty, which rolls the test labelled `label`. */
+function StatSkill({ rowPath, name, label }: { rowPath: string; name: string; label: Label }) {
     return (
         <>
             <span class="stat-skill-name" title={name}>{name}</span>
-            <Difficulty rowPath={rowPath} label={() => name} />
+            <Difficulty rowPath={rowPath} label={() => label} />
         </>
     );
+}
+
+/**
+ * The label of a test of the skill `row`: a sub-skill with its group, as
+ * "Navigate (Surface)"; a row of the right column by the name typed, or its group.
+ */
+export function statSkillLabel(state: SheetSignals, table: string, row: SkillRow, editableName: boolean, kind: string): Label {
+    const group = row.groupLabel ? code(SPACE.skillGroup, row.key) : null;
+    if (editableName) return rollLabelOf(textAt(state, `${table}.${row.key}.name`) || group || "", { k: kind });
+    return group ? rollLabelOf(group, { t: [code(SPACE.skill, row.key)], k: kind }) : rollLabelOf(code(SPACE.skill, row.key), { k: kind });
 }
 
 const trained = (state: SheetSignals, table: string, rows: readonly SkillRow[]) => rows.filter(row => valueAt(state, `${table}.${row.key}.plus0`));
 
 /** The trained skills of a table: plus0 and above. */
 function TrainedSkills({ table, rows, editableName }: { table: string; rows: readonly SkillRow[]; editableName: boolean }) {
-    const { state } = useSheet();
+    const { state, kindName } = useSheet();
     return (
         <Scope dataId={table} class="stat-skill-table">
             {trained(state, table, rows).map(row => {
                 const rowPath = `${table}.${row.key}`;
                 // A row of the right column never named shows its group, as "Trade".
                 const name = editableName ? textAt(state, `${rowPath}.name`) || row.groupLabel || "" : row.groupLabel ? `${row.groupLabel} (${row.label})` : row.label;
-                return <Scope key={row.key} dataId={row.key} class="stat-skill"><StatSkill rowPath={rowPath} name={name} /></Scope>;
+                return <Scope key={row.key} dataId={row.key} class="stat-skill"><StatSkill rowPath={rowPath} name={name} label={statSkillLabel(state, table, row, editableName, kindName)} /></Scope>;
             })}
         </Scope>
     );
@@ -304,7 +314,7 @@ function StatSkills() {
                 <Scope dataId={grid} class="stat-skill-table">
                     {custom.map(id => (
                         <Scope key={id} dataId={id} class="stat-skill">
-                            <StatSkill rowPath={`${grid}.${id}`} name={textAt(state, `${grid}.${id}.name`)} />
+                            <StatSkill rowPath={`${grid}.${id}`} name={textAt(state, `${grid}.${id}.name`)} label={{ n: textAt(state, `${grid}.${id}.name`) }} />
                         </Scope>
                     ))}
                 </Scope>
@@ -502,7 +512,7 @@ function StatAttacks() {
  * damage counts or its price, and what of it counts in a fight.
  */
 function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; path: string }) {
-    const { state, preview, terms } = useSheet();
+    const { state, preview, terms, kindName } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const psychic = kind === "psychic";
@@ -538,7 +548,7 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                 <div class="stat-line">
                     {action && <span data-id="action">{action}</span>}
                     {range && <span data-id="range">{t("sheet.termsPowers.field.range")} {range}</span>}
-                    {hasDamage && <DamageLine owner={owner} itemPath={path} label={() => rollLabelOf(psychic ? `${name}, PR ${pr}` : name)} />}
+                    {hasDamage && <DamageLine owner={owner} itemPath={path} label={() => (psychic ? psychicDamageLabel(state, path, kindName) : techDamageLabel(state, path))} />}
                 </div>
             )}
             {special && <div class="stat-line stat-special">{special}</div>}

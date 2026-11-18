@@ -15,15 +15,18 @@ import { BlockHeading } from "../rolls/BlockSettings";
 import { CurrentResource } from "../rolls/ResourceField";
 import { rollBonusSuccesses } from "../rolls/rollBase";
 import { firstTestOption } from "../rolls/testOptionRules";
-import { ExtraModifier, RollResult, baseAndExtras, extraNames, rollLabel, useRollTest } from "../rolls/rollParts";
+import { ExtraModifier, RollResult, baseAndExtras, extraNames, useRollTest } from "../rolls/rollParts";
+import { code, label, NAME, SPACE, type Label, type Part } from "../rollLabel";
 import { BaseColumn, PowerTabs, type PowerSort } from "../powers/Powers";
 import { COMPENSATION, activateTechPower, compensate } from "./activation";
-import { hardwareAt } from "./hardware";
+import { hardwareAt, type Hardware } from "./hardware";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "./tech";
 import { TECH_FIELD } from "./techDamage";
 import { TechResourceField } from "./TechResourceField";
 import { listFormat, t } from "../../i18n";
+
+const COMPENSATION_ROLL = "technoArcana.compensationRoll";
 
 const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state, path)), 10) || 0;
 
@@ -58,6 +61,29 @@ function TechnoArcanaHeading() {
     );
 }
 
+/**
+ * The label of the activation test of the tech power at `path`: `x`, the X
+ * it pays when its price has one, and the worst of the implants it needs.
+ */
+export function techRollLabel(state: SheetSignals, path: string, x: number | null, worst: Hardware["worst"]): Label {
+    return label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.unknownTechPower), {
+        m: [
+            ...(x === null ? [] : [`X = ${x}`]),
+            ...(worst ? [code(SPACE.quality, worst.quality)] : []),
+            ...extraNames(state, `${path}.roll`),
+        ],
+    });
+}
+
+/** The label of the Compensation Roll after `due` was paid; `modifier`, its X. */
+export function compensationRollLabel(state: SheetSignals, due: { part: Part } | null, modifier: number): Label {
+    return label(code(SPACE.name, NAME.compensator), { m: [...(due ? [due.part] : []), `X = ${modifier}`, ...extraNames(state, COMPENSATION_ROLL)] });
+}
+
+/** The label of a roll of the damage of the tech power at `path`. */
+export const techDamageLabel = (state: SheetSignals, path: string): Label =>
+    label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.techPower));
+
 export function TechRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
@@ -74,13 +100,10 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
     const stop = noCognition ? t("sheet.tech.roll.noCognition") : notCompiled ? t("sheet.tech.roll.notCompiled") : null;
     const roll = () => {
         const x = int(state, `${rollPath}.x`);
-        const worst = hardware.peek()?.worst;
-        const label = rollLabel(String(peekAt(state, `${path}.name`) || t("sheet.tech.roll.unknownPower")), [
-            ...(traits.price.x ? [`X = ${x}`] : []),
-            ...(worst ? [`${worst.quality}.Q`] : []),
-            ...extraNames(state, rollPath),
-        ]);
-        const versus = traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label };
+        const worst = hardware.peek()?.worst ?? null;
+        const versus = traits.auto ? null : {
+            target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: techRollLabel(state, path, traits.price.x ? x : null, worst),
+        };
         void activateTechPower({ state, actions, rolls }, path, {
             x, process: !!traits.process && process.peek(), test: versus, energyAsFatigue: asFatigue.peek(),
         });
@@ -129,7 +152,7 @@ const TECH: PowerSort = {
     Pill: ProcessPill,
     Fields: TechFields,
     field: TECH_FIELD,
-    damageLabel: (state, path) => String(peekAt(state, `${path}.name`) || t("sheet.termsPowers.tech.techPower")),
+    damageLabel: techDamageLabel,
     collection: "techPowers",
     newRoll: (state, defaults) => ({ ...defaults.techPower, testOption: firstTestOption(state, "technoArcana") }),
     prefix: "tech-powers",
@@ -146,14 +169,12 @@ export function CompensationRoll() {
     const { state, actions, rolls, canEdit } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
-    const rollPath = "technoArcana.compensationRoll";
+    const rollPath = COMPENSATION_ROLL;
     const total = useComputed(() => compensationTotal(state, rollPath));
     const due = useComputed(() => compensationDue(state)).value;
     const roll = () => {
         const modifier = parseInt(String(peekAt(state, `${rollPath}.modifier`)), 10) || 0;
-        const compensator = t("sheet.termsPowers.techType.compensator");
-        const label = rollLabel(due ? `${compensator}, ${due.name}` : compensator, [`X = ${modifier}`, ...extraNames(state, rollPath)]);
-        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), label);
+        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), compensationRollLabel(state, due, modifier));
         const power = String(peekAt(state, `${COMPENSATION}.power`) ?? "");
         if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
         dropdown.close();

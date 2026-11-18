@@ -32,10 +32,31 @@ import { POWER_DAMAGE, powerPR, uncastPR } from "./powerDamage";
 import type { FieldOwner } from "../rolls/ModdedField";
 import { PsykanaHeading } from "./PsykanaHeading";
 import {
-    ExtraModifier, RollResult, TestText, baseAndExtras, extraNames, rollLabel, useRollTest,
+    ExtraModifier, RollResult, TestText, baseAndExtras, extraNames, useRollTest,
 } from "../rolls/rollParts";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
 
 const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state, path)), 10) || 0;
+
+/** The label of the test of a cast of the psychic power at `path`, as its roll is set now, on a sheet of `kind`. */
+export function psychicRollLabel(state: SheetSignals, path: string, kind: string): Label {
+    const rollPath = `${path}.roll`;
+    const effectivePR = int(state, `${rollPath}.effectivePR`);
+    const kick = rollKick(state, path);
+    return label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.unknownPower), {
+        m: [
+            ...(peekAt(state, `${rollPath}.safe`) ? [code(SPACE.mod, MOD.safe)] : []),
+            ...(effectivePR > 0 ? [code(SPACE.mod, MOD.effectivePR, { pr: effectivePR })] : []),
+            ...(kick > 0 ? [code(SPACE.mod, MOD.kick, { kick })] : []),
+            ...extraNames(state, rollPath),
+        ],
+        k: kind,
+    });
+}
+
+/** The label of a roll of the damage of the psychic power at `path`, with the PR it counts. */
+export const psychicDamageLabel = (state: SheetSignals, path: string, kind: string): Label =>
+    label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.psychicPower), { m: [`PR ${untracked(() => powerPR(state, path))}`], k: kind });
 
 /**
  * The effective PR of a psychic power's cast. Max casts it normally at the
@@ -88,7 +109,7 @@ function KickColumn({ path, safe }: { path: string; safe: boolean }) {
 }
 
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
+    const { state, actions, rolls, terms, canEdit, castCost, preparation, kindName } = useSheet();
     const rollPath = `${path}.roll`;
     const cast = () => castCharacteristic(state, path);
     const test = useRollTest("psykana", rollPath, cast);
@@ -113,18 +134,11 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const sustain = useSignal(true);
     const free = useSignal(true);
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || terms.unknownPower);
         const effectivePR = int(state, `${rollPath}.effectivePR`);
         const kickPR = rollKick(state, path);
-        const modifiers = [
-            ...(safe ? [t("sheet.magic.roll.safe")] : []),
-            ...(effectivePR > 0 ? [t("sheet.magic.roll.effectivePR", { pr: effectivePR })] : []),
-            ...(kickPR > 0 ? [t("sheet.magic.roll.kick", { kick: kickPR })] : []),
-            ...extraNames(state, rollPath),
-        ];
         void castPower({ state, actions, rolls }, path, {
             effectivePR, kick: kickPR, safe,
-            target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: rollLabel(name, modifiers),
+            target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: psychicRollLabel(state, path, kindName),
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
             pay: castCost ? () => castCost.pay({ state, actions }, effectivePR + kickPR) : undefined,
         });
@@ -386,8 +400,7 @@ const PSYCHIC: PowerSort = {
     Pill: PsychicPills,
     Fields: PsychicFields,
     field: POWER_FIELD,
-    damageLabel: (state, path, terms) =>
-        `${String(peekAt(state, `${path}.name`) || terms.psychicPower)}, PR ${untracked(() => powerPR(state, path))}`,
+    damageLabel: psychicDamageLabel,
     collection: "psychicPowers",
     // A picked spell is tested as its Magic test says; the option it names is added first, so the roll finds it.
     picked: ({ state, actions }, result, power) => {

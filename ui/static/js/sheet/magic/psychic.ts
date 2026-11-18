@@ -10,6 +10,7 @@ import { schemaOf, sheetComputed, statsOf } from "../core/state";
 import { optionLabel, optionValue } from "../schema/constants";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
+import { code, NAME, SPACE, type Part } from "../rollLabel";
 
 export interface PowerTraits {
     /** Whether the power can be sustained: its Sustained field names an action. */
@@ -227,8 +228,8 @@ export interface PhenomenaPart {
 }
 
 export interface Phenomena {
-    /** The power cast last, if it is still on the sheet. */
-    power: { path: string; name: string; kick: number; safe: boolean; reason: PhenomenaReason } | null;
+    /** The power cast last, if it is still on the sheet; `part`, its name in a roll label. */
+    power: { path: string; name: string; part: Part; kick: number; safe: boolean; reason: PhenomenaReason } | null;
     parts: PhenomenaPart[];
     total: number;
 }
@@ -264,9 +265,11 @@ function natureMod(nature: string, kick: number): number {
 export function phenomena(state: SheetSignals): Phenomena {
     const id = textAt(state, "psykana.lastCastPower");
     const path = id ? psychicPowers(state).find(p => p.path.endsWith(`.powers.items.${id}`))?.path : undefined;
+    const typed = path ? textAt(state, `${path}.name`).trim() : "";
     const power = path ? {
         path,
-        name: textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.psy.psychicPower"),
+        name: typed || t("sheet.termsPowers.psy.psychicPower"),
+        part: typed || code(SPACE.name, NAME.psychicPower),
         kick: numberAt(state, `${path}.cast.kick`),
         safe: !!valueAt(state, `${path}.cast.safe`),
         reason: textAt(state, `${path}.cast.phenomena`) as PhenomenaReason,

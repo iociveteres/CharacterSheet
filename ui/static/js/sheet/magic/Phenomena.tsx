@@ -14,7 +14,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "./psychic";
 import type { PsykanaTerms } from "../schema/constants";
-import { rollLabel } from "../rolls/rollParts";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 
@@ -83,6 +83,16 @@ function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaS
     );
 }
 
+/**
+ * The label of the phenomena roll after a cast of `power`. Without a kind:
+ * phenomena() names a power without a name by Black Crusade's term in every
+ * kind, and nothing else in it depends on the kind.
+ */
+export function phenomenaRollLabel(power: PhenomenaState["power"]): Label {
+    const kick = power && !power.safe && power.kick > 0 ? [code(SPACE.mod, MOD.kick, { kick: power.kick })] : [];
+    return label(code(SPACE.name, NAME.phenomena), { m: power ? [power.part, ...kick] : [] });
+}
+
 export function PhenomenaRoll() {
     const { state, actions, rolls, preview, terms } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
@@ -99,8 +109,7 @@ export function PhenomenaRoll() {
     };
     const roll = () => {
         const { total, power } = summary.peek();
-        const kick = power && !power.safe && power.kick > 0 ? [t("sheet.magic.roll.kick", { kick: power.kick })] : [];
-        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, rollLabel(t("sheet.magic.phenomena.label"), power ? [power.name, ...kick] : []));
+        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, phenomenaRollLabel(power));
         settle();
     };
     return (

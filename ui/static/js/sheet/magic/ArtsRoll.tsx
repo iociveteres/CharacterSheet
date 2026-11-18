@@ -21,7 +21,9 @@ import { numberAt, peekAt, textAt } from "../core/sync";
 import { testBaseLabel } from "../rolls/testOptionRules";
 import { skillGroups } from "../characteristics/skillNames";
 import { signed } from "../components/format";
-import { RollRow, ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
+import { RollRow, ExtraModifier, RollResult, TestText, extraNames } from "../rolls/rollParts";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
+import type { SheetSignals } from "../schema/sheet";
 import { testTextNote, type TestTextNote } from "./spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 
@@ -124,8 +126,22 @@ function TestChoices({ rollPath, text, note, test }: { rollPath: string; text: s
     );
 }
 
+/** The label of the test of a cast of the Arts spell at `path` on a sheet of `kind`; `twoSustained` when its sustaining costs the penalty. */
+export function artsRollLabel(state: SheetSignals, path: string, kind: string, twoSustained: boolean): Label {
+    const rollPath = `${path}.roll`;
+    const effectivePR = numberAt(state, `${rollPath}.effectivePR`);
+    return label(String(peekAt(state, `${path}.name`) ?? "") || code(SPACE.name, NAME.unknownPower), {
+        m: [
+            ...(effectivePR > 0 ? [code(SPACE.mod, MOD.effectivePR, { pr: effectivePR })] : []),
+            ...(twoSustained ? [code(SPACE.mod, MOD.twoSustained)] : []),
+            ...extraNames(state, rollPath),
+        ],
+        k: kind,
+    });
+}
+
 export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
+    const { state, actions, rolls, canEdit, castCost, kindName } = useSheet();
     const rollPath = `${path}.roll`;
     const cap = useComputed(() => artsCap(state, path)).value;
     const sustain = useSignal(true);
@@ -146,18 +162,13 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
     const sustains = !!choice && !choice.full && sustain.value;
     const overLimit = sustains && sustained.count >= sustained.limit;
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || terms.unknownPower);
         const effectivePR = numberAt(state, `${rollPath}.effectivePR`);
         const cost = artsCost(state, path);
         const test = artsTest(state, rollPath);
         void castPower({ state, actions, rolls }, path, {
             effectivePR, kick: 0, safe: false,
             target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test),
-            label: rollLabel(name, [
-                ...(effectivePR > 0 ? [t("sheet.magic.roll.effectivePR", { pr: effectivePR })] : []),
-                ...(sustained.penalty ? [t("sheet.magicPf.artsRoll.twoSustained")] : []),
-                ...extraNames(state, rollPath),
-            ]),
+            label: artsRollLabel(state, path, kindName, !!sustained.penalty),
             sustain: choice && !choice.full && sustain.peek() ? { free: false } : null,
             pay: castCost && pool ? () => castCost.pay({ state, actions }, cost, pool) : undefined,
             arts: true,

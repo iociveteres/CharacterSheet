@@ -28,18 +28,18 @@ const PARAMS = { s: "Source", i: "Item", n: 10, pr: 3, kick: 1 };
 async function load(lang: Lang) {
     installDictionary(lang);
     vi.resetModules();
-    const [registry, labels, constants, grips, stances] = await Promise.all([
+    const [registry, labels, constants, grips, stances, kinds] = await Promise.all([
         import("./rollLabelText"), import("./rollLabel"), import("./schema/constants"),
-        import("./weapons/gripRules"), import("./weapons/stanceRules"),
+        import("./weapons/gripRules"), import("./weapons/stanceRules"), import("./kinds"),
     ]);
-    return { registry, labels, constants, grips, stances };
+    return { registry, labels, constants, grips, stances, kinds };
 }
 
 afterEach(() => vi.resetModules());
 
 /** The codes the sheet's tables give, as the golden file sorts them. */
 async function derivable(): Promise<Golden> {
-    const { labels: { MOD, NAME, SPACE, SRC, WRAP }, constants, grips, stances } = await load("en");
+    const { labels: { MOD, NAME, SPACE, SRC, WRAP }, constants, grips, stances, kinds } = await load("en");
     const { MELEE_PROFILES, MELEE_ROLL_COLUMNS, QUALITIES, RANGED_ROLL_COLUMNS, columnCode, optionValue } = constants;
     const columns = [...RANGED_ROLL_COLUMNS, ...MELEE_ROLL_COLUMNS].flatMap(column =>
         column.options.map(optionValue).filter(value => value !== column.default).map(value => `${columnCode(column)}:${value}`));
@@ -56,8 +56,17 @@ async function derivable(): Promise<Golden> {
         ...Object.values(MOD).map(value => `${SPACE.mod}:${value}`),
         SPACE.hit, SPACE.linked,
     ];
-    // The characteristics and skills of each kind (char, skill, skillGroup) come with the rolls that use them.
-    return { any: sorted(any), black_crusade: [], pathfinder_crusade: [], wrappers: sorted(Object.values(WRAP)) };
+    // Each kind names its characteristics and skills its own way.
+    const ofKind = (kind: (typeof KINDS)[number]) => {
+        const { characteristics, skillsLeft, skillsRight } = kinds.KINDS[kind].stats;
+        const rows = [...skillsLeft, ...skillsRight];
+        return sorted([
+            ...characteristics.map(c => `${SPACE.char}:${c.key}`),
+            ...skillsLeft.map(row => `${SPACE.skill}:${row.key}`),
+            ...rows.filter(row => row.groupLabel).map(row => `${SPACE.skillGroup}:${row.key}`),
+        ]);
+    };
+    return { any: sorted(any), black_crusade: ofKind("black_crusade"), pathfinder_crusade: ofKind("pathfinder_crusade"), wrappers: sorted(Object.values(WRAP)) };
 }
 
 const sorted = (codes: Iterable<string>) => [...new Set(codes)].sort();
