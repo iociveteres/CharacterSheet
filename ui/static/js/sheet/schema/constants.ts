@@ -641,7 +641,7 @@ const column = <K extends string>(c: RollColumn<K>) => c;
 const AIM = column({
     key: "aim", label: t("sheet.termsRolls.rollColumn.aim"), default: "no",
     options: [
-        { value: "no", label: t("sheet.termsRolls.aim.no.short") },
+        { value: "no", label: t("sheet.termsRolls.aim.no") },
         { value: "half", label: t("sheet.termsRolls.aim.half.short") },
         { value: "full", label: t("sheet.termsRolls.aim.full.short") },
     ],
@@ -651,7 +651,7 @@ const AIM = column({
 const TARGET = column({
     key: "target", label: t("sheet.termsRolls.rollColumn.target"), default: "no",
     options: [
-        { value: "no", label: t("sheet.termsRolls.target.no.short") },
+        { value: "no", label: t("sheet.termsRolls.target.no") },
         { value: "torso", label: t("sheet.termsRolls.target.torso") },
         { value: "leg", label: t("sheet.terms.bodyPart.leg") },
         { value: "arm", label: t("sheet.terms.bodyPart.arm") },
@@ -667,12 +667,12 @@ export const RANGED_ROLL_COLUMNS = [
     column({
         key: "range", label: t("sheet.termsRolls.rollColumn.range"), default: "combat",
         options: [
-            { value: "melee", label: t("sheet.termsRolls.range.melee.short") },
-            { value: "point-blank", label: t("sheet.termsRolls.range.pointBlank.short") },
-            { value: "short", label: t("sheet.termsRolls.range.short.short") },
-            { value: "combat", label: t("sheet.termsRolls.range.combat.short") },
-            { value: "long", label: t("sheet.termsRolls.range.long.short") },
-            { value: "extreme", label: t("sheet.termsRolls.range.extreme.short") },
+            { value: "melee", label: t("sheet.termsRolls.range.melee") },
+            { value: "point-blank", label: t("sheet.termsRolls.range.pointBlank") },
+            { value: "short", label: t("sheet.termsRolls.range.short") },
+            { value: "combat", label: t("sheet.termsRolls.range.combat") },
+            { value: "long", label: t("sheet.termsRolls.range.long") },
+            { value: "extreme", label: t("sheet.termsRolls.range.extreme") },
         ],
         names: {
             melee: t("sheet.schema.rollName.range.melee"),
@@ -685,10 +685,10 @@ export const RANGED_ROLL_COLUMNS = [
     column({
         key: "rof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
         options: [
-            { value: "single", label: t("sheet.termsRolls.rof.single.short") },
+            { value: "single", label: t("sheet.termsRolls.rof.single") },
             { value: "short", label: t("sheet.termsRolls.rof.short.short") },
             { value: "long", label: t("sheet.termsRolls.rof.long.short") },
-            { value: "suppression", label: t("sheet.termsRolls.rof.suppression.short") },
+            { value: "suppression", label: t("sheet.termsRolls.rof.suppression") },
         ],
         names: { short: t("sheet.termsRolls.rof.short"), long: t("sheet.termsRolls.rof.long"), suppression: t("sheet.schema.rollName.rof.suppression") },
     }),
@@ -700,12 +700,12 @@ export const MELEE_ROLL_COLUMNS = [
     column({
         key: "base", label: t("sheet.termsRolls.rollColumn.base"), default: "standard",
         options: [
-            { value: "standard", label: t("sheet.termsRolls.meleeBase.standard.short") },
+            { value: "standard", label: t("sheet.termsRolls.meleeBase.standard") },
             { value: "charge", label: t("sheet.termsRolls.meleeBase.charge") },
             { value: "full", label: t("sheet.termsRolls.meleeBase.full.short") },
-            { value: "careful", label: t("sheet.termsRolls.meleeBase.careful.short") },
-            { value: "mounted", label: t("sheet.termsRolls.meleeBase.mounted.short") },
-            { value: "free", label: t("sheet.termsRolls.meleeBase.free.short") },
+            { value: "careful", label: t("sheet.termsRolls.meleeBase.careful") },
+            { value: "mounted", label: t("sheet.termsRolls.meleeBase.mounted") },
+            { value: "free", label: t("sheet.termsRolls.meleeBase.free") },
         ],
         names: {
             full: t("sheet.termsRolls.meleeBase.full"),
@@ -717,7 +717,7 @@ export const MELEE_ROLL_COLUMNS = [
     column({
         key: "rof", label: t("sheet.termsArms.weaponField.rof.short"), default: "single",
         options: [
-            { value: "single", label: t("sheet.termsRolls.meleeRof.single.short") },
+            { value: "single", label: t("sheet.termsRolls.meleeRof.single") },
             { value: "quick", label: t("sheet.termsRolls.meleeRof.quick.short") },
             { value: "lightning", label: t("sheet.termsRolls.meleeRof.lightning.short") },
         ],
