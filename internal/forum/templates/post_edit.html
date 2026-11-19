@@ -14,12 +14,9 @@
             <span>{{t .Lang "forum.posts.yourPost"}} <a href="{{.Post.URL}}">#{{.Post.Number}}</a></span>
         </div>
         <div class="forum-post-main forum-form">
-            {{- /* Session B puts the Text / Preview tabs over the field. */}}
-            <textarea id="forum-edit-body" name="body" rows="12" required aria-label="{{t .Lang "forum.posts.yourPost"}}"
-                {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-edit-body-error"{{end}}>{{.Form.Body}}</textarea>
-            {{with .Form.Errors.body}}<span class="error field-error" id="forum-edit-body-error">{{.}}</span>{{end}}
+            {{- template "forum-editor" ($.Editor "forum-edit-body" 12 (t .Lang "forum.posts.yourPost") .Form)}}
             <div class="forum-form-buttons">
-                <span class="meta left">{{t .Lang "forum.posts.markdownHint"}}</span>
+                {{- template "forum-markup-hint" .Lang}}
                 <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
                 <button type="submit" class="f-btn f-primary">{{t .Lang "common.save"}}</button>
             </div>

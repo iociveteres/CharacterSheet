@@ -274,11 +274,12 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	f.renderTopic(w, r, v, t, page, postForm{}, http.StatusOK)
+	f.renderTopic(w, r, v, t, page, postForm{}, http.StatusOK, false)
 }
 
-// renderTopic shows an existing page of a topic the viewer may read.
-func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t topicPage, page int, form postForm, status int) {
+// renderTopic shows an existing page of a topic the viewer may read. noIndex is for the addresses
+// that show it with something in the reply form: a quote, a preview, an error.
+func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t topicPage, page int, form postForm, status int, noIndex bool) {
 	posts, err := f.topicPosts(r.Context(), t.ID, page)
 	if err != nil {
 		f.host.ServerError(w, r, err)
@@ -299,6 +300,7 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 		Title:       t.Title,
 		Description: description,
 		Canonical:   f.baseURL + pageURL(t.URL(), page),
+		NoIndex:     noIndex,
 	})
 }
 

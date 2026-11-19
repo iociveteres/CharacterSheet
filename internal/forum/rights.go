@@ -50,6 +50,12 @@ func (v Viewer) CanDeletePost(t Topic, p post) bool {
 	return v.ownsLivePost(t, p) && !p.First()
 }
 
+// CanQuote: whoever may reply in the topic quotes a post that is not deleted; a guest, a member in
+// a closed topic and anyone in a deleted topic get no link (task 3.2 of block 3).
+func (v Viewer) CanQuote(t Topic, p post) bool {
+	return v.CanReply(t) && !p.Deleted()
+}
+
 func (v Viewer) ownsLivePost(t Topic, p post) bool {
 	return v.SignedIn() && p.AuthorID == v.ID && !p.Deleted() && !t.Deleted() && (!t.Closed || v.Moderator)
 }

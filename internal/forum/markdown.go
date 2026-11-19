@@ -5,6 +5,7 @@ import (
 	stdhtml "html"
 	"html/template"
 	"net/url"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -32,6 +33,7 @@ var markdown = goldmark.New(
 		extension.NewLinkify(extension.WithLinkifyAllowedProtocols([]string{"http:", "https:", "mailto:"})),
 		spoilerExtension{},
 		linkExtension{},
+		quoteHeadExtension{},
 	),
 	goldmark.WithRendererOptions(html.WithHardWraps()),
 )
@@ -223,6 +225,95 @@ func (spoilerRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 			w.WriteString(`<span class="spoiler" tabindex="0">`)
 		} else {
 			w.WriteString("</span>")
+		}
+		return ast.WalkContinue, nil
+	})
+}
+
+// quoteHeadExtension sets the head of a quote apart from its text: the first line of a blockquote
+// that links to a post and ends with a colon, "> **Name** [wrote in #12](/forum/post/123):"
+// (quoteText), becomes span.quote-head over the quoted paragraphs.
+type quoteHeadExtension struct{}
+
+func (quoteHeadExtension) Extend(m goldmark.Markdown) {
+	m.Parser().AddOptions(parser.WithASTTransformers(util.Prioritized(quoteHeadTransformer{}, 500)))
+	m.Renderer().AddOptions(renderer.WithNodeRenderers(util.Prioritized(quoteHeadRenderer{}, 500)))
+}
+
+var kindQuoteHead = ast.NewNodeKind("QuoteHead")
+
+// quoteHeadNode holds the inline nodes of the head line; it is a block, the first child of its
+// blockquote.
+type quoteHeadNode struct{ ast.BaseBlock }
+
+func (n *quoteHeadNode) Kind() ast.NodeKind { return kindQuoteHead }
+
+func (n *quoteHeadNode) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
+
+// quotedPostPath is the address a quote head links to; block 6 finds the quoted post by it.
+var quotedPostPath = regexp.MustCompile(`^/forum/post/[0-9]+$`)
+
+type quoteHeadTransformer struct{}
+
+func (quoteHeadTransformer) Transform(doc *ast.Document, reader text.Reader, _ parser.Context) {
+	source := reader.Source()
+	var quotes []*ast.Blockquote
+	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if q, ok := n.(*ast.Blockquote); ok && entering {
+			quotes = append(quotes, q)
+		}
+		return ast.WalkContinue, nil
+	})
+	for _, q := range quotes {
+		p, ok := q.FirstChild().(*ast.Paragraph)
+		if !ok {
+			continue
+		}
+		// The head is the first line of the paragraph: the quoted text may follow it without a
+		// blank line, as typed by hand.
+		var line []ast.Node
+		for c := p.FirstChild(); c != nil; c = c.NextSibling() {
+			line = append(line, c)
+			if t, ok := c.(*ast.Text); ok && (t.SoftLineBreak() || t.HardLineBreak()) {
+				break
+			}
+		}
+		last, ok := line[len(line)-1].(*ast.Text)
+		if !ok || !bytes.HasSuffix(bytes.TrimSpace(last.Segment.Value(source)), []byte(":")) || !linksToPost(line) {
+			continue
+		}
+		head := &quoteHeadNode{}
+		for _, c := range line {
+			p.RemoveChild(p, c)
+			head.AppendChild(head, c)
+		}
+		last.SetSoftLineBreak(false)
+		last.SetHardLineBreak(false)
+		q.InsertBefore(q, p, head)
+		if !p.HasChildren() {
+			q.RemoveChild(q, p)
+		}
+	}
+}
+
+// linksToPost is whether one of the nodes is a link to a post of the forum.
+func linksToPost(nodes []ast.Node) bool {
+	for _, n := range nodes {
+		if l, ok := n.(*ast.Link); ok && quotedPostPath.Match(l.Destination) {
+			return true
+		}
+	}
+	return false
+}
+
+type quoteHeadRenderer struct{}
+
+func (quoteHeadRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+	reg.Register(kindQuoteHead, func(w util.BufWriter, _ []byte, _ ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering {
+			w.WriteString(`<span class="quote-head">`)
+		} else {
+			w.WriteString("</span>\n")
 		}
 		return ast.WalkContinue, nil
 	})

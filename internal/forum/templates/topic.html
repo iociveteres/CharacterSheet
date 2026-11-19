@@ -30,7 +30,8 @@
     {{end}}
     {{if .Viewer.CanReply .Topic.Topic}}
     {{- /* The reply form looks like a post: the writer on the left (design/decisions.md, 19). */}}
-    <form class="forum-post reply" id="reply" action="{{.Topic.URL}}/reply" method="POST">
+    {{- /* #reply in the action: the page that comes back (a tab, an error) opens at the form. */}}
+    <form class="forum-post reply" id="reply" action="{{.Topic.URL}}/reply#reply" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="forum-post-author">
             <span class="name">{{.Viewer.Name}}</span>
@@ -38,14 +39,11 @@
         </div>
         <div class="forum-post-main forum-form">
             {{if .Topic.Closed}}<span class="meta">{{t .Lang "forum.posts.closedButModerator"}}</span>{{end}}
-            {{- /* Block 3 puts the Text / Preview tabs over the field. */}}
-            <textarea id="forum-reply-body" name="body" rows="6" required aria-label="{{t .Lang "forum.posts.yourReply"}}"
-                {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-reply-body-error"{{end}}>{{.Form.Body}}</textarea>
-            {{with .Form.Errors.body}}<span class="error field-error" id="forum-reply-body-error">{{.}}</span>{{end}}
+            {{- template "forum-editor" ($.Editor "forum-reply-body" 6 (t .Lang "forum.posts.yourReply") .Form)}}
             {{- /* What is not about one field: the limit of how often one writes. */}}
             {{range .Form.NonFieldErrors}}<span class="error forum-form-error">{{.}}</span>{{end}}
             <div class="forum-form-buttons">
-                <span class="meta left">{{t .Lang "forum.posts.markdownHint"}}</span>
+                {{- template "forum-markup-hint" .Lang}}
                 <button type="submit" class="f-btn f-primary">{{t .Lang "forum.posts.reply"}}</button>
             </div>
         </div>

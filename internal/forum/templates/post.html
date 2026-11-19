@@ -24,10 +24,12 @@
         {{- if $.Actions}}
         {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
         {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
-        {{- /* Only the actions the viewer may take (design/decisions.md, 8). Session B of block 3
-             puts "❝ Quote" first and adds it to the condition. */}}
-        {{- if or $edit $delete}}
+        {{- $quote := $.Viewer.CanQuote $.Topic $.Post}}
+        {{- /* Only the actions the viewer may take (design/decisions.md, 8). Quote opens the reply
+             form on the last page of the topic with the quote in it. */}}
+        {{- if or $quote $edit $delete}}
         <div class="forum-post-actions">
+            {{- if $quote}}<a class="f-icon forum-quote-post" href="{{.URL}}/quote#reply" rel="nofollow">❝ {{t $.Lang "forum.posts.quote"}}</a>{{end}}
             {{- if $edit}}<a class="f-icon forum-edit-post" href="{{.URL}}/edit">✎ {{t $.Lang "common.edit"}}</a>{{end}}
             {{- if $delete}}<a class="f-icon danger forum-delete-post" href="{{.URL}}/delete">× {{t $.Lang "common.delete"}}</a>{{end}}
         </div>

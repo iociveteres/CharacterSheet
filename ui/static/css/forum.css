@@ -724,11 +724,17 @@ main.forum-wide {
     gap: 6px;
 }
 
-/* "Name wrote in #N:" over a quote, small and faint. The quote of block 2 is one paragraph with
-   its head; the renderer of block 3 puts the head into span.quote-head. */
+/* "Name wrote in #N:" over a quote, small and faint: the renderer puts the first line of a quote
+   that links to a post into span.quote-head (quoteHeadTransformer in markdown.go). */
 .forum-post-body blockquote .quote-head {
     font-size: 14px;
     color: var(--text-secondary);
+}
+
+/* The name is bold in the text of the quote ("> **Name** [wrote in #N](…):"), plain in its head,
+   as in the prototype. */
+.forum-post-body blockquote .quote-head strong {
+    font-weight: normal;
 }
 
 #forum .forum-post-body blockquote .quote-head a {
@@ -851,9 +857,128 @@ main.forum-wide {
     flex-wrap: wrap;
 }
 
-/* The place of the markup hint (a popover in block 3), left of the buttons. */
+/* The markup hint, left of the buttons. */
 .forum-form-buttons .left {
     margin-right: auto;
+}
+
+/* Text / Preview tabs over the message field (design/decisions.md, 18); the preview takes the
+   field's place. Without a script a tab is a submit button. */
+.forum-tabs-bar {
+    display: flex;
+    gap: 4px;
+}
+
+#forum .forum-tabs-bar .tab {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 1px 12px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 15px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+#forum .forum-tabs-bar .tab:hover {
+    color: var(--text);
+}
+
+/* The current tab is a selection: accent frame and bold accent name (DESIGN.md). */
+#forum .forum-tabs-bar .tab.current {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: bold;
+    cursor: default;
+}
+
+.forum-form .tab-preview {
+    min-height: 180px;
+    padding: 8px 12px;
+    border: 1px dashed var(--border-medium);
+    border-radius: 3px;
+}
+
+/* The reply's field is lower (rows 6). */
+.forum-post.reply:not(.forum-edit) .tab-preview {
+    min-height: 140px;
+}
+
+/* "Markup": the table opens over the field, as a menu, and the form does not move
+   (design/decisions.md, 6). */
+.forum-hint {
+    position: relative;
+}
+
+.forum-hint>summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.forum-hint>summary:hover {
+    color: var(--text);
+}
+
+#forum .forum-hint table {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 5;
+    width: max-content;
+    margin: 0;
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    border-collapse: separate;
+    padding: 4px 0;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+    font-size: 15px;
+}
+
+#forum .forum-hint tr {
+    border: none;
+    background: transparent;
+}
+
+#forum .forum-hint td {
+    padding: 2px 12px;
+    border: none;
+    text-align: left;
+    vertical-align: top;
+}
+
+#forum .forum-hint td:first-child {
+    color: var(--text-secondary);
+    white-space: pre;
+}
+
+.forum-hint code {
+    padding: 0 4px;
+    background: var(--bg-item2);
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+.forum-hint .forum-hint-link {
+    color: var(--link);
+    text-decoration: underline;
+}
+
+.forum-hint .forum-hint-quote {
+    padding-left: 8px;
+    border-left: 3px solid var(--border-dark);
+}
+
+.forum-hint .spoiler {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--text-secondary);
+    color: transparent;
 }
 
 /* The reply form looks like a post: the writer's name on the left (design/decisions.md, 19). */

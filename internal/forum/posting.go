@@ -17,11 +17,17 @@ const (
 	bodyMaxChars  = 20000
 )
 
-// postForm is what the new topic and reply forms send; on an error the page shows it again with
-// the errors by field name.
+// postForm is what the new topic, reply and edit forms send; on an error the page shows it again
+// with the errors by field name.
 type postForm struct {
 	Title string
 	Body  string
+	// Preview is the Preview tab open: the body rendered in the field's place, the text in a hidden
+	// field (design/decisions.md, 18).
+	Preview bool
+	// tab: a tab of the form was pressed, Preview or back to Text. The form comes back on that
+	// tab and nothing is written, the limit of how often one writes is not spent.
+	tab bool
 	validator.Validator
 }
 
@@ -31,10 +37,24 @@ func readPostForm(r *http.Request) (postForm, error) {
 	if err := r.ParseForm(); err != nil {
 		return postForm{}, err
 	}
+	preview := r.PostForm.Has("preview")
 	return postForm{
-		Title: strings.TrimSpace(r.PostForm.Get("title")),
-		Body:  r.PostForm.Get("body"),
+		Title:   strings.TrimSpace(r.PostForm.Get("title")),
+		Body:    r.PostForm.Get("body"),
+		Preview: preview,
+		tab:     preview || r.PostForm.Has("write"),
 	}, nil
+}
+
+// tabStatus is the status of a form that comes back from its tab. A body over the length is not
+// rendered: the form stays on the Text tab with the error.
+func (p *postForm) tabStatus(lang string) int {
+	if !validator.MaxChars(p.Body, bodyMaxChars) {
+		p.Preview = false
+		p.AddError("body", i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": bodyMaxChars}))
+		return http.StatusUnprocessableEntity
+	}
+	return http.StatusOK
 }
 
 func (p *postForm) checkTitle(lang string) {
@@ -53,6 +73,21 @@ func (p *postForm) checkBody(lang string) {
 	p.Check(validator.NotBlank(p.Body), "body", i18n.T(lang, "server.errors.form.blank"))
 	p.Check(validator.MaxChars(p.Body, bodyMaxChars), "body",
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": bodyMaxChars}))
+}
+
+// editor is the message field of a form for the template "forum-editor": the id of its textarea
+// (the error and the preview take it as a prefix), its height, its aria-label when no label names it.
+type editor struct {
+	view
+	ID    string
+	Rows  int
+	Label string
+	Form  postForm
+}
+
+// Editor: {{template "forum-editor" ($.Editor "forum-reply-body" 6 (t .Lang "forum.posts.yourReply") .Form)}}.
+func (v view) Editor(id string, rows int, label string, form postForm) editor {
+	return editor{view: v, ID: id, Rows: rows, Label: label, Form: form}
 }
 
 // forbidden answers a signed-in viewer who sent a form the page did not offer them, as the site's
@@ -99,6 +134,13 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 	if r.Method == http.MethodPost {
 		if data.Form, err = readPostForm(r); err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		if data.Form.tab {
+			f.render(w, r, data.Form.tabStatus(v.Lang), "new_topic.html", data, Page{
+				Title:   i18n.T(v.Lang, "forum.topics.new"),
+				NoIndex: true,
+			})
 			return
 		}
 		data.Form.checkTitle(v.Lang)
@@ -158,9 +200,14 @@ func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	if form.tab {
+		status := form.tabStatus(v.Lang)
+		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, status, true)
+		return
+	}
 	form.checkBody(v.Lang)
 	if !form.Valid() {
-		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusUnprocessableEntity)
+		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusUnprocessableEntity, true)
 		return
 	}
 	next, err := f.nextReplyAt(r.Context(), v.Viewer, v.Now)
@@ -170,7 +217,7 @@ func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 	}
 	if next.After(v.Now) {
 		form.AddNonFieldError(tooOften(v.Lang, next, v.Now))
-		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusTooManyRequests)
+		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusTooManyRequests, true)
 		return
 	}
 	postID, err := f.reply(r.Context(), t.ID, v.Viewer.ID, form.Body, v.Now)
@@ -179,6 +226,33 @@ func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 		return
 	}
 	http.Redirect(w, r, postURL(postID), http.StatusSeeOther)
+}
+
+// preview is the address the script of block 7 renders the Preview tab with: the body of the form
+// as the topic would show it, the HTML alone. A guest gets 403, a body over the length 422; the
+// app's middleware refuses a request without csrf_token.
+func (f *Forum) preview(w http.ResponseWriter, r *http.Request, v view) {
+	if !v.Viewer.SignedIn() {
+		forbidden(w)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	body := r.PostForm.Get("body")
+	if !validator.MaxChars(body, bodyMaxChars) {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+	html, err := renderMarkdown(body)
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Write([]byte(html))
 }
 
 // topicForReply loads the topic of /forum/topic/{id}/reply: a guest goes to sign in and back to

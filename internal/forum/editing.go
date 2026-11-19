@@ -41,10 +41,10 @@ func (f *Forum) loadPost(ctx context.Context, id int) (postTarget, error) {
 	return p, err
 }
 
-// postToChange loads the post of /forum/post/{id}/edit or /delete and asks may whether the viewer
-// may change it: a guest goes to sign in and back, a post the viewer cannot read is not found, a
-// change the page did not offer gets 403. False when it has answered.
-func (f *Forum) postToChange(w http.ResponseWriter, r *http.Request, v view, may func(Viewer, Topic, post) bool) (postTarget, bool) {
+// postToActOn loads the post of /forum/post/{id}/edit, /delete or /quote and asks may whether the
+// viewer may do that: a guest goes to sign in and back, a post the viewer cannot read is not found,
+// an action the page did not offer gets 403. False when it has answered.
+func (f *Forum) postToActOn(w http.ResponseWriter, r *http.Request, v view, may func(Viewer, Topic, post) bool) (postTarget, bool) {
 	id, ok := idParam(r)
 	if !ok {
 		f.host.NotFound(w, r)
@@ -80,7 +80,7 @@ type editPostData struct {
 // changes, of the first post too: the title of a topic is the moderators' (block 5). A text sent
 // unchanged leaves the post as it was, without the "edited" mark.
 func (f *Forum) editPost(w http.ResponseWriter, r *http.Request, v view) {
-	p, ok := f.postToChange(w, r, v, Viewer.CanEditPost)
+	p, ok := f.postToActOn(w, r, v, Viewer.CanEditPost)
 	if !ok {
 		return
 	}
@@ -92,8 +92,10 @@ func (f *Forum) editPost(w http.ResponseWriter, r *http.Request, v view) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		form.checkBody(v.Lang)
-		if form.Valid() {
+		if form.tab {
+			status = form.tabStatus(v.Lang)
+			data.Form = form
+		} else if form.checkBody(v.Lang); form.Valid() {
 			if form.Body != p.Body {
 				if err := f.updatePost(r.Context(), p.ID, form.Body, v.Now); err != nil {
 					f.host.ServerError(w, r, err)
@@ -102,8 +104,9 @@ func (f *Forum) editPost(w http.ResponseWriter, r *http.Request, v view) {
 			}
 			http.Redirect(w, r, p.URL(), http.StatusSeeOther)
 			return
+		} else {
+			data.Form, status = form, http.StatusUnprocessableEntity
 		}
-		data.Form, status = form, http.StatusUnprocessableEntity
 	}
 	f.render(w, r, status, "post_edit.html", data, Page{
 		Title:   i18n.T(v.Lang, "forum.posts.editTitle"),
@@ -129,7 +132,7 @@ type deletePostData struct {
 // its form posts to. The post keeps its place in the topic; the browser goes back to it, to the
 // line that says it is deleted.
 func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
-	p, ok := f.postToChange(w, r, v, Viewer.CanDeletePost)
+	p, ok := f.postToActOn(w, r, v, Viewer.CanDeletePost)
 	if !ok {
 		return
 	}

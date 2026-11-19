@@ -234,7 +234,7 @@ func TestDeletedPostTextHidden(t *testing.T) {
 		for _, target := range []string{
 			fmt.Sprintf("/forum/topic/%d", topicID),
 			fmt.Sprintf("/forum/topic/%d", firstSecret),
-			editURL(reply), deleteURL(reply),
+			editURL(reply), deleteURL(reply), postURL(reply) + "/quote",
 		} {
 			rec := h.get(t, f, target)
 			for _, text := range []string{string(h.page.Body), h.page.Description, h.page.Title, rec.Body.String()} {
@@ -245,15 +245,14 @@ func TestDeletedPostTextHidden(t *testing.T) {
 		}
 	}
 
-	// loadPost, which the pages of a single post read (and the quote of session B will), never
-	// carries the text either.
+	// loadPost, which the pages of a single post and the quote read, never carries the text either.
 	p, err := f.loadPost(context.Background(), reply)
 	assert.NilError(t, err)
 	assert.Equal(t, p.Body, "")
 }
 
 // TestPostActionsOffered: under a post only the actions the viewer may take (design/decisions.md,
-// 8), by the same rules the handlers ask.
+// 8), by the same rules the handlers ask. Both topics hold two posts by alice.
 func TestPostActionsOffered(t *testing.T) {
 	db := forumtest.NewDB(t)
 	h := &testHost{}
@@ -268,26 +267,32 @@ func TestPostActionsOffered(t *testing.T) {
 	mustReply(t, f, closed, alice, "a reply", at(1))
 	closeTopic(t, db, closed)
 
-	const editLink, deleteLink = `forum-edit-post"`, `forum-delete-post"`
+	deleted := mustReply(t, f, open, alice, "deleted", at(2))
+	deletePost(t, db, deleted)
+
+	const quoteLink, editLink, deleteLink = `forum-quote-post"`, `forum-edit-post"`, `forum-delete-post"`
 	tests := []struct {
-		name          string
-		viewer, topic int
-		edit, delete  int // links on the page: the first post and the reply are alice's
+		name                string
+		viewer, topic       int
+		quote, edit, delete int // links on the page
 	}{
-		{"author", alice, open, 2, 1},
-		{"author in a closed topic", alice, closed, 0, 0},
-		{"another member", bob, open, 0, 0},
-		{"moderator", mod, open, 0, 0},
-		{"guest", 0, open, 0, 0},
+		{"author", alice, open, 2, 2, 1},
+		{"author in a closed topic", alice, closed, 0, 0, 0},
+		{"another member", bob, open, 2, 0, 0},
+		{"another member in a closed topic", bob, closed, 0, 0, 0},
+		{"moderator", mod, open, 2, 0, 0},
+		{"moderator in a closed topic", mod, closed, 2, 0, 0},
+		{"guest", 0, open, 0, 0, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h.userID = tt.viewer
 			h.get(t, f, fmt.Sprintf("/forum/topic/%d", tt.topic))
 			page := string(h.page.Body)
+			assert.Equal(t, strings.Count(page, quoteLink), tt.quote)
 			assert.Equal(t, strings.Count(page, editLink), tt.edit)
 			assert.Equal(t, strings.Count(page, deleteLink), tt.delete)
-			assert.Equal(t, strings.Count(page, `class="forum-post-actions"`), max(tt.edit, tt.delete))
+			assert.Equal(t, strings.Count(page, `class="forum-post-actions"`), max(tt.quote, tt.edit, tt.delete))
 		})
 	}
 }

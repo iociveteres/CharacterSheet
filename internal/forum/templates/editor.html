@@ -1,0 +1,41 @@
+{{- /* The message field of the new topic, reply and edit forms with its Text / Preview tabs over it
+     (design/decisions.md, 18); dot is editor (view.Editor). Without a script a tab is a submit
+     button: the server sends the form back on the other tab and writes nothing; the Preview tab
+     keeps the text in a hidden field. data-tab is for the script of block 7. */}}
+{{define "forum-editor"}}
+<div class="forum-tabs-bar">
+    {{- if .Form.Preview}}
+    <button type="submit" class="tab" data-tab="text" name="write" value="1" formnovalidate>{{t .Lang "forum.posts.tabText"}}</button>
+    <button type="button" class="tab current" data-tab="preview" aria-current="true">{{t .Lang "forum.posts.tabPreview"}}</button>
+    {{- else}}
+    <button type="button" class="tab current" data-tab="text" aria-current="true">{{t .Lang "forum.posts.tabText"}}</button>
+    <button type="submit" class="tab" data-tab="preview" name="preview" value="1" formnovalidate>{{t .Lang "forum.posts.tabPreview"}}</button>
+    {{- end}}
+</div>
+{{- if .Form.Preview}}
+<input type="hidden" name="body" value="{{.Form.Body}}">
+<div class="tab-preview forum-post-body" id="{{.ID}}-preview">{{markdown .Form.Body}}</div>
+{{- else}}
+<textarea id="{{.ID}}" name="body" rows="{{.Rows}}" required{{with .Label}} aria-label="{{.}}"{{end}}
+    {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="{{$.ID}}-error"{{end}}>{{.Form.Body}}</textarea>
+{{- end}}
+{{with .Form.Errors.body}}<span class="error field-error" id="{{$.ID}}-error">{{.}}</span>{{end}}
+{{- end}}
+
+{{- /* "Markup" left of the form's buttons: a table that opens over the field without moving the
+     form (design/decisions.md, 6); dot is the language. The left column is what one types, the
+     right one what it gives. */}}
+{{define "forum-markup-hint"}}
+<details class="forum-hint left">
+    <summary>{{t . "forum.posts.markup"}}</summary>
+    <table>
+        <tr><td>**{{t . "forum.posts.hintBold"}}**</td><td><strong>{{t . "forum.posts.hintBold"}}</strong></td></tr>
+        <tr><td>*{{t . "forum.posts.hintItalic"}}*</td><td><em>{{t . "forum.posts.hintItalic"}}</em></td></tr>
+        <tr><td>[{{t . "forum.posts.hintLinkText"}}]({{t . "forum.posts.hintLinkAddress"}})</td><td><span class="forum-hint-link">{{t . "forum.posts.hintLinkText"}}</span></td></tr>
+        <tr><td>- {{t . "forum.posts.hintListItem"}}</td><td>• {{t . "forum.posts.hintListItem"}}</td></tr>
+        <tr><td>&gt; {{t . "forum.posts.hintQuote"}}</td><td><span class="forum-hint-quote">{{t . "forum.posts.hintQuote"}}</span></td></tr>
+        <tr><td>`{{t . "forum.posts.hintCode"}}`</td><td><code>{{t . "forum.posts.hintCode"}}</code></td></tr>
+        <tr><td>||{{t . "forum.posts.hintSpoiler"}}||</td><td><span class="spoiler">{{t . "forum.posts.hintSpoiler"}}</span></td></tr>
+    </table>
+</details>
+{{- end}}

@@ -39,6 +39,7 @@ func TestRights(t *testing.T) {
 	modsReply := post{ID: 14, AuthorID: moderator.ID, Number: 5}
 	edit := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanEditPost(t, p) } }
 	del := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanDeletePost(t, p) } }
+	quote := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanQuote(t, p) } }
 
 	tests := []struct {
 		name   string
@@ -102,6 +103,15 @@ func TestRights(t *testing.T) {
 		{"moderator deletes another's post", moderator, del(open, othersReply), false},
 		{"moderator deletes their post", moderator, del(open, modsReply), true},
 		{"moderator deletes their post in a closed topic", moderator, del(closed, modsReply), true},
+
+		{"guest quotes a post", guest, quote(open, othersReply), false},
+		{"member quotes another's post", member, quote(open, othersReply), true},
+		{"member quotes their post", member, quote(open, ownReply), true},
+		{"member quotes a deleted post", member, quote(open, ownDeleted), false},
+		{"member quotes in a closed topic", member, quote(closed, othersReply), false},
+		{"moderator quotes in a closed topic", moderator, quote(closed, othersReply), true},
+		{"moderator quotes a deleted post", moderator, quote(open, ownDeleted), false},
+		{"moderator quotes in a deleted topic", moderator, quote(deleted, othersReply), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
