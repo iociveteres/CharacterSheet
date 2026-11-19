@@ -20,7 +20,7 @@ func unread(t *testing.T, f *Forum, sectionID, userID int) map[int]bool {
 	var v Viewer
 	if userID != 0 {
 		var err error
-		v, err = f.loadViewer(ctx, userID)
+		v, err = f.loadViewer(ctx, userID, f.now())
 		assert.NilError(t, err)
 	}
 	rows, err := f.sectionTopics(ctx, sectionID, 1, v)
@@ -36,7 +36,7 @@ func unread(t *testing.T, f *Forum, sectionID, userID int) map[int]bool {
 func sectionUnread(t *testing.T, f *Forum, sectionID, userID int) bool {
 	t.Helper()
 	ctx := context.Background()
-	v, err := f.loadViewer(ctx, userID)
+	v, err := f.loadViewer(ctx, userID, f.now())
 	assert.NilError(t, err)
 	sections, err := f.sections(ctx, v)
 	assert.NilError(t, err)

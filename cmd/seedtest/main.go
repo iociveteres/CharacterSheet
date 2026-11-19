@@ -5,7 +5,7 @@
 // folders and sheets made by tests are deleted, the seeded sheets get their
 // name and visibility back, the stress sheets (stress.go), the gm's stress
 // encounter (encounter.go) and the gm's sheets of the other kinds are made
-// anew.
+// anew. The seeded moderator is a moderator of the forum too (forum.go).
 // The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
@@ -170,6 +170,9 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 
 	if err := ensureChat(ctx, db, m, roomID); err != nil {
 		return out, fmt.Errorf("chat: %w", err)
+	}
+	if err := ensureForum(ctx, db, users[1]); err != nil {
+		return out, fmt.Errorf("forum: %w", err)
 	}
 	return out, nil
 }

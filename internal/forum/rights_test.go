@@ -1,15 +1,20 @@
 package forum
 
 import (
+	"slices"
+	"strings"
 	"testing"
 	"time"
 )
 
-// The viewers the table checks; a later block adds its own (an author, a banned user) here.
+// The viewers the tables check. A ban of a viewer is the one loadViewer found standing.
 var (
 	guest     = Viewer{}
 	member    = Viewer{ID: 1, Name: "member", RegisteredAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)}
 	moderator = Viewer{ID: 2, Name: "moderator", RegisteredAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), Moderator: true}
+	banned    = Viewer{ID: 1, Name: "member", RegisteredAt: member.RegisteredAt, Ban: &Ban{ID: 1, Reason: "spam"}}
+	// A moderator banned before the grant: the ban no longer binds them.
+	bannedModerator = Viewer{ID: 2, Name: "moderator", RegisteredAt: moderator.RegisteredAt, Moderator: true, Ban: &Ban{ID: 2, Reason: "old"}}
 )
 
 // TestRights is the one table of the rules in rights.go: a row per viewer and target. A rule with
@@ -40,6 +45,15 @@ func TestRights(t *testing.T) {
 	edit := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanEditPost(t, p) } }
 	del := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanDeletePost(t, p) } }
 	quote := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanQuote(t, p) } }
+	isBanned := func(v Viewer) bool { return v.Banned() }
+	moderate := func(v Viewer) bool { return v.CanModerate() }
+	restorePost := func(t Topic, p post) func(Viewer) bool {
+		return func(v Viewer) bool { return v.CanRestorePost(t, p) }
+	}
+	ban := func(p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanBan(p) } }
+	othersDeleted := post{ID: 15, AuthorID: 3, Number: 6, DeletedAt: &deletedAt}
+	othersFirst := post{ID: 16, AuthorID: 3, Number: 1}
+	byModerator := post{ID: 17, AuthorID: 4, Number: 7, AuthorModerator: true}
 
 	tests := []struct {
 		name   string
@@ -112,11 +126,132 @@ func TestRights(t *testing.T) {
 		{"moderator quotes in a closed topic", moderator, quote(closed, othersReply), true},
 		{"moderator quotes a deleted post", moderator, quote(open, ownDeleted), false},
 		{"moderator quotes in a deleted topic", moderator, quote(deleted, othersReply), false},
+
+		{"guest is not banned", guest, isBanned, false},
+		{"member is not banned", member, isBanned, false},
+		{"member under a ban is banned", banned, isBanned, true},
+		{"moderator under a ban is not banned", bannedModerator, isBanned, false},
+		{"moderator under a ban starts a topic in news", bannedModerator, start(news), true},
+		{"moderator under a ban replies in a closed topic", bannedModerator, reply(closed), true},
+		{"banned user signs in to reply", banned, signInToReply(open), false},
+		{"banned user signs in to start a topic", banned, signInToStart(questions), false},
+
+		{"guest moderates", guest, moderate, false},
+		{"member moderates", member, moderate, false},
+		{"banned user moderates", banned, moderate, false},
+		{"moderator moderates", moderator, moderate, true},
+
+		{"member restores their deleted post", member, restorePost(open, ownDeleted), false},
+		{"moderator restores a deleted post", moderator, restorePost(open, othersDeleted), true},
+		{"moderator restores a post deleted by its author", moderator, restorePost(open, ownDeleted), true},
+		{"moderator restores a post deleted in a closed topic", moderator, restorePost(closed, othersDeleted), true},
+		{"moderator restores a post in a deleted topic", moderator, restorePost(deleted, othersDeleted), false},
+		{"moderator restores a post that stands", moderator, restorePost(open, othersReply), false},
+
+		{"guest bans an author", guest, ban(othersReply), false},
+		{"member bans an author", member, ban(othersReply), false},
+		{"moderator bans the author of a reply", moderator, ban(othersReply), true},
+		{"moderator bans the author of a first post", moderator, ban(othersFirst), true},
+		{"moderator bans the author of a deleted post", moderator, ban(othersDeleted), true},
+		{"moderator bans a moderator", moderator, ban(byModerator), false},
+		{"moderator bans themself", moderator, ban(modsReply), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.check(tt.viewer); got != tt.want {
 				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestRightsMatrix covers every viewer with every section and topic: guest, member, the author of
+// the topic and of its reply, that author under a ban, moderator × an open section and one of
+// moderators' topics × an open, closed and deleted topic. want lists the rights that hold; the
+// others must not.
+func TestRightsMatrix(t *testing.T) {
+	deletedAt := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	author := Viewer{ID: 5, Name: "author", RegisteredAt: member.RegisteredAt}
+	authorBanned := author
+	authorBanned.Ban = &Ban{ID: 3, Reason: "spam"}
+	viewers := map[string]Viewer{"guest": guest, "member": member, "author": author, "banned": authorBanned, "moderator": moderator}
+	sections := map[string]Section{"open": {ID: 1}, "mods-only": {ID: 2, ModsOnlyTopics: true}}
+	topic := func(section Section, state string) Topic {
+		t := Topic{ID: 1, SectionID: section.ID, AuthorID: author.ID}
+		switch state {
+		case "closed":
+			t.Closed = true
+		case "deleted":
+			t.DeletedAt = &deletedAt
+		}
+		return t
+	}
+	reply := post{ID: 2, AuthorID: author.ID, Number: 2}
+	rights := map[string]func(Viewer, Section, Topic) bool{
+		"read":      func(v Viewer, _ Section, t Topic) bool { return v.CanReadTopic(t) },
+		"start":     func(v Viewer, s Section, _ Topic) bool { return v.CanStartTopic(s) },
+		"reply":     func(v Viewer, _ Section, t Topic) bool { return v.CanReply(t) },
+		"edit":      func(v Viewer, _ Section, t Topic) bool { return v.CanEditPost(t, reply) },
+		"delete":    func(v Viewer, _ Section, t Topic) bool { return v.CanDeletePost(t, reply) },
+		"quote":     func(v Viewer, _ Section, t Topic) bool { return v.CanQuote(t, reply) },
+		"subscribe": func(v Viewer, _ Section, t Topic) bool { return v.CanSubscribe(t) },
+		"moderate":  func(v Viewer, _ Section, t Topic) bool { return v.CanModerateTopic(t) },
+		"restore":   func(v Viewer, _ Section, t Topic) bool { return v.CanRestoreTopic(t) },
+		"ban":       func(v Viewer, _ Section, t Topic) bool { return v.CanBan(reply) },
+	}
+
+	tests := []struct {
+		viewer, section, topic string
+		want                   string
+	}{
+		{"guest", "open", "open", "read"},
+		{"guest", "open", "closed", "read"},
+		{"guest", "open", "deleted", ""},
+		{"guest", "mods-only", "open", "read"},
+		{"guest", "mods-only", "closed", "read"},
+		{"guest", "mods-only", "deleted", ""},
+
+		{"member", "open", "open", "read start reply quote subscribe"},
+		{"member", "open", "closed", "read start subscribe"},
+		{"member", "open", "deleted", "start"},
+		{"member", "mods-only", "open", "read reply quote subscribe"},
+		{"member", "mods-only", "closed", "read subscribe"},
+		{"member", "mods-only", "deleted", ""},
+
+		{"author", "open", "open", "read start reply edit delete quote subscribe"},
+		{"author", "open", "closed", "read start subscribe"},
+		{"author", "open", "deleted", "start"},
+		{"author", "mods-only", "open", "read reply edit delete quote subscribe"},
+		{"author", "mods-only", "closed", "read subscribe"},
+		{"author", "mods-only", "deleted", ""},
+
+		{"banned", "open", "open", "read"},
+		{"banned", "open", "closed", "read"},
+		{"banned", "open", "deleted", ""},
+		{"banned", "mods-only", "open", "read"},
+		{"banned", "mods-only", "closed", "read"},
+		{"banned", "mods-only", "deleted", ""},
+
+		{"moderator", "open", "open", "read start reply quote subscribe moderate ban"},
+		{"moderator", "open", "closed", "read start reply quote subscribe moderate ban"},
+		{"moderator", "open", "deleted", "read start restore ban"},
+		{"moderator", "mods-only", "open", "read start reply quote subscribe moderate ban"},
+		{"moderator", "mods-only", "closed", "read start reply quote subscribe moderate ban"},
+		{"moderator", "mods-only", "deleted", "read start restore ban"},
+	}
+	names := make([]string, 0, len(rights))
+	for name := range rights {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	for _, tt := range tests {
+		t.Run(tt.viewer+" in "+tt.section+" section, "+tt.topic+" topic", func(t *testing.T) {
+			want := strings.Fields(tt.want)
+			v, s := viewers[tt.viewer], sections[tt.section]
+			for _, name := range names {
+				if got := rights[name](v, s, topic(s, tt.topic)); got != slices.Contains(want, name) {
+					t.Errorf("%s: got %v", name, got)
+				}
 			}
 		})
 	}
