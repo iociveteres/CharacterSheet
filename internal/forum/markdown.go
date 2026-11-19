@@ -161,7 +161,7 @@ func openLink(w util.BufWriter, link, title []byte) {
 
 // spoilerExtension parses ||text|| inside a paragraph (plan decision 4) the way GFM parses
 // ~~strikethrough~~: a delimiter pair, so it nests with emphasis and stays text inside code or
-// without its pair.
+// without its pair. Unlike ~~, spaces next to the bars do not break it.
 type spoilerExtension struct{}
 
 func (spoilerExtension) Extend(m goldmark.Markdown) {
@@ -199,6 +199,10 @@ func (spoilerParser) Parse(_ ast.Node, block text.Reader, pc parser.Context) ast
 	if node == nil || node.OriginalLength != 2 || before == '|' {
 		return nil
 	}
+	// Spaces next to the bars are allowed, as in Discord (|| text ||): every pair opens and
+	// closes, without the flanking rules of * and ~~. The author accepted that a phrase with two
+	// || hides the text between them.
+	node.CanOpen, node.CanClose = true, true
 	node.Segment = segment.WithStop(segment.Start + node.OriginalLength)
 	block.Advance(node.OriginalLength)
 	pc.PushDelimiter(node)
