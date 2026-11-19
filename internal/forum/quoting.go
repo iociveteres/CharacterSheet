@@ -33,16 +33,8 @@ func (f *Forum) quotePost(w http.ResponseWriter, r *http.Request, v view) {
 // code block.
 func quoteText(lang string, p post) string {
 	var b strings.Builder
-	b.WriteString("> **")
-	b.WriteString(escapeMarkdown(p.AuthorName))
-	b.WriteString("** [")
-	// The name of the author can be anything; the words of the catalog only need their brackets
-	// kept from closing the link.
-	b.WriteString(strings.NewReplacer(`\`, `\\`, `[`, `\[`, `]`, `\]`).
-		Replace(i18n.T(lang, "forum.posts.quoteWrote", i18n.Params{"n": p.Number})))
-	b.WriteString("](")
-	b.WriteString(p.URL())
-	b.WriteString("):\n")
+	b.WriteString(quoteHead(lang, p))
+	b.WriteString("\n")
 	if body := withoutQuotes(p.Body); body != "" {
 		b.WriteString(">\n")
 		for _, line := range strings.Split(body, "\n") {
@@ -55,6 +47,32 @@ func quoteText(lang string, p post) string {
 	}
 	b.WriteString("\n")
 	return b.String()
+}
+
+// quoteHead is the first line of a quote of p: > **Name** [wrote in #12](/forum/post/123):
+func quoteHead(lang string, p post) string {
+	var b strings.Builder
+	b.WriteString("> **")
+	b.WriteString(escapeMarkdown(p.AuthorName))
+	b.WriteString("** [")
+	// The name of the author can be anything; the words of the catalog only need their brackets
+	// kept from closing the link.
+	b.WriteString(strings.NewReplacer(`\`, `\\`, `[`, `\[`, `]`, `\]`).
+		Replace(i18n.T(lang, "forum.posts.quoteWrote", i18n.Params{"n": p.Number})))
+	b.WriteString("](")
+	b.WriteString(p.URL())
+	b.WriteString("):")
+	return b.String()
+}
+
+// QuoteHead is the head of a quote of the card's post for the forum script, which quotes the
+// selected part of a post into the reply form on the page (ui/static/js/forum/quote.ts); empty
+// where Quote is not offered.
+func (c postCard) QuoteHead() string {
+	if !c.Actions || !c.Viewer.CanQuote(c.Topic, c.Post) {
+		return ""
+	}
+	return quoteHead(c.Lang, c.Post)
 }
 
 // escapeMarkdown puts a backslash before every ASCII punctuation character, which CommonMark then

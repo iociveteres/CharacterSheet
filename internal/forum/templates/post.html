@@ -12,7 +12,8 @@
 {{- else}}
 {{- /* A moderator sees the whole card of a deleted post: a dashed red frame, faint text, who
      deleted it, when and why, and the way back (design/decisions.md, 20). */}}
-<article class="forum-post{{if .AuthorModerator}} mod{{end}}{{if .Deleted}} deleted-mod{{end}}" id="post-{{.ID}}">
+<article class="forum-post{{if .AuthorModerator}} mod{{end}}{{if .Deleted}} deleted-mod{{end}}" id="post-{{.ID}}"
+    {{- with $.QuoteHead}} data-quote-head="{{.}}"{{end}}>
     <div class="forum-post-author">
         <span class="name">{{.AuthorName}}</span>
         <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>

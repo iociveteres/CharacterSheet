@@ -852,9 +852,10 @@ main.forum-wide {
 }
 
 /* ||spoiler||: a grey bar that opens on a click. Without a script the click focuses it (it has
-   tabindex), so it opens on focus, by Tab and by a tap, and a click elsewhere closes it again;
-   .open is for the script of block 7. While hidden, a link inside takes no click: the first one
-   opens the spoiler instead of following an unseen link. */
+   tabindex), so it opens on focus, by Tab and by a tap, and a click elsewhere closes it again.
+   The forum script (html.forum-js) toggles .open on a click, Enter or Space instead, so that a
+   second click closes it. While hidden, a link inside takes no click: the first one opens the
+   spoiler instead of following an unseen link. */
 .forum-post-body .spoiler {
     padding: 0 3px;
     border-radius: 3px;
@@ -866,18 +867,20 @@ main.forum-wide {
     transition: background-color 0.15s, color 0.15s;
 }
 
-.forum-post-body .spoiler:not(:focus-within):not(.open) * {
+:root:not(.forum-js) .forum-post-body .spoiler:not(:focus-within):not(.open) *,
+.forum-js .forum-post-body .spoiler:not(.open) * {
     color: transparent;
     background: transparent;
     border-color: transparent;
     text-decoration-color: transparent;
 }
 
-.forum-post-body .spoiler:not(:focus-within):not(.open) a {
+:root:not(.forum-js) .forum-post-body .spoiler:not(:focus-within):not(.open) a,
+.forum-js .forum-post-body .spoiler:not(.open) a {
     pointer-events: none;
 }
 
-.forum-post-body .spoiler:focus-within,
+:root:not(.forum-js) .forum-post-body .spoiler:focus-within,
 .forum-post-body .spoiler.open {
     background: var(--bg-item2);
     color: inherit;
@@ -927,6 +930,11 @@ main.forum-wide {
     height: auto;
     min-height: 180px;
     resize: vertical;
+}
+
+/* The field under the preview the script shows in its place. */
+#forum .forum-form textarea[hidden] {
+    display: none;
 }
 
 #forum .forum-form select {

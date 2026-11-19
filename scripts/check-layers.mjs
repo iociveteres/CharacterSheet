@@ -4,7 +4,8 @@
 // sheet/api.ts. Type-only imports count: a type ties the layers as much as a
 // value. Tests and testUtils.tsx don't count. The order and the reasons for
 // it: _prd/sheet_modules/plan.md. Imports listed in layer-exceptions.txt pass;
-// one that no longer exists fails, so the list only shrinks.
+// one that no longer exists fails, so the list only shrinks. The forum's script
+// imports only its own folder and no package, and nothing else imports it.
 import ts from "typescript";
 import fs from "node:fs";
 import path from "node:path";
@@ -42,6 +43,10 @@ const OUTSIDE_ALLOWED = ["room/messages.ts", "i18n/index.ts"];
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const js = path.join(root, "ui", "static", "js");
 const sheet = path.join(js, "sheet");
+// The forum's script stands alone (_prd/forum/plan.md): plain TypeScript without Preact or signals
+// and nothing of the sheet, the room or the bestiary, and nothing else imports it, so that it goes
+// with the forum.
+const forum = path.join(js, "forum");
 const layerOf = new Map(LAYERS.flatMap((units, i) => units.map(u => [u, i])));
 const exceptionsFile = path.join(root, "scripts", "layer-exceptions.txt");
 const exceptions = new Set(fs.readFileSync(exceptionsFile, "utf8").split(/\r?\n/)
@@ -51,6 +56,7 @@ const problems = [];
 
 const slash = p => p.split(path.sep).join("/");
 const inSheet = file => !path.relative(sheet, file).startsWith("..");
+const inForum = file => !path.relative(forum, file).startsWith("..");
 const ignored = name => /\.test\.[jt]sx?$/.test(name) || /(^|[\\/])testUtils\.tsx?$/.test(name) || name.endsWith(".d.ts");
 
 // The layer unit of a sheet file: its folder, or <base> / <app> at the root.
@@ -78,7 +84,7 @@ function* files(dir) {
     }
 }
 
-// The relative module specifiers of `file`: imports, re-exports, import() and import("x").T.
+// The module specifiers of `file`: imports, re-exports, import() and import("x").T.
 function specifiers(file) {
     const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
     const found = [];
@@ -93,7 +99,7 @@ function specifiers(file) {
         ts.forEachChild(node, visit);
     };
     visit(source);
-    return found.filter(s => s.startsWith("."));
+    return found;
 }
 
 function report(edge, why) {
@@ -104,10 +110,18 @@ function report(edge, why) {
 for (const file of files(js)) {
     const from = slash(path.relative(js, file));
     for (const spec of specifiers(file)) {
+        if (!spec.startsWith(".")) {
+            if (inForum(file)) report(`${from} -> ${spec}`, "the forum script imports no packages");
+            continue;
+        }
         const target = resolve(file, spec);
         if (!target) continue;
         const to = slash(path.relative(js, target));
         const edge = `${from} -> ${to}`;
+        if (inForum(file) !== inForum(target)) {
+            report(edge, inForum(file) ? "the forum script imports only ui/static/js/forum" : "nothing outside ui/static/js/forum imports the forum script");
+            continue;
+        }
         if (!inSheet(file)) {
             if (inSheet(target) && !PUBLIC.includes(slash(path.relative(sheet, target)))) {
                 report(edge, "outside the sheet, import sheet/api.ts");
@@ -137,4 +151,4 @@ if (problems.length) {
     for (const p of problems) console.error(p);
     process.exit(1);
 }
-console.log(`The sheet imports only lower layers, the rest of the code only sheet/api.ts (${exceptions.size} exceptions left).`);
+console.log(`The sheet imports only lower layers, the rest of the code only sheet/api.ts, the forum script only itself (${exceptions.size} exceptions left).`);
