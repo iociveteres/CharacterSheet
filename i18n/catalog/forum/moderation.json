@@ -1,5 +1,5 @@
 {
-  "forum.moderation.menu": { "en": "Moderation", "ru": "Модерация", "note": "кнопка меню действий модератора в шапке темы; за словом стоит стрелка ▾" },
+  "forum.moderation.menu": { "en": "Moderation", "ru": "Модерация", "note": "кнопка меню действий модератора в шапке темы; за словом стоит стрелка ▾. Также вид уведомления о действии модератора на странице уведомлений («Модерация · 5 минут назад»)" },
   "forum.moderation.renameTitle": { "en": "Rename the topic", "ru": "Переименовать тему", "note": "заголовок страницы, где модератор меняет заголовок темы" },
   "forum.moderation.pin": { "en": "Pin", "ru": "Закрепить", "note": "пункт меню модератора и кнопка: тема встаёт в разделе сверху" },
   "forum.moderation.pinTitle": { "en": "Pin the topic", "ru": "Закрепить тему", "note": "заголовок страницы, где модератор закрепляет тему" },
@@ -14,7 +14,7 @@
   "forum.moderation.restoreTopic": { "en": "Restore the topic", "ru": "Восстановить тему", "note": "пункт меню модератора у удалённой темы и заголовок страницы" },
   "forum.moderation.restore": { "en": "Restore", "ru": "Восстановить", "note": "кнопка: вернуть удалённое (тему, сообщение)" },
   "forum.moderation.restoreNote": { "en": "The topic comes back to its section for everyone, with its posts.", "ru": "Тема вернётся в свой раздел для всех, вместе с сообщениями.", "note": "на странице восстановления темы, над кнопками" },
-  "forum.moderation.reason": { "en": "Reason", "ru": "Причина", "note": "поле формы действия модератора" },
+  "forum.moderation.reason": { "en": "Reason", "ru": "Причина", "note": "поле формы действия модератора; также подпись «Причина: …» под уведомлением о действии модератора" },
   "forum.moderation.reasonOptional": { "en": "Optional. It goes to the moderation log.", "ru": "Необязательно. Попадёт в журнал модерации.", "note": "подсказка под полем «Причина»" },
   "forum.moderation.sameSection": { "en": "The topic is already in this section.", "ru": "Тема уже в этом разделе.", "note": "ошибка под выбором раздела при переносе темы" },
   "forum.moderation.noSection": { "en": "Choose a section.", "ru": "Выберите раздел.", "note": "ошибка под выбором раздела: такого раздела нет" },

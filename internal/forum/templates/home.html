@@ -2,11 +2,14 @@
     {{- template "forum-ban-notice" .}}
     {{- /* No visible heading: the page is plainly the forum (design/decisions.md, 12); the h2 keeps
          the page's outline for screen readers. The buttons are a line on the right above the list,
-         none for a guest; blocks 5–6 add theirs to the same div.forum-actions. */}}
+         none for a guest: notifications, mark all read, the moderators' menu. */}}
     <h2 class="forum-visually-hidden">{{t .Lang "forum.sections.title"}}</h2>
     {{if .Viewer.SignedIn}}
     <div class="forum-head">
         <div class="forum-actions">
+            {{- /* The same pill as next to the forum link of the nav (design/decisions.md, 14). */}}
+            <a class="f-btn f-secondary forum-notifications" href="/forum/notifications">{{t .Lang "forum.notifications.title"}}
+                {{- with .Badge}} <span class="nav-badge" title="{{t $.Lang "forum.notifications.unread"}}">{{.}}</span>{{end}}</a>
             <form method="post" action="/forum/read">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>

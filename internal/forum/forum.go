@@ -116,6 +116,8 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/topic/{id}/unread", f.withView(f.firstUnread))
 	mux.HandleFunc("POST /forum/read", f.withView(f.markAllRead))
 	mux.HandleFunc("POST /forum/section/{id}/read", f.withView(f.markSectionRead))
+	mux.HandleFunc("GET /forum/notifications", f.withView(f.notificationsPage))
+	mux.HandleFunc("POST /forum/notifications/read", f.withView(f.readAllNotifications))
 	mux.HandleFunc("POST /forum/topic/{id}/subscribe", f.withView(f.subscription(true)))
 	mux.HandleFunc("POST /forum/topic/{id}/unsubscribe", f.withView(f.subscription(false)))
 	mux.HandleFunc("GET /forum/topic/{id}/mod/{action}", f.withView(f.moderateTopic))

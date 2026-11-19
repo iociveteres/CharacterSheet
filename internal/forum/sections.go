@@ -101,6 +101,8 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 type homeData struct {
 	view
 	Sections []sectionSummary
+	// Badge is the counter of unread notifications on the button «Notifications» (Badge).
+	Badge string
 }
 
 func (f *Forum) home(w http.ResponseWriter, r *http.Request, v view) {
@@ -110,6 +112,14 @@ func (f *Forum) home(w http.ResponseWriter, r *http.Request, v view) {
 		return
 	}
 	data := homeData{view: v, Sections: sections}
+	if v.Viewer.SignedIn() {
+		// As in the nav: without the counter the page still serves.
+		n, err := f.UnreadNotifications(r.Context(), v.Viewer.ID)
+		if err != nil {
+			f.host.LogError(r, err)
+		}
+		data.Badge = Badge(n)
+	}
 	f.render(w, r, http.StatusOK, "home.html", data, Page{
 		Title:       i18n.T(data.Lang, "forum.sections.title"),
 		Description: i18n.T(data.Lang, "forum.sections.description"),

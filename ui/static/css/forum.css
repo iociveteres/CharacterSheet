@@ -1000,6 +1000,20 @@ main.forum-wide {
     gap: 6px;
 }
 
+/* Notifications: kind and time small above the text, a reason on its own line (design/decisions.md,
+   21); unread ones bold, with the dot (11). */
+.forum-notes .forum-row {
+    grid-template-columns: 8px minmax(0, 1fr);
+}
+
+#forum .forum-notes .note-text {
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-notes .unread .note-text {
+    font-weight: bold;
+}
+
 /* The moderation log: who and when above, what and why under it, one column. */
 .forum-mod-log .forum-row {
     grid-template-columns: minmax(0, 1fr);

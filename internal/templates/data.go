@@ -40,6 +40,18 @@ type Data struct {
 	Token                   string
 	OnlineUsers             int
 	Embedded                *EmbeddedPage // set only for embedded.html
+	// ForumBadge counts the unread forum notifications of the signed-in user as the nav shows them
+	// ("3", "9+", empty for none); nil for a guest. It is called only by the nav, so a page drawn
+	// without it (a room) never asks the forum.
+	ForumBadge func() string
+}
+
+// NavForumBadge is ForumBadge for the nav template, which cannot call a nil func.
+func (d Data) NavForumBadge() string {
+	if d.ForumBadge == nil {
+		return ""
+	}
+	return d.ForumBadge()
 }
 
 // EmbeddedPage is a page rendered elsewhere (the forum) and shown inside the site layout.

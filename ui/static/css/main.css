@@ -152,6 +152,23 @@ nav a.live:after {
     pointer-events: none;
 }
 
+/* The counter of unread forum notifications next to the forum link (and on the button of the forum
+   home): a pill in the user's accent colour that grows with its text, "3", "9+". */
+.nav-badge {
+    display: inline-block;
+    margin-left: 5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: var(--bg-light);
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+}
+
 /* Header and nav at phone width. Only pages with a viewport meta (the forum's) get this narrow:
    without it a phone lays the page out about 980px wide (_prd/forum/plan.md, amendment 5). */
 @media (max-width: 600px) {

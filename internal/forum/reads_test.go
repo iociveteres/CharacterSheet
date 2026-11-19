@@ -154,7 +154,7 @@ func TestUnreadTopics(t *testing.T) {
 
 	t.Run("a reply makes a read topic unread for the others", func(t *testing.T) {
 		topic, first := mustCreateTopic(t, f, section, alice, "replied", at(2))
-		assert.NilError(t, readTopicUpTo(ctx, db, bob, topic, first))
+		assert.NilError(t, readTopicUpTo(ctx, db, bob, topic, first, at(0)))
 		assert.Equal(t, unread(t, f, section, bob)[topic], false)
 		mustReply(t, f, topic, alice, "reply", at(3))
 		assert.Equal(t, unread(t, f, section, bob)[topic], true)
@@ -167,7 +167,7 @@ func TestUnreadTopics(t *testing.T) {
 
 	t.Run("a deleted last post does not make a topic unread", func(t *testing.T) {
 		topic, first := mustCreateTopic(t, f, section, alice, "deleted reply", at(5))
-		assert.NilError(t, readTopicUpTo(ctx, db, bob, topic, first))
+		assert.NilError(t, readTopicUpTo(ctx, db, bob, topic, first, at(0)))
 		deletePost(t, db, mustReply(t, f, topic, alice, "reply", at(6)))
 		assert.Equal(t, unread(t, f, section, bob)[topic], false)
 	})
@@ -222,7 +222,7 @@ func TestFirstUnread(t *testing.T) {
 	// Nothing read: the first post.
 	assert.Equal(t, redirect(reader), path+"#post-"+fmt.Sprint(posts[0]))
 	// Read up to post #20: the second page.
-	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, posts[19]))
+	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, posts[19], at(0)))
 	assert.Equal(t, redirect(reader), path+"?page=2#post-"+fmt.Sprint(posts[20]))
 	// A deleted post is not news: the next visible one.
 	deletePost(t, db, posts[20])
@@ -233,7 +233,7 @@ func TestFirstUnread(t *testing.T) {
 	reply := mustReply(t, f, topic, author, "news", at(100))
 	assert.Equal(t, redirect(reader), path+"?page=3#post-"+fmt.Sprint(reply))
 	// All read, a guest, a user registered after the last post: the first page.
-	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, reply))
+	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, reply, at(0)))
 	assert.Equal(t, redirect(reader), path)
 	assert.Equal(t, redirect(0), path)
 	assert.Equal(t, redirect(forumtest.User(t, db, "newcomer", at(200))), path)

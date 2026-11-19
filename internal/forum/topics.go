@@ -89,7 +89,7 @@ func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title,
 		if err := subscribe(ctx, tx, authorID, topicID, at); err != nil {
 			return err
 		}
-		return readTopicUpTo(ctx, tx, authorID, topicID, postID)
+		return readTopicUpTo(ctx, tx, authorID, topicID, postID, at)
 	})
 	if err != nil {
 		return 0, 0, err
@@ -109,7 +109,7 @@ func (f *Forum) reply(ctx context.Context, topicID, authorID int, body string, a
 			return err
 		}
 		// The author has read up to their post: their own reply never makes the topic unread.
-		if err := readTopicUpTo(ctx, tx, authorID, topicID, postID); err != nil {
+		if err := readTopicUpTo(ctx, tx, authorID, topicID, postID, at); err != nil {
 			return err
 		}
 		return notifyOfReply(ctx, tx, topicID, postID, authorID, body, at)
@@ -328,7 +328,7 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 	}
 	if v.Viewer.SignedIn() && len(posts) > 0 {
 		// The page is worth more than the mark: a failed write is logged and the page served.
-		if err := readTopicUpTo(r.Context(), f.db, v.Viewer.ID, t.ID, posts[len(posts)-1].ID); err != nil {
+		if err := readTopicUpTo(r.Context(), f.db, v.Viewer.ID, t.ID, posts[len(posts)-1].ID, v.Now); err != nil {
 			f.host.LogError(r, err)
 		}
 	}

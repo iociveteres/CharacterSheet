@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -22,12 +23,33 @@ type execer interface {
 
 // readTopicUpTo records that the user has read the topic up to the post: when a page of the topic
 // is shown to them, and when they post in it. The mark only moves forward, so going back to an
-// earlier page leaves it alone.
-func readTopicUpTo(ctx context.Context, db execer, userID, topicID, postID int) error {
+// earlier page leaves it alone. In the same statement the notifications the read posts were about
+// go out (task 6.4): a quote up to the post is read; the replies keep only what comes after it —
+// their link moves to the first visible post of someone else past the post and their count to how
+// many such posts there are, and with none left they are read. A moderator's notification is read
+// on the page of notifications instead.
+func readTopicUpTo(ctx context.Context, db execer, userID, topicID, postID int, at time.Time) error {
 	_, err := db.Exec(ctx, `
-		INSERT INTO forum_topic_reads (user_id, topic_id, last_read_post_id) VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, topic_id) DO UPDATE SET last_read_post_id = EXCLUDED.last_read_post_id
-		WHERE forum_topic_reads.last_read_post_id < EXCLUDED.last_read_post_id`, userID, topicID, postID)
+		WITH mark AS (
+			INSERT INTO forum_topic_reads (user_id, topic_id, last_read_post_id) VALUES ($1, $2, $3)
+			ON CONFLICT (user_id, topic_id) DO UPDATE SET last_read_post_id = EXCLUDED.last_read_post_id
+			WHERE forum_topic_reads.last_read_post_id < EXCLUDED.last_read_post_id
+		), rest AS (
+			-- What the replies are still about: the user's own posts never notify them.
+			SELECT min(id) AS first, count(*) AS n FROM forum_posts
+			WHERE topic_id = $2 AND id > $3 AND deleted_at IS NULL AND author_id <> $1
+		), done AS (
+			UPDATE forum_notifications n SET read_at = $4
+			FROM rest
+			WHERE n.user_id = $1 AND n.topic_id = $2 AND n.read_at IS NULL AND n.post_id <= $3
+			  AND (n.kind = $5 OR n.kind = $6 AND rest.n = 0)
+		)
+		-- Disjoint from the rows of done by rest.n: no row is updated twice.
+		UPDATE forum_notifications n SET post_id = rest.first, count = LEAST(n.count, rest.n)
+		FROM rest
+		WHERE n.user_id = $1 AND n.topic_id = $2 AND n.read_at IS NULL AND n.post_id <= $3
+		  AND n.kind = $6 AND rest.n > 0`,
+		userID, topicID, postID, at, string(notifyQuote), string(notifyReplies))
 	return err
 }
 

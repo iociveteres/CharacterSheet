@@ -17,6 +17,22 @@ type ForumService interface {
 	UnreadNotifications(ctx context.Context, userID int) (int, error)
 }
 
+// forumBadge is templates.Data.ForumBadge: the nav asks the forum for the counter only when it is
+// drawn, and only for a signed-in user. The counter is worth less than the page: an error is logged
+// and the page served without it.
+func (app *Application) forumBadge(r *http.Request) func() string {
+	if !app.isAuthenticated(r) {
+		return nil
+	}
+	return func() string {
+		n, err := app.Forum.UnreadNotifications(r.Context(), app.userID(r))
+		if err != nil && !errors.Is(err, context.Canceled) {
+			app.ErrorLog.Output(2, fmt.Sprintf("forum unread notifications %s %s: %v", r.Method, r.URL.Path, err))
+		}
+		return forum.Badge(n)
+	}
+}
+
 // ForumHost is what forum.New takes from the app; the forum is made after the app for it.
 func (app *Application) ForumHost() forum.Host {
 	return forumHost{app}

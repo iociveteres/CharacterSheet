@@ -276,7 +276,7 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 	reader := forumtest.User(t, db, "reader", at(0))
 	section := newSection(t, db, "section")
 	topic, firstPost := mustCreateTopic(t, write, section, moderator, "topic", at(0))
-	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, firstPost))
+	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, firstPost, at(0)))
 	assert.NilError(t, write.markRead(ctx, reader, &section))
 	assert.NilError(t, write.markRead(ctx, reader, nil))
 	targets := []string{
@@ -285,6 +285,7 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 		fmt.Sprintf("/forum/topic/%d", topic),
 		fmt.Sprintf("/forum/topic/%d/unread", topic),
 		fmt.Sprintf("/forum/post/%d", firstPost),
+		"/forum/notifications",
 	}
 	queries := func() map[string]int64 {
 		got := map[string]int64{}

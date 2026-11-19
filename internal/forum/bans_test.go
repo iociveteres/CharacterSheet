@@ -353,7 +353,7 @@ func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 		"title": {"a new title"}, "body": {"text"}, "reason": {"reason"}, "name": {"name"},
 		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"},
 	}
-	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true}
+	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true, "POST /forum/notifications/read": true}
 
 	s.h.userID = s.alice
 	before := forumState(t, s.db)

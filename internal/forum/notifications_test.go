@@ -59,7 +59,7 @@ func noticeList(t *testing.T, db *pgxpool.Pool, userID int) string {
 	return strings.Join(lines, "\n")
 }
 
-// readNotices marks every notification of the user read, as block 6.4 will when they read the topic.
+// readNotices marks every notification of the user read, as «Mark all as read» of their page does.
 func readNotices(t *testing.T, db *pgxpool.Pool, userID int) {
 	t.Helper()
 	_, err := db.Exec(context.Background(), `

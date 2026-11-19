@@ -1,7 +1,10 @@
 package webapp
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"html"
 	"net/http"
 	"net/url"
 	"strings"
@@ -125,4 +128,86 @@ func TestForumLoginComesBack(t *testing.T) {
 	code, header, _ = ts.postForm(t, "/user/login", form)
 	assert.Equal(t, code, http.StatusSeeOther)
 	assert.Equal(t, header.Get("Location"), "/forum/topic/1/reply")
+}
+
+// countingForum answers the nav counter with n or err and counts the questions.
+type countingForum struct {
+	ForumService
+	n     int
+	err   error
+	asked int
+}
+
+func (f *countingForum) UnreadNotifications(context.Context, int) (int, error) {
+	f.asked++
+	return f.n, f.err
+}
+
+func badges(body string) []string {
+	var found []string
+	for _, part := range strings.Split(body, `<span class="nav-badge"`)[1:] {
+		start := strings.Index(part, ">") + 1
+		// html/template writes "+" as "&#43;".
+		found = append(found, html.UnescapeString(part[start:start+strings.Index(part[start:], "<")]))
+	}
+	return found
+}
+
+// The room is drawn without the nav, so it never asks the forum for the counter; a page of the
+// site does, once.
+func TestRoomDoesNotAskForum(t *testing.T) {
+	app := newTestApplication(t)
+	forum := &countingForum{ForumService: app.Forum, n: 3}
+	app.Forum = forum
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+
+	ts.get(t, "/about")
+	assert.Equal(t, forum.asked, 0) // a guest
+	ts.login(t)
+	forum.asked = 0
+	code, _, body := ts.get(t, "/room/view/1")
+	assert.Equal(t, code, http.StatusOK)
+	assert.Equal(t, forum.asked, 0)
+	assert.Equal(t, len(badges(body)), 0)
+
+	_, _, body = ts.get(t, "/about")
+	assert.Equal(t, forum.asked, 1)
+	assert.Equal(t, strings.Join(badges(body), ","), "3")
+}
+
+// A failing counter leaves the page served, without the counter, and goes to the error log.
+func TestForumCounterFailureServesPage(t *testing.T) {
+	app := newTestApplication(t)
+	var log bytes.Buffer
+	app.ErrorLog.SetOutput(&log)
+	app.Forum = &countingForum{ForumService: app.Forum, n: 0, err: errors.New("no forum today")}
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+
+	ts.login(t)
+	log.Reset()
+	for _, path := range []string{"/about", "/account/view"} {
+		code, _, body := ts.get(t, path)
+		assert.Equal(t, code, http.StatusOK)
+		assert.StringContains(t, body, `<a href='/forum/'>`)
+		assert.Equal(t, len(badges(body)), 0)
+	}
+	assert.Equal(t, strings.Count(log.String(), "no forum today"), 2)
+}
+
+// The counter is the number up to 9, "9+" past it, nothing at zero.
+func TestForumCounter(t *testing.T) {
+	app := newTestApplication(t)
+	forum := &countingForum{ForumService: app.Forum}
+	app.Forum = forum
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+
+	ts.login(t)
+	for n, want := range map[int]string{0: "", 1: "1", 9: "9", 10: "9+", 1500: "9+"} {
+		forum.n = n
+		_, _, body := ts.get(t, "/about")
+		assert.Equal(t, strings.Join(badges(body), ","), want)
+	}
 }
