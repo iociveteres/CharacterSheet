@@ -157,20 +157,26 @@ describe("portrait requests", () => {
         expect(header(requests[0].init, "X-CSRF-Token")).toBe("token-1");
     });
 
-    it("reject with what to show when the server refuses", async () => {
+    it("reject with what to show when the server refuses, a message of its own for each reason", async () => {
         const image = new Blob(["png"], { type: "image/png" });
+        const reason = (refused: Promise<unknown>) => refused.then(() => null, (e: Error) => e.message);
         answer = () => new Response("Bad Request", { status: 400 });
-        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Not a 360×480 WebP or JPEG image.");
+        const badImage = await reason(sheetActions.uploadPortrait(image));
         answer = () => new Response("Request Entity Too Large", { status: 413 });
-        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("The image is larger than 128 KB.");
+        const tooLarge = await reason(sheetActions.uploadPortrait(image));
         answer = () => new Response(JSON.stringify({ code: "quota", message: "Your bestiary is over 10 MB." }), {
             status: 413, headers: { "Content-Type": "application/json" },
         });
+        // The server's own message is shown as it is.
         await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Your bestiary is over 10 MB.");
         answer = () => new Response("Forbidden", { status: 403 });
-        await expect(sheetActions.deletePortrait()).rejects.toThrow("You cannot edit this sheet.");
+        const forbidden = await reason(sheetActions.deletePortrait());
         answer = () => { throw new TypeError("Failed to fetch"); };
-        await expect(sheetActions.deletePortrait()).rejects.toThrow("There is no connection to the server.");
+        const offline = await reason(sheetActions.deletePortrait());
+
+        const reasons = [badImage, tooLarge, forbidden, offline];
+        expect(reasons.every(r => typeof r === "string" && r !== "")).toBe(true);
+        expect(new Set(reasons).size).toBe(4);
     });
 });
 

@@ -1,19 +1,19 @@
-{{define "title"}}Your Character Sheets{{end}}
+{{define "title"}}{{t .Lang "site.sheets.title"}}{{end}}
 {{define "main"}}
-<h2>Your Character Sheets</h2>
+<h2>{{t .Lang "site.sheets.title"}}</h2>
 <div class="container">
     {{range .CharacterSheetSummaries}}
     <div class="item">
         <div class="data">
             <div class="data">
                 <div class="name">{{.CharacterSheet.CharacterName}}</div>
-                <div class="meta">At {{.RoomName}}</div>
-                <div class="meta created">Created {{humanDate .CharacterSheet.CreatedAt $.TimeZone}}</div>
-                <div class="meta updated">Last modified {{humanDate .CharacterSheet.UpdatedAt $.TimeZone}}</div>
+                <div class="meta">{{t $.Lang "site.sheets.room" "room" .RoomName}}</div>
+                <div class="meta created">{{t $.Lang "site.sheets.created" "date" (humanDate $.Lang .CharacterSheet.CreatedAt $.TimeZone)}}</div>
+                <div class="meta updated">{{t $.Lang "site.sheets.updated" "date" (humanDate $.Lang .CharacterSheet.UpdatedAt $.TimeZone)}}</div>
             </div>
         </div>
         <div class="controls">
-            <a href='{{reverseRev "ViewRoomWithSheet" (str .RoomID) (str .CharacterSheet.ID)}}'>Edit</a>
+            <a href='{{reverseRev "ViewRoomWithSheet" (str .RoomID) (str .CharacterSheet.ID)}}'>{{t $.Lang "common.edit"}}</a>
         </div>
     </div>
     {{end}}

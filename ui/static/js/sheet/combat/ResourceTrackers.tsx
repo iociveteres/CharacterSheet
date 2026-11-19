@@ -3,6 +3,7 @@ import { NumberField, TextField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
+import { t } from "../../i18n";
 
 function ResourceTracker({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
@@ -19,7 +20,7 @@ function ResourceTracker({ itemId }: { itemId: string }) {
 export function ResourceTrackers() {
     return (
         <div class="layout-column">
-            <h3>Resource Trackers</h3>
+            <h3>{t("sheet.terms.block.resourceTrackers")}</h3>
             <ItemGrid
                 dataId="resourceTrackers.list.items"
                 id="resource-trackers"

@@ -4,6 +4,7 @@
 // phenomena; whether they happen is the players' call, so it never rolls by
 // itself. Shown while the sheet counts phenomena (settings.psykana).
 import { useRef } from "preact/hooks";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
@@ -13,27 +14,27 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "./psychic";
 import type { PsykanaTerms } from "../schema/constants";
-import { rollLabel } from "../rolls/rollParts";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 /** What the dropdown says of the last cast; short, as the power's own row names it. */
 function note({ power }: PhenomenaState, terms: PsykanaTerms): string {
-    if (!power) return `No ${terms.power} cast yet.`;
-    if (power.safe) return "Cast safely, no phenomena.";
+    if (!power) return terms.noCastYet;
+    if (power.safe) return t("sheet.magic.phenomena.note.safe");
     switch (power.reason) {
-        case "pushed": return "Pushed, phenomena are certain.";
-        case "doubles": return "Doubles on a success.";
-        case "99": return "Rolled 99.";
-        default: return "No doubles or 99 in the last cast.";
+        case "pushed": return t("sheet.magic.phenomena.note.pushed");
+        case "doubles": return t("sheet.magic.phenomena.note.doubles");
+        case "99": return t("sheet.magic.phenomena.note.rolled99");
+        default: return t("sheet.magic.phenomena.note.none");
     }
 }
 
 function PhenomenaModRow({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class="phenomena-mod">
-            <Checkbox field="enabled" class="custom" title="Counts in the roll" />
-            <TextField field="name" placeholder="Talent, warp storm…" />
+            <Checkbox field="enabled" class="custom" title={t("sheet.magic.phenomena.modCounts")} />
+            <TextField field="name" placeholder={t("sheet.magic.phenomena.modPlaceholder")} />
             <NumberField field="value" placeholder="0" />
             <DragHandle />
             <DeleteButton itemPath={joinPath(usePath(), itemId)} />
@@ -47,39 +48,49 @@ function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaS
     const part = (key: string) => summary.parts.find(p => p.key === key)!;
     return (
         <div class="roll-dropdown phenomena-dropdown visible">
-            <span class="column-label">Phenomena: 1d100 + modifiers</span>
+            <span class="column-label">{t("sheet.magic.phenomena.heading")}</span>
             <p class={summary.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(summary, terms)}>
                 {note(summary, terms)}
             </p>
-            <div class="phenomena-row" title="A normal cast: Unbound and Daemonic +10; a pushed one: Bound +10, Unbound +5 and Daemonic +10 per point of kick">
+            <div class="phenomena-row" title={t("sheet.magic.phenomena.natureTitle")}>
                 <span>{part("nature").label}</span>
                 <span class="phenomena-value" data-id="nature">{value("nature")}</span>
             </div>
-            <div class="phenomena-row" title={`Added while any ${terms.power} is sustained; talents and artefacts change it`}>
-                <label>{`Sustained ${terms.powers}`} <NumberField field="sustainPenalty" class="short" /></label>
+            <div class="phenomena-row" title={terms.sustainPenaltyTitle}>
+                <label>{terms.sustainedLabel} <NumberField field="sustainPenalty" class="short" /></label>
                 <span class="phenomena-value" data-id="sustained">{value("sustained")}</span>
             </div>
-            <div class="phenomena-row" title={`Set under the ⚙ of the ${terms.power}`}>
+            <div class="phenomena-row" title={terms.setUnderGearTitle}>
                 <span>{part("power").label}</span>
                 <span class="phenomena-value" data-id="power">{value("power")}</span>
             </div>
             <div class="phenomena-other">
-                <span class="column-label">Other</span>
+                <span class="column-label">{t("common.other")}</span>
                 <span class="phenomena-value" data-id="other">{value("other")}</span>
             </div>
             <ItemGrid dataId="phenomenaMods.items" class="phenomena-mods" itemClass="phenomena-mod" idPrefix="phenomena-mod"
                 renderItem={id => <PhenomenaModRow itemId={id} />} />
             <div class="phenomena-result">
-                <span class="column-label">Total</span>
+                <span class="column-label">{t("common.total")}</span>
                 <span class="phenomena-total" data-id="phenomenaTotal">{`1d100${summary.total === 0 ? "" : signed(summary.total)}`}</span>
                 {summary.power?.reason && (
                     <button type="button" class="phenomena-discard" data-id="discardPhenomena"
-                        title="No phenomena this time: stop calling for them" onClick={onDiscard}>Discard</button>
+                        title={t("sheet.magic.phenomena.discardTitle")} onClick={onDiscard}>{t("sheet.magic.phenomena.discard")}</button>
                 )}
-                <button type="button" class="button-colored" data-id="rollPhenomena" onClick={onRoll}>Roll</button>
+                <button type="button" class="button-colored" data-id="rollPhenomena" onClick={onRoll}>{t("common.roll")}</button>
             </div>
         </div>
     );
+}
+
+/**
+ * The label of the phenomena roll after a cast of `power`. Without a kind:
+ * phenomena() names a power without a name by Black Crusade's term in every
+ * kind, and nothing else in it depends on the kind.
+ */
+export function phenomenaRollLabel(power: PhenomenaState["power"]): Label {
+    const kick = power && !power.safe && power.kick > 0 ? [code(SPACE.mod, MOD.kick, { kick: power.kick })] : [];
+    return label(code(SPACE.name, NAME.phenomena), { m: power ? [power.part, ...kick] : [] });
 }
 
 export function PhenomenaRoll() {
@@ -98,16 +109,15 @@ export function PhenomenaRoll() {
     };
     const roll = () => {
         const { total, power } = summary.peek();
-        const kick = power && !power.safe && power.kick > 0 ? [`+${power.kick} kick`] : [];
-        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, rollLabel("Phenomena", power ? [power.name, ...kick] : []));
+        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, phenomenaRollLabel(power));
         settle();
     };
     return (
         <div class="phenomena-roll dropdown-parent" ref={ref}>
             <button type="button" data-id="phenomenaToggle"
                 class={`phenomena-toggle${called ? " attention" : ""}${dropdown.open ? " active" : ""}`}
-                title={called ? note(summary.value, terms) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
-                Phenomena
+                title={called ? note(summary.value, terms) : t("sheet.magic.phenomena.rollTitle")} onClick={dropdown.toggle}>
+                {t("sheet.magic.phenomena.label")}
             </button>
             {dropdown.open && <PhenomenaDropdown summary={summary.value} onRoll={roll} onDiscard={settle} />}
         </div>

@@ -1,6 +1,7 @@
 // The Chat tab: messages grouped by day, player and character, and the input.
 import { createRef, type JSX } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { chat, chatGroups, commands, me, roomId } from "../state";
 import { deleteMessage, loadEarlierMessages, sendChat } from "../actions";
 import { isGamemaster } from "../permissions";
@@ -86,7 +87,7 @@ export function Chat() {
         <>
             <div class="scroll-container" ref={scroller}>
                 {chat.value.hasMore && (
-                    <button onClick={loadEarlierMessages} class="load-more-btn" type="button">Load earlier messages</button>
+                    <button onClick={loadEarlierMessages} class="load-more-btn" type="button">{t("room.chat.loadEarlier")}</button>
                 )}
 
                 {chatGroups.value.map(day => (
@@ -118,7 +119,7 @@ export function Chat() {
 
                 <Transition show={unread > 0} name="new-msg">
                     <div onClick={showNewMessages} class="new-messages-button">
-                        <span>{count === 1 ? "1 new message" : `${count} new messages`}</span>
+                        <span>{t("room.chat.newMessages", { count })}</span>
                         <span class="arrow-down">↓</span>
                     </div>
                 </Transition>
@@ -136,13 +137,13 @@ function MessageMenu({ messageId }: { messageId: number }) {
 
     return (
         <div class="message-menu-wrapper" ref={wrapper}>
-            <button onClick={() => setOpen(o => !o)} class="message-menu-btn" type="button" title="Message actions">⋮</button>
+            <button onClick={() => setOpen(o => !o)} class="message-menu-btn" type="button" title={t("room.chat.messageActions")}>⋮</button>
             <Transition show={open} name="popover">
                 <div class="popover message-menu-popover">
                     <div class="popover-item" onClick={() => {
                         setOpen(false);
                         deleteMessage(messageId);
-                    }}>Delete message</div>
+                    }}>{t("room.chat.deleteMessage")}</div>
                 </div>
             </Transition>
         </div>
@@ -230,12 +231,17 @@ function ChatInput() {
     return (
         <div class="chat-input-container">
             <textarea ref={chatInput} value={draft} onKeyDown={onKeyDown} onInput={onInput}
-                placeholder="Type a message..." rows={3} maxLength={2000}></textarea>
+                placeholder={t("room.chat.placeholder")} rows={3} maxLength={2000}></textarea>
 
             <div class="layout-column">
                 <Commands onPick={insertCommand} />
-                <button onClick={sendInput} class="button-colored button-wide send-btn" disabled={!draft.trim()} type="button">
-                    Send
+                <button onClick={sendInput} class="button-colored button-wide send-btn" disabled={!draft.trim()} type="button"
+                    title={t("room.chat.send")} aria-label={t("room.chat.send")}>
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1.5 7.5 14.5 1.5 10 14.5 7.5 9z" />
+                        <path d="M7.5 9 14.5 1.5" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -250,10 +256,10 @@ function Commands({ onPick }: { onPick: (command: string) => void }) {
     return (
         <div class="commands-popover-wrapper" ref={wrapper}>
             <button onClick={() => setOpen(o => !o)} class="button-colored button-wide commands-btn" type="button"
-                title="Available commands">/</button>
+                title={t("room.chat.commands")}>/</button>
             <Transition show={open} name="popover">
                 <div class="commands-popover">
-                    <div class="commands-popover-header">Available Commands</div>
+                    <div class="commands-popover-header">{t("room.chat.commands")}</div>
                     <div class="commands-list">
                         {commands.map(cmd => (
                             <div key={cmd.command} class="command-entry" title={cmd.detailedDescription} onClick={() => {

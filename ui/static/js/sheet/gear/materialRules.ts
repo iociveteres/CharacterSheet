@@ -4,6 +4,7 @@
 // adds its AP to the covered locations (gear/armourRules.ts gearApTotal), and a
 // broken item has half its AP. A sheet of a kind without them has none of
 // these fields: its items weigh and protect as their own fields say.
+import { t } from "../../i18n";
 import { INLAY_GEMS } from "../schema/constants";
 import { capacityUsed, enchantmentWeightFactors } from "./enchantmentRules";
 import type { GearItem, SheetSignals } from "../schema/sheet";
@@ -81,15 +82,24 @@ export const hasMetalRim = (item: GearItem) => weaponModsOf(item).some(isMetalRi
 export function weightFactors(item: GearItem): WeightFactor[] {
     const material = materialOf(item);
     const own = hasMetalRim(item)
-        ? [{ factor: METAL_RIM_WEIGHT_FACTOR, source: "Metal Rim" }]
+        ? [{ factor: METAL_RIM_WEIGHT_FACTOR, source: t("sheet.termsPf.gearMod.metalRim") }]
         : material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
     const mods = weaponModsOf(item)
         // The rim's factor is counted above by its name.
         .filter(mod => !isMetalRim(mod))
-        .map(mod => ({ factor: modWeightFactor(mod), source: String(mod.name?.value ?? "").trim() || "mod" }))
+        .map(mod => ({ factor: modWeightFactor(mod), source: String(mod.name?.value ?? "").trim() || t("sheet.gear.mod.fallback") }))
         .filter(f => f.factor !== 1);
     return [...own, ...enchantmentWeightFactors(item), ...mods];
 }
+
+/** The inlay gems by their stored name, in the page's language. */
+export const GEM_LABELS: { readonly [name: string]: string } = {
+    Quartz: t("sheet.termsPf.inlay.quartz"),
+    Onyx: t("sheet.termsPf.inlay.onyx"),
+    Ruby: t("sheet.termsPf.inlay.ruby"),
+    Emerald: t("sheet.termsPf.inlay.emerald"),
+    Diamond: t("sheet.termsPf.inlay.diamond"),
+};
 
 /** What every item can hold of enchantments before its material and gem. */
 export const BASE_CAPACITY = 8;
@@ -105,9 +115,9 @@ export function itemCapacity(item: GearItem): Capacity {
     const material = materialOf(item);
     const gem = INLAY_GEMS.find(g => g.name === item.inlay?.value);
     const capacityFactor = material?.capacityFactor ?? 1;
-    const lines = [`${BASE_CAPACITY} base`];
+    const lines = [t("sheet.gear.capacity.base", { value: BASE_CAPACITY })];
     if (material) lines.push(`× ${capacityFactor} ${material.name}`);
-    if (gem) lines.push(`+ ${gem.capacityBonus} ${gem.name}`);
+    if (gem) lines.push(`+ ${gem.capacityBonus} ${GEM_LABELS[gem.name]}`);
     const total = BASE_CAPACITY * capacityFactor + (gem?.capacityBonus ?? 0);
     lines.push(`= ${total}`);
     return { total, lines };
@@ -117,5 +127,5 @@ export function itemCapacity(item: GearItem): Capacity {
 export function capacityTitle(item: GearItem): string {
     const capacity = itemCapacity(item);
     const over = capacityUsed(item) > capacity.total;
-    return ["Capacity for enchantments:", ...capacity.lines, ...(over ? ["The enchantments take more"] : [])].join("\n");
+    return [t("sheet.gear.capacity.title"), ...capacity.lines, ...(over ? [t("sheet.gear.capacity.over")] : [])].join("\n");
 }

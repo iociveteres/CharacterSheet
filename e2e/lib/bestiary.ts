@@ -56,7 +56,12 @@ export async function deleteCollections(page: Page, prefix: string): Promise<voi
     }
 }
 
-/** Waits for a notice of the room or the bestiary page. */
-export async function expectToast(page: Page, text: string): Promise<void> {
-    await eventually(() => page.locator(".toasts > .toast").allTextContents(), toasts => expect(toasts.map(t => t.trim())).toContain(text));
+/**
+ * Waits for a notice of the room or the bestiary page that has every one of
+ * `parts` in it (the names and numbers it carries, not its wording) and returns its text.
+ */
+export async function expectToast(page: Page, ...parts: (string | number)[]): Promise<string> {
+    const toasts = await eventually(() => page.locator(".toasts > .toast").allTextContents(),
+        all => expect(all.some(t => parts.every(part => t.includes(String(part)))), `a toast with ${parts.join(", ")} in ${JSON.stringify(all)}`).toBe(true));
+    return toasts.find(t => parts.every(part => t.includes(String(part))))!.trim();
 }

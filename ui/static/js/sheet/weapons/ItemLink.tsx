@@ -4,6 +4,7 @@
 // Quality add, the Special field without what the Quality removes, and the In
 // Gear group of its name's autocomplete. The gear item's own row of attacks is LinkedAttacks.tsx.
 import { useLayoutEffect, useRef } from "preact/hooks";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import type { Autocomplete } from "../autocomplete";
 import type { LocalResults } from "../components/AutocompleteField";
@@ -19,15 +20,17 @@ import { qualitySpecial, shownSpecial } from "../gear/quality";
 import { traitLinkOf } from "./traitLinkRules";
 import { materialOf } from "../gear/materialRules";
 import { textAt } from "../core/sync";
+import { WRAP, type Label } from "../rollLabel";
 
-const ITEM_TITLE = "From the gear: its material, Quality, enchantments and Broken count in the attack. Pick another name to unlink.";
-const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another name to unlink.";
-const TRAIT_TITLE = "From the Natural Weapons trait: X in its name, as Natural Weapons (2), adds to the damage, and to Pen when it is Deadly.";
+const ITEM_TITLE = t("sheet.weapons.link.itemTitle");
+const TRAIT_TITLE = t("sheet.weapons.link.traitTitle");
+const GEAR_MARK = `· ${t("sheet.weapons.link.gear")}`;
+const DELETED_MARK = `· ${t("sheet.weapons.link.deleted")}`;
 
 /** Why the trait named `name` gives nothing or 0; null when X counts. */
 function traitWarning(name: string, rating: number | null | undefined): string | null {
-    if (rating === undefined) return `${name} is no Natural Weapons trait: it gives the attack nothing. Pick another name to unlink.`;
-    if (rating === null) return `No number in the brackets of ${name}: X counts as 0. Put it in the trait's name, as Natural Weapons (2).`;
+    if (rating === undefined) return t("sheet.weapons.link.notTrait", { name });
+    if (rating === null) return t("sheet.weapons.link.noRating", { name });
     return null;
 }
 
@@ -46,12 +49,12 @@ function markOf(state: SheetSignals, attackPath: string): LinkMark | null {
     const link = linkOf(state, attackPath);
     if (link) {
         return link.item
-            ? { text: "· gear", title: ITEM_TITLE }
-            : { text: "· deleted", title: DELETED_TITLE, dimmed: true };
+            ? { text: GEAR_MARK, title: ITEM_TITLE }
+            : { text: DELETED_MARK, title: t("sheet.weapons.link.itemDeleted"), dimmed: true };
     }
     const trait = attackPath.startsWith("meleeAttacks.") ? traitLinkOf(state, attackPath) : null;
     if (!trait) return null;
-    if (trait.name === null) return { text: "· deleted", title: DELETED_TITLE.replace("gear item", "trait"), dimmed: true };
+    if (trait.name === null) return { text: DELETED_MARK, title: t("sheet.weapons.link.traitDeleted"), dimmed: true };
     const warning = traitWarning(trait.name, trait.natural ? trait.natural.rating : undefined);
     return { text: `· ${trait.name}`, title: warning ?? TRAIT_TITLE, dimmed: !trait.natural, invalid: !!trait.natural && !!warning };
 }
@@ -137,7 +140,7 @@ export function ItemProperties({ weaponPath }: { weaponPath: string }) {
     const item = linkedItem(state, weaponPath);
     const names = [...added.map(p => p.text), ...(quality?.added ?? [])];
     if (!item || !names.length) return null;
-    const lines = [...added.map(p => `${p.text}: the ${p.source} enchantment of ${itemName(item)}`), ...(quality?.lines ?? [])];
+    const lines = [...added.map(p => t("sheet.weapons.link.enchantmentOf", { property: p.text, enchantment: p.source, item: itemName(item) })), ...(quality?.lines ?? [])];
     return <span class="added-property" data-id="itemProperties" title={lines.join("\n")}>{`+ ${names.join(", ")}`}</span>;
 }
 
@@ -156,8 +159,8 @@ export function SpecialField({ weaponPath }: { weaponPath: string }) {
 }
 
 /** The roll label of a damage, marked while the linked item is broken: the GM halves what armour lets through. */
-export const damageRollLabel = (state: SheetSignals, weaponPath: string, label: string) =>
-    (brokenItem(state, weaponPath) ? `${label} (broken: ½ after armour)` : label);
+export const damageRollLabel = (state: SheetSignals, weaponPath: string, label: Label): Label =>
+    (brokenItem(state, weaponPath) ? { ...label, w: WRAP.broken } : label);
 
 /** The entry of `collection` named `name` exactly, in any case; null when the rulebook has none or no answer comes. */
 export async function findEntry(autocomplete: Autocomplete, kind: string, collection: string, name: string): Promise<AutocompleteResult | null> {
@@ -196,7 +199,7 @@ export function useInGear(attackPath: string, block: AttackBlock, collection: st
     const env = useSheet();
     const { state } = env;
     return {
-        group: "In Gear",
+        group: t("sheet.weapons.link.inGear"),
         results: query => weaponItems(state)
             .filter(({ id, item }) => String(item.name?.value ?? "").toLowerCase().includes(query.toLowerCase())
                 && !linkedInBlock(state, block, id, attackPath))

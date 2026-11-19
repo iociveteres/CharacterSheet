@@ -109,7 +109,7 @@ func TestSubscriptions(t *testing.T) {
 	if _, err := b.Subscribe(r.ctx, r.gm, orks.ID); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("subscribed to a private collection: %v", err)
 	}
-	if _, err := b.Subscribe(r.ctx, r.player, orks.ID); !errors.Is(err, ErrInvalidBestiaryRequest) {
+	if _, err := b.Subscribe(r.ctx, r.player, orks.ID); !errors.Is(err, ErrOwnSubscription) {
 		t.Errorf("subscribed to an own collection: %v", err)
 	}
 	if c, err := b.Collection(r.ctx, r.player, orks.ID); err != nil || !c.Own {
@@ -312,14 +312,14 @@ func TestCopySharedCreature(t *testing.T) {
 		t.Errorf("the owner's copy: %+v, %v", c, err)
 	}
 
-	if _, err := b.CopyCreature(r.ctx, r.gm, grot, into(mine.ID)); !errors.Is(err, ErrNoRecord) {
+	if _, err := b.CopyCreature(r.ctx, r.gm, grot, into(mine.ID)); !errors.Is(err, ErrCreatureGone) {
 		t.Errorf("copied a private creature: %v", err)
 	}
-	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(orks.ID)); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(orks.ID)); !errors.Is(err, ErrCollectionNotOwn) {
 		t.Errorf("copied into a public collection of another user: %v", err)
 	}
 	// Seen, still not the gamemaster's.
-	if err := b.DeleteCreature(r.ctx, r.gm, boy); !errors.Is(err, ErrPermissionDenied) {
+	if err := b.DeleteCreature(r.ctx, r.gm, boy); !errors.Is(err, ErrCreatureNotOwn) {
 		t.Errorf("deleted a public creature: %v", err)
 	}
 	if _, err := b.Export(r.ctx, r.gm, orks.ID); !errors.Is(err, ErrPermissionDenied) {
@@ -377,22 +377,25 @@ func TestCreatureAuthor(t *testing.T) {
 	if _, err := b.Save(r.ctx, r.gm, r.sheet(r.player, r.room, "Ulrich"), into(mine.ID)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+	fresh, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade, "en")
+	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"New creature by you", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
+	// A name of the test's own: the default one comes from the catalog.
+	r.exec(`UPDATE character_sheets SET content = jsonb_set(content, '`+creatureNamePath+`', '"Fresh"') WHERE id = $1`, fresh.ID)
+	want := []string{"Fresh by you", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
 	if got := r.byline(r.gm, mine.ID); !slices.Equal(got, want) {
 		t.Errorf("the gamemaster's: %v", got)
 	}
 	// A third user sees the first author, not the one they copy from.
-	want = []string{"New creature by gm", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
+	want = []string{"Fresh by gm", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
 	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, want) {
 		t.Errorf("the outsider's: %v", got)
 	}
 
 	// The name goes with the account.
 	r.exec(`DELETE FROM users WHERE id = $1`, r.player)
-	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, []string{"New creature by gm", "Ork Boy by ", "Ork Boy by ", "Ork Boy by ", "Ulrich by "}) {
+	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, []string{"Fresh by gm", "Ork Boy by ", "Ork Boy by ", "Ork Boy by ", "Ulrich by "}) {
 		t.Errorf("after the author left: %v", got)
 	}
 }
@@ -407,9 +410,12 @@ func TestCreatureAuthorInFiles(t *testing.T) {
 	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(mine.ID)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+	fresh, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade, "en")
+	if err != nil {
 		t.Fatal(err)
 	}
+	// A name of the test's own: the default one comes from the catalog.
+	r.exec(`UPDATE character_sheets SET content = jsonb_set(content, '`+creatureNamePath+`', '"Fresh"') WHERE id = $1`, fresh.ID)
 
 	f, err := b.Export(r.ctx, r.gm, mine.ID)
 	if err != nil {
@@ -429,19 +435,19 @@ func TestCreatureAuthorInFiles(t *testing.T) {
 	if _, err := b.Upload(r.ctx, r.outsider, theirs.ID, append(f.Creatures, CreatureInFile{SheetKind: KindBlackCrusade, Content: f.Creatures[0].Content})); err != nil {
 		t.Fatal(err)
 	}
-	if got := r.byline(r.outsider, theirs.ID); !slices.Equal(got, []string{"New creature by gm", "New creature by you", "Ork Boy by player"}) {
+	if got := r.byline(r.outsider, theirs.ID); !slices.Equal(got, []string{"Fresh by gm", "Fresh by you", "Ork Boy by player"}) {
 		t.Errorf("uploaded: %v", got)
 	}
 	back := r.newCollection(r.gm, "Back")
 	if _, err := b.Upload(r.ctx, r.gm, back.ID, f.Creatures); err != nil {
 		t.Fatal(err)
 	}
-	if got := r.byline(r.gm, back.ID); !slices.Equal(got, []string{"New creature by you", "Ork Boy by player"}) {
+	if got := r.byline(r.gm, back.ID); !slices.Equal(got, []string{"Fresh by you", "Ork Boy by player"}) {
 		t.Errorf("the user's own file: %v", got)
 	}
 	// A text author is copied and exported as it is.
 	r.visibility(r.outsider, theirs.ID, VisibilityPublic)
-	if got := r.byline(r.gm, theirs.ID); !slices.Equal(got, []string{"New creature by gm", "New creature by outsider", "Ork Boy by player"}) {
+	if got := r.byline(r.gm, theirs.ID); !slices.Equal(got, []string{"Fresh by gm", "Fresh by outsider", "Ork Boy by player"}) {
 		t.Errorf("seen by the gamemaster: %v", got)
 	}
 	if f, err = b.Export(r.ctx, r.outsider, theirs.ID); err != nil || deref2(f.Creatures[2].Author) != "player" {
@@ -454,7 +460,7 @@ func TestCreatureAuthorInFiles(t *testing.T) {
 	if deref2(ef.Npcs[0].Author) != "player" {
 		t.Errorf("NPC in the file %+v", ef.Npcs[0])
 	}
-	loaded, err := r.encounters.Load(r.ctx, r.outsider, r.other, ef)
+	loaded, err := r.encounters.Load(r.ctx, r.outsider, r.other, ef, "en")
 	if err != nil {
 		t.Fatal(err)
 	}

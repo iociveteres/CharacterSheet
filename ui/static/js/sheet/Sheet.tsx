@@ -7,6 +7,7 @@ import type { SheetInstance } from "./instance";
 import type { Autocomplete } from "./autocomplete";
 import type { SheetUiState } from "./core/ui";
 import { online } from "./connection";
+import { t } from "../i18n";
 
 // Items whose inputs Enter walks through.
 const ENTER_ITEMS = ".item-with-description, .custom-skill, .ranged-attack, .melee-attack, .experience-item, .psychic-power, .tech-power, .gear-item";
@@ -58,13 +59,13 @@ export function Sheet({ env, Layout, Controls }: SheetProps) {
                 <div class="wrapper">
                     <div class="controls-block">
                         {env.editable.value && online.value && (
-                            <button class="toggle-delete-mode" id="toggle-delete-mode" title="Enable/disable deleting items"
+                            <button class="toggle-delete-mode" id="toggle-delete-mode" title={t("sheet.view.deleteModeTitle")}
                                 onClick={toggleDeletionMode}>
-                                Delete Mode
+                                {t("sheet.view.deleteMode")}
                             </button>
                         )}
-                        <button class="toggle-descriptions" id="toggle-descriptions" title="Show/hide all descriptions" onClick={toggleAll}>
-                            Toggle Descs
+                        <button class="toggle-descriptions" id="toggle-descriptions" title={t("sheet.view.toggleDescriptionsTitle")} onClick={toggleAll}>
+                            {t("sheet.view.toggleDescriptions")}
                         </button>
                         {Controls && <Controls />}
                     </div>

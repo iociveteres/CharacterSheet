@@ -1,0 +1,49 @@
+{
+  "sheet.termsPowers.psykanaType.bound": { "en": "Bound", "ru": "Связанный", "note": "Природа Дара; гл. V «Псайкана» › Механика, с. 289" },
+  "sheet.termsPowers.psykanaType.unbound": { "en": "Unbound", "ru": "Несвязанный", "note": "Природа Дара; гл. V › Механика, с. 289" },
+  "sheet.termsPowers.psykanaType.daemonic": { "en": "Daemonic", "ru": "Демонический", "note": "Природа Дара; гл. V › Механика, с. 289" },
+
+  "sheet.termsPowers.psy.psykana": { "en": "Psykana", "ru": "Псайкана", "note": "вкладка и заголовок блока; гл. V «Псайкана»" },
+  "sheet.termsPowers.psy.psykanaType": { "en": "Psykana type", "ru": "Природа дара", "note": "в книге «Природа Дара», гл. V › Механика, с. 289" },
+  "sheet.termsPowers.psy.psychicPower": { "en": "Psychic Power", "ru": "Психосила", "note": "код пишет power / powers / Power / Powers / Psychic Power / Psychic powers — одно слово; формы: мн. психосилы, род. мн. психосил; в тексте книги и просто «сила»" },
+  "sheet.termsPowers.psy.psychicPower.short": { "en": "Power", "ru": "Психосила", "note": "колонка собственного урона психосилы и строка его разбора" },
+  "sheet.termsPowers.psy.psyRating": { "en": "Psy rating", "ru": "Пси-рейтинг", "note": "сокращение PR остаётся латинским; талант Psy Rating в книге по-английски; гл. V › Механика, с. 289" },
+  "sheet.termsPowers.psy.basePR": { "en": "Base PR", "ru": "Базовый PR", "note": "в книге «Базовый Пси-Рейтинг (бPR)»: уровень таланта Psy Rating" },
+  "sheet.termsPowers.psy.currentPR": { "en": "Current PR", "ru": "Текущий PR", "note": "в книге «Текущий Пси-Рейтинг (тPR)»: бPR −1 за каждую поддерживаемую психосилу" },
+  "sheet.termsPowers.psy.effectivePR": { "en": "Effective PR", "ru": "Эффективный PR", "note": "в книге «Эффективный Пси-Рейтинг (эPR)»: PR психосилы после модификаторов" },
+  "sheet.termsPowers.psy.ePR": { "en": "ePR", "ru": "эPR", "note": "сокращение в подписях и в строке броска" },
+  "sheet.termsPowers.psy.kick": { "en": "Kick", "ru": "Усиление", "note": "в книге названия нет: «эPR = тPR + Бонус» Усиленного режима, с. 289; предложение" },
+  "sheet.termsPowers.psy.maxPush": { "en": "Max Push", "ru": "Предел усиления", "note": "наибольший kick по Природе Дара (+3, до +5, до +4), с. 289; в книге названия нет, предложение" },
+  "sheet.termsPowers.psy.sustain": { "en": "Sustain", "ru": "Поддержание", "note": "строка профиля силы «Поддержание:» (гл. V › Фундаментальные дисциплины); вариант: «Поддерживание» (заголовок в Механике, с. 289)" },
+  "sheet.termsPowers.psy.sustained": { "en": "Sustained", "ru": "Поддерживаемая", "note": "о психосиле: «поддерживаемые психосилы» (Sustained powers); строку профиля «Sustained:» переводить через psy.sustain" },
+
+  "sheet.termsPowers.castMode.safe": { "en": "Safe", "ru": "Безоп.", "note": "полностью «Безопасный»; сокращено при вёрстке: кнопка в броске психосилы; Режим манифестации: эPR = ½тPR, без Феноменов; гл. V › Механика, с. 289" },
+
+  "sheet.termsPowers.psyType.cycle": { "en": "Cycle", "ru": "Цикл", "note": "«Цикл (X)»: поддержание без траты тPR при эPR X+, с. 290; правило магии сравнивает «цикл|cycle»" },
+
+
+  "sheet.termsPowers.tech.techPower": { "en": "Tech Power", "ru": "Техночудо", "note": "мн. техночудеса; гл. VI «Мистика» › Техночудеса, с. 367; вариант: «Техно-чудо» (гл. II › Бой, подтип Незримое)" },
+  "sheet.termsPowers.tech.techPower.short": { "en": "Power", "ru": "Техночудо", "note": "колонка собственного урона техночуда и строка его разбора" },
+  "sheet.termsPowers.tech.price": { "en": "Price", "ru": "Цена", "note": "цена активации и строка профиля «Цена:»; ⚙ снимается до теста, 🗲 после успеха, с. 367" },
+  "sheet.termsPowers.tech.process": { "en": "Process", "ru": "Процесс", "note": "техночудо, оставшееся активным; мн. Процессы; строка профиля «Процесс:», с. 367" },
+  "sheet.termsPowers.tech.hardware": { "en": "Hardware", "ru": "Железо", "note": "импланты, нужные техночуду; строка профиля «Железо:» — в листе подписана «Implants:»; с. 367" },
+
+  "sheet.termsPowers.techType.litany": { "en": "Litany", "ru": "Славословие", "note": "«Славословие (X)», Типы Техночудес, с. 367; правило сравнивает «Славословие|Litany»" },
+  "sheet.termsPowers.techType.compensator": { "en": "Compensator", "ru": "Компенсатор", "note": "«Компенсатор (X)»: тест T−(10×X) снижает цену в 🗲, с. 367; правило сравнивает «Компенсатор|Compensator»" },
+
+  "sheet.termsPowers.resource.cognition": { "en": "Cognition", "ru": "Когниция", "note": "знак ⚙; до I.b, восстанавливает ½I.b в начале Хода; с. 367" },
+  "sheet.termsPowers.resource.energy": { "en": "Energy", "ru": "Энергия", "note": "знак 🗲 — заряд Катушки Потенции; нехватку можно оплатить Усталостью; с. 367" },
+
+
+  "sheet.termsPowers.rollDomain.ranged.short": { "en": "Ranged", "ru": "Стрелк.", "note": "флажок бонуса броска; полностью «Стрелковая атака»" },
+  "sheet.termsPowers.rollDomain.melee.short": { "en": "Melee", "ru": "Рукоп.", "note": "полностью «Рукопашная атака»" },
+  "sheet.termsPowers.rollDomain.psychic": { "en": "Psychotest", "ru": "Психотест", "note": "тест манифестации психосилы, +5×эPR; он же поле профиля «Психотест:» и PsykanaTerms.psychotest; гл. V › Механика, с. 289" },
+  "sheet.termsPowers.rollDomain.psychic.short": { "en": "Psy", "ru": "Пси" },
+  "sheet.termsPowers.rollDomain.techPower.short": { "en": "Tech", "ru": "Техно", "note": "полностью «Тест активации»" },
+  "sheet.termsPowers.rollDomain.compensation": { "en": "Compensation Roll", "ru": "Тест Компенсатора", "note": "в книге «тесты Компенсатора», с. 367; в листе также Compensation Roll" },
+  "sheet.termsPowers.rollDomain.compensation.short": { "en": "Comp", "ru": "Комп." },
+
+  "sheet.termsPowers.field.subtypes": { "en": "Subtypes", "ru": "Тип", "note": "строка профиля силы «Тип:»; раздел книги «Типы Психосил» / «Типы Техночудес»" },
+  "sheet.termsPowers.field.range": { "en": "Range", "ru": "Дальность", "note": "строка профиля силы «Дальность:»; если termsArms заводит Range оружия — оставить один ключ" },
+  "sheet.termsPowers.field.action": { "en": "Action", "ru": "Действие", "note": "строка профиля силы «Действие:»; если terms.json заводит Action — оставить один ключ" }
+}

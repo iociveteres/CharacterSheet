@@ -1,13 +1,12 @@
 {{define "base"}}
 <!doctype html>
-<html lang='en'>
+<html lang='{{.Lang}}'>
 
 <head>
     <meta charset='utf-8'>
     <title>{{template "title" .}} - Character Sheet</title>
 
-    <meta name="description"
-        content="Online Warhammer RPG character sheet with real-time collaboration, automation, and a user-focused design.">
+    <meta name="description" content='{{t .Lang "site.layout.description"}}'>
 
     <script>(function () {
             const THEME_KEY = 'theme';
@@ -49,6 +48,9 @@
             window.__USER_HUE_INIT = { stored: readStored(HUE_KEY), hue };
         })();</script>
 
+    <!-- Before the page bundles: they read the dictionary at module level (ui/static/js/i18n). -->
+    <script src='/static/dist/i18n.{{.Lang}}.js?v={{version (printf "dist/i18n.%s.js" .Lang)}}'></script>
+
     <link rel='stylesheet' href='/static/css/themes/themes.css?v={{version "css/themes/themes.css"}}'>
     <link rel='stylesheet' href='/static/css/common.css?v={{version "css/common.css"}}'>
     {{if not .HideLayout}}
@@ -72,6 +74,7 @@
             <div class="recolor"></div>
         </a>
         <h1><a href='/'>Iociveteres's Character Sheet</a></h1>
+        {{template "language" .}}
     </header>
     {{template "nav" .}}
     {{end}}
@@ -88,8 +91,8 @@
         <div class="site-inner">
             <div class="layout-column">
                 <div class="layout-row">
-                    <a href='/about'>About</a>
-                    <a href='/donate'>Donate</a>
+                    <a href='/about'>{{t .Lang "site.nav.about"}}</a>
+                    <a href='/donate'>{{t .Lang "site.nav.donate"}}</a>
                 </div>
 
                 <span>
@@ -100,13 +103,8 @@
     {{end}}
     {{if and .ShowIncidentNotice (not .HideLayout)}}
     <div class="incident-notice" id="incident-notice" role="status">
-        <button type="button" class="close" id="incident-notice-close" aria-label="Close">×</button>
-        <p>In early November, the site's hosting provider Beget was attacked, and the site's data was
-            lost, backups included. It was unexpected and beyond the scenarios I had planned for, but
-            still, what a screw-up on my part. Losing an ongoing campaign or dear memories is tough.
-            Backups are now also copied to a device outside the hosting provider, as it should be.</p>
-        <p>Sadly, all accounts, rooms and character sheets created before November 8 are gone, so please
-            sign up again.</p>
+        <button type="button" class="close" id="incident-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
+        {{template "content/incident" .}}
     </div>
     {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>

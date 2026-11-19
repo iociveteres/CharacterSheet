@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -41,7 +42,7 @@ func ensureStressEncounter(ctx context.Context, db *pgxpool.Pool, m models.Model
 	if err != nil {
 		return 0, fmt.Errorf("stress encounter file: %w", err)
 	}
-	state, err := m.Encounters.Load(ctx, gm.ID, roomID, f)
+	state, err := m.Encounters.Load(ctx, gm.ID, roomID, f, i18n.Default)
 	if err != nil {
 		return 0, fmt.Errorf("stress encounter: %w", err)
 	}

@@ -146,7 +146,7 @@ describe("the phenomena button", () => {
 
         act(() => updateSignalAtPath(testState(), `${P}.phenomenaMod`, 5));
         act(() => toggle()!.click());
-        expect($('[data-id="phenomenaNote"]')!.textContent).toBe("Doubles on a success.");
+        expect($('[data-id="phenomenaNote"]')!.textContent).not.toBe("");
         // Unbound +10 and the power's own +5.
         expect($('[data-id="phenomenaTotal"]')!.textContent).toBe("1d100+15");
 

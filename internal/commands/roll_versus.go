@@ -119,18 +119,20 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	}
 
 	// Show the roll breakdown - only show calculation if there are operators
+	breakdown := ""
 	if strings.ContainsAny(output, "+-*/(") {
+		breakdown = output
 		sb.WriteString(fmt.Sprintf("%s = %d\n", output, result))
 	}
 
 	// Show result line
 	if isSuccess {
-		sb.WriteString(fmt.Sprintf("%d, %d success", result, level))
+		sb.WriteString(fmt.Sprintf("%d, %s", result, degreesText(level, true)))
 		if isCrit {
 			sb.WriteString(", crit!")
 		}
 	} else {
-		sb.WriteString(fmt.Sprintf("%d, %d fail", result, level))
+		sb.WriteString(fmt.Sprintf("%d, %s", result, degreesText(level, false)))
 		if isCrit {
 			sb.WriteString(", crit!")
 		}
@@ -139,13 +141,19 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	return CommandResult{
 		Success: true,
 		Result:  sb.String(),
-		Versus: &VersusOutcome{
-			Roll:    result,
-			Target:  target,
-			Success: isSuccess,
-			Degrees: level,
-			Crit:    isCrit,
-			Doubles: isPlainD100(rollExpr) && isDoubles(result),
+		Data: &ResultData{
+			Kind:       ResultKindVersus,
+			Expression: rollExpr,
+			Target:     target,
+			Bonus:      bonusSuccesses,
+			Rolls: []VersusRoll{{
+				Output:  breakdown,
+				Roll:    result,
+				Success: isSuccess,
+				Degrees: level,
+				Crit:    isCrit,
+				Doubles: isPlainD100(rollExpr) && isDoubles(result),
+			}},
 		},
 	}
 }
@@ -195,6 +203,7 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	var outputs []string
 	var levelContributions []string
 	totalSuccessLevel := 0
+	rolls := make([]VersusRoll, 0, n)
 
 	for i := 0; i < n; i++ {
 		output, result, err := evaluate(rollExpr, rng)
@@ -209,18 +218,28 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 
 		// Format individual result - only show calculation if there are operators
 		var line strings.Builder
+		breakdown := ""
 		if strings.ContainsAny(output, "+-*/(") {
+			breakdown = output
 			line.WriteString(fmt.Sprintf("%s = %d, ", output, result))
 		} else {
 			line.WriteString(fmt.Sprintf("%d, ", result))
 		}
+		rolls = append(rolls, VersusRoll{
+			Output:  breakdown,
+			Roll:    result,
+			Success: isSuccess,
+			Degrees: level,
+			Crit:    isCrit,
+			Doubles: isPlainD100(rollExpr) && isDoubles(result),
+		})
 
 		if isSuccess {
-			line.WriteString(fmt.Sprintf("%d success", level))
+			line.WriteString(degreesText(level, true))
 			totalSuccessLevel += level
 			levelContributions = append(levelContributions, fmt.Sprintf("%d", level))
 		} else {
-			line.WriteString(fmt.Sprintf("%d fail", level))
+			line.WriteString(degreesText(level, false))
 			totalSuccessLevel -= level
 			levelContributions = append(levelContributions, fmt.Sprintf("-%d", level))
 		}
@@ -249,12 +268,46 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	calculation := strings.Join(levelContributions, " + ")
 	calculation = strings.ReplaceAll(calculation, "+ -", "- ")
 	sb.WriteString(fmt.Sprintf("%s = %d\n", calculation, totalSuccessLevel))
-	sb.WriteString(fmt.Sprintf("Total: %d success", totalSuccessLevel))
+	// A negative total reads as fails: "Total: 3 fails", not "-3 successes".
+	sb.WriteString("Total: " + degreesText(abs(totalSuccessLevel), totalSuccessLevel >= 0))
 
 	return CommandResult{
 		Success: true,
 		Result:  sb.String(),
+		Data: &ResultData{
+			Kind:       ResultKindVersus,
+			Expression: rollExpr,
+			Target:     target,
+			Bonus:      bonusSuccesses,
+			Repeat:     n,
+			Rolls:      rolls,
+			Total:      &totalSuccessLevel,
+		},
 	}
+}
+
+// degreesText is the English of ResultData's degrees, as the client renders
+// it (room.roll.* in i18n/catalog): "1 success", "2 successes", "0 fails".
+func degreesText(n int, success bool) string {
+	word := "fail"
+	if success {
+		word = "success"
+	}
+	switch {
+	case n == 1:
+		return "1 " + word
+	case success:
+		return fmt.Sprintf("%d successes", n)
+	default:
+		return fmt.Sprintf("%d fails", n)
+	}
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 func max(a, b int) int {

@@ -1,11 +1,18 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { updateSignalAtPath } from "../core/sync";
 import { armourComputeds } from "../gear/armourRules";
 import { attachComputeds } from "../kinds/computed";
 import { sumEntryField } from "../modifiers/entries";
 import { getRollValue } from "../rolls/rollBase";
-import { meleeRollName, stanceOf, stanceUnavailable } from "./stanceRules";
+import { meleeRollTags, stanceOf, stanceUnavailable } from "./stanceRules";
+import { label } from "../rollLabel";
+import { labelText } from "../rollLabelText";
+import type { SheetSignals } from "../schema/sheet";
+
+/** The name of a roll of the attack m1 named `name`, with its tags in words. */
+const meleeRollName = (state: SheetSignals, name: string) => labelText(label(name, { t: meleeRollTags(state, A) }));
 
 afterEach(teardownSheet);
 
@@ -65,14 +72,14 @@ describe("the stance of the sheet", () => {
 
 describe("what a stance needs", () => {
     it("Springy: a melee weapon of Balance 0 or more, its grip counted", () => {
-        expect(stanceUnavailable(sheet(""), "springy")).toBe("No melee weapon of Balance 0 or more, its grip counted");
+        expect(stanceUnavailable(sheet(""), "springy")).toBeTruthy();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "-1" }) }), "springy")).not.toBeNull();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "-1" }), m2: weapon("knife") }), "springy")).toBeNull();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword", { balance: "1", grip: "2р [Бл]", gripSelected: "Cl" }) }), "springy")).not.toBeNull();
     });
 
     it("Palisade: a glaive, spear or bayonet profile", () => {
-        expect(stanceUnavailable(sheet("", { m1: weapon("sword") }), "palisade")).toBe("No glaive, spear or bayonet among the melee attacks");
+        expect(stanceUnavailable(sheet("", { m1: weapon("sword") }), "palisade")).toBeTruthy();
         expect(stanceUnavailable(sheet("", { m1: weapon("sword"), m2: weapon("bayonet") }), "palisade")).toBeNull();
     });
 
@@ -84,10 +91,23 @@ describe("what a stance needs", () => {
 describe("a melee roll's name", () => {
     it("names the grip held when not the primary and the stance when not Standard", () => {
         const items = { m1: weapon("sword", { grip: "2р [1р]", gripSelected: "1h" }) };
-        expect(meleeRollName(sheet("aggressive", items), A, "Longsword")).toBe("Longsword (1h, Aggressive)");
-        expect(meleeRollName(sheet("", items), A, "Longsword")).toBe("Longsword (1h)");
-        expect(meleeRollName(sheet("covering", { m1: weapon("sword", { grip: "2р [1р]" }) }), A, "Longsword")).toBe("Longsword (Covering)");
-        expect(meleeRollName(sheet("", { m1: weapon("sword") }), A, "Longsword")).toBe("Longsword");
+        expect(meleeRollName(sheet("aggressive", items), "Longsword")).toBe("Longsword (1h, Aggressive)");
+        expect(meleeRollName(sheet("", items), "Longsword")).toBe("Longsword (1h)");
+        expect(meleeRollName(sheet("covering", { m1: weapon("sword", { grip: "2р [1р]" }) }), "Longsword")).toBe("Longsword (Covering)");
+        expect(meleeRollName(sheet("", { m1: weapon("sword") }), "Longsword")).toBe("Longsword");
+    });
+
+    it("names the grip and the stance in Russian on a Russian page", async () => {
+        installDictionary("ru");
+        // The grips and stances take their labels when their modules load.
+        vi.resetModules();
+        const [{ meleeRollTags: tags }, { loadState: load }, { labelText: words }] =
+            await Promise.all([import("./stanceRules"), import("../components/testUtils"), import("../rollLabelText")]);
+        const state = load({ meleeAttacks: { stance: "aggressive", list: {
+            items: { m1: weapon("sword", { grip: "2р [1р+Об]", gripSelected: "1h+Rev" }) }, layouts: { m1: pos(0, 0) },
+        } } });
+        // The grip as the weapon writes it, the stance in the page's language.
+        expect(words(label("Длинный меч", { t: tags(state, A) }))).toMatch(/^Длинный меч \(1р\+Об, [^A-Za-z]+\)$/);
     });
 });
 

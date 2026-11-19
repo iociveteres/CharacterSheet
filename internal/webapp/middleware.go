@@ -2,11 +2,14 @@ package webapp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
+	"charactersheet.iociveteres.net/internal/i18n"
+	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/justinas/nosurf"
 )
@@ -88,17 +91,41 @@ func (app *Application) authenticate(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		exists, err := app.Models.Users.Exists(r.Context(), id)
-		if err != nil {
+		// The query that checks the user also brings the language, so the language
+		// middleware needs none of its own.
+		locale, err := app.Models.Users.GetLocale(r.Context(), id)
+		if err != nil && !errors.Is(err, models.ErrNoRecord) {
 			app.serverError(w, err)
 			return
 		}
-		if exists {
+		if err == nil {
 			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			ctx = context.WithValue(ctx, userLocaleContextKey, locale)
 			r = r.WithContext(ctx)
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+// langCookie keeps the language of a guest, and of a user on a device until sign-in.
+const langCookie = "lang"
+
+// language puts the language of the request into its context: the signed-in user's choice,
+// then the cookie, then Accept-Language. It goes after authenticate.
+func (app *Application) language(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lang, _ := r.Context().Value(userLocaleContextKey).(string)
+		if !i18n.Supported(lang) {
+			lang = ""
+			if c, err := r.Cookie(langCookie); err == nil && i18n.Supported(c.Value) {
+				lang = c.Value
+			}
+		}
+		if lang == "" {
+			lang = i18n.FromAcceptLanguage(r.Header.Get("Accept-Language"))
+		}
+		next.ServeHTTP(w, r.WithContext(i18n.WithLang(r.Context(), lang)))
 	})
 }
 

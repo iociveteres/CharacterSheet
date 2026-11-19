@@ -10,6 +10,8 @@ import {
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
+import { versusOutcome } from "./messages";
+import { hasCodes, labelText } from "../sheet/api";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
 import { displayNameOf } from "./encounter/state";
@@ -170,7 +172,7 @@ export function listenRemote(): void {
         if (requestId !== undefined) {
             sheetRolls.delete(msg.eventID);
             document.dispatchEvent(new CustomEvent("sheet:rollResult", {
-                detail: { requestId, outcome: msg.versus ?? null, commandResult: msg.commandResult || null },
+                detail: { requestId, outcome: versusOutcome(msg.resultData), commandResult: msg.commandResult || null },
             }));
         }
         const message: ChatMessage = {
@@ -179,6 +181,8 @@ export function listenRemote(): void {
             userName: msg.userName,
             messageBody: msg.messageBody,
             commandResult: msg.commandResult || null,
+            resultData: msg.resultData ?? null,
+            labelData: msg.labelData ?? null,
             characterName: msg.characterName || null,
             createdAt: msg.created,
         };
@@ -202,6 +206,8 @@ export function listenRemote(): void {
             userName: username,
             messageBody: message.messageBody,
             commandResult: message.commandResult || null,
+            resultData: message.resultData ?? null,
+            labelData: message.labelData ?? null,
             characterName: message.characterName || null,
             createdAt: message.createdAt,
         }));
@@ -299,12 +305,13 @@ export function listenRemote(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const { target, bonusSuccesses, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        awaitSheetRoll(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
+        const command = rollVersusCommand(target, bonusSuccesses, labelText(label));
+        awaitSheetRoll(rollFromSheet(command, signed, hasCodes(label) ? label : undefined), requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollExact>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        awaitSheetRoll(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
+        awaitSheetRoll(rollFromSheet(rollExactCommand(expression, labelText(label)), signed, hasCodes(label) ? label : undefined), requestId);
     });
     // A refused roll gets only the error. The chat message of a roll sent over a
     // socket that closed, or while it was closed, goes to no one: on a new

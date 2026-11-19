@@ -2,7 +2,8 @@
 // has the sheets of all participants, with their initiative modifiers and
 // characteristics. It publishes the order and the view the players see
 // (encounterOrder), and the server keeps what it was sent.
-import type { InitiativeView } from "./types.gen";
+import type { InitiativeRow, InitiativeView } from "./types.gen";
+import { t } from "../../i18n";
 
 /** A participant as the order sees it. */
 export interface Contender {
@@ -73,19 +74,32 @@ export function groupNumbers(groups: readonly { id: number; name: string | null;
     return new Map(numbered.map((id, i) => [id, i + 1]));
 }
 
+/** A group's name or, for a group the gamemaster did not name, its number. */
+export type GroupName = Pick<InitiativeRow, "name" | "group">;
+
 /**
  * A group named by the gamemaster goes by its name, a group of one by its
  * member's name, the others by their number: the names of all members would
- * not fit a row.
+ * not fit a row. The players' view and the roll for NPCs carry the number,
+ * not "Group N", so that each viewer reads it in their own language.
  */
-export function groupLabel(name: string | null, memberNames: readonly string[], number: number | undefined): string {
-    return name?.trim() || (memberNames.length === 1 ? memberNames[0] : `Group ${number}`);
+export function groupName(name: string | null, memberNames: readonly string[], number: number | undefined): GroupName {
+    const own = name?.trim() || (memberNames.length === 1 ? memberNames[0] : "");
+    return own || number === undefined ? { name: own } : { name: "", group: number };
 }
+
+/** The text of a group's name in the viewer's language. */
+export function nameText({ name, group }: GroupName): string {
+    return group ? t("room.encounter.groupNumber", { number: group }) : name;
+}
+
+export const groupLabel = (name: string | null, memberNames: readonly string[], number: number | undefined): string =>
+    nameText(groupName(name, memberNames, number));
 
 export interface ViewRow {
     groupId: number;
     /** The name the players see. */
-    label: string;
+    players: GroupName;
     value: number | null;
 }
 
@@ -95,6 +109,6 @@ export function initiativeView(round: number, currentGroupId: number | null, row
     return {
         round,
         current: current < 0 ? null : current,
-        rows: rows.map(r => ({ name: r.label, value: r.value })),
+        rows: rows.map(r => ({ ...r.players, value: r.value })),
     };
 }

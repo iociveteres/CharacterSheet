@@ -14,8 +14,12 @@ export interface DiceSettings {
 
 export const DICE_PRESET_SLOTS = 5;
 
-/** The label of a roll from the sheet, under the command as `>>` lines. */
-function labelLines(label: string): string {
+/**
+ * The label of a roll from the sheet, under the command as `>>` lines and cut
+ * at 200 characters: as the roller sends it and as the chat shows a label
+ * stored as data (messageText of commandResult.ts).
+ */
+export function labelLines(label: string): string {
     if (!label.trim()) return "";
     const lines = label
         .replace(/\r\n/g, "\n")

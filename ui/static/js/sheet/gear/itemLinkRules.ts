@@ -4,6 +4,7 @@
 // enchantments, its weapon entries named "This item" (weapons/weaponBonus.ts)
 // and Broken, which halves the damage left after armour. A link to a deleted
 // item stays on the attack and gives nothing.
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../components/format";
 import { chipText, enchantmentsOf } from "./enchantmentRules";
@@ -11,6 +12,7 @@ import { idsInOrder } from "../core/gridOrder";
 import { isBroken, materialOf } from "./materialRules";
 import type { GearItem } from "../schema/sheet";
 import { textAt, valueAt } from "../core/sync";
+import { code, SPACE, SRC, type Part } from "../rollLabel";
 
 export const MELEE_ATTACKS = "meleeAttacks.list.items";
 export const RANGED_ATTACKS = "rangedAttacks.list.items";
@@ -27,7 +29,10 @@ export function gearItemAt(state: SheetSignals, id: string): GearItem | null {
     return (state.gear?.list?.items?.[id] as GearItem | undefined) ?? null;
 }
 
-export const itemName = (item: GearItem) => String(item.name?.value ?? "").trim() || "Item";
+export const itemName = (item: GearItem) => String(item.name?.value ?? "").trim() || t("sheet.gear.item");
+
+/** The item in a roll label: its name, or the code of what itemName says without one. */
+const itemPart = (item: GearItem): Part => String(item.name?.value ?? "").trim() || code(SPACE.src, SRC.item);
 
 export interface Link {
     id: string;
@@ -86,6 +91,13 @@ export const linkedInBlock = (state: SheetSignals, block: AttackBlock, itemId: s
 /** The label of a line the item gives the attack: its source, and the item when that is not the item itself. */
 export const linkedLabel = (item: GearItem, source: string) => (source === itemName(item) ? source : `${source} (${itemName(item)})`);
 
+/** linkedLabel in a roll label: text while both are text, else the code `linked`, which each reader words as linkedLabel does. */
+export function linkedPart(item: GearItem, source: Part): Part {
+    const name = itemPart(item);
+    if (typeof source === "string" && typeof name === "string") return linkedLabel(item, source);
+    return code(SPACE.linked, null, { s: source, i: name });
+}
+
 /** The Pen the material of the linked item adds to the weapon at `weaponPath`, as a modifier named by the material. */
 export function materialPenMods(state: SheetSignals, weaponPath: string) {
     const item = linkedItem(state, weaponPath);
@@ -119,5 +131,5 @@ export function brokenItem(state: SheetSignals, weaponPath: string): GearItem | 
 /** The note of a broken linked item on the damage of the weapon at `weaponPath`; empty while it is whole. */
 export function brokenNote(state: SheetSignals, weaponPath: string): string {
     const item = brokenItem(state, weaponPath);
-    return item ? `½ after armour: ${itemName(item)} is broken` : "";
+    return item ? t("sheet.gear.brokenNote", { item: itemName(item) }) : "";
 }

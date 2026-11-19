@@ -15,7 +15,7 @@ function CustomSkill({ itemId }: { itemId: string }) {
             <Select field="characteristic" options={stats.characteristics.map(c => c.key)} />
             <AdvanceCheckboxes rowPath={path} />
             <NumberField field="miscBonus" class="short textlike" />
-            <Difficulty rowPath={path} label={() => String(peekAt(state, `${path}.name`) ?? "")} />
+            <Difficulty rowPath={path} label={() => ({ n: String(peekAt(state, `${path}.name`) ?? "") })} />
             <DragHandle />
             <DeleteButton itemPath={path} />
         </Scope>

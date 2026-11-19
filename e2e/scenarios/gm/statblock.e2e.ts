@@ -120,7 +120,8 @@ describe("the stat block", () => {
         await roll.locator('[data-id="maxPR"]').click();
         await roll.locator('[data-id="rollButton"]').click();
         const cast = await player.waitReceived(
-            m => m.type === "chatMessage" && String(m.messageBody).startsWith("/r d100 vs") && String(m.messageBody).includes(POWER), "the cast");
+            // Its label has codes (the effective PR), so it comes as labelData apart from the body.
+            m => m.type === "chatMessage" && String(m.messageBody).startsWith("/r d100 vs") && JSON.stringify(m.labelData ?? "").includes(POWER), "the cast");
         expect(cast.characterName).toBe(SHOWN);
         expect(JSON.stringify(await player.received())).not.toContain(REAL);
     });

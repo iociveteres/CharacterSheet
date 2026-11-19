@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 // The files at the sheet's root that the layers read: below core, they import
 // only the schema and each other. Every other root file wires the sheet
 // together (main.ts, instance.ts, api.ts...) and sits above sheet/kinds.
-const BASE = ["autocomplete.ts", "connection.ts", "lifecycle.ts", "payload.ts", "rollEvents.ts", "versions.ts"];
+const BASE = ["autocomplete.ts", "connection.ts", "lifecycle.ts", "payload.ts", "rollEvents.ts", "rollLabel.ts", "versions.ts"];
 
 const LAYERS = [
     ["schema"],
@@ -37,7 +37,7 @@ const SIDEWAYS = {
 };
 // What the code outside the sheet may import of it, and the sheet of the code outside.
 const PUBLIC = ["api.ts", "main.ts", "kinds/kinds.gen.ts"];
-const OUTSIDE_ALLOWED = ["room/messages.ts"];
+const OUTSIDE_ALLOWED = ["room/messages.ts", "i18n/index.ts"];
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const js = path.join(root, "ui", "static", "js");

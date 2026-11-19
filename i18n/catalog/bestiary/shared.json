@@ -1,0 +1,11 @@
+{
+  "bestiary.shared.collections": { "en": "Collections", "ru": "Коллекции", "note": "заголовок списка коллекций: страница бестиария и «Добавить монстров» в комнате" },
+  "bestiary.shared.myCollections": { "en": "My collections", "ru": "Мои коллекции" },
+  "bestiary.shared.subscriptions": { "en": "Subscriptions", "ru": "Подписки", "note": "чужие публичные коллекции, на которые подписан пользователь" },
+  "bestiary.shared.creatures": { "en": "Creatures", "ru": "Существа", "note": "заголовок списка существ" },
+  "bestiary.shared.searchCreatures": { "en": "Search creatures", "ru": "Поиск существ" },
+  "bestiary.shared.newCreature": { "en": "New creature", "ru": "Новое существо", "note": "кнопка; так же сервер называет созданное существо" },
+  "bestiary.shared.newCreatureKind": { "en": "Kind of the new creature", "ru": "Вид нового существа", "note": "список видов листа рядом с кнопкой «Новое существо»" },
+  "bestiary.shared.source": { "en": "Source:", "ru": "Источник:", "note": "откуда скопировано существо: «коллекция · владелец»" },
+  "bestiary.shared.defaultCollection": { "en": "My creatures", "ru": "Мои существа", "note": "название коллекции, которую сервер заводит каждому пользователю при регистрации" }
+}

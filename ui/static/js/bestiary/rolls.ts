@@ -3,8 +3,9 @@
 // and answers this tab only (roll in internal/roomws/bestiary.go); the answer
 // goes back to the sheet and into the page's roll feed.
 import { rollExactCommand, rollVersusCommand } from "../room/dice";
-import type { SheetRollExact, SheetRollVersus, VersusOutcome } from "../room/messages";
-import { sendToRoom } from "../sheet/api";
+import type { ResultData } from "../room/commands.gen";
+import { versusOutcome, type SheetRollExact, type SheetRollVersus, type VersusOutcome } from "../room/messages";
+import { labelText, sendToRoom } from "../sheet/api";
 import { addRoll } from "./actions";
 
 /** What the server answers a roll with: a chat message nobody else sees. */
@@ -13,7 +14,7 @@ export interface RollResultMessage {
     eventID: string;
     messageBody: string;
     commandResult: string;
-    versus?: VersusOutcome;
+    resultData?: ResultData;
     characterName?: string;
     created: string;
 }
@@ -46,11 +47,11 @@ function roll(command: string, characterName: string | null, requestId: string):
 export function listenRolls(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const { target, bonusSuccesses, label, requestId, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
-        roll(rollVersusCommand(target, bonusSuccesses, label), characterName, requestId);
+        roll(rollVersusCommand(target, bonusSuccesses, labelText(label)), characterName, requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label, requestId, characterName } = (e as CustomEvent<SheetRollExact>).detail;
-        roll(rollExactCommand(expression, label), characterName, requestId);
+        roll(rollExactCommand(expression, labelText(label)), characterName, requestId);
     });
     document.addEventListener("ws:rollResult", e => {
         const msg = (e as CustomEvent<RollResultMessage>).detail;
@@ -63,10 +64,11 @@ export function listenRolls(): void {
             userName: "",
             messageBody: msg.messageBody,
             commandResult: msg.commandResult || null,
+            resultData: msg.resultData ?? null,
             characterName: msg.characterName || null,
             createdAt: msg.created,
         });
-        answer(requestId, msg.versus ?? null, msg.commandResult || null);
+        answer(requestId, versusOutcome(msg.resultData), msg.commandResult || null);
     });
     // A refused roll gets only the error; one sent over a socket that closed
     // is answered on no socket.

@@ -28,7 +28,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 	router.HandlerFunc(http.MethodGet, "/stats/online", app.onlineUsersHandler)
 
-	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate)
+	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate, app.language)
 
 	router.Handler(http.MethodGet, routeAdd("Home", "/"), dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, routeAdd("UserSignup", "/user/signup"), dynamic.ThenFunc(app.userSignup))
@@ -48,6 +48,7 @@ func (app *Application) Routes() http.Handler {
 
 	router.Handler(http.MethodGet, routeAdd("About", "/about"), dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, routeAdd("Donate", "/donate"), dynamic.ThenFunc(app.donate))
+	router.Handler(http.MethodPost, routeAdd("Language", "/language"), dynamic.ThenFunc(app.languagePost))
 
 	protected := dynamic.Append(app.requireAuthentication)
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))

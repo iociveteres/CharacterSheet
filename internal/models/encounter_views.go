@@ -132,6 +132,9 @@ type InitiativeView struct {
 
 type InitiativeRow struct {
 	Name string `json:"name"`
+	// Group is the number of a group the gamemaster did not name, whose Name
+	// is empty: each player reads "Group N" in their own language.
+	Group int `json:"group,omitempty"`
 	// Value is null for a group none of whom has rolled.
 	Value *int `json:"value" tstype:"number | null,required"`
 }
@@ -158,7 +161,7 @@ func ParseInitiativeView(raw json.RawMessage) (*InitiativeView, error) {
 		return nil, ErrInvalidInitiativeView
 	}
 	for _, r := range v.Rows {
-		if utf8.RuneCountInString(r.Name) > maxInitiativeRowName {
+		if utf8.RuneCountInString(r.Name) > maxInitiativeRowName || r.Group < 0 || r.Group > maxInitiativeRows {
 			return nil, ErrInvalidInitiativeView
 		}
 	}

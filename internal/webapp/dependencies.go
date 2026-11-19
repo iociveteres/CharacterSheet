@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"charactersheet.iociveteres.net/internal/gamedata"
-	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/roomws"
 	"github.com/alexedwards/scs/v2"
@@ -19,13 +18,19 @@ type Dependencies struct {
 	ErrorLog       *log.Logger
 	InfoLog        *log.Logger
 	Models         models.Models
-	TemplateCache  map[string]*template.Template
+	TemplateCache  map[string]map[string]*template.Template
 	FormDecoder    *form.Decoder
 	SessionManager *scs.SessionManager
 	WSServer       *roomws.Server
 	BaseURL        string
 	Gamedata       gamedata.Catalogs
-	Mailer         mailer.Mailer
+	Mailer         MailSender
+}
+
+// MailSender is mailer.Mailer; tests put a fake in its place.
+type MailSender interface {
+	// Send sends the email templates/<name>.<lang>.html of internal/mailer.
+	Send(recipient, lang, name string, data any) error
 }
 
 type Application struct {

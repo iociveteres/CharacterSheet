@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
@@ -39,6 +40,7 @@ func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *h
 		errorLog: app.ErrorLog,
 		userID:   userID,
 		timeZone: util.GetTimeLocation(r),
+		lang:     i18n.FromContext(r.Context()),
 	}
 	hub.register <- client
 

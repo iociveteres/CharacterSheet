@@ -8,7 +8,8 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Never push to `main`: a push deploys straight to production (`.github/workflows/deploy.yml`).
   Work on a branch.
 - Never edit `*.gen.ts` by hand. After changing `internal/models/character_sheets_content.go` or
-  `sheet_kinds.go`, run `npm run gen:types`; CI checks the result.
+  `sheet_kinds.go`, run `npm run gen:types`; after changing `i18n/catalog`, `npm run gen:i18n`. CI
+  checks the result.
 - Never add a `Co-Authored-By` line to commits.
 
 ## Architecture
@@ -37,6 +38,19 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   CSS and tests do.
 - Backgrounds by nesting level, selection, buttons by role, editing in place:
   `ui/static/css/DESIGN.md`. Follow it in new UI.
+- UI text is in `i18n/catalog/` (en, ru), never a literal in code: `t("key")` on the client
+  (`ui/static/js/i18n`), `i18n.T(lang, "key")` and `{{t .Lang "key"}}` on the server; exceptions
+  with a reason in `scripts/i18n-literal-exceptions.txt`. A file path is its key prefix
+  (`sheet/weapons.json` holds `sheet.weapons.*`); one entry per line with the full key:
+  `"key": { "en": …, "ru": …, "note": "for the translator" }`, plural forms picked by `count`.
+  Terms come from `sheet/terms*.json` and `common.json`, never a second key. A key built at run time
+  needs an `i18n-keys:` marker (`scripts/i18n/usage.mjs`). Long texts are a file per language
+  (`ui/html/content/<name>.<lang>.html`, `internal/mailer/templates`).
+- Stored values never depend on the language: translate the label, not what goes into the sheet;
+  rules compare the stored value. What the server sends to the whole room is a code that each client
+  words in its own language. So is a roll label: what the sheet takes from the catalog goes as a code
+  (`sheet/rollLabel.ts`), worded by the reader's client (`sheet/rollLabelText.ts`); only what the
+  player typed stays text. Codes are stored in `room_messages.label_data`: never rename one, alias it.
 
 ## Game data: the DoomBC Core rulebook (Russian), prepared in `../BookParser`
 
@@ -55,7 +69,7 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Check in a browser with `web-local` / `web-dev` from `.claude/launch.json` (port 4002): with the
   `BASE_URL` from `.env` the WebSocket rejects the connection, it compares Origin with `BASE_URL`.
 - Checks, same as CI: `npm run typecheck`, `npm test`, `npm run check:signals`,
-  `npm run check:state`, `npm run check:layers`, `go vet ./...`,
+  `npm run check:state`, `npm run check:layers`, `npm run check:i18n`, `go vet ./...`,
   `go test ./...`. `internal/models` tests need Postgres on `localhost:5432` (`test_web` / `pass`,
   database `test_charactersheet`). Most tests take the schema from `testdata/setup.sql`; encounter
   and bestiary tests build it in `newSheetHomesTestDB` from `sheet_homes_setup.sql` plus a list of
@@ -64,6 +78,9 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - `npm run test:e2e` drives a running `web-local` / `web-dev` in headless Chrome, with the session
   saved by `node scripts/perf/sheet-render.mjs login`. Pass a folder to run one domain
   (`npm run test:e2e -- e2e/scenarios/sync`); `baseline/old-build` compares with a build on :4001.
+- Strings: `npm run i18n -- find <text or key>` instead of reading catalog files,
+  `npm run i18n -- missing` for keys without `ru`; `npm run i18n:table` builds `i18n/table.html` for
+  proofreading, `npm run i18n:edit` serves it editable. e2e pins the `lang=en` cookie.
 - happy-dom misparses `select`, `input`, `textarea` and radio in HTML strings: render with Preact.
 - Measure render time with `npm run perf:sheet`, not in the built-in browser pane: it throttles
   `requestAnimationFrame` in the background.

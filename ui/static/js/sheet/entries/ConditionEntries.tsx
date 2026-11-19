@@ -19,6 +19,7 @@ import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponW
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../characteristics/characteristicSuggestions";
 import { characteristicsOf } from "../modifiers/entries";
 import { namesSheetSkill, skillNameGroups } from "../characteristics/skillNames";
+import { t } from "../../i18n";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_cap_bonus", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
@@ -27,7 +28,7 @@ function ValueField({ field, label }: { field: string; label: string }) {
     return (
         <span class="field-stack">
             <span class="field-label">{label}</span>
-            <TextField field={field} class="textlike" placeholder="0 or X" />
+            <TextField field={field} class="textlike" placeholder={t("sheet.entries.valuePlaceholder")} />
         </span>
     );
 }
@@ -38,63 +39,63 @@ function EntryValues({ type }: { type: string }) {
         case "char_bonus":
             return (
                 <span class="value-char-bonus entry-field-group">
-                    <ValueField field="bonus" label="Char." />
-                    <ValueField field="unnaturalBonus" label="Unnat." />
+                    <ValueField field="bonus" label={t("sheet.entries.char")} />
+                    <ValueField field="unnaturalBonus" label={t("sheet.entries.unnatural")} />
                 </span>
             );
         case "char_cap":
-            return <span class="value-char-cap entry-field-group"><ValueField field="cap" label="Char." /></span>;
+            return <span class="value-char-cap entry-field-group"><ValueField field="cap" label={t("sheet.entries.char")} /></span>;
         case "char_cap_bonus":
             return (
                 <span class="value-char-cap-bonus entry-field-group"
-                    title="Raises the caps of these characteristics: inside a gear item only that item's caps, elsewhere all of them">
-                    <ValueField field="capBonus" label="Bonus" />
+                    title={t("sheet.entries.capBonusTitle")}>
+                    <ValueField field="capBonus" label={t("common.bonus")} />
                 </span>
             );
         case "char_override":
             return (
                 <span class="value-char-override entry-field-group">
-                    <ValueField field="overrideValue" label="Value" />
-                    <ValueField field="overrideUnnatural" label="Unnat." />
+                    <ValueField field="overrideValue" label={t("sheet.entries.value")} />
+                    <ValueField field="overrideUnnatural" label={t("sheet.entries.unnatural")} />
                 </span>
             );
         case "roll_bonus":
-            return <span class="value-roll-bonus entry-field-group"><ValueField field="rollBonus" label="Char." /></span>;
+            return <span class="value-roll-bonus entry-field-group"><ValueField field="rollBonus" label={t("sheet.entries.char")} /></span>;
         case "skill_bonus":
-            return <span class="value-skill-bonus entry-field-group"><ValueField field="skillBonus" label="Char." /></span>;
+            return <span class="value-skill-bonus entry-field-group"><ValueField field="skillBonus" label={t("sheet.entries.char")} /></span>;
         case "ablative_wounds":
-            return <span class="value-ablative entry-field-group"><ValueField field="ablativeWounds" label="Wounds" /></span>;
+            return <span class="value-ablative entry-field-group"><ValueField field="ablativeWounds" label={t("sheet.terms.stat.wounds")} /></span>;
         case "initiative_bonus":
             return (
                 <span class="value-initiative-bonus entry-field-group">
-                    <ValueField field="initiativeBonus" label="Init." />
+                    <ValueField field="initiativeBonus" label={t("sheet.entries.initiative")} />
                 </span>
             );
         case "movement_bonus":
             return (
                 <span class="value-movement-bonus entry-field-group">
-                    <ValueField field="movementBonus" label="Move" />
+                    <ValueField field="movementBonus" label={t("sheet.entries.movement")} />
                 </span>
             );
         case "weapon_bonus":
             return (
                 <span class="value-weapon-bonus entry-field-group">
                     <span class="field-stack">
-                        <span class="field-label">Field</span>
+                        <span class="field-label">{t("sheet.entries.weaponField")}</span>
                         <Select field="weaponField" class="textlike" options={WEAPON_FIELDS}
-                            title="The field of the weapons it adds to; Rng both ends of a melee range, Rng min and max one" />
+                            title={t("sheet.entries.weaponFieldTitle")} />
                     </span>
-                    <ValueField field="weaponBonus" label="Value" />
+                    <ValueField field="weaponBonus" label={t("sheet.entries.value")} />
                 </span>
             );
         case "bonus_ap":
             return (
                 <span class="value-bonus-ap entry-field-group">
                     <span class="field-stack">
-                        <span class="field-label">AP Type</span>
+                        <span class="field-label">{t("sheet.entries.apType")}</span>
                         <Select field="apType" class="textlike" options={AP_TYPES} />
                     </span>
-                    <ValueField field="apValue" label="AP" />
+                    <ValueField field="apValue" label={t("sheet.entries.ap")} />
                 </span>
             );
         default:
@@ -118,14 +119,8 @@ function RollDomains({ mode }: { mode: string }) {
     );
 }
 
-const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
-    "The characteristics the entry applies to:",
-    "WS — one characteristic",
-    "WS, BS — several, separated by commas or spaces",
-    `Any — ${anyScope(characteristics)}`,
-    "Any -T — all but T; -T alone means the same",
-    "Case does not matter. An unknown name turns the entry off.",
-].join("\n");
+const characteristicsTitle = (characteristics: readonly Characteristic[]) =>
+    t("sheet.entries.characteristicsTitle", { any: anyScope(characteristics) });
 
 /**
  * The characteristics an entry counts on, with suggestions for the token being
@@ -146,8 +141,8 @@ function CharacteristicsField({ path }: { path: string }) {
     return (
         <>
             <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
-                placeholder="WS, BS or Any -T"
-                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
+                placeholder={t("sheet.entries.characteristicsPlaceholder")}
+                title={invalid.length ? `${t("sheet.entries.unknown", { words: invalid.join(", ") })}\n\n${title}` : title}
                 suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
                 queryAt={tokenAt} insert={insertToken} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={parts} />}
@@ -155,14 +150,8 @@ function CharacteristicsField({ path }: { path: string }) {
     );
 }
 
-const WEAPONS_TITLE = [
-    "The weapons the entry adds to, separated by commas:",
-    "Melee, Ranged — all of a kind",
-    "Primary, Power, Pistol — a melee group or ranged class",
-    "sword, spear — a melee profile",
-    "Longsword — a weapon of the sheet by its name",
-    "Case does not matter. An unknown word turns the entry off.",
-].join("\n");
+// The words are the ones the entry is written in, the same in every language (modifiers/weaponWords.ts).
+const WEAPONS_TITLE = t("sheet.entries.weaponsTitle");
 
 /** The word of a comma-separated list at `caret`, trimmed. */
 const wordAt = (text: string, caret: number) => {
@@ -182,7 +171,7 @@ function insertWord(text: string, caret: number, value: string, typed: boolean):
     return `${text.slice(0, start)}${start > 0 ? " " : ""}${value}${end < 0 ? "" : text.slice(end)}`;
 }
 
-const THIS_ITEM_TITLE = `${THIS_ITEM} — the attacks linked to this gear item, equipped or not`;
+const THIS_ITEM_TITLE = t("sheet.entries.thisItemTitle", { word: THIS_ITEM });
 
 /**
  * The weapons a weapon entry adds to, with suggestions: the kinds, groups,
@@ -197,24 +186,24 @@ function WeaponsField({ path }: { path: string }) {
     const inItem = path.startsWith("gear.list.items.");
     const title = inItem ? `${WEAPONS_TITLE}\n${THIS_ITEM_TITLE}` : WEAPONS_TITLE;
     const groups = () => [
-        ...(inItem ? [{ label: "Item", options: [THIS_ITEM] }] : []),
-        { label: "All", options: WEAPON_KINDS },
-        { label: "Groups", options: WEAPON_GROUPS },
-        { label: "Profiles", options: WEAPON_PROFILES },
-        { label: "Weapons", options: weaponNames(state) },
+        ...(inItem ? [{ label: t("sheet.entries.group.item"), options: [{ value: THIS_ITEM, label: t("sheet.entries.thisItem") }] }] : []),
+        { label: t("sheet.entries.group.all"), options: WEAPON_KINDS },
+        { label: t("sheet.entries.group.groups"), options: WEAPON_GROUPS },
+        { label: t("sheet.entries.group.profiles"), options: WEAPON_PROFILES },
+        { label: t("sheet.entries.group.weapons"), options: weaponNames(state) },
     ];
     // The word being typed may still become one.
     const unfinished = typing !== null && typing !== "" && filterGroups(groups(), typing).length > 0;
     const invalid = unknownWeaponWords(state, name, inItem).filter(w => !(unfinished && w === typing?.toLowerCase()));
     return (
         <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
-            placeholder={inItem ? "This item, Melee…" : "Melee, sword, a weapon…"}
-            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
+            placeholder={inItem ? t("sheet.entries.weaponsPlaceholderInItem", { word: THIS_ITEM }) : t("sheet.entries.weaponsPlaceholder")}
+            title={invalid.length ? `${t("sheet.entries.unknown", { words: invalid.join(", ") })}\n\n${title}` : title}
             suggest={query => filterGroups(groups(), query)} queryAt={wordAt} insert={insertWord} />
     );
 }
 
-const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus counts once there is one.";
+const UNMATCHED_SKILL_TITLE = t("sheet.entries.unmatchedSkill");
 
 /** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
 function SkillNameField({ path }: { path: string }) {
@@ -226,7 +215,7 @@ function SkillNameField({ path }: { path: string }) {
     }).value;
     return (
         <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
-            placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
+            placeholder={t("sheet.entries.skillName")} title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
             suggest={query => filterGroups(skillNameGroups(state, stats), query)} />
     );
 }
@@ -276,7 +265,7 @@ export function AddConditionButton({ itemId, itemPath }: { itemId: string; itemP
     const { actions } = useSheet();
     const gridPath = `${itemPath}.entries.items`;
     const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
-    return <button type="button" class="add-first-condition" onClick={addFirst}>＋ condition</button>;
+    return <button type="button" class="add-first-condition" onClick={addFirst}>{t("sheet.entries.addCondition")}</button>;
 }
 
 /**
@@ -294,7 +283,7 @@ export function ItemEntries({ itemId, itemPath, framed = true, addButton = true 
     if (!framed) return <ConditionEntries itemId={itemId} />;
     return (
         <fieldset class="gear-condition-fields">
-            <legend>Conditions</legend>
+            <legend>{t("sheet.terms.block.conditions")}</legend>
             <ConditionEntries itemId={itemId} />
         </fieldset>
     );

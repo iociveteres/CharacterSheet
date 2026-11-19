@@ -58,15 +58,15 @@ it("shows me first with my role and when I joined", () => {
     mount("player");
 
     expect($$(".player-name").map(e => e.textContent)).toEqual(["Me", "Moderator", "Player"]);
-    expect($("#current-player .meta.role")!.textContent).toBe("player");
-    expect($("#current-player .meta.created")!.textContent).toMatch(/^Joined at 05 Jan 2026 at \d\d:00$/);
+    expect($("#current-player .meta.role")!.textContent).toBe("Player");
+    expect($("#current-player .meta.created")!.textContent).toMatch(/05 Jan 2026 at \d\d:00$/);
 });
 
 describe("a player", () => {
     beforeEach(() => mount("player"));
 
     it("sees roles, and no invite, role selects or kicks", () => {
-        expect($$(".player .meta.role").map(e => e.textContent)).toEqual(["player", "moderator", "player"]);
+        expect($$(".player .meta.role").map(e => e.textContent)).toEqual(["Player", "Moderator", "Player"]);
         expect($$("button")).toHaveLength(0);
         expect($$("select")).toHaveLength(0);
     });
@@ -104,7 +104,7 @@ describe("the gamemaster", () => {
 
     it("kicks a player after asking", async () => {
         click($('.player[data-user-id="2"] .delete-entry')!);
-        expect(confirmMessage.value).toBe("Kick Moderator?");
+        expect(confirmMessage.value).toContain("Moderator");
 
         act(() => answerConfirm(true));
         await Promise.resolve();

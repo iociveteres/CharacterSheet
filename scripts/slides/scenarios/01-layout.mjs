@@ -18,7 +18,7 @@ export default {
         const name = page.locator('#character_info input[data-id="characterName"]');
         return d.record(frame, out, async () => {
             await d.pause(500);
-            await d.click(page.getByRole('button', { name: 'New character' }));
+            await d.click(page.locator('#characters .button-wide.button-large'));
             await d.pause(600);
             await d.click(page.locator('.character-sheet-entry a').first());
             await name.waitFor();

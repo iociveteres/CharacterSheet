@@ -2,14 +2,15 @@
 // cognition and energy, with the defaults of the rules (rolls/ResourceField.tsx).
 import { StatField, type StatTexts } from "../rolls/ResourceField";
 import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "./tech";
+import { t } from "../../i18n";
 
-const RESOURCE_HINT = "An implant or talent, as Explorator −1.";
+const RESOURCE_HINT = t("sheet.tech.resource.hint");
 
 const TEXTS: { [K in ResourceKey]: StatTexts } = {
-    cognitionMax: { noun: "maximum of cognition", rule: "⚙ up to I.b", hint: RESOURCE_HINT },
-    cognitionRestore: { noun: "cognition a turn restores", rule: "½I.b▲ ⚙ a turn", hint: RESOURCE_HINT },
-    energyMax: { noun: "maximum of energy", rule: "a Potentia Coil holds 3 🗲 (Poor.Q 1, Good.Q 5, Best.Q 7)", hint: RESOURCE_HINT },
-    energyRestore: { noun: "energy a turn restores", rule: "a turn restores no 🗲", hint: RESOURCE_HINT },
+    cognitionMax: { noun: t("sheet.tech.resource.cognitionMaxNoun"), rule: t("sheet.tech.resource.cognitionMaxRule"), hint: RESOURCE_HINT },
+    cognitionRestore: { noun: t("sheet.tech.resource.cognitionRestoreNoun"), rule: t("sheet.tech.resource.cognitionRestoreRule"), hint: RESOURCE_HINT },
+    energyMax: { noun: t("sheet.tech.resource.energyMaxNoun"), rule: t("sheet.tech.resource.energyMaxRule"), hint: RESOURCE_HINT },
+    energyRestore: { noun: t("sheet.tech.resource.energyRestoreNoun"), rule: t("sheet.tech.resource.energyRestoreRule"), hint: RESOURCE_HINT },
 };
 
 /** The field of the stat `stat` of Techno Arcana, at the enclosing path. */

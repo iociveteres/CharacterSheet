@@ -90,7 +90,7 @@ func (app *Application) portraitPut(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.WSServer.PortraitChanged(r.Context(), sheetID, &hash)
@@ -103,7 +103,7 @@ func (app *Application) portraitDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if app.bestiaryError(w, app.Models.Portraits.Delete(r.Context(), app.userID(r), sheetID)) {
+	if app.bestiaryError(w, r, app.Models.Portraits.Delete(r.Context(), app.userID(r), sheetID)) {
 		return
 	}
 	app.WSServer.PortraitChanged(r.Context(), sheetID, nil)

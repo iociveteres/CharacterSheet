@@ -1,0 +1,5 @@
+{
+  "common.close": { "en": "Close", "ru": "Закрыть" },
+  "common.items": { "en": { "one": "{count} item", "other": "{count} items" }, "ru": { "one": "{count} предмет", "few": "{count} предмета", "many": "{count} предметов" }, "note": "a count of gear" },
+  "common.greeting": { "en": "Hi, {name}", "ru": "Привет, {name}" }
+}

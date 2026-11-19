@@ -1,0 +1,11 @@
+{
+  "site.rooms.title": { "en": "Your Rooms", "ru": "Ваши комнаты" },
+  "site.rooms.created": { "en": "Created {date}", "ru": "Создана {date}", "note": "date — «2 января 2026 в 15:04»" },
+  "site.rooms.create.title": { "en": "Create New Room", "ru": "Создать комнату", "note": "заголовок страницы и ссылка в списке комнат" },
+  "site.rooms.create.name": { "en": "Name:", "ru": "Название:", "note": "название комнаты" },
+  "site.rooms.create.submit": { "en": "Create Room", "ru": "Создать комнату" },
+  "site.rooms.delete.title": { "en": "Delete Room", "ru": "Удаление комнаты" },
+  "site.rooms.delete.question": { "en": "Do you really want to delete room? All character sheets inside will be deleted too.", "ru": "Точно удалить комнату? Все листы персонажей в ней тоже удалятся." },
+  "site.rooms.delete.back": { "en": "Go back", "ru": "Назад" },
+  "site.rooms.delete.submit": { "en": "Delete Room", "ru": "Удалить комнату" }
+}

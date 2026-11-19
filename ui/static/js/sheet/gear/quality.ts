@@ -13,9 +13,11 @@
 //   Armour: Poor −10 to all A tests while worn; Best +1 AP on every location
 //     it covers. Their effects on called shots it only names in the title.
 import { computed, signal, type Signal } from "@preact/signals-core";
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../modifiers/entries";
-import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
+import { itemName, linkedItem, linkedLabel, linkedPart } from "./itemLinkRules";
+import { code, SPACE, type Part } from "../rollLabel";
 import type { GearItem } from "../schema/sheet";
 import { textAt } from "../core/sync";
 
@@ -57,7 +59,13 @@ function qualityItem(state: SheetSignals, weaponPath: string): { item: GearItem;
 export interface QualityAdd {
     add: number;
     label: string;
+    /** The label in a roll's label: the code of the Quality. */
+    part: Part;
 }
+
+/** A modifier the Quality of the linked `item` gives, named by the Quality and the item. */
+const qualityAdd = (item: GearItem, quality: Quality, add: number): QualityAdd =>
+    ({ add, label: linkedLabel(item, qualityName(quality)), part: linkedPart(item, code(SPACE.quality, quality)) });
 
 /**
  * What the Quality of the linked item adds to the field of the melee weapon
@@ -71,13 +79,13 @@ export function qualityAdds(state: SheetSignals, weaponPath: string, field: stri
     const add = field === "hit" || field === "parry" ? TEST_MODS[linked.quality]
         : field === "dmg" && linked.quality === "Best" && !isShield(state, weaponPath) ? 1
         : 0;
-    return add ? [{ add, label: linkedLabel(linked.item, qualityName(linked.quality)) }] : [];
+    return add ? [qualityAdd(linked.item, linked.quality, add)] : [];
 }
 
 /** The shield AP the Quality of the shield's linked item adds: +1 of Best. */
 export function shieldQualityAp(state: SheetSignals, attackPath: string): QualityAdd | null {
     const linked = qualityItem(state, attackPath);
-    return linked?.quality === "Best" ? { add: 1, label: linkedLabel(linked.item, qualityName("Best")) } : null;
+    return linked?.quality === "Best" ? qualityAdd(linked.item, "Best", 1) : null;
 }
 
 /** The properties of a Special, without their values in brackets: "Reliable, Tearing (2)" is reliable and tearing. */
@@ -101,7 +109,7 @@ export function qualitySpecial(state: SheetSignals, weaponPath: string): Quality
     const linked = qualityItem(state, weaponPath);
     if (!linked) return null;
     const { item, quality } = linked;
-    const source = `${qualityName(quality)} of ${itemName(item)}`;
+    const source = t("sheet.gear.quality.source", { quality: qualityName(quality), item: itemName(item) });
     const own = propertyNames(textAt(state, `${weaponPath}.special`));
     const ownKeys = own.map(p => p.toLowerCase());
     const result: QualitySpecial = { added: [], removed: [], lines: [] };
@@ -113,12 +121,16 @@ export function qualitySpecial(state: SheetSignals, weaponPath: string): Quality
             result.removed.push(...ownReliability.map(([, name]) => own[ownKeys.indexOf(name.toLowerCase())]));
             const name = RELIABILITY.find(([n]) => n === after)?.[1];
             if (name) result.added.push(name);
-            result.lines.push(`Reliability ${signedOrZero(before)} ${signedOrZero(RELIABILITY_MODS[quality])} ${source} = ${signedOrZero(after)}${name ? `: ${name}` : ""}`);
+            const sum = t("sheet.gear.quality.reliability", {
+                before: signedOrZero(before), change: signedOrZero(RELIABILITY_MODS[quality]), source, after: signedOrZero(after),
+            });
+            // The property's name stays English: the Special of the sheet holds it so.
+            result.lines.push(name ? `${sum}: ${name}` : sum);
         }
     }
     if (quality === "Best" && ownKeys.includes(PRIMITIVE.toLowerCase())) {
         result.removed.push(own[ownKeys.indexOf(PRIMITIVE.toLowerCase())]);
-        result.lines.push(`No ${PRIMITIVE}: ${source}`);
+        result.lines.push(t("sheet.gear.quality.noProperty", { property: PRIMITIVE, source }));
     }
     return result.lines.length ? result : null;
 }
@@ -140,7 +152,7 @@ export function shownSpecial(state: SheetSignals, weaponPath: string): { text: s
     const quality = qualitySpecial(state, weaponPath);
     if (!quality?.removed.length) return null;
     const own = textAt(state, `${weaponPath}.special`);
-    return { text: withoutProperties(own, quality.removed), title: [`Own: ${own}`, ...quality.lines].join("\n") };
+    return { text: withoutProperties(own, quality.removed), title: [t("sheet.gear.quality.own", { special: own }), ...quality.lines].join("\n") };
 }
 
 const signedOrZero = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
@@ -171,21 +183,22 @@ export function armourQualityEntries(item: GearItem): { entry: Entry; source: { 
 export function qualityTitle(item: GearItem): string {
     const q = qualityOf(item);
     const type = String(item.gearType?.value ?? "");
-    const head = `Quality: ${qualityName(q)}`;
+    const head = t("sheet.gear.quality.title", { quality: qualityName(q) });
     if (q === "Common") return head;
     const effects: { [type: string]: { [Q in Exclude<Quality, "Common">]: string } } = {
         weapon: {
-            Poor: "Melee: −10 to its tests, Parry too. Ranged: Reliability −1.",
-            Good: "Melee: +5 to its tests, Parry too. Ranged: Reliability +1.",
-            Best: "Melee: +10 to its tests, Parry too, +1 Dmg (a shield: +1 AP instead). Ranged: Reliability +2. No Primitive.",
+            Poor: t("sheet.gear.quality.weapon.poor"),
+            Good: t("sheet.gear.quality.weapon.good"),
+            Best: t("sheet.gear.quality.weapon.best"),
         },
         armour: {
-            Poor: "−10 to all A tests while worn.",
-            Good: "Called shots at the wearer's joints and eyes −10.",
-            Best: "Called shots at the wearer's joints and eyes −10. +1 AP on every location it covers; +2 AP more against hits in a joint (after its reduction) and in the eye (a closed helmet only). No Primitive.",
+            Poor: t("sheet.gear.quality.armour.poor"),
+            Good: t("sheet.gear.quality.armour.good"),
+            Best: t("sheet.gear.quality.armour.best"),
         },
     };
-    const other = { Poor: "−10 to tests with it, unless its description says otherwise.", Good: "+5 to tests with it, unless its description says otherwise.", Best: "+10 to tests with it, unless its description says otherwise." };
-    const counted = type === "weapon" ? "\nCounted in the linked attacks." : type === "armour" && q !== "Good" ? "\nCounted in the armour." : "";
+    const other = { Poor: t("sheet.gear.quality.other.poor"), Good: t("sheet.gear.quality.other.good"), Best: t("sheet.gear.quality.other.best") };
+    const counted = type === "weapon" ? `\n${t("sheet.gear.quality.countedInAttacks")}`
+        : type === "armour" && q !== "Good" ? `\n${t("sheet.gear.quality.countedInArmour")}` : "";
     return `${head}\n${(effects[type] ?? other)[q]}${counted}`;
 }

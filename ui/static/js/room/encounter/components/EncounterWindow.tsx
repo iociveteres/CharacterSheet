@@ -9,6 +9,7 @@ import { ParticipantColumn } from "./ParticipantColumn";
 import { StatBlockColumn } from "./StatBlockColumn";
 import { CollectionsColumn, CreaturesColumn, EncounterTabs } from "./AddMonsters";
 import { SheetPopup } from "../../components/SheetPopup";
+import { t } from "../../../i18n";
 
 export function EncounterWindow() {
     if (!encounterList.value) return null;
@@ -29,7 +30,7 @@ export function EncounterWindow() {
                             <InitiativeColumn />
                             {state ? <ParticipantColumn side="party" /> : (
                                 <div class="encounter-column encounter-none">
-                                    <p class="encounter-muted">No encounter is open. Create one in the menu of the first column.</p>
+                                    <p class="encounter-muted">{t("room.encounter.noneOpen")}</p>
                                 </div>
                             )}
                         </>

@@ -5,7 +5,7 @@
 
 {{/* Hidden until the bundle has rendered the islands (ui/static/js/room/main.ts). */}}
 <div class='room' id="room" data-room-id="{{.Room.ID}}" hidden>
-    <div class="links-block"> <a href='{{reverseRev "AccountRooms"}}' title="Back to rooms">&lt;</a></div>
+    <div class="links-block"> <a href='{{reverseRev "AccountRooms"}}' title='{{t .Lang "site.room.back"}}'>&lt;</a></div>
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>
     {{end}}
@@ -29,15 +29,15 @@
         <div id="right-panel">
             <div class="tabs">
                 <input class="radiotab" type="radio" id="show-chat" name="toggle" />
-                <label class="tablabel" for="show-chat">Chat</label>
+                <label class="tablabel" for="show-chat">{{t .Lang "site.room.tab.chat"}}</label>
                 <div id="chat" class="panel chat"></div>
 
                 <input class="radiotab" type="radio" id="show-characters" name="toggle" checked="checked" />
-                <label class="tablabel" for="show-characters">Characters</label>
+                <label class="tablabel" for="show-characters">{{t .Lang "site.room.tab.characters"}}</label>
                 <div id="characters" class="panel characters"></div>
 
                 <input class="radiotab" type="radio" id="show-players" name="toggle" />
-                <label class="tablabel" for="show-players">Players</label>
+                <label class="tablabel" for="show-players">{{t .Lang "site.room.tab.players"}}</label>
                 <div id="players" class="panel players"></div>
             </div>
         </div>

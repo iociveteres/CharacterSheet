@@ -11,6 +11,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
 import { CAST, CAST_GROUP, isCharacteristic, isDeletedSkill, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
+import { t } from "../../i18n";
 
 function TestOption({ itemId, block, castOption }: { itemId: string; block: TestBlock; castOption: boolean }) {
     const path = joinPath(usePath(), itemId);
@@ -32,7 +33,7 @@ function TestOption({ itemId, block, castOption }: { itemId: string; block: Test
     return (
         <Scope dataId={itemId} class="test-option" onPointerEnter={expand} onFocusIn={expand}>
             <Select field="base" class={deleted ? "test-base dimmed" : "test-base"} onEdit={editBase}
-                title={deleted ? "Its custom skill was deleted: rolls on this option count nothing for it. Pick another skill, or delete the option." : undefined}>
+                title={deleted ? t("sheet.rolls.test.optionSkillDeleted") : undefined}>
                 {!current && <option value={base}>{testBaseLabel(state, stats, base)}</option>}
                 {!expanded && current && <option value={base}>{optionLabel(current)}</option>}
                 {expanded && groups.map(g => (
@@ -42,7 +43,7 @@ function TestOption({ itemId, block, castOption }: { itemId: string; block: Test
                 ))}
             </Select>
             <Select field="characteristic" class="test-characteristic" disabled={isCharacteristic(stats, base)}
-                title={base === CAST ? "Tested on; — for the characteristic of each spell's Spellcasting" : "Tested on"}
+                title={base === CAST ? t("sheet.rolls.test.testedOnCast") : t("sheet.rolls.test.testedOn")}
                 options={expanded
                     ? [{ value: "", label: "—" }, ...stats.skillCharacteristics]
                     : [{ value: characteristic, label: characteristic || "—" }]} />

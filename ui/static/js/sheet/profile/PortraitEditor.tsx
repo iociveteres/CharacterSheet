@@ -8,8 +8,9 @@ import {
     drawCrop, encodePortrait, FRAME, initialCrop, MAX_ZOOM, moveCrop, OUTPUT, sameCrop, scaleOf, STAGE, zoomCrop,
     type Crop, type Size,
 } from "./portraitCrop";
+import { t } from "../../i18n";
 
-export const NOT_AN_IMAGE = "Not an image: choose a PNG, JPEG or WebP file.";
+export const NOT_AN_IMAGE = t("sheet.profile.portrait.notAnImage");
 
 /** Whether `file` may be an image the browser can open; the window says so when it cannot. */
 export const isImageFile = (file: File) => file.type.startsWith("image/");
@@ -92,7 +93,7 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
         const canvas = preview.current;
         if (!loaded || !crop || !canvas?.toBlob) return;
         const timer = setTimeout(() => canvas.toBlob(blob => {
-            setWeight(blob && `${blob.type.replace("image/", "").toUpperCase()} · ${(blob.size / 1024).toFixed(1)} KB`);
+            setWeight(blob && t("sheet.profile.portrait.weight", { format: blob.type.replace("image/", "").toUpperCase(), size: (blob.size / 1024).toFixed(1) }));
         }, "image/webp", 0.8), 150);
         return () => clearTimeout(timer);
     }, [loaded, crop]);
@@ -168,8 +169,8 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
         : { visibility: "hidden" };
 
     return (
-        <div ref={pop} class="crop-pop" role="dialog" aria-label="Portrait">
-            <div class="crop-title">Portrait</div>
+        <div ref={pop} class="crop-pop" role="dialog" aria-label={t("sheet.profile.portrait.title")}>
+            <div class="crop-title">{t("sheet.profile.portrait.title")}</div>
             <div class="crop-body">
                 <div>
                     <div class="crop-stage" style={{ width: STAGE, height: STAGE }} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
@@ -179,7 +180,7 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
                     </div>
                     <label class="crop-zoom">
                         <span>−</span>
-                        <input type="range" min={1} max={MAX_ZOOM} step={0.01} value={crop?.zoom ?? 1} disabled={!loaded} aria-label="Zoom"
+                        <input type="range" min={1} max={MAX_ZOOM} step={0.01} value={crop?.zoom ?? 1} disabled={!loaded} aria-label={t("sheet.profile.portrait.zoom")}
                             onInput={e => loaded && crop && setCrop(zoomCrop(loaded.size, crop, Number(e.currentTarget.value)))} />
                         <span>+</span>
                     </label>
@@ -187,7 +188,7 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
                 <div class="crop-side">
                     <canvas ref={preview} width={OUTPUT.w} height={OUTPUT.h} />
                     <div class="crop-size">{`${OUTPUT.w}×${OUTPUT.h}`}{weight && ` · ${weight}`}</div>
-                    <button type="button" class="crop-choose" onClick={() => picker.current?.click()}>Choose file…</button>
+                    <button type="button" class="crop-choose" onClick={() => picker.current?.click()}>{t("sheet.profile.portrait.chooseFile")}</button>
                     <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={choose} />
                     {message && <div class="crop-message">{message}</div>}
                 </div>
@@ -196,18 +197,18 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
                 {confirming
                     ? (
                         <>
-                            <span class="question">Delete the portrait?</span>
+                            <span class="question">{t("sheet.profile.portrait.confirmDelete")}</span>
                             <span class="spacer" />
-                            <button type="button" class="crop-keep" onClick={() => setConfirming(false)}>Keep</button>
-                            <button type="button" class="danger confirm crop-delete-yes" onClick={onDelete}>Delete</button>
+                            <button type="button" class="crop-keep" onClick={() => setConfirming(false)}>{t("sheet.profile.portrait.keep")}</button>
+                            <button type="button" class="danger confirm crop-delete-yes" onClick={onDelete}>{t("common.delete")}</button>
                         </>
                     )
                     : (
                         <>
-                            {saved && <button type="button" class="danger crop-delete" disabled={saving} onClick={() => setConfirming(true)}>Delete</button>}
+                            {saved && <button type="button" class="danger crop-delete" disabled={saving} onClick={() => setConfirming(true)}>{t("common.delete")}</button>}
                             <span class="spacer" />
-                            <button type="button" class="crop-cancel" onClick={onClose}>Cancel</button>
-                            <button type="button" class="primary crop-save" disabled={!loaded || saving} onClick={save}>Save</button>
+                            <button type="button" class="crop-cancel" onClick={onClose}>{t("common.cancel")}</button>
+                            <button type="button" class="primary crop-save" disabled={!loaded || saving} onClick={save}>{t("common.save")}</button>
                         </>
                     )}
             </div>

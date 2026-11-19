@@ -10,9 +10,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
 	"charactersheet.iociveteres.net/internal/roomws"
@@ -61,7 +63,39 @@ func newTestApplication(t *testing.T) *Application {
 		TemplateCache:  templateCache,
 		FormDecoder:    formDecoder,
 		SessionManager: sessionManager,
+		Mailer:         &testMailer{},
 	})
+}
+
+type sentMail struct {
+	Recipient string
+	mailer.Message
+}
+
+// testMailer renders emails as mailer.Mailer does and keeps them instead of sending.
+type testMailer struct {
+	mu   sync.Mutex
+	sent []sentMail
+}
+
+func (m *testMailer) Send(recipient, lang, name string, data any) error {
+	msg, err := mailer.Render(lang, name, data)
+	if err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.sent = append(m.sent, sentMail{recipient, msg})
+	return nil
+}
+
+// sentMails waits for the emails that handlers send in the background.
+func (app *Application) sentMails() []sentMail {
+	app.Wait()
+	m := app.Mailer.(*testMailer)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.sent
 }
 
 // Define a custom testServer type which embeds a httptest.Server instance.

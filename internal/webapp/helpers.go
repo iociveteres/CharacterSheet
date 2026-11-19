@@ -7,13 +7,38 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/util"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
+
+// setDownload makes the response a file the browser saves as name. A plain
+// filename may hold only ASCII, a raw UTF-8 one is guessed at: the name goes
+// as filename* (RFC 6266), which browsers prefer, after an ASCII fallback.
+func setDownload(w http.ResponseWriter, name string) {
+	var fallback, encoded strings.Builder
+	for _, r := range name {
+		if r >= 0x20 && r < 0x7f && r != '"' && r != '\\' {
+			fallback.WriteRune(r)
+		} else {
+			fallback.WriteByte('_')
+		}
+	}
+	for _, b := range []byte(name) {
+		// The attr-char of RFC 5987 go as they are, the other bytes encoded.
+		if 'a' <= b && b <= 'z' || 'A' <= b && b <= 'Z' || '0' <= b && b <= '9' || strings.IndexByte("!#$&+-.^_`|~", b) >= 0 {
+			encoded.WriteByte(b)
+		} else {
+			fmt.Fprintf(&encoded, "%%%02X", b)
+		}
+	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, fallback.String(), encoded.String()))
+}
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
 	if errors.Is(err, context.Canceled) {
@@ -48,7 +73,7 @@ func (app *Application) isAuthenticated(r *http.Request) bool {
 }
 
 func (app *Application) render(w http.ResponseWriter, status int, page string, tplName string, data *templates.Data) {
-	ts, ok := app.TemplateCache[page]
+	ts, ok := app.TemplateCache[data.Lang][page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
 		app.serverError(w, err)
@@ -70,13 +95,15 @@ func (app *Application) newTemplateData(r *http.Request) *templates.Data {
 	// closed notice from flashing on every page load.
 	_, noticeClosed := r.Cookie("incident_notice_closed")
 	return &templates.Data{
+		Lang:               i18n.FromContext(r.Context()),
+		RequestURI:         r.URL.RequestURI(),
 		ShowIncidentNotice: noticeClosed != nil,
-		CurrentYear:     time.Now().Year(),
-		Flash:           app.SessionManager.PopString(r.Context(), "flash"),
-		IsAuthenticated: app.isAuthenticated(r),
-		CSRFToken:       nosurf.Token(r),
-		TimeZone:        util.GetTimeLocation(r),
-		OnlineUsers:     app.onlineUsersCount(),
+		CurrentYear:        time.Now().Year(),
+		Flash:              app.SessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated:    app.isAuthenticated(r),
+		CSRFToken:          nosurf.Token(r),
+		TimeZone:           util.GetTimeLocation(r),
+		OnlineUsers:        app.onlineUsersCount(),
 	}
 }
 

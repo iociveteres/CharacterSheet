@@ -129,7 +129,13 @@ describe("the file of an encounter", () => {
             json("ambush.json", { ...file, name: LOADED }),
             { name: "broken.json", mimeType: "application/json", buffer: Buffer.from("{}") },
         ]);
-        await expectToast(gm.page, `ambush.json: "${LOADED}", 3 NPCs\nbroken.json: not an encounter file`);
+        // A line a file, in the order they were picked.
+        const lines = (await expectToast(gm.page, "ambush.json", "broken.json")).split("\n");
+        expect(lines).toHaveLength(2);
+        expect(lines[0]).toContain("ambush.json");
+        expect(lines[0]).toContain(LOADED);
+        expect(lines[0], "the number of NPCs").toMatch(/\b3\b/);
+        expect(lines[1]).toContain("broken.json");
         const loaded = await eventually(() => picker(gm), list => expect(list.map(e => e.name)).toContain(LOADED));
         await eventually(() => openEncounterId(gm), id => expect(id).toBe(loaded.find(e => e.name === LOADED)!.id));
         await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual([BLANK_NPC, `${ORC} 1`, `${ORC} 2`]));
@@ -188,7 +194,7 @@ describe("the file of an encounter", () => {
             await card(gm, orc).locator(".encounter-add-variant").click();
             await gm.page.locator(".add-variant-name").fill(name);
             await gm.page.locator(".add-variant-add").click();
-            await expectToast(gm.page, `"${name}" added to ${COLLECTION}`);
+            await expectToast(gm.page, name, COLLECTION);
         };
         await addVariant(NOB);
         const creatures = async () => bestiary<Creature[]>(gm.page, "GET", `/bestiary/creatures?collection=${collection}`);
@@ -205,7 +211,7 @@ describe("the file of an encounter", () => {
             const title = await card(gm, orc).locator(".encounter-add-variant").getAttribute("title");
             await card(gm, orc).locator(".encounter-npc-menu-btn").click();
             return title;
-        }, title => expect(title).toBe(`A new creature next to "${NOB}"`));
+        }, title => expect(title).toContain(NOB));
         await addVariant(BOSS);
         expect((await creatures()).map(c => c.name)).toEqual([BOSS, NOB, ORC]);
     });

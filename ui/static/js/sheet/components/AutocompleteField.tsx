@@ -6,6 +6,7 @@ import { useSheet, type AutocompleteResult } from "./context";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import { TextField, type FieldProps } from "./fields";
 import { DropdownOption, InputDropdown } from "./InputDropdown";
+import { t } from "../../i18n";
 
 export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputRef"> {
     itemPath: string;
@@ -150,8 +151,8 @@ export function AutocompleteDropdown({ autocomplete, inputRef, renderOption, onP
             {s && (
                 <InputDropdown inputRef={inputRef} active={s.active} onClose={() => autocomplete.close(inputRef.current ?? undefined)}>
                     {s.results.map((r, i) => {
-                        const group = s.results.some(o => o[LOCAL]) ? String(r[LOCAL] ?? "Rulebook") : "";
-                        const heading = group && (i === 0 || group !== String(s.results[i - 1][LOCAL] ?? "Rulebook"));
+                        const group = s.results.some(o => o[LOCAL]) ? String(r[LOCAL] ?? t("sheet.components.rulebook")) : "";
+                        const heading = group && (i === 0 || group !== String(s.results[i - 1][LOCAL] ?? t("sheet.components.rulebook")));
                         return (
                             <Fragment key={i}>
                                 {heading && <div class="autocomplete-group">{group}</div>}

@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
+import { updateSignalAtPath } from "../core/sync";
 import { loadState, testState } from "../components/testUtils";
 import { characteristicSummary, skillSummary, unnaturalSummary } from "./characteristicSummary";
 import { attachComputeds } from "../kinds/computed";
@@ -83,5 +85,15 @@ describe("skillSummary", () => {
         loadState({ ...content(), characteristics: { BS: { value: "110" } }, fatigue: {} });
         attachComputeds(testState());
         expect(skillSummary(testState(), "skillsLeft.awareness")).toEqual(["Difficulty 80", "BS 110", "Counts 100 of 110", "Untrained -20"]);
+    });
+});
+
+describe("in Russian", () => {
+    it("counts the successes of the unnatural in plural", () => {
+        installDictionary("ru");
+        expect(unnaturalSummary(testState(), "WS")).toEqual([expect.stringMatching(/WS 3\b.*\+1\b/), expect.stringMatching(/ 2$/), "Rage +1"]);
+        // 3 + Rage 1 = 4: two successes.
+        updateSignalAtPath(testState(), "characteristics.WS.unnatural", "3");
+        expect(unnaturalSummary(testState(), "WS")[0]).toMatch(/WS 4\b.*\+2\b/);
     });
 });

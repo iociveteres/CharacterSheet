@@ -5,6 +5,7 @@ import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core
 import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "./entryValues";
 import type { SheetSignals } from "../schema/sheet";
 import type { GearItem } from "../schema/sheet";
+import type { Part } from "../rollLabel";
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
@@ -14,7 +15,11 @@ type EntryField = Exclude<keyof Entry, "type" | "domains">;
 export interface EntryRef {
     entry: Entry;
     stacks: number;
-    source: { name: Signal<string> };
+    /**
+     * Its name; `labelPart` names it in a roll label when the name is not the
+     * player's (a stance's). Most sources are groups of the sheet's schema, so not `part`, which a field may be named.
+     */
+    source: { name: Signal<string>; labelPart?: Part };
     /** The gear item of an entry of the item, its material, mods or enchantments; none for a condition, implant or stance. */
     item?: GearItem;
 }

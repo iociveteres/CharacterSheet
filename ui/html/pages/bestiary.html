@@ -1,4 +1,4 @@
-{{define "title"}}Bestiary{{end}}
+{{define "title"}}{{t .Lang "site.nav.bestiary"}}{{end}}
 {{define "main"}}
 {{/* The page has no head of its own: a block defined here would reach every page (templates/cache.go parses them together). */}}
 <link rel='stylesheet' href='/static/css/bestiary.css?v={{version "css/bestiary.css"}}'>

@@ -7,6 +7,7 @@ import type { BestiaryPayload } from "./payload.gen";
 import type { CatalogRow, UploadResult } from "./types.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import type { ChatMessage } from "../room/payload.gen";
+import { t } from "../i18n";
 import {
     catalogNext, catalogQuery, catalogRows, catalogSort, center, collections, confirmMessage, creatures,
     creatureSheet, creatureSheetOpen, dialog, openedCollection, query, quota, rolls, rollsCollapsed, selectedCollection,
@@ -28,7 +29,7 @@ export async function initBestiary(payload: BestiaryPayload, initial: number | n
         } catch (err) {
             // Another user's private collection is a 404, as a gone one is.
             console.error(err);
-            showToast("The collection is not shared.");
+            showToast(t("bestiary.messages.notShared"));
             initial = null;
         }
     }
@@ -42,7 +43,7 @@ function fail(err: unknown): void {
     console.error(err);
     // Another user's collection is gone when its owner makes it private.
     if (err instanceof api.ApiError && err.status === 404 && selectedCollection.value?.own === false) {
-        showToast("The collection is no longer shared with you.");
+        showToast(t("bestiary.messages.noLongerShared"));
         openedCollection.value = null;
         void loadBestiary();
         return;
@@ -125,8 +126,7 @@ export async function editCollection(id: number, edit: api.CollectionEdit): Prom
 export async function deleteCollection(id: number): Promise<void> {
     const collection = collections.value?.find(c => c.id === id);
     if (!collection) return;
-    const what = collection.creatures === 1 ? "its creature" : `its ${collection.creatures} creatures`;
-    if (!await confirm(`Delete the collection "${collection.name}" and ${what}?`)) return;
+    if (!await confirm(t("bestiary.dialogs.deleteCollection", { name: collection.name, count: collection.creatures }))) return;
     try {
         await api.deleteCollection(id);
         await loadBestiary();
@@ -138,7 +138,7 @@ export async function deleteCollection(id: number): Promise<void> {
 /** Makes the collection public, after asking, or private again; the default one stays private. */
 export async function setVisibility(id: number, visibility: api.Visibility): Promise<void> {
     if (visibility === "public"
-        && !await confirm(`Make "${collectionName(id)}" public? Everyone will see it in the catalog and may subscribe to it.`)) return;
+        && !await confirm(t("bestiary.dialogs.makePublic", { name: collectionName(id) }))) return;
     try {
         await api.updateCollection(id, { visibility });
         await loadBestiary();
@@ -227,9 +227,10 @@ export async function openFromCatalog(row: CatalogRow): Promise<void> {
 }
 
 function uploadLine({ file, added, error, message }: UploadResult): string {
-    if (error === "quota") return `${file}: ${message ?? "over the quota"}`;
-    if (error) return `${file}: not a sheet or a collection`;
-    return `${file}: ${added === 1 ? "1 creature" : `${added} creatures`}`;
+    // The server writes the quota's text in the user's language.
+    if (error === "quota") return `${file}: ${message ?? t("bestiary.messages.overQuota")}`;
+    if (error) return t("bestiary.messages.uploadInvalid", { file });
+    return t("bestiary.messages.uploadAdded", { file, count: added });
 }
 
 /** Uploads exported sheets and collections into the collection and says how each file went. */
@@ -239,7 +240,7 @@ export async function uploadFiles(collectionId: number, files: File[]): Promise<
         const results = await api.uploadFiles(collectionId, files);
         // The server stops at the first file over the quota: the rest were not tried.
         const tried = new Set(results.map(r => r.file));
-        const skipped = files.filter(f => !tried.has(f.name)).map(f => `${f.name}: not uploaded`);
+        const skipped = files.filter(f => !tried.has(f.name)).map(f => t("bestiary.messages.uploadSkipped", { file: f.name }));
         showToast([...results.map(uploadLine), ...skipped].join("\n"));
     } catch (err) {
         fail(err);
@@ -369,7 +370,7 @@ export async function creaturesDeleted(ids: number[]): Promise<void> {
  */
 export async function creatureSheetFailed(sheetId: string, message: string): Promise<void> {
     if (sheetId !== heldSheetId) return;
-    showToast(`The creature could not be read: ${message}`);
+    showToast(t("bestiary.messages.creatureUnread", { message }));
     await Promise.all([loadBestiary(), loadCreatures()]);
 }
 
@@ -395,7 +396,7 @@ export async function copyCreature(id: number, target: api.CollectionTarget): Pr
     try {
         await api.copyCreature(id, target);
         closeDialog();
-        showToast(`"${creatureName(id)}" copied to ${to}`);
+        showToast(t("bestiary.messages.copied", { name: creatureName(id), collection: to }));
         await loadBestiary();
     } catch (err) {
         fail(err);
@@ -406,7 +407,7 @@ export async function moveCreature(id: number, collectionId: number): Promise<vo
     try {
         await api.moveCreature(id, collectionId);
         closeDialog();
-        showToast(`"${creatureName(id)}" moved to ${collectionName(collectionId)}`);
+        showToast(t("bestiary.messages.moved", { name: creatureName(id), collection: collectionName(collectionId) }));
         if (selectedCreatureId.value === id) selectCreature(null);
         creatures.value = creatures.value.filter(c => c.id !== id);
         await loadBestiary();
@@ -416,7 +417,7 @@ export async function moveCreature(id: number, collectionId: number): Promise<vo
 }
 
 export async function deleteCreature(id: number): Promise<void> {
-    if (!await confirm(`Delete "${creatureName(id)}"?`)) return;
+    if (!await confirm(t("bestiary.dialogs.deleteCreature", { name: creatureName(id) }))) return;
     try {
         await api.deleteCreature(id);
         if (selectedCreatureId.value === id) selectCreature(null);

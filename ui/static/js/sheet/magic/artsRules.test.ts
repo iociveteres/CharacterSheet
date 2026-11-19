@@ -136,7 +136,9 @@ describe("the counting of a sheet with both ways", () => {
         const actions = recordingActions(state);
         expect([manaUpkeep(state), manaUpkeep(state, "focus.bard")]).toEqual([1, 2]);
         expect(manaShortage(state, 2)).toBeNull();
-        expect(manaShortage(state, 2, "focus.bard")).toBe("Not enough Bardic Focus: the cast costs 2, 1 left");
+        expect(manaShortage(state, 2, "focus.bard")).toMatch(/\b2\b.*\b1\b/);
+
+        expect(manaShortage(state, 4)).toMatch(/\b4\b.*\b2\b/);
 
         payMana({ state, actions }, 1, "focus.bard");
         expect([valueAt(state, "mana.current"), valueAt(state, "focus.bard.current")]).toEqual([2, 0]);

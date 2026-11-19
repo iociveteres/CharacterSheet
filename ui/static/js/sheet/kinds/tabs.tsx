@@ -21,6 +21,7 @@ import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { Skills } from "../characteristics/Skills";
 import { useSheet } from "../components/context";
 import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
+import { t } from "../../i18n";
 
 interface NavTabProps {
     /** The id of the radio button. */
@@ -135,8 +136,8 @@ export function NavTab({ id, label, panelId, panelClass, first = false, children
 
 export function PlayerSheetTab() {
     return (
-        <NavTab id="show-player-sheet" label="Player Sheet" panelId="player-sheet" panelClass="character-sheet" first>
-            <h2 class="align-self-center">Character Information</h2>
+        <NavTab id="show-player-sheet" label={t("sheet.terms.tab.playerSheet")} panelId="player-sheet" panelClass="character-sheet" first>
+            <h2 class="align-self-center">{t("sheet.terms.block.characterInformation")}</h2>
             <div class="character-sheet-grid">
                 <CharacterInfo />
 
@@ -148,21 +149,21 @@ export function PlayerSheetTab() {
 
                         <div id="skills" class="skills-block">
                             <div>
-                                <h3>Skills</h3>
+                                <h3>{t("sheet.terms.block.skills")}</h3>
                                 <div class="skill-list">
                                     <Skills />
                                 </div>
                             </div>
 
                             <div class="custom-skills">
-                                <h3>Custom skills</h3>
+                                <h3>{t("sheet.terms.block.customSkills")}</h3>
                                 <CustomSkills />
                             </div>
                         </div>
                     </div>
 
                     <div class="layout-column" id="character-sheet-right-col">
-                        <h3>Notes</h3>
+                        <h3>{t("sheet.terms.block.notes")}</h3>
                         <Notes />
                     </div>
                 </div>
@@ -174,8 +175,8 @@ export function PlayerSheetTab() {
 /** `points` names the points of the Infamy block: Infamy Points, or Fate Points in Pathfinder Crusade. */
 export function CombatTab({ points }: { points: string }) {
     return (
-        <NavTab id={COMBAT_TAB} label="Combat" panelId="combat" panelClass="combat">
-            <h2 class="align-self-center">Combat</h2>
+        <NavTab id={COMBAT_TAB} label={t("sheet.terms.tab.combat")} panelId="combat" panelClass="combat">
+            <h2 class="align-self-center">{t("sheet.terms.tab.combat")}</h2>
             <div class="layout-row gap-5">
                 <div class="statblock layout-column">
                     <div class="layout-column">
@@ -185,7 +186,7 @@ export function CombatTab({ points }: { points: string }) {
                                 <Infamy />
                             </div>
                             <div class="layout-column fatigue-block">
-                                <h3>Fatigue</h3>
+                                <h3>{t("sheet.terms.stat.fatigue")}</h3>
                                 <Fatigue />
                             </div>
                         </div>
@@ -203,17 +204,18 @@ export function CombatTab({ points }: { points: string }) {
                     </div>
 
                     <div id="armour" class="armour">
-                        <h3>Armour & Defence</h3>
+                        <h3>{t("sheet.terms.block.armourAndDefence")}</h3>
                         <Armour />
                     </div>
 
                     <div id="power-shields">
-                        <h3>Power Shields</h3>
+                        <h3>{t("sheet.terms.block.powerShields")}</h3>
                         <PowerShields />
                     </div>
                 </div>
                 <div class="layout-column full-width">
-                    <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options of the ranged attacks" />
+                    <BlockHeading level="h3" heading={t("sheet.terms.block.rangedAttacks")} block="rangedAttacks" rolls={t("sheet.kinds.attacks")}
+                        title={t("sheet.kinds.rangedAttacksSettings")} />
                     <RangedAttacks />
 
                     <MeleeAttacksHeading />
@@ -226,12 +228,12 @@ export function CombatTab({ points }: { points: string }) {
 
 export function TalentsTab() {
     return (
-        <NavTab id="show-talents" label="Talents" panelId="traits-and-talents" panelClass="talents">
-            <h2 class="align-self-center">Traits and Talents</h2>
-            <h3>Traits</h3>
+        <NavTab id="show-talents" label={t("sheet.terms.tab.talents")} panelId="traits-and-talents" panelClass="talents">
+            <h2 class="align-self-center">{t("sheet.terms.block.traitsAndTalents")}</h2>
+            <h3>{t("sheet.terms.block.traits")}</h3>
             <Traits />
 
-            <h3>Talents</h3>
+            <h3>{t("sheet.terms.tab.talents")}</h3>
             <Talents />
         </NavTab>
     );
@@ -241,23 +243,23 @@ export function TalentsTab() {
 export function GearTab({ money }: { money?: ComponentChildren }) {
     const { sheetId } = useSheet();
     return (
-        <NavTab id="show-gear" label="Gear" panelId="inventory" panelClass="gear">
+        <NavTab id="show-gear" label={t("sheet.terms.tab.gear")} panelId="inventory" panelClass="gear">
             <div class="layout-column">
-                <h2 class="align-self-center">Weight</h2>
+                <h2 class="align-self-center">{t("sheet.terms.block.weight")}</h2>
                 <CarryWeight />
 
                 {money && (
                     <>
                         {/* A joke for one player's character on production. */}
-                        <h2 class="align-self-center">{sheetId === "652" ? "d4n` pryxozh4n ₮" : "Money"}</h2>
+                        <h2 class="align-self-center">{sheetId === "652" ? "d4n` pryxozh4n ₮" : t("sheet.terms.block.money")}</h2>
                         {money}
                     </>
                 )}
 
-                <h2 class="align-self-center">Gear</h2>
+                <h2 class="align-self-center">{t("sheet.terms.tab.gear")}</h2>
                 <Gear useAttacks={useLinkedAttacks} />
 
-                <h2 class="align-self-center">Cybernetics</h2>
+                <h2 class="align-self-center">{t("sheet.terms.block.cybernetics")}</h2>
                 <Cybernetics />
             </div>
         </NavTab>
@@ -266,20 +268,20 @@ export function GearTab({ money }: { money?: ComponentChildren }) {
 
 export function AdvancementsTab() {
     return (
-        <NavTab id="show-advancements" label="Advancements" panelId="advancements" panelClass="advancements">
+        <NavTab id="show-advancements" label={t("sheet.terms.tab.advancements")} panelId="advancements" panelClass="advancements">
             <div id="advancements-grid">
                 <Experience />
 
                 <div>
-                    <h2 class="align-self-center">Mutations</h2>
+                    <h2 class="align-self-center">{t("sheet.terms.block.mutations")}</h2>
                     <Mutations />
                 </div>
                 <div>
-                    <h2 class="align-self-center">Mental Disorders</h2>
+                    <h2 class="align-self-center">{t("sheet.terms.block.mentalDisorders")}</h2>
                     <MentalDisorders />
                 </div>
                 <div>
-                    <h2 class="align-self-center">Diseases</h2>
+                    <h2 class="align-self-center">{t("sheet.terms.block.diseases")}</h2>
                     <Diseases />
                 </div>
             </div>

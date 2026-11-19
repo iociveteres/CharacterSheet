@@ -6,7 +6,7 @@ import { computed, signal } from "@preact/signals";
 import { agilityOf, initiativeOf, nameOf, sheets, sheetsChanged, type SheetInstance } from "../../sheet/api";
 import type { EncounterList, EncounterParticipant, EncounterState, InitiativeView } from "./types.gen";
 import type { Creature } from "../../bestiary/types.gen";
-import { groupLabel, groupNumbers, initiativeView as viewOf, leaderOf, sortGroups, type Contender } from "./order";
+import { groupLabel, groupName, groupNumbers, initiativeView as viewOf, leaderOf, sortGroups, type Contender, type GroupName } from "./order";
 
 /** Whether the gamemaster sees the encounter window in place of the sheet. */
 export const gmMode = signal(false);
@@ -61,7 +61,7 @@ export interface GroupView {
     side: Side;
     /** Named for the gamemaster and for the players. */
     label: string;
-    playersLabel: string;
+    playersName: GroupName;
     value: number | null;
     /** Whose value it is, or who rolls for it. */
     leader: ParticipantView | null;
@@ -108,7 +108,7 @@ export const groups = computed<GroupView[]>(() => {
             npc: members.every(m => m.participant.npc),
             side: members[0]?.participant.side ?? "enemies",
             label: groupLabel(g.name, members.map(m => m.name), numbers.get(g.id)),
-            playersLabel: groupLabel(g.name, members.map(m => m.playersName), numbers.get(g.id)),
+            playersName: groupName(g.name, members.map(m => m.playersName), numbers.get(g.id)),
             value: leader?.value ?? null,
             leader: members.find(m => m.participant.id === leader?.participantId) ?? null,
         };
@@ -162,7 +162,7 @@ export const publishedOrder = computed(() => {
     return {
         positions,
         view: viewOf(state?.round ?? 1, state?.currentGroupId ?? null,
-            ordered.map(g => ({ groupId: g.id, label: g.playersLabel, value: g.value }))),
+            ordered.map(g => ({ groupId: g.id, players: g.playersName, value: g.value }))),
     };
 });
 

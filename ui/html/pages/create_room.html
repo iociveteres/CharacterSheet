@@ -1,16 +1,16 @@
-{{define "title"}}Create New Room{{end}}
+{{define "title"}}{{t .Lang "site.rooms.create.title"}}{{end}}
 {{define "main"}}
 <form action='{{reverseRev "RoomCreate"}}' method='POST'>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     <div>
-        <label>Name:</label>
+        <label>{{t .Lang "site.rooms.create.name"}}</label>
         {{with .Form.Errors.roomName}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='text' name='roomName' value='{{.Form.Name}}'>
     </div>
     <div>
-        <input type='submit' value='Create Room'>
+        <input type='submit' value='{{t .Lang "site.rooms.create.submit"}}'>
     </div>
 </form>
 {{end}}

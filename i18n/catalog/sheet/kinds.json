@@ -1,0 +1,4 @@
+{
+  "sheet.kinds.attacks": { "en": "Attacks", "ru": "Атаки", "note": "что тестирует блок стрелковых атак, в настройках ⚙" },
+  "sheet.kinds.rangedAttacksSettings": { "en": "Test options of the ranged attacks", "ru": "Варианты тестов стрелковых атак", "note": "подсказка ⚙ у заголовка" }
+}

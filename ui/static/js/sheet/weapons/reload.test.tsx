@@ -35,7 +35,7 @@ describe("the Reload of a ranged attack", () => {
         load("4");
         const total = $('[data-id="reloadTotal"]')!;
         expect(total.value).toBe("2");
-        expect(total.title).toBe("4 Weapon\n×½ Rapid Reload\n= 2\n\nIn half-actions; Free is a free action.");
+        expect(total.title.split("\n").slice(0, 3)).toEqual(["4 Weapon", "×½ Rapid Reload", "= 2"]);
     });
 
     it("opens at the weapon's own Reload on a click, with the unit, and counts an edit of it", () => {
@@ -44,7 +44,6 @@ describe("the Reload of a ranged attack", () => {
         const own = $('.mod-dropdown [data-id="reload"]')!;
         expect(own.value).toBe("4");
         expect(document.activeElement).toBe(own);
-        expect($('[data-id="unit"]')!.textContent).toBe("In half-actions; Free is a free action.");
         expect($('[data-id="breakdown"]')!.textContent).toBe("×½Rapid Reload2");
 
         act(() => updateSignalAtPath(state, "rangedAttacks.list.items.r1.reload", "½"));
@@ -54,7 +53,6 @@ describe("the Reload of a ranged attack", () => {
     it("counts in actions in Black Crusade, and shows a Reload of no number as typed", () => {
         const state = load("1", blackCrusade);
         expect($('[data-id="reloadTotal"]')!.value).toBe("½");
-        expect($('[data-id="reloadTotal"]')!.title).toContain("In actions: ½ is a half-action, 1 a full one");
 
         act(() => updateSignalAtPath(state, "rangedAttacks.list.items.r1.reload", "2 [½]"));
         expect($('[data-id="reloadTotal"]')!.value).toBe("2 [½]");

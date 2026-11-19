@@ -1,0 +1,17 @@
+{{define "language"}}
+<!-- Language names stay in their own language, untranslated. -->
+<!-- main.js submits the form when the choice changes. -->
+<form action='{{reverseRev "Language"}}' method='POST' id='language-form'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    <input type='hidden' name='redirect' value='{{.RequestURI}}'>
+    <svg class="language-globe" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.5" />
+        <ellipse cx="8" cy="8" rx="2.8" ry="6.5" />
+        <path d="M1.5 8h13M2.6 4.6h10.8M2.6 11.4h10.8" />
+    </svg>
+    <select name='lang' class='padding-small' aria-label='{{t .Lang "site.nav.language"}}'>
+        <option value='en' lang='en' {{if eq .Lang "en"}}selected{{end}}>English</option>
+        <option value='ru' lang='ru' {{if eq .Lang "ru"}}selected{{end}}>Русский</option>
+    </select>
+</form>
+{{end}}

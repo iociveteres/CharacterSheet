@@ -2,14 +2,15 @@
 // Balance shows its own: the total, and under ⚙ the weapon's own value, the
 // entries that changed it and the unit the kind's tables count in.
 import { useComputed } from "@preact/signals";
+import { t } from "../../i18n";
 import { usePath, useSheet } from "../components/context";
 import { peekAt } from "../core/sync";
 import { reloadAt } from "./reloadRules";
 import { BreakdownField, breakdownTitle } from "./Grips";
 
 const UNIT_NOTES = {
-    1: "In half-actions; Free is a free action.",
-    2: "In actions: ½ is a half-action, 1 a full one; Free is a free action.",
+    1: t("sheet.weapons.reload.halfActions"),
+    2: t("sheet.weapons.reload.actions"),
 } as const;
 
 /** The Reload of the ranged attack at the enclosing path. */
@@ -22,7 +23,7 @@ export function ReloadField() {
     const title = [breakdownTitle(reload.value, own), note].filter(Boolean).join("\n\n");
     return (
         <BreakdownField field="reloadTotal" baseField="reload" value={reload} title={title}
-            toggleTitle="Reload of the weapon and what changes it" placeholder={stats.reloadUnit === 1 ? "2" : "1"}>
+            toggleTitle={t("sheet.weapons.reloadToggle")} placeholder={stats.reloadUnit === 1 ? "2" : "1"}>
             <p class="mod-note-quiet" data-id="unit">{note}</p>
         </BreakdownField>
     );

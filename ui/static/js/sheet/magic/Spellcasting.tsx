@@ -7,31 +7,45 @@
 // sheet without the spellcasting block, Black Crusade, never has.
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
+import { t } from "../../i18n";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
-import type { SpellcastingVariant } from "../schema/constants";
+import { optionLabel, optionValue, type SpellcastingVariant, type StatSet } from "../schema/constants";
 import { prCapWarning, prVariants, spellVariant, tickedVariants } from "./spellcastingRules";
 
+/** The label of the gift of a PR variant, as the kind's Psykana types name it: "Arcane". */
+function giftLabel(stats: StatSet, v: SpellcastingVariant): string {
+    const gift = stats.psykanaTypes.find(o => optionValue(o) === v.gift);
+    return gift ? optionLabel(gift) : v.gift ?? "";
+}
+
 /** The row of the variant in the table of the rules, as its toggle's title. */
-function variantTitle(v: SpellcastingVariant): string {
+function variantTitle(stats: StatSet, v: SpellcastingVariant): string {
     if (v.way === "arts") {
-        return `${v.label} Spellcasting: Arts spells of the ${(v.classes ?? []).join(" or ")}, tested on their skill; ${v.pool} ${v.base}`;
+        return t("sheet.magicPf.spellcasting.artsTitle", { trait: v.trait, class: v.label, pool: v.pool ?? "", base: v.base });
     }
-    return `${v.label} Spellcasting: spells cast by PR, Cast on ${v.test}; Mana ${v.base}; ${v.gift} gift; `
-        + (v.prepares ? "prepares the spells of the day" : "casts any spell known");
+    return t("sheet.magicPf.spellcasting.prTitle", {
+        trait: v.trait, test: v.test ?? "", base: v.base, gift: giftLabel(stats, v),
+        preparation: v.prepares ? t("sheet.magicPf.spellcasting.prepares") : t("sheet.magicPf.spellcasting.knows"),
+    });
 }
 
 /** What the variant gives, under its name in the list: "Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares". */
-function variantSummary(v: SpellcastingVariant): string {
-    if (v.way === "arts") return `${(v.classes ?? [])[0]} spells, tested on their skill · ${v.pool} ${v.base}`;
-    return [`Cast on ${v.test}`, `${v.gift} gift`, `Mana ${v.base}`, ...(v.prepares ? ["prepares"] : [])].join(" · ");
+function variantSummary(stats: StatSet, v: SpellcastingVariant): string {
+    if (v.way === "arts") return t("sheet.magicPf.spellcasting.artsSummary", { class: v.label, pool: v.pool ?? "", base: v.base });
+    return [
+        t("sheet.magicPf.spellcasting.castOn", { test: v.test ?? "" }),
+        t("sheet.magicPf.spellcasting.gift", { gift: giftLabel(stats, v) }),
+        `${t("sheet.termsPf.magic.mana")} ${v.base}`,
+        ...(v.prepares ? [t("sheet.magicPf.spellcasting.preparesShort")] : []),
+    ].join(" · ");
 }
 
 const WAYS: readonly { way: SpellcastingVariant["way"]; label: string }[] = [
-    { way: "pr", label: "Cast by PR" },
-    { way: "arts", label: "Arts" },
+    { way: "pr", label: t("sheet.magicPf.ways.pr") },
+    { way: "arts", label: t("sheet.termsPf.magic.arts") },
 ];
 
 /**
@@ -45,11 +59,11 @@ export function SpellcastingRow() {
     const labels = useComputed(() => tickedVariants(state).map(v => v.label).join(", ")).value;
     return (
         <Scope dataId="spellcasting" class="layout-row spellcasting-row">
-            <span class="spellcasting-label">Spellcasting:</span>
+            <span class="spellcasting-label">{`${t("sheet.termsPf.magic.spellcasting")}:`}</span>
             <div class="spellcasting-picker dropdown-parent" ref={ref}>
                 <button type="button" data-id="picker" class={dropdown.open ? "spellcasting-summary active" : "spellcasting-summary"}
-                    aria-expanded={dropdown.open} title="The Spellcasting of your classes" onClick={dropdown.toggle}>
-                    {labels || <span class="spellcasting-none">none</span>}
+                    aria-expanded={dropdown.open} title={t("sheet.magicPf.spellcasting.title")} onClick={dropdown.toggle}>
+                    {labels || <span class="spellcasting-none">{t("common.none")}</span>}
                 </button>
                 {dropdown.open && (
                     <div class="roll-dropdown roll-dropdown-centered spellcasting-dropdown visible">
@@ -60,11 +74,11 @@ export function SpellcastingRow() {
                                 <div key={way} class="spellcasting-group">
                                     <span class="column-label">{label}</span>
                                     {variants.map(v => (
-                                        <label key={v.key} class="spellcasting-option" title={variantTitle(v)}>
+                                        <label key={v.key} class="spellcasting-option" title={variantTitle(stats, v)}>
                                             <Checkbox field={v.key} class="custom" />
                                             <span>
                                                 <span class="spellcasting-option-label">{v.label}</span>
-                                                <span class="spellcasting-option-text">{variantSummary(v)}</span>
+                                                <span class="spellcasting-option-text">{variantSummary(stats, v)}</span>
                                             </span>
                                         </label>
                                     ))}
@@ -90,7 +104,7 @@ export function PRCapWarning() {
 export function StatSpellcasting() {
     const { state } = useSheet();
     const labels = useComputed(() => prVariants(state).map(v => v.label).join(", ")).value;
-    return labels ? <span data-id="spellcasting" title="Spellcasting">{labels}</span> : null;
+    return labels ? <span data-id="spellcasting" title={t("sheet.termsPf.magic.spellcasting")}>{labels}</span> : null;
 }
 
 /**
@@ -101,18 +115,22 @@ export function StatSpellcasting() {
  * default, so a spell keeps "" until one is picked.
  */
 export function SpellcastingColumn({ path }: { path: string }) {
-    const { state, actions, canEdit } = useSheet();
+    const { state, actions, canEdit, stats } = useSheet();
     const variants = useComputed(() => prVariants(state)).value;
     const current = useComputed(() => spellVariant(state, path)?.key ?? "").value;
     if (variants.length === 0) return null;
     return (
         <div class="roll-column spellcasting-column">
-            <label class="column-label">Spellcasting</label>
+            <label class="column-label">{t("sheet.termsPf.magic.spellcasting")}</label>
             <div class="roll-column-content">
                 <select data-id="spellcasting" value={current} disabled={!canEdit}
-                    title="The Spellcasting the spell is cast by: its gift, what Cast tests it on and whether it is prepared"
+                    title={t("sheet.magicPf.spellcasting.columnTitle")}
                     onChange={e => actions.change(`${path}.roll.spellcasting`, e.currentTarget.value)}>
-                    {variants.map(v => <option key={v.key} value={v.key} title={`Tested on ${v.test}, ${v.gift} gift`}>{v.label}</option>)}
+                    {variants.map(v => (
+                        <option key={v.key} value={v.key} title={t("sheet.magicPf.spellcasting.optionTitle", { test: v.test ?? "", gift: giftLabel(stats, v) })}>
+                            {v.label}
+                        </option>
+                    ))}
                 </select>
             </div>
         </div>

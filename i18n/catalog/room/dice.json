@@ -1,0 +1,7 @@
+{
+  "room.dice.title": { "en": "Dice Roller", "ru": "Броски кубиков", "note": "заголовок окна бросков над чатом и подсказка у кнопки ⚄" },
+  "room.dice.rollAgainst": { "en": "Roll against:", "ru": "Бросок против:", "note": "до четырёх целей d100; отмеченная идёт в бросок как «vs N»" },
+  "room.dice.amount": { "en": "Number of dice:", "ru": "Число кубиков:" },
+  "room.dice.custom": { "en": "Custom rolls:", "ru": "Свои броски:", "note": "сохранённые строки бросков вида 2d10+5" },
+  "room.dice.example": { "en": "e.g., 2d10+5", "ru": "напр., 2d10+5", "note": "запись броска не переводится: её читает сервер" }
+}

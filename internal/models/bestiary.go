@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,8 +34,9 @@ type BestiaryModelInterface interface {
 	Upload(ctx context.Context, userID, collectionID int, creatures []CreatureInFile) (int, error)
 
 	Creatures(ctx context.Context, userID int, filter CreatureFilter) ([]Creature, error)
-	// NewCreature adds an empty sheet of the kind to the user's collection.
-	NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind) (*Creature, error)
+	// NewCreature adds an empty sheet of the kind to the user's collection,
+	// named in lang, the user's language.
+	NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind, lang string) (*Creature, error)
 	// CopyCreature copies a creature the user can view into their collection.
 	CopyCreature(ctx context.Context, userID, creatureID int, target CollectionTarget) (*Creature, error)
 	MoveCreature(ctx context.Context, userID, creatureID, collectionID int) (*Creature, error)
@@ -54,19 +56,31 @@ type BestiaryModelInterface interface {
 // collection, a subscription to the user's own collection.
 var ErrInvalidBestiaryRequest = errors.New("models: invalid bestiary request")
 
-const (
-	maxCollectionName  = 100
-	maxDescription     = 2000
-	maxCreatureName    = 200
-	catalogPage        = 50
-	creatureNamePath   = "{characterInfo,characterName}"
-	lastInitiativePath = "{initiative,lastInitiative}"
+// The reasons of refusals the user can act on, which the bestiary's API
+// answers with in the user's language (internal/webapp bestiaryError). Each
+// is also the error it wraps.
+var (
+	ErrCollectionGone      = fmt.Errorf("%w: collection", ErrNoRecord)
+	ErrCreatureGone        = fmt.Errorf("%w: creature", ErrNoRecord)
+	ErrCollectionNotOwn    = fmt.Errorf("%w: collection of another user", ErrPermissionDenied)
+	ErrCreatureNotOwn      = fmt.Errorf("%w: creature of another user", ErrPermissionDenied)
+	ErrCollectionName      = fmt.Errorf("%w: collection name", ErrInvalidBestiaryRequest)
+	ErrCollectionDesc      = fmt.Errorf("%w: collection description", ErrInvalidBestiaryRequest)
+	ErrCreatureName        = fmt.Errorf("%w: creature name", ErrInvalidBestiaryRequest)
+	ErrDefaultPrivate      = fmt.Errorf("%w: the default collection stays private", ErrInvalidBestiaryRequest)
+	ErrDefaultKept         = fmt.Errorf("%w: the default collection is never deleted", ErrInvalidBestiaryRequest)
+	ErrOwnSubscription     = fmt.Errorf("%w: subscription to the user's own collection", ErrInvalidBestiaryRequest)
+	ErrVariantSourceGone   = fmt.Errorf("%w: the NPC's creature is gone", ErrInvalidBestiaryRequest)
+	ErrVariantSourceNotOwn = fmt.Errorf("%w: the NPC's creature is another user's", ErrInvalidBestiaryRequest)
 )
 
 const (
-	// The collection every user has; migration 000037 names it too.
-	defaultCollectionName = "My creatures"
-	newCreatureName       = "New creature"
+	MaxCollectionName  = 100
+	MaxDescription     = 2000
+	MaxCreatureName    = 200
+	catalogPage        = 50
+	creatureNamePath   = "{characterInfo,characterName}"
+	lastInitiativePath = "{initiative,lastInitiative}"
 )
 
 type BestiaryModel struct {
@@ -166,12 +180,24 @@ func collectionAccess(ctx context.Context, q querier, userID, collectionID int, 
         SELECT c.owner_id, can_view_collection($1, c.id)
         FROM bestiary_collections c WHERE c.id = $2`, userID, collectionID).Scan(&owner, &viewable)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrNoRecord
+		return ErrCollectionGone
 	}
 	if err != nil {
 		return err
 	}
-	return access(owner, userID, viewable, mustOwn)
+	return refusal(access(owner, userID, viewable, mustOwn), ErrCollectionGone, ErrCollectionNotOwn)
+}
+
+// refusal is err of access as the reason the user reads: gone or another
+// user's.
+func refusal(err, gone, notOwn error) error {
+	switch err {
+	case ErrNoRecord:
+		return gone
+	case ErrPermissionDenied:
+		return notOwn
+	}
+	return err
 }
 
 // ownCollection fails unless the collection is the user's: ErrPermissionDenied
@@ -194,12 +220,12 @@ func creatureAccess(ctx context.Context, q querier, userID, creatureID int, must
         JOIN bestiary_collections c ON c.id = cs.collection_id
         WHERE cs.id = $2`, userID, creatureID).Scan(&collectionID, &owner, &viewable)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, ErrNoRecord
+		return 0, ErrCreatureGone
 	}
 	if err != nil {
 		return 0, err
 	}
-	return collectionID, access(owner, userID, viewable, mustOwn)
+	return collectionID, refusal(access(owner, userID, viewable, mustOwn), ErrCreatureGone, ErrCreatureNotOwn)
 }
 
 // ownCreature fails unless the sheet is a creature in a collection of the
@@ -252,7 +278,7 @@ func loadCollection(ctx context.Context, q querier, userID, collectionID int) (*
 // them would unpack every sheet.
 const creatureColumns = `
     cs.id, cs.collection_id, cs.character_name, cs.sheet_kind, cs.source_label,
-    `+authorName+`, COALESCE(cs.author_id = $1, false), cs.updated_at`
+    ` + authorName + `, COALESCE(cs.author_id = $1, false), cs.updated_at`
 
 // authorName is the name of the author of sheet cs: the user's, else the one
 // a file named.
@@ -325,9 +351,9 @@ func (m *BestiaryModel) Get(ctx context.Context, userID int) (*Bestiary, error) 
 }
 
 func (m *BestiaryModel) CreateCollection(ctx context.Context, userID int, name string) (*BestiaryCollection, error) {
-	name, ok := cleanName(name, maxCollectionName, false)
+	name, ok := cleanName(name, MaxCollectionName, false)
 	if !ok {
-		return nil, ErrInvalidBestiaryRequest
+		return nil, ErrCollectionName
 	}
 	return scanCollection(m.DB.QueryRow(ctx, `
         INSERT INTO bestiary_collections AS c (owner_id, name) VALUES ($1, $2)
@@ -337,16 +363,16 @@ func (m *BestiaryModel) CreateCollection(ctx context.Context, userID int, name s
 func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collectionID int, edit CollectionEdit) (*BestiaryCollection, error) {
 	var name, description *string
 	if edit.Name != nil {
-		n, ok := cleanName(*edit.Name, maxCollectionName, false)
+		n, ok := cleanName(*edit.Name, MaxCollectionName, false)
 		if !ok {
-			return nil, ErrInvalidBestiaryRequest
+			return nil, ErrCollectionName
 		}
 		name = &n
 	}
 	if edit.Description != nil {
-		d, ok := cleanName(*edit.Description, maxDescription, true)
+		d, ok := cleanName(*edit.Description, MaxDescription, true)
 		if !ok {
-			return nil, ErrInvalidBestiaryRequest
+			return nil, ErrCollectionDesc
 		}
 		description = &d
 	}
@@ -369,7 +395,7 @@ func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collection
         WHERE c.id = $2 AND NOT (c.is_default AND $5 IS NOT DISTINCT FROM 'public')
         RETURNING`+collectionColumns, userID, collectionID, name, description, edit.Visibility))
 	if errors.Is(err, ErrNoRecord) {
-		return nil, ErrInvalidBestiaryRequest
+		return nil, ErrDefaultPrivate
 	}
 	return c, err
 }
@@ -380,7 +406,7 @@ func (m *BestiaryModel) Collection(ctx context.Context, userID, collectionID int
 		return nil, err
 	}
 	if !c.Own && c.Visibility != VisibilityPublic {
-		return nil, ErrNoRecord
+		return nil, ErrCollectionGone
 	}
 	return c, nil
 }
@@ -391,7 +417,7 @@ func (m *BestiaryModel) Subscribe(ctx context.Context, userID, collectionID int)
 		return nil, err
 	}
 	if c.Own {
-		return nil, ErrInvalidBestiaryRequest
+		return nil, ErrOwnSubscription
 	}
 	_, err = m.DB.Exec(ctx, `
         INSERT INTO bestiary_subscriptions (user_id, collection_id) VALUES ($1, $2)
@@ -458,7 +484,7 @@ func (m *BestiaryModel) DeleteCollection(ctx context.Context, userID, collection
 			return err
 		}
 		if isDefault {
-			return ErrInvalidBestiaryRequest
+			return ErrDefaultKept
 		}
 		rows, err := tx.Query(ctx, `SELECT id FROM character_sheets WHERE collection_id = $1 ORDER BY id`, collectionID)
 		if err != nil {
@@ -575,7 +601,7 @@ func (m *BestiaryModel) Creatures(ctx context.Context, userID int, filter Creatu
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Creature, error) { return scanCreature(row) })
 }
 
-func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind) (*Creature, error) {
+func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind, lang string) (*Creature, error) {
 	if !kind.IsValid() {
 		return nil, ErrInvalidBestiaryRequest
 	}
@@ -596,7 +622,7 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 		err = tx.QueryRow(ctx, `
             INSERT INTO character_sheets (owner_id, author_id, collection_id, sheet_kind, content, created_at, updated_at)
             VALUES ($1, $1, $2, $3, jsonb_set($4::jsonb, '`+creatureNamePath+`', to_jsonb($5::text)), now(), now())
-            RETURNING id`, userID, collectionID, kind, content, newCreatureName).Scan(&id)
+            RETURNING id`, userID, collectionID, kind, content, i18n.T(lang, "bestiary.shared.newCreature")).Scan(&id)
 		if err != nil {
 			return err
 		}
@@ -622,9 +648,9 @@ func targetCollection(ctx context.Context, tx pgx.Tx, userID int, target Collect
 	if target.CollectionID != 0 {
 		return 0, ErrInvalidBestiaryRequest
 	}
-	name, ok := cleanName(target.NewCollection, maxCollectionName, false)
+	name, ok := cleanName(target.NewCollection, MaxCollectionName, false)
 	if !ok {
-		return 0, ErrInvalidBestiaryRequest
+		return 0, ErrCollectionName
 	}
 	var id int
 	err := tx.QueryRow(ctx, `INSERT INTO bestiary_collections (owner_id, name) VALUES ($1, $2) RETURNING id`, userID, name).Scan(&id)
@@ -726,9 +752,9 @@ func (m *BestiaryModel) Save(ctx context.Context, userID, sheetID int, target Co
 }
 
 func (m *BestiaryModel) AddVariant(ctx context.Context, userID, sheetID int, name string) (*Creature, int, error) {
-	name, ok := cleanName(name, maxCreatureName, true)
+	name, ok := cleanName(name, MaxCreatureName, true)
 	if !ok {
-		return nil, 0, ErrInvalidBestiaryRequest
+		return nil, 0, ErrCreatureName
 	}
 	var creature *Creature
 	var encounterID int
@@ -747,11 +773,14 @@ func (m *BestiaryModel) AddVariant(ctx context.Context, userID, sheetID int, nam
 		}
 		// Only an NPC of the user's own creature: the variant goes next to it.
 		if source == nil {
-			return ErrInvalidBestiaryRequest
+			return ErrVariantSourceGone
 		}
 		collectionID, err := ownCreature(ctx, tx, userID, *source)
-		if errors.Is(err, ErrNoRecord) || errors.Is(err, ErrPermissionDenied) {
-			return ErrInvalidBestiaryRequest
+		switch {
+		case errors.Is(err, ErrNoRecord):
+			return ErrVariantSourceGone
+		case errors.Is(err, ErrPermissionDenied):
+			return ErrVariantSourceNotOwn
 		}
 		if err != nil {
 			return err

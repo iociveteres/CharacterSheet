@@ -10,10 +10,11 @@ import { Scope } from "../components/Scope";
 import type { TestBlock } from "./testOptionRules";
 import { TestOptionList } from "./TestOptions";
 import type { Rule } from "../components/kindParts";
+import { t } from "../../i18n";
 
 interface BlockSettingsProps {
     block: TestBlock;
-    /** What the block rolls, as the label of its test options says it: "Attacks", "Powers". */
+    /** What the block rolls, in the page's language, as the label of its test options says it: "Attacks", "Powers". */
     rolls: string;
     /** The title of the ⚙. */
     title: string;
@@ -34,13 +35,13 @@ function BlockSettings({ block, rolls, title, rules, castOption }: BlockSettings
             </Scope>
             {dropdown.open && (
                 <div class="roll-dropdown block-settings-dropdown visible">
-                    <span class="column-label">{`${rolls} are tested on`}</span>
+                    <span class="column-label">{t("sheet.rolls.block.testedOn", { rolls })}</span>
                     <Scope dataId={block}>
                         <TestOptionList block={block} castOption={castOption} />
                     </Scope>
                     {rules && (
                         <>
-                            <span class="column-label">The sheet counts</span>
+                            <span class="column-label">{t("sheet.rolls.block.sheetCounts")}</span>
                             <Scope dataId="settings" class="block-rules">
                                 <Scope dataId={block} class="block-rules">
                                     {rules.map(rule => (
@@ -54,7 +55,7 @@ function BlockSettings({ block, rolls, title, rules, castOption }: BlockSettings
                                     ))}
                                 </Scope>
                             </Scope>
-                            <span class="block-settings-note">These are the sheet's: everyone who opens it sees the same.</span>
+                            <span class="block-settings-note">{t("sheet.rolls.block.sameForAll")}</span>
                         </>
                     )}
                 </div>

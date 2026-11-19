@@ -6,6 +6,7 @@ import { sheetComputed } from "../core/state";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
+import { listFormat } from "../../i18n";
 
 /** What a quality adds; Common, and an item without one, adds nothing. */
 export const QUALITY_MODS: { readonly [quality: string]: number } = { Poor: -10, Common: 0, Good: 5, Best: 10 };
@@ -46,7 +47,7 @@ export interface Hardware {
     mod: number;
     /** The implant that sets `mod`, as the power names it, and its quality; null when none of them is below Common or above it. */
     worst: { name: string; quality: string } | null;
-    /** The implants it needs that the sheet lacks, alternatives joined by "or". */
+    /** The implants it needs that the sheet lacks, alternatives joined by "or" in the page's language. */
     missing: string[];
 }
 
@@ -79,7 +80,7 @@ export function hardwareAt(state: SheetSignals, path: string): Hardware {
             if (mod !== undefined && (!best || mod > best.mod)) best = { name, mod };
         }
         if (!best) {
-            hardware.missing.push(names.join(" or "));
+            hardware.missing.push(listFormat("disjunction").format(names));
             continue;
         }
         const { name, mod } = best;

@@ -28,7 +28,7 @@ export default {
             await d.pause(600);
             await d.click(page.locator('.autocomplete-option').filter({ hasText: 'Aquila' }).first());
             await d.pause(1200);
-            await d.click(item.locator('label', { hasText: 'Equipped' }).locator('input'));
+            await d.click(item.locator('input[data-id="equipped"]'));
             await d.pause(450);
             await d.click(page.locator('label[for="show-combat"]'));
             await d.pause(350);

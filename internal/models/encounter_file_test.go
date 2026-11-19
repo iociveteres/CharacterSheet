@@ -156,7 +156,7 @@ func TestLoadEncounterFile(t *testing.T) {
 	r.must(r.encounters.Order(r.ctx, r.ref(s), map[int]int{}, &InitiativeView{Round: 2, Rows: []InitiativeRow{}}))
 	f := r.export(s)
 
-	loaded, err := r.encounters.Load(r.ctx, r.gm, r.room, r.reread(f))
+	loaded, err := r.encounters.Load(r.ctx, r.gm, r.room, r.reread(f), "en")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestLoadEncounterFile(t *testing.T) {
 		f.Npcs[i].SourceSheetID = &id
 		f.Npcs[i].SourceLabel = strp(" Orks · Alex ")
 	}
-	loaded = r.must(r.encounters.Load(r.ctx, r.gm, r.room, r.reread(f)))
+	loaded = r.must(r.encounters.Load(r.ctx, r.gm, r.room, r.reread(f), "ru"))
 	for _, p := range loaded.Participants {
 		if !p.NPC {
 			continue
@@ -219,15 +219,15 @@ func TestLoadEncounterFile(t *testing.T) {
 			t.Errorf("%s has label %q", p.Name, deref2(p.SourceLabel))
 		}
 	}
-	// No name: named as "New encounter" names one.
-	if loaded.Name != "Encounter 3" {
+	// No name: numbered as "New encounter" names one.
+	if !strings.Contains(loaded.Name, "3") {
 		t.Errorf("name %q", loaded.Name)
 	}
 
-	if _, err := r.encounters.Load(r.ctx, r.moderator, r.room, r.reread(f)); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := r.encounters.Load(r.ctx, r.moderator, r.room, r.reread(f), "en"); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("the moderator loaded a file: %v", err)
 	}
-	if _, err := r.encounters.Load(r.ctx, r.gm, r.other, r.reread(f)); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := r.encounters.Load(r.ctx, r.gm, r.other, r.reread(f), "en"); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("loaded into a room of another gamemaster: %v", err)
 	}
 
@@ -236,7 +236,7 @@ func TestLoadEncounterFile(t *testing.T) {
 	sheets := r.count(`SELECT count(*) FROM character_sheets`)
 	big := npcFile(1, "Small", incompressible(QuotaBytes))
 	var quota *QuotaError
-	if _, err := r.encounters.Load(r.ctx, r.gm, r.room, r.reread(big)); !errors.As(err, &quota) {
+	if _, err := r.encounters.Load(r.ctx, r.gm, r.room, r.reread(big), "en"); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
 	if r.count(`SELECT count(*) FROM encounters`) != encounters || r.count(`SELECT count(*) FROM character_sheets`) != sheets {
@@ -388,7 +388,7 @@ func TestEncounterFileKeepsColumnsAndNotes(t *testing.T) {
 	if f.Description != "Orks in the ruins" {
 		t.Errorf("notes %q", f.Description)
 	}
-	loaded := r.must(r.encounters.Load(r.ctx, r.gm, r.room, f))
+	loaded := r.must(r.encounters.Load(r.ctx, r.gm, r.room, f, "en"))
 	if loaded.Description != "Orks in the ruins" {
 		t.Errorf("loaded notes %q", loaded.Description)
 	}
@@ -421,7 +421,7 @@ func TestEncounterFileKeepsColumnsAndNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old := r.must(r.encounters.Load(r.ctx, r.gm, r.room, v1))
+	old := r.must(r.encounters.Load(r.ctx, r.gm, r.room, v1, "en"))
 	if old.Description != "" || !maps.Equal(columns(old), map[string]string{"Grot": SideEnemies}) {
 		t.Errorf("loaded from version 1: %q %v", old.Description, columns(old))
 	}

@@ -10,6 +10,7 @@ import { signed } from "../components/format";
 import { characteristicCaps } from "./caps";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
 import { resolvePath } from "../core/sync";
+import { t } from "../../i18n";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;
 type SkillRow = SheetSignals["skillsLeft"][string];
@@ -35,14 +36,16 @@ function override(refs: readonly EntryRef[], field: EntryField): string | null {
         const value = valueOf(ref, field);
         if (!best || value > best.value) best = { ref, value };
     }
-    return best && `${sourceName(best.ref)} sets ${best.value}`;
+    return best && t("sheet.characteristics.summary.sets", { source: sourceName(best.ref), value: best.value });
 }
 
 /** The rolls a roll bonus of a mode counts in, as "only Ranged, Psy". */
 function domainsOf({ entry }: EntryRef): string {
     const mode = entry.domainMode?.value;
     const domains = ROLL_DOMAINS.filter(d => entry.domains?.[d.value]?.value).map(d => d.label);
-    return mode && domains.length ? `, ${mode === "only" ? "only" : "not"} on ${domains.join(", ")}` : "";
+    if (!mode || !domains.length) return "";
+    const params = { domains: domains.join(", ") };
+    return `, ${mode === "only" ? t("sheet.characteristics.summary.onlyOn", params) : t("sheet.characteristics.summary.notOn", params)}`;
 }
 
 /**
@@ -54,7 +57,7 @@ function testLines(state: SheetSignals, key: string, ordinary: boolean): string[
     const rolls = entriesOn(state, "roll_bonus", key)
         .filter(ref => valueOf(ref, "rollBonus") && !(ordinary && ref.entry.domainMode?.value === "only"));
     return [
-        ...(fatigue ? [`Fatigue ${signed(-fatigue)}`] : []),
+        ...(fatigue ? [`${t("sheet.terms.stat.fatigue")} ${signed(-fatigue)}`] : []),
         ...rolls.map(ref => `${sourceName(ref)} ${signed(valueOf(ref, "rollBonus"))}${domainsOf(ref)}`),
     ];
 }
@@ -66,12 +69,12 @@ export function characteristicSummary(state: SheetSignals, key: string): string[
     const tests = testLines(state, key, false);
     return [
         `${key} ${char.calculatedValue.value}`,
-        override(entriesOn(state, "char_override", key), "overrideValue") ?? `Permanent ${num(char.value)}`,
+        override(entriesOn(state, "char_override", key), "overrideValue") ?? t("sheet.characteristics.summary.permanent", { value: num(char.value) }),
         ...addedLines(entriesOn(state, "char_bonus", key), "bonus"),
-        ...characteristicCaps(state, key).map(cap => `${sourceName(cap.ref)}: at most ${cap.total}${cap.raises.length
+        ...characteristicCaps(state, key).map(cap => `${t("sheet.characteristics.summary.atMost", { source: sourceName(cap.ref), total: cap.total })}${cap.raises.length
             ? ` (${[cap.base, ...cap.raises.map(r => `${signed(r.value)} ${r.source}`)].join(" ")})`
             : ""}`),
-        ...(tests.length ? [`Tests at ${char.valueForRolls.value}:`, ...tests] : []),
+        ...(tests.length ? [t("sheet.characteristics.summary.testsAt", { value: char.valueForRolls.value }), ...tests] : []),
     ];
 }
 
@@ -81,8 +84,9 @@ export function unnaturalSummary(state: SheetSignals, key: string): string[] {
     if (!char) return [];
     const successes = num(char.bonusSuccesses);
     return [
-        `Unnatural ${key} ${char.calculatedUnnatural.value}${successes ? `: ${signed(successes)} success${successes === 1 ? "" : "es"} on a passed test` : ""}`,
-        override(entriesOn(state, "char_override", key), "overrideUnnatural") ?? `Permanent ${num(char.unnatural)}`,
+        t("sheet.characteristics.summary.unnatural", { key, value: char.calculatedUnnatural.value })
+            + (successes ? `: ${t("sheet.characteristics.summary.successes", { count: successes, signed: signed(successes) })}` : ""),
+        override(entriesOn(state, "char_override", key), "overrideUnnatural") ?? t("sheet.characteristics.summary.permanent", { value: num(char.unnatural) }),
         ...addedLines(entriesOn(state, "char_bonus", key), "unnaturalBonus"),
     ];
 }
@@ -99,13 +103,15 @@ export function skillSummary(state: SheetSignals, rowPath: string): string[] {
     const skillName = normalizeSkillName(name);
     const bonuses = skillName ? collectEntries(state, "skill_bonus", e => normalizeSkillName(e.name?.value) === skillName) : [];
     return [
-        `Difficulty ${num(skill.difficulty)}`,
+        `${t("common.difficulty")} ${num(skill.difficulty)}`,
         `${charKey} ${num(char?.calculatedValue)}`,
         ...testLines(state, charKey, true),
         // calculateTestDifficulty counts no more than 100.
-        ...(value > 100 ? [`Counts 100 of ${value}`] : []),
-        `${advances ? "Advances" : "Untrained"} ${signed(calculateSkillAdvancement(advances))}`,
-        ...(num(skill.miscBonus) ? [`Misc ${signed(num(skill.miscBonus))}`] : []),
+        ...(value > 100 ? [t("sheet.characteristics.summary.counts100", { value })] : []),
+        advances
+            ? t("sheet.characteristics.summary.advances", { value: signed(calculateSkillAdvancement(advances)) })
+            : t("sheet.characteristics.summary.untrained", { value: signed(calculateSkillAdvancement(advances)) }),
+        ...(num(skill.miscBonus) ? [t("sheet.characteristics.summary.misc", { value: signed(num(skill.miscBonus)) })] : []),
         ...addedLines(bonuses, "skillBonus"),
     ];
 }

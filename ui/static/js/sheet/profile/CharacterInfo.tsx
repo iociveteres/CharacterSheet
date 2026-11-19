@@ -4,21 +4,22 @@ import { TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useSheet } from "../components/context";
 import { Portrait, showsPortrait } from "./Portrait";
+import { t } from "../../i18n";
 
 const COLUMNS: readonly (readonly [string, string][])[] = [
     [
-        ["characterName", "Character Name"],
-        ["archetype", "Archetype"],
-        ["race", "Race"],
-        ["warbandName", "Warband Name"],
-        ["age", "Age"],
+        ["characterName", t("sheet.profile.info.characterName")],
+        ["archetype", t("sheet.terms.profile.archetype")],
+        ["race", t("sheet.terms.profile.race")],
+        ["warbandName", t("sheet.profile.info.warbandName")],
+        ["age", t("sheet.profile.info.age")],
     ],
     [
-        ["homeworld", "Homeworld"],
-        ["origin", "Origin"],
-        ["pride", "Pride"],
-        ["disgrace", "Disgrace"],
-        ["motivation", "Motivation"],
+        ["homeworld", t("sheet.profile.info.homeworld")],
+        ["origin", t("sheet.profile.info.origin")],
+        ["pride", t("sheet.terms.profile.pride")],
+        ["disgrace", t("sheet.terms.profile.disgrace")],
+        ["motivation", t("sheet.terms.profile.motivation")],
     ],
 ];
 

@@ -1,0 +1,7 @@
+{
+  "room.roll.success": { "en": {"one": "{count} success", "other": "{count} successes"}, "ru": {"one": "{count} Успех", "few": "{count} Успеха", "many": "{count} Успехов"}, "note": "уровни Успеха броска vs в чате: «55, 2 Успеха». en совпадает со строкой сервера (degreesText в internal/commands/roll_versus.go)" },
+  "room.roll.fail": { "en": {"one": "{count} fail", "other": "{count} fails"}, "ru": {"one": "{count} Провал", "few": "{count} Провала", "many": "{count} Провалов"}, "note": "уровни Провала броска vs в чате: «81, 1 Провал»; при критическом провале бывает 0. en совпадает со строкой сервера" },
+  "room.roll.crit": { "en": "crit!", "ru": "крит!", "note": "в конце строки броска: выпало 1–5 или 96–100 на d100 (для других кубиков пропорционально)" },
+  "room.roll.total": { "en": {"one": "Total: {count} success", "other": "Total: {count} successes"}, "ru": {"one": "Итого: {count} Успех", "few": "Итого: {count} Успеха", "many": "Итого: {count} Успехов"}, "note": "последняя строка повторного броска 5x(d100 vs 50): уровни Успеха минус уровни Провала, когда итог не меньше нуля" },
+  "room.roll.totalFail": { "en": {"one": "Total: {count} fail", "other": "Total: {count} fails"}, "ru": {"one": "Итого: {count} Провал", "few": "Итого: {count} Провала", "many": "Итого: {count} Провалов"}, "note": "то же, когда Провалов больше: итог −6 пишется «Итого: 6 Провалов»" }
+}

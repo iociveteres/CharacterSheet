@@ -11,6 +11,8 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY ui/static/js ./ui/static/js
+# The build writes the client dictionaries ui/static/dist/i18n.<lang>.js from it
+COPY i18n/catalog ./i18n/catalog
 
 RUN npm run build
 

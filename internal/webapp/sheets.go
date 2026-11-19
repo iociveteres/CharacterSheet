@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
 	"github.com/alehano/reverse"
@@ -146,6 +147,7 @@ func sheetOfFile(content []byte) ([]byte, models.SheetKind, *string, error) {
 }
 
 func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
@@ -158,7 +160,7 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case models.ErrNoRecord:
-			app.SessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.sheetMissing"))
 			app.notFound(w)
 		case models.ErrPermissionDenied:
 			app.clientError(w, http.StatusForbidden)
@@ -188,7 +190,7 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 
 	filename := fmt.Sprintf("%s_%s.json", sheetView.CharacterSheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "Application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	setDownload(w, filename)
 
 	w.Write(prettyJSON.Bytes())
 }

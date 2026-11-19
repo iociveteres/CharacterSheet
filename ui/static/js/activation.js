@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
         submit.disabled = true;
         const originalText = submit.textContent || submit.value;
 
-        const processingText = shouldAutoSubmit ? 'Activating…' : 'Sending…';
+        // The page's language texts are on the button (verify_user.html, resend_verification.html).
+        const processingText = submit.dataset.busy ?? originalText;
         if (submit.tagName === 'INPUT') {
             submit.value = processingText;
         } else {
@@ -52,10 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (shouldAutoSubmit) {
                     window.location = '/user/login';
                 } else {
+                    const doneText = submit.dataset.done ?? originalText;
                     if (submit.tagName === 'INPUT') {
-                        submit.value = 'Sent!';
+                        submit.value = doneText;
                     } else {
-                        submit.textContent = 'Sent!';
+                        submit.textContent = doneText;
                     }
                 }
                 return;

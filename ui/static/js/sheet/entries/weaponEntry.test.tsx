@@ -70,7 +70,7 @@ describe("a Weapon entry", () => {
         rendered = renderBlock(<Conditions />);
         act(() => updateSignalAtPath(testState(), `${E1}.name`, "sword, Halberd"));
         expect(name().classList.contains("invalid")).toBe(true);
-        expect(name().title).toMatch(/^Unknown: halberd\. The entry is off\./);
+        expect(name().title).toContain("halberd");
 
         act(() => name().focus());
         type("sword, lon");

@@ -6,15 +6,16 @@ import type { Creature } from "../types.gen";
 import { creatureSheet, kindLabel, selectedCollection, shownCreature } from "../state";
 import { openCreatureSheet } from "../actions";
 import { renderStatBlockView, useSheetView } from "../../sheet/api";
+import { t } from "../../i18n";
 
 export function CreaturePanel() {
     const creature = shownCreature.value;
     return (
-        <section class="bestiary-panel bestiary-creature" aria-label="Creature">
+        <section class="bestiary-panel bestiary-creature" aria-label={t("bestiary.creature.panel")}>
             <div class="bestiary-panel-body">
                 {creature
                     ? <CreatureView key={creature.id} creature={creature} />
-                    : <p class="bestiary-muted">Pick a creature to see its stat block.</p>}
+                    : <p class="bestiary-muted">{t("bestiary.creature.pick")}</p>}
             </div>
         </section>
     );
@@ -32,10 +33,10 @@ function CreatureView({ creature }: { creature: Creature }) {
             <div class="bestiary-header">
                 <h2 class="bestiary-title">{creature.name}</h2>
                 <button type="button" class="bestiary-open-sheet" disabled={!sheet} onClick={openCreatureSheet}>
-                    {own ? "Edit" : "View"}
+                    {own ? t("common.edit") : t("bestiary.creature.view")}
                 </button>
             </div>
-            {creature.sourceLabel && <div class="bestiary-muted bestiary-source">Source: {creature.sourceLabel}</div>}
+            {creature.sourceLabel && <div class="bestiary-muted bestiary-source">{t("bestiary.shared.source")} {creature.sourceLabel}</div>}
             <div class="bestiary-muted">{kindLabel(creature.kind)}</div>
             {sheet
                 ? <div class="bestiary-statblock" ref={box} />

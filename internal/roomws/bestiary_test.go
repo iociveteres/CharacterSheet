@@ -27,7 +27,7 @@ type countedMessages struct {
 	created atomic.Int32
 }
 
-func (m *countedMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (models.MessageWithName, error) {
+func (m *countedMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (models.MessageWithName, error) {
 	m.created.Add(1)
 	return models.MessageWithName{}, nil
 }
@@ -156,13 +156,13 @@ func TestRollAnswersSenderOnly(t *testing.T) {
 		if got["messageBody"] != body || got["commandResult"] != want.Result || got["characterName"] != "Ork Boy" || got["created"] == "" {
 			t.Errorf("got %v, want the result %q", got, want.Result)
 		}
-		var versus *commands.VersusOutcome
-		if v, ok := got["versus"]; ok {
+		var data *commands.ResultData
+		if v, ok := got["resultData"]; ok {
 			b, _ := json.Marshal(v)
-			json.Unmarshal(b, &versus)
+			json.Unmarshal(b, &data)
 		}
-		if !reflect.DeepEqual(versus, want.Versus) {
-			t.Errorf("versus %+v, want %+v", versus, want.Versus)
+		if !reflect.DeepEqual(data, want.Data) {
+			t.Errorf("resultData %+v, want %+v", data, want.Data)
 		}
 	}
 

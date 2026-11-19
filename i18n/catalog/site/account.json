@@ -1,0 +1,17 @@
+{
+  "site.account.title": { "en": "Your Account", "ru": "Ваш аккаунт" },
+  "site.account.name": { "en": "Name", "ru": "Имя", "note": "строка таблицы аккаунта" },
+  "site.account.email": { "en": "Email", "ru": "Почта" },
+  "site.account.joined": { "en": "Joined", "ru": "Дата регистрации" },
+  "site.account.password": { "en": "Password", "ru": "Пароль" },
+  "site.account.theme.heading": { "en": "Theme settings:", "ru": "Оформление:" },
+  "site.account.theme.label": { "en": "Theme:", "ru": "Тема:" },
+  "site.account.theme.light": { "en": "Light", "ru": "Светлая" },
+  "site.account.theme.dark": { "en": "Dark", "ru": "Тёмная" },
+  "site.account.theme.retro": { "en": "Retro", "ru": "Ретро" },
+  "site.account.theme.system": { "en": "System", "ru": "Как в системе", "note": "тема по настройке ОС" },
+  "site.account.theme.hue": { "en": "Accent hue:", "ru": "Акцентный цвет:", "note": "за подписью идёт число 0–360 или hueDefault" },
+  "site.account.theme.preview": { "en": "Preview", "ru": "Образец", "note": "подсказка у квадратика с выбранным цветом" },
+  "site.account.theme.reset": { "en": "Default", "ru": "По умолчанию", "note": "кнопка: вернуть цвет темы" },
+  "site.account.theme.hueDefault": { "en": "default", "ru": "по умолчанию", "note": "значение после «Accent hue:», когда свой цвет не выбран (main.js)" }
+}

@@ -11,10 +11,12 @@ import type {
     UpdateFolderRequest, Visibility,
 } from "./messages";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import type { Label } from "../sheet/api";
 import { rememberInput } from "./chat";
 import { playerFolders, reorderedFolders, sheetName } from "./characters";
 import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSettings } from "./dice";
 import { savePanelVisible } from "./panel";
+import { t } from "../i18n";
 
 /**
  * Sends `msg` over the room's socket (../socket.ts) with a fresh eventID, which
@@ -78,7 +80,7 @@ export function createInviteLink(expiresInDays: number | null, maxUses: number |
 /** Uploads an exported sheet into the room; the server announces it as newCharacterItem. */
 export async function importSheet(file: File | undefined): Promise<void> {
     if (!file) {
-        await confirm("Please select a file to import");
+        await confirm(t("room.modals.import.noFile"));
         return;
     }
     const form = new FormData();
@@ -90,11 +92,11 @@ export async function importSheet(file: File | undefined): Promise<void> {
         if (response.ok) {
             setModal("import", false);
         } else {
-            await confirm("Failed to import character sheet. Please check the file and try again.");
+            await confirm(t("room.modals.import.failed"));
         }
     } catch (err) {
         console.error("Import error:", err);
-        await confirm("An error occurred while importing the character sheet.");
+        await confirm(t("room.modals.import.error"));
     }
 }
 
@@ -136,8 +138,10 @@ export function runToastAction(toast: Toast): void {
  * eventID, null when it did not go. The input is the chat's own: a roll goes past it and leaves a
  * draft there.
  */
-export function sendChat(messageBody: string, character: string | null = null): string | null {
-    const request: ChatMessageRequest = { type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}) };
+export function sendChat(messageBody: string, character: string | null = null, labelData?: Label): string | null {
+    const request: ChatMessageRequest = {
+        type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}), ...(labelData ? { labelData } : {}),
+    };
     const eventID = send(request);
     rememberInput(roomId, messageBody);
     return eventID;
@@ -204,9 +208,13 @@ export function rollPreset(index: number): void {
     if (command) sendChat(command);
 }
 
-/** A roll a sheet asks for, signed with the character the sheet names; returns the eventID of its message, null when it did not go. */
-export function rollFromSheet(command: string, character: string | null): string | null {
-    return sendChat(command, character);
+/**
+ * A roll a sheet asks for, signed with the character the sheet names, with
+ * the label of the command as data when it has some; returns the eventID of
+ * its message, null when it did not go.
+ */
+export function rollFromSheet(command: string, character: string | null, labelData?: Label): string | null {
+    return sendChat(command, character, labelData);
 }
 
 // — Characters ————————————————————————————
@@ -218,7 +226,7 @@ export function createCharacter(kind: SheetKind): void {
 
 export async function deleteCharacter(sheetId: number): Promise<void> {
     const sheet = sheets.value.find(s => s.id === sheetId);
-    if (!sheet || !await confirm(`Delete ${sheetName(sheet)}?`)) return;
+    if (!sheet || !await confirm(t("common.deleteNamed", { name: sheetName(sheet) }))) return;
     const request: DeleteCharacterRequest = { type: "deleteCharacter", sheetID: String(sheetId) };
     send(request);
 }
@@ -253,7 +261,7 @@ export function moveSheetToFolder(sheetId: number, folderId: number | null): voi
 // — Folders ———————————————————————————————
 
 export function createFolder(): void {
-    const request: CreateFolderRequest = { type: "createFolder", name: "New Folder", visibility: "everyone_can_view" };
+    const request: CreateFolderRequest = { type: "createFolder", name: t("room.characters.newFolder"), visibility: "everyone_can_view" };
     send(request);
 }
 
@@ -308,8 +316,8 @@ export async function deleteFolder(folderId: number): Promise<void> {
     const folder = folders.value.find(f => f.id === folderId);
     if (!folder) return;
     const inside = sheets.value.filter(s => s.folderId === folderId).length;
-    let question = `Delete folder "${folder.name}"?`;
-    if (inside > 0) question += `\n\n${inside} character sheet(s) will be moved to the default area.`;
+    let question = t("room.characters.deleteFolderNamed", { name: folder.name });
+    if (inside > 0) question += `\n\n${t("room.characters.sheetsLeaveFolder", { count: inside })}`;
     if (!await confirm(question)) return;
     const request: DeleteFolderRequest = { type: "deleteFolder", folderId };
     send(request);
@@ -336,7 +344,7 @@ export function reorderFolders(dropped: readonly number[]): void {
 
 export async function kickPlayer(userId: number): Promise<void> {
     const player = players.value.find(p => p.id === userId);
-    if (!player || !await confirm(`Kick ${player.name}?`)) return;
+    if (!player || !await confirm(t("room.players.kickNamed", { name: player.name }))) return;
     const request: KickPlayerRequest = { type: "kickPlayer", userID: userId };
     send(request);
 }

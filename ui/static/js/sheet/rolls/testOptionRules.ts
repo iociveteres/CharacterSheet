@@ -13,6 +13,7 @@ import type { GridSignals } from "../schema/spec";
 import { parseBase } from "./rollBase";
 import { CUSTOM_SKILL_PREFIX, rightSkillName, skillGroups } from "../characteristics/skillNames";
 import type { SheetSignals } from "../schema/sheet";
+import { t } from "../../i18n";
 
 const TEST_BLOCKS = ["rangedAttacks", "meleeAttacks", "psykana", "technoArcana"] as const;
 
@@ -28,11 +29,11 @@ export const isCharacteristic = (stats: StatSet, key: string) => stats.character
 export const CAST = "cast";
 
 /** The group of Cast, which the Magic test options of a sheet with Spellcasting offer before the others. */
-export const CAST_GROUP: OptionGroup = { label: "Spellcasting", options: [{ value: CAST, label: "Cast" }] };
+export const CAST_GROUP: OptionGroup = { label: t("sheet.termsPf.magic.spellcasting"), options: [{ value: CAST, label: t("sheet.termsPf.magic.cast") }] };
 
 /** What a test option can be based on, by group for <optgroup>: the characteristics, then skillGroups. */
 export const testBaseGroups = (state: SheetSignals, stats: StatSet): OptionGroup[] => [
-    { label: "Characteristics", options: stats.characteristics.map(c => c.key) },
+    { label: t("sheet.terms.block.characteristics"), options: stats.characteristics.map(c => c.key) },
     ...skillGroups(state, stats),
 ];
 
@@ -55,16 +56,16 @@ export function onDeletedSkill(state: SheetSignals, block: TestBlock, id: string
 /** How the base of a test option reads: "W", "Navigate: Surface", a skill's name. */
 export function testBaseLabel(state: SheetSignals, stats: StatSet, base: string): string {
     if (isCharacteristic(stats, base)) return base;
-    if (base === CAST) return "Cast";
+    if (base === CAST) return t("sheet.termsPf.magic.cast");
     if (base.startsWith(CUSTOM_SKILL_PREFIX)) {
-        if (isDeletedSkill(state, base)) return "(skill deleted)";
+        if (isDeletedSkill(state, base)) return t("sheet.rolls.test.skillDeletedMark");
         const name = state.customSkills?.list?.items?.[base.slice(CUSTOM_SKILL_PREFIX.length)]?.name?.value?.trim();
-        return name || "Custom skill";
+        return name || t("sheet.rolls.test.customSkill");
     }
     const left = stats.skillsLeft.find(r => r.key === base);
-    if (left) return left.group ? `${left.group}: ${left.label}` : left.label;
+    if (left) return left.groupLabel ? `${left.groupLabel}: ${left.label}` : left.label;
     const right = stats.skillsRight.find(r => r.key === base);
-    if (right) return rightSkillName(state, base) || right.group || base;
+    if (right) return rightSkillName(state, base) || right.groupLabel || base;
     return base;
 }
 
@@ -114,10 +115,10 @@ export const firstTestOption = (state: SheetSignals, block: TestBlock): string =
 export function rollTestOptions(state: SheetSignals, stats: StatSet, block: TestBlock, current: string, cast?: CastOn): Option[] {
     const options: Option[] = inOrder(state[block]?.testOptions).map(([id, o]) => {
         const test = optionTest(stats, o.base.value, o.characteristic.value, cast);
-        return { value: id, label: o.base.value === CAST ? `Cast (${test})` : testOptionLabel(state, stats, test) };
+        return { value: id, label: o.base.value === CAST ? `${t("sheet.termsPf.magic.cast")} (${test})` : testOptionLabel(state, stats, test) };
     });
     if (!options.some(o => optionValue(o) === current)) {
-        options.unshift({ value: current, label: current ? "(test deleted)" : "(no test)" });
+        options.unshift({ value: current, label: current ? t("sheet.rolls.test.testDeleted") : t("sheet.rolls.test.noTest") });
     }
     return options;
 }

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { act } from "preact/test-utils";
 import { loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
@@ -35,6 +36,13 @@ describe("the coins of a Pathfinder Crusade sheet", () => {
         act(() => updateSignalAtPath(state, "coins.countWeight", false));
         expect(state.carryWeightAndEncumbrance.encumbrance.value).toBe(1.25);
         expect($('[data-id="coins"] [data-id="weight"]').value).toBe("");
+    });
+
+    it("say how many coins weigh in Russian too", () => {
+        installDictionary("ru");
+        loadState(content({ gp: 122 }), pathfinderCrusade);
+        rendered = renderBlock(<Coins />);
+        expect($('[data-id="coins"] [data-id="weight"]').title).toMatch(/\b122\b.*\b100\b/);
     });
 
     it("count their weight by default, are whole and turned off under the ⚙", () => {

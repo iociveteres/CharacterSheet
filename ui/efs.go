@@ -72,18 +72,22 @@ func StaticFS() fs.FS {
 	return Files
 }
 
+// StaticHash returns the cache-busting hash of a file under "static", and whether it exists.
+func StaticHash(path string) (string, bool) {
+	fullPath := "static/" + path
+	if devFS != nil {
+		hash, err := hashFile(devFS, fullPath)
+		return hash, err == nil
+	}
+	hash, ok := fileHashes[fullPath]
+	return hash, ok
+}
+
 // VersionFunc returns a template function for cache busting
 func VersionFunc() template.FuncMap {
 	return template.FuncMap{
 		"version": func(path string) string {
-			fullPath := "static/" + path
-			if devFS != nil {
-				if hash, err := hashFile(devFS, fullPath); err == nil {
-					return hash
-				}
-				return "1"
-			}
-			if hash, ok := fileHashes[fullPath]; ok {
+			if hash, ok := StaticHash(path); ok {
 				return hash
 			}
 			return "1"

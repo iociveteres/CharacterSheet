@@ -5,8 +5,10 @@ import (
 	"context"
 	"embed"
 	"html/template"
+	"io/fs"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/wneessen/go-mail"
 )
 
@@ -48,25 +50,44 @@ func (m Mailer) Check(ctx context.Context) error {
 	return m.client.CloseWithSMTPClient(client)
 }
 
-func (m Mailer) Send(recipient, templateFile string, data any) error {
-	tmpl, err := template.New("email").ParseFS(Templates, "templates/"+templateFile)
+type Message struct {
+	Subject   string
+	PlainBody string
+	HTMLBody  string
+}
+
+// Render executes templates/<name>.<lang>.html, or <name>.en.html when lang has no file.
+func Render(lang, name string, data any) (Message, error) {
+	file := "templates/" + name + "." + lang + ".html"
+	if _, err := fs.Stat(Templates, file); err != nil {
+		file = "templates/" + name + "." + i18n.Default + ".html"
+	}
+	tmpl, err := template.New("email").ParseFS(Templates, file)
 	if err != nil {
-		return err
+		return Message{}, err
 	}
 
-	subject := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(subject, "subject", data)
-	if err != nil {
-		return err
+	var msg Message
+	for _, part := range []struct {
+		name string
+		dst  *string
+	}{
+		{"subject", &msg.Subject},
+		{"plainBody", &msg.PlainBody},
+		{"htmlBody", &msg.HTMLBody},
+	} {
+		buf := new(bytes.Buffer)
+		if err := tmpl.ExecuteTemplate(buf, part.name, data); err != nil {
+			return Message{}, err
+		}
+		*part.dst = buf.String()
 	}
+	return msg, nil
+}
 
-	plainBody := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(plainBody, "plainBody", data)
-	if err != nil {
-		return err
-	}
-	htmlBody := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(htmlBody, "htmlBody", data)
+// Send renders the email name in lang (see Render) and sends it to recipient.
+func (m Mailer) Send(recipient, lang, name string, data any) error {
+	rendered, err := Render(lang, name, data)
 	if err != nil {
 		return err
 	}
@@ -74,9 +95,9 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 	msg := mail.NewMsg()
 	msg.To(recipient)
 	msg.From(m.sender)
-	msg.Subject(subject.String())
-	msg.SetBodyString(mail.TypeTextPlain, plainBody.String())
-	msg.AddAlternativeString(mail.TypeTextHTML, htmlBody.String())
+	msg.Subject(rendered.Subject)
+	msg.SetBodyString(mail.TypeTextPlain, rendered.PlainBody)
+	msg.AddAlternativeString(mail.TypeTextHTML, rendered.HTMLBody)
 
 	for i := 1; i <= 3; i++ {
 		err = m.client.DialAndSend(msg)

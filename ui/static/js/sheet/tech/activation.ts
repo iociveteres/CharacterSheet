@@ -4,13 +4,14 @@ import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
 import { numberAt, peekAt } from "../core/sync";
 import { FATIGUE, spend } from "../powers/spend";
+import type { Label } from "../rollLabel";
 import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "./tech";
 
 export interface Activation {
     /** X of a price of X ⚙. */
     x: number;
     /** The test: its target, bonus successes and label in the chat; null for a power activated without one. */
-    test: { target: number; bonusSuccesses: number; label: string } | null;
+    test: { target: number; bonusSuccesses: number; label: Label } | null;
     /** Hold the power in a Process once it is activated. */
     process: boolean;
     /** How much of the 🗲 to pay with Fatigue rather than energy. */

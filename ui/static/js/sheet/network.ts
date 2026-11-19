@@ -5,6 +5,7 @@ import type { Transport } from "./core/actions";
 import { movedTo, touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
 import { online } from "./connection";
+import { t } from "../i18n";
 
 /**
  * Sends `json` over the page's socket; false when the socket is not open and
@@ -60,15 +61,15 @@ function editFailed(sheetID: string, reason: string): void {
 }
 
 const EDIT_FAILED: { [reason: string]: string } = {
-    permission: "you can no longer edit this sheet",
-    destinationGone: "the item it was moved into was deleted",
-    tooLarge: "it is larger than 32 KB",
-    offline: "there is no connection to the server",
+    permission: t("sheet.view.editFailed.permission"),
+    destinationGone: t("sheet.view.editFailed.destinationGone"),
+    tooLarge: t("sheet.view.editFailed.tooLarge"),
+    offline: t("sheet.view.editFailed.offline"),
 };
 
 /** What the page tells the user of sheet:editFailed for `reason`. */
 export function editFailedNotice(reason: string): string {
-    return `Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`;
+    return EDIT_FAILED[reason] ?? t("sheet.view.editFailed.rejected");
 }
 
 function sendEdit(msg: object & Edit, versions?: SheetVersions): void {
@@ -106,10 +107,10 @@ let csrf: string | undefined;
 const csrfToken = () => csrf ??= document.querySelector<HTMLElement>("[data-csrf]")?.dataset.csrf ?? "";
 
 const PORTRAIT_ERRORS: { [status: number]: string } = {
-    400: "Not a 360×480 WebP or JPEG image.",
-    403: "You cannot edit this sheet.",
-    404: "The sheet is gone.",
-    413: "The image is larger than 128 KB.",
+    400: t("sheet.view.portrait.badImage"),
+    403: t("sheet.view.portrait.forbidden"),
+    404: t("sheet.view.portrait.gone"),
+    413: t("sheet.view.portrait.tooLarge"),
 };
 
 /** The text to show for a portrait request the server refused. */
@@ -119,7 +120,7 @@ async function portraitError(res: Response): Promise<string> {
         const body = await res.json().catch(() => null) as { message?: string } | null;
         if (body?.message) return body.message;
     }
-    return PORTRAIT_ERRORS[res.status] ?? `The server refused the portrait: ${res.status}.`;
+    return PORTRAIT_ERRORS[res.status] ?? t("sheet.view.portrait.refused", { status: res.status });
 }
 
 /** PUT or DELETE /sheet/portrait/:id; the body of a PUT is the image itself. */
@@ -128,7 +129,7 @@ async function portraitRequest(sheetId: string, method: "PUT" | "DELETE", image?
     try {
         res = await fetch(`/sheet/portrait/${sheetId}`, { method, body: image, headers: { "X-CSRF-Token": csrfToken() } });
     } catch {
-        throw new Error("There is no connection to the server.");
+        throw new Error(t("sheet.view.portrait.offline"));
     }
     if (!res.ok) throw new Error(await portraitError(res));
 }

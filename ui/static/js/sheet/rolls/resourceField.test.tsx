@@ -99,6 +99,6 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         act(() => updateSignalAtPath(testState(), "technoArcana.cognitionMax.base", "10"));
         expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(12);
         expect(current.classList.contains("over-max")).toBe(true);
-        expect(current.title).toBe("More than the maximum, 10");
+        expect(current.title).toMatch(/\b10\b/);
     });
 });

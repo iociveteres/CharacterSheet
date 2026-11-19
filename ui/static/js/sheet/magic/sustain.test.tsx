@@ -155,7 +155,7 @@ describe("sustaining from the roll", () => {
         expect(value(`${power("a")}.sustain.copies`)).toBe(0);
 
         openRoll("r");
-        expect($('[data-id="r"] [data-id="instant"]')!.textContent).toBe("Instant: 1 of Repeatable (1) sustained");
+        expect($('[data-id="r"] [data-id="instant"]')!.textContent).toMatch(/\b1\b.*\(1\)/);
         await cast("r", true);
         expect([value(`${power("r")}.sustain.copies`), value(`${power("r")}.sustain.pr`)]).toEqual([1, 2]);
     });

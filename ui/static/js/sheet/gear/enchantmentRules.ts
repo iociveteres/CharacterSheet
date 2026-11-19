@@ -5,6 +5,7 @@
 // itemCapacity), the weight factor in the item's weight, the entries while
 // the item is equipped (kinds/computed.ts).
 import { Signal } from "@preact/signals-core";
+import { t } from "../../i18n";
 import { columnsFromLayout } from "../core/columns";
 import type { Position } from "../schema/content.gen";
 import type { gearEnchantment } from "../schema/sheet";
@@ -49,7 +50,7 @@ export function chipText(enchantment: Enchantment): string {
 export function enchantmentWeightFactors(item: GearItem): WeightFactor[] {
     return enchantmentsOf(item)
         .filter(e => (e.weightFactor?.value ?? 1) !== 1)
-        .map(e => ({ factor: num(e.weightFactor), source: String(e.name.value ?? "").trim() || "enchantment" }));
+        .map(e => ({ factor: num(e.weightFactor), source: String(e.name.value ?? "").trim() || t("sheet.gear.enchantment.fallback") }));
 }
 
 /** The plain value of a signal tree, as a batch carries it. */

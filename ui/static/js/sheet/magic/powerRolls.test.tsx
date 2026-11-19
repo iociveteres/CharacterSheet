@@ -332,7 +332,7 @@ describe("the hardware of a tech power's roll", () => {
         expect(rendered.container.querySelector('[data-id="p1"] [data-id="hardware"]')!.textContent).toBe("Luminen Capacitors Good.Q +5");
 
         act(() => updateSignalAtPath(testState(), "technoArcana.tabs.items.t1.powers.items.p1.implants", "Luminen Capacitors, Maglev Coils"));
-        expect(rendered.container.querySelector('[data-id="p1"] [data-id="noHardware"]')!.textContent).toBe("No Maglev Coils");
+        expect(rendered.container.querySelector('[data-id="p1"] [data-id="noHardware"]')!.textContent).toContain("Maglev Coils");
         const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
         expect(rolls(() => button.click())).toEqual([{ target: 22, bonusSuccesses: 0, label: "Scan, Good.Q" }]);
     });

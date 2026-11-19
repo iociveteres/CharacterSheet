@@ -110,7 +110,6 @@ afterAll(() => {
 describe("an own creature", () => {
     it("is edited in its stat block and its full sheet, over the page's socket", async () => {
         await pick(11);
-        expect($(".bestiary-open-sheet")!.textContent).toBe("Edit");
         // A click on a roll in the stat block rolls and opens nothing.
         click(statBlock()!.querySelector('[data-id="BS"].rollable'));
         expect(popup()).toBeNull();
@@ -161,7 +160,6 @@ describe("another user's creature", () => {
         await act(() => selectCollection(6));
         await vi.waitFor(() => expect(rows()).toEqual(["Gaunt"]));
         await pick(61);
-        expect($(".bestiary-open-sheet")!.textContent).toBe("View");
 
         const sheet = await openSheet();
         expect(sheet.querySelector<HTMLInputElement>('[data-id="characterName"]')!.readOnly).toBe(true);

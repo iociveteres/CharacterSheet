@@ -1,13 +1,14 @@
 // The coins of a Pathfinder Crusade character (gear/Coins.tsx): their
 // weight, unless turned off, goes into the encumbrance (gear/gearComputeds.ts).
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import { numberAt, valueAt } from "../core/sync";
 
 export const COINS = [
-    { key: "pp", label: "PP", title: "Platinum pieces" },
-    { key: "gp", label: "GP", title: "Gold pieces" },
-    { key: "sp", label: "SP", title: "Silver pieces" },
-    { key: "cp", label: "CP", title: "Copper pieces" },
+    { key: "pp", label: "PP", title: t("sheet.termsPf.coin.pp") },
+    { key: "gp", label: "GP", title: t("sheet.termsPf.coin.gp") },
+    { key: "sp", label: "SP", title: t("sheet.termsPf.coin.sp") },
+    { key: "cp", label: "CP", title: t("sheet.termsPf.coin.cp") },
 ] as const;
 
 /** Pathfinder's 50 coins to a pound, rounded to the kilogram. */

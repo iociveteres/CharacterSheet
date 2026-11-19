@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { confirmMessage, creatures, dialog, ownCollections, type Dialog } from "../state";
 import { answerConfirm, closeDialog, copyCreature, createCollection, moveCreature } from "../actions";
 import { Modal } from "./common";
+import { t } from "../../i18n";
 
 export function Dialogs() {
     const open = dialog.value;
@@ -18,7 +19,7 @@ export function Dialogs() {
 function DialogOf({ open }: { open: Dialog }) {
     switch (open.type) {
         case "newCollection":
-            return <TextDialog label="New collection" initial="" maxLength={100} submit={name => createCollection(name)} />;
+            return <TextDialog label={t("bestiary.collections.newCollection")} initial="" maxLength={100} submit={name => createCollection(name)} />;
         case "copy":
         case "move":
             return <PickCollection open={open} />;
@@ -28,7 +29,7 @@ function DialogOf({ open }: { open: Dialog }) {
 function Actions({ ok, disabled, onOk }: { ok: string; disabled?: boolean; onOk: () => void }) {
     return (
         <div class="actions">
-            <button type="button" onClick={closeDialog}>Cancel</button>
+            <button type="button" onClick={closeDialog}>{t("common.cancel")}</button>
             <button type="button" class="bestiary-dialog-ok" disabled={disabled} onClick={onOk}>{ok}</button>
         </div>
     );
@@ -55,7 +56,7 @@ function TextDialog({ label, initial, maxLength, submit }: {
                 onKeyDown={e => {
                     if (e.key === "Enter") save();
                 }} />
-            <Actions ok="Save" disabled={!ok} onOk={save} />
+            <Actions ok={t("common.save")} disabled={!ok} onOk={save} />
         </Modal>
     );
 }
@@ -82,23 +83,24 @@ function PickCollection({ open }: { open: Dialog & { type: "copy" | "move" } }) 
         else void copyCreature(open.id, target === NEW ? { newCollection: newName.trim() } : { collectionId: target });
     };
     return (
-        <Modal label={`${move ? "Move" : "Copy"} "${creature.name}" to`} onClose={closeDialog}>
+        <Modal label={move ? t("bestiary.dialogs.moveTitle", { name: creature.name }) : t("bestiary.dialogs.copyTitle", { name: creature.name })}
+            onClose={closeDialog}>
             {move && !targets.length
-                ? <p class="bestiary-muted">There is no other collection.</p>
-                : <select class="bestiary-dialog-target" value={target} aria-label="Collection"
+                ? <p class="bestiary-muted">{t("bestiary.dialogs.noOtherCollection")}</p>
+                : <select class="bestiary-dialog-target" value={target} aria-label={t("room.modals.saveToCollection.collection")}
                     onChange={e => setTarget(Number(e.currentTarget.value))}>
                     {targets.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    {!move && <option value={NEW}>New collection…</option>}
+                    {!move && <option value={NEW}>{t("room.modals.saveToCollection.new")}</option>}
                 </select>}
             {!move && target === NEW && (
-                <input type="text" class="bestiary-dialog-text bestiary-new-collection-name" placeholder="Name of the new collection"
-                    aria-label="Name of the new collection" maxLength={100} value={newName}
+                <input type="text" class="bestiary-dialog-text bestiary-new-collection-name" placeholder={t("room.modals.saveToCollection.newName")}
+                    aria-label={t("room.modals.saveToCollection.newName")} maxLength={100} value={newName}
                     onInput={e => setNewName(e.currentTarget.value)}
                     onKeyDown={e => {
                         if (e.key === "Enter") submit();
                     }} />
             )}
-            <Actions ok={move ? "Move" : "Copy"} disabled={!ok} onOk={submit} />
+            <Actions ok={move ? t("common.move") : t("common.copy")} disabled={!ok} onOk={submit} />
         </Modal>
     );
 }
@@ -115,11 +117,11 @@ function Confirm({ message }: { message: string }) {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
     return (
-        <Modal label="Confirm" onClose={() => answerConfirm(false)}>
+        <Modal label={t("common.confirm")} onClose={() => answerConfirm(false)}>
             <div class="confirm-text">{message}</div>
             <div class="actions">
-                <button type="button" onClick={() => answerConfirm(false)}>Cancel</button>
-                <button type="button" class="bestiary-confirm-ok" onClick={() => answerConfirm(true)}>OK</button>
+                <button type="button" onClick={() => answerConfirm(false)}>{t("common.cancel")}</button>
+                <button type="button" class="bestiary-confirm-ok" onClick={() => answerConfirm(true)}>{t("common.ok")}</button>
             </div>
         </Modal>
     );

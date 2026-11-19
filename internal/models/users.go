@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -15,9 +16,11 @@ import (
 )
 
 type UserModelInterface interface {
-	Insert(ctx context.Context, name, email, password string) (int, error)
+	Insert(ctx context.Context, name, email, password, locale string) (int, error)
 	Authenticate(ctx context.Context, email, password string) (int, error)
 	Exists(ctx context.Context, id int) (bool, error)
+	GetLocale(ctx context.Context, id int) (string, error)
+	SetLocale(ctx context.Context, id int, locale string) error
 	Get(ctx context.Context, id int) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
@@ -39,21 +42,24 @@ type User struct {
 	HashedPassword []byte
 	CreatedAt      time.Time
 	Status         userStatus
+	// Locale is "" when the user hasn't picked a language.
+	Locale string
 }
 
 type UserModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *UserModel) Insert(ctx context.Context, name, email, password string) (int, error) {
+// Insert saves locale as the user's language, "" for none.
+func (m *UserModel) Insert(ctx context.Context, name, email, password, locale string) (int, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return 0, err
 	}
 
 	const stmt = `
-INSERT INTO users (name, email, hashed_password, created_at)
-VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+INSERT INTO users (name, email, hashed_password, locale, created_at)
+VALUES ($1, $2, $3, NULLIF($4, ''), CURRENT_TIMESTAMP)
 RETURNING id`
 
 	tx, err := m.DB.Begin(ctx)
@@ -63,7 +69,7 @@ RETURNING id`
 	defer tx.Rollback(ctx)
 
 	var id int
-	err = tx.QueryRow(ctx, stmt, name, email, string(hashedPassword)).Scan(&id)
+	err = tx.QueryRow(ctx, stmt, name, email, string(hashedPassword), locale).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -73,8 +79,9 @@ RETURNING id`
 		}
 		return 0, err
 	}
-	// Every user has a default collection in the bestiary from the start.
-	_, err = tx.Exec(ctx, `INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, id, defaultCollectionName)
+	// Every user has a default collection in the bestiary from the start,
+	// named in their language: it is known by is_default, not by the name.
+	_, err = tx.Exec(ctx, `INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, id, i18n.T(locale, "bestiary.shared.defaultCollection"))
 	if err != nil {
 		return 0, err
 	}
@@ -136,9 +143,28 @@ SELECT EXISTS(
 	return exists, err
 }
 
+// GetLocale returns the language the user picked, "" if none, or ErrNoRecord: the web app
+// checks the session's user with it on every request instead of Exists.
+func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
+	var locale *string
+	err := m.DB.QueryRow(ctx, `SELECT locale FROM users WHERE id = $1`, id).Scan(&locale)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNoRecord
+	}
+	if err != nil || locale == nil {
+		return "", err
+	}
+	return *locale, nil
+}
+
+func (m *UserModel) SetLocale(ctx context.Context, id int, locale string) error {
+	_, err := m.DB.Exec(ctx, `UPDATE users SET locale = $1 WHERE id = $2`, locale, id)
+	return err
+}
+
 func (m *UserModel) Get(ctx context.Context, id int) (*User, error) {
 	const stmt = `
-SELECT id, name, email, created_at
+SELECT id, name, email, created_at, COALESCE(locale, '')
   FROM users
  WHERE id = $1`
 
@@ -150,6 +176,7 @@ SELECT id, name, email, created_at
 		&u.Name,
 		&u.Email,
 		&u.CreatedAt,
+		&u.Locale,
 	)
 
 	if err != nil {
@@ -163,7 +190,7 @@ SELECT id, name, email, created_at
 
 func (m *UserModel) GetByEmail(ctx context.Context, email string) (*User, error) {
 	const stmt = `
-SELECT id, name, email, created_at
+SELECT id, name, email, created_at, COALESCE(locale, '')
   FROM users
  WHERE email = $1`
 
@@ -175,6 +202,7 @@ SELECT id, name, email, created_at
 		&u.Name,
 		&u.Email,
 		&u.CreatedAt,
+		&u.Locale,
 	)
 
 	if err != nil {

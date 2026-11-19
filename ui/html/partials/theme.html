@@ -1,30 +1,27 @@
 {{define "theme_changer"}}
 <div class="theme-settings">
-    <h2>Theme settings:</h2>
-    <label for="theme-select">Theme:</label>
+    <h2>{{t .Lang "site.account.theme.heading"}}</h2>
+    <label for="theme-select">{{t .Lang "site.account.theme.label"}}</label>
     <select id="theme-select" class="padding-small">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="retro">Retro</option>
-        <option value="system">System</option>
+        <option value="light">{{t .Lang "site.account.theme.light"}}</option>
+        <option value="dark">{{t .Lang "site.account.theme.dark"}}</option>
+        <option value="retro">{{t .Lang "site.account.theme.retro"}}</option>
+        <option value="system">{{t .Lang "site.account.theme.system"}}</option>
     </select>
 
     <div class="hue-control layout-column" aria-labelledby="hue-label">
         <div class="layout-row">
-            <label id="hue-label" for="hue-range">Accent hue:
-                <output id="hue-value" aria-live="polite">—</output>
+            <label id="hue-label" for="hue-range">{{t .Lang "site.account.theme.hue"}}
+                {{/* main.js writes the hue here, or data-default when there is none. */}}
+                <output id="hue-value" aria-live="polite" data-default='{{t .Lang "site.account.theme.hueDefault"}}'>—</output>
             </label>
-            <span class="hue-preview" aria-hidden="true" title="Preview"></span>
+            <span class="hue-preview" aria-hidden="true" title='{{t .Lang "site.account.theme.preview"}}'></span>
         </div>
 
         <div class="layout-row">
             <input id="hue-range" type="range" min="0" max="360" step="1" />
-            <button id="hue-default" type="button" class="padding-small">Default</button>
+            <button id="hue-default" type="button" class="padding-small">{{t .Lang "site.account.theme.reset"}}</button>
         </div>
     </div>
 </div>
-{{end}}
-
-{{define "set_theme"}}
-data-theme="{{ .ThemeFromCookie }}" style="{{ if .UserHue }}--user-hue:{{ .UserHue }};{{ end }}"
 {{end}}

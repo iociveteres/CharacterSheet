@@ -1,27 +1,27 @@
-{{define "title"}}Your Account{{end}}
+{{define "title"}}{{t .Lang "site.account.title"}}{{end}}
 {{define "main"}}
-<h2>Your Account</h2>
+<h2>{{t .Lang "site.account.title"}}</h2>
 {{with .User}}
 <table>
     <tr>
-        <th>Name</th>
+        <th>{{t $.Lang "site.account.name"}}</th>
         <td>{{.Name}}</td>
     </tr>
     <tr>
-        <th>Email</th>
+        <th>{{t $.Lang "site.account.email"}}</th>
         <td>{{.Email}}</td>
     </tr>
     <tr>
-        <th>Joined</th>
-        <td>{{humanDate .CreatedAt $.TimeZone}}</td>
+        <th>{{t $.Lang "site.account.joined"}}</th>
+        <td>{{humanDate $.Lang .CreatedAt $.TimeZone}}</td>
     </tr>
     <tr>
         <!-- Add a link to the change password form -->
-        <th>Password</th>
-        <td><a href='{{reverseRev "PasswordRequestReset"}}'>Change password</a></td>
+        <th>{{t $.Lang "site.account.password"}}</th>
+        <td><a href='{{reverseRev "PasswordRequestReset"}}'>{{t $.Lang "site.auth.password.submit"}}</a></td>
     </tr>
 </table>
 
-{{template "theme_changer"}}
+{{template "theme_changer" $}}
 {{end }}
 {{end}}
