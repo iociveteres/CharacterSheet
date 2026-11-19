@@ -834,8 +834,11 @@ main.forum-wide {
 }
 
 /* The error is under its field (design/decisions.md, 17); main.css colours a field only after an
-   .error, so the frame goes by aria-invalid. */
-#forum .forum-form [aria-invalid="true"] {
+   .error, so the frame goes by aria-invalid. By element: input[type="text"] above outweighs a bare
+   attribute. */
+#forum .forum-form input[aria-invalid="true"],
+#forum .forum-form select[aria-invalid="true"],
+#forum .forum-form textarea[aria-invalid="true"] {
     border-color: var(--accent-attention);
 }
 
