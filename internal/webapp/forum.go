@@ -47,7 +47,9 @@ func (h forumHost) Render(w http.ResponseWriter, r *http.Request, status int, pa
 		Canonical:   page.Canonical,
 		NoIndex:     page.NoIndex,
 		Styles:      []string{"css/forum.css"},
-		Body:        page.Body,
+		// Wider than the site's 800px, header and nav keep theirs (forum.css).
+		MainClass: "forum-wide",
+		Body:      page.Body,
 	}
 	h.app.render(w, status, "embedded.html", "base", data)
 }

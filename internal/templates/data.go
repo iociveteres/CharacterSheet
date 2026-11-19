@@ -49,5 +49,7 @@ type EmbeddedPage struct {
 	NoIndex                       bool
 	// Styles and Scripts are paths under /static, after the site's own.
 	Styles, Scripts []string
-	Body            template.HTML
+	// MainClass is added to the class of <main>: a page may be laid out wider than the site.
+	MainClass string
+	Body      template.HTML
 }

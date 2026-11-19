@@ -138,3 +138,21 @@ func TestEmbeddedPageHead(t *testing.T) {
 	assert.StringContains(t, head, `<title>Forum - Character Sheet</title>`)
 	assert.StringContains(t, head, `href='/static/css/forum.css?v=`)
 }
+
+// An embedded page may widen <main>; the site pages keep the plain class.
+func TestEmbeddedPageMainClass(t *testing.T) {
+	cache, err := NewTemplateCache()
+	assert.NilError(t, err)
+	render := func(page string, data *Data) string {
+		buf := new(bytes.Buffer)
+		ts := cache["en"][page]
+		ts.Funcs(template.FuncMap{"reverseRev": func(name string, _ ...string) string { return "/" + name }})
+		assert.NilError(t, ts.ExecuteTemplate(buf, "base", data))
+		return buf.String()
+	}
+	assert.StringContains(t, render("about.html", &Data{Lang: "en"}), `<main class="site-inner">`)
+	assert.StringContains(t, render("embedded.html", &Data{Lang: "en", Embedded: &EmbeddedPage{Title: "Forum"}}),
+		`<main class="site-inner">`)
+	assert.StringContains(t, render("embedded.html", &Data{Lang: "en", Embedded: &EmbeddedPage{Title: "Forum", MainClass: "wide"}}),
+		`<main class="site-inner wide">`)
+}

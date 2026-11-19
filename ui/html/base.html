@@ -90,7 +90,7 @@
     </header>
     {{template "nav" .}}
     {{end}}
-    <main class="site-inner">
+    <main class="site-inner{{with .Embedded}}{{with .MainClass}} {{.}}{{end}}{{end}}">
         <div class="main-content">
             {{with .Flash}}
             <div class='flash'>{{.}}</div>
