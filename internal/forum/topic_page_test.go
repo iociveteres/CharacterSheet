@@ -138,7 +138,9 @@ func TestTopicPage(t *testing.T) {
 	}
 
 	assert.Equal(t, found(path), true)
-	assert.Equal(t, host.page.Title, "topic")
+	// The title of the topic, then the forum's words (not compared).
+	firstTitle := host.page.Title
+	assert.Equal(t, strings.HasPrefix(firstTitle, "topic "), true)
 	assert.Equal(t, host.page.Canonical, "https://example.com"+path)
 	if d := host.page.Description; !strings.HasPrefix(d, "Bold start with a inside word word") ||
 		!strings.HasSuffix(d, "…") || len([]rune(d)) > descriptionLength+1 {
@@ -147,7 +149,10 @@ func TestTopicPage(t *testing.T) {
 	assert.Equal(t, articles(), 20)
 
 	assert.Equal(t, found(path+"?page=2"), true)
-	assert.Equal(t, host.page.Title, "topic")
+	// Another page of the topic has a title of its own, with its number.
+	assert.Equal(t, strings.HasPrefix(host.page.Title, "topic "), true)
+	assert.Equal(t, strings.Contains(host.page.Title, "2"), true)
+	assert.Equal(t, host.page.Title != firstTitle, true)
 	assert.Equal(t, host.page.Canonical, "https://example.com"+path+"?page=2")
 	assert.Equal(t, found(path+"?page=3"), true)
 	assert.Equal(t, articles(), 5)

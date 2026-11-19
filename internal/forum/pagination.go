@@ -3,6 +3,8 @@ package forum
 import (
 	"net/http"
 	"strconv"
+
+	"charactersheet.iociveteres.net/internal/i18n"
 )
 
 const (
@@ -38,6 +40,15 @@ func pageURL(path string, n int) string {
 		return path
 	}
 	return path + "?page=" + strconv.Itoa(n)
+}
+
+// pageTitle tells the pages of a section or topic apart in a tab and a search result: the first
+// page is the title alone.
+func pageTitle(lang, title string, n int) string {
+	if n <= 1 {
+		return title
+	}
+	return title + " — " + i18n.T(lang, "forum.topics.pageNumber", i18n.Params{"n": n})
 }
 
 // pagination is the data of the "forum-pagination" template.

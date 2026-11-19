@@ -344,7 +344,7 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 		Form:       form,
 	}
 	f.render(w, r, status, "topic.html", data, Page{
-		Title:       t.Title,
+		Title:       pageTitle(v.Lang, t.Title, page),
 		Description: description,
 		Canonical:   f.baseURL + pageURL(t.URL(), page),
 		NoIndex:     noIndex,

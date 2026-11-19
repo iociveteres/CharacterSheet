@@ -257,7 +257,7 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 		Pagination: pagination{Lang: v.Lang, Path: s.URL(), Current: page, Total: pages},
 	}
 	f.render(w, r, http.StatusOK, "section.html", data, Page{
-		Title:       s.Name,
+		Title:       pageTitle(v.Lang, s.Name, page),
 		Description: s.Description,
 		Canonical:   f.baseURL + pageURL(s.URL(), page),
 	})
