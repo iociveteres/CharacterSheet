@@ -185,6 +185,25 @@ func (p post) URL() string {
 	return postURL(p.ID)
 }
 
+// First is the post that opens the topic.
+func (p post) First() bool {
+	return p.Number == 1
+}
+
+// postCard is what the template "forum-post" draws: a post of a topic, with the actions under it
+// that the viewer may take, or without any (the post on the page that confirms its deletion).
+type postCard struct {
+	view
+	Topic   Topic
+	Post    post
+	Actions bool
+}
+
+// Card is a post for the template "forum-post": {{template "forum-post" ($.Card $.Topic.Topic . true)}}.
+func (v view) Card(t Topic, p post, actions bool) postCard {
+	return postCard{view: v, Topic: t, Post: p, Actions: actions}
+}
+
 // topicPosts reads one page of the topic with its authors and their post counts in one query.
 func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, error) {
 	offset := (page - 1) * postsPerPage

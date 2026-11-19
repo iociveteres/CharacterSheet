@@ -142,6 +142,34 @@ main.forum-wide {
     background: var(--button-bg-subtle-hover);
 }
 
+/* Delete looks secondary and reddens on hover (DESIGN.md, «Buttons by role»). */
+#forum .f-secondary.danger:hover {
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+}
+
+/* Faint text actions under a post: no border, text-secondary until hovered. */
+#forum .f-icon {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#forum .f-icon:hover {
+    opacity: 1;
+    color: var(--text);
+}
+
+#forum .f-icon.danger:hover {
+    color: var(--accent-attention);
+}
+
 /* ===== Small marks ===== */
 
 .forum-marks {
@@ -565,6 +593,10 @@ main.forum-wide {
     color: var(--text-secondary);
 }
 
+.forum-post-meta .edited {
+    font-style: italic;
+}
+
 #forum .forum-post .num {
     margin-left: auto;
     color: var(--text-secondary);
@@ -572,6 +604,15 @@ main.forum-wide {
 
 #forum .forum-post .num:hover {
     color: var(--link);
+}
+
+/* Under the text on the right (design/decisions.md, 8); the column pushes them to the bottom. */
+.forum-post-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-top: auto;
 }
 
 /* A deleted post keeps its place and number as one line (design/decisions.md, 20). */
@@ -787,6 +828,11 @@ main.forum-wide {
 
 #forum .forum-form .field-error {
     font-size: 15px;
+}
+
+/* The page that confirms a deletion: the post, then the question's buttons under it. */
+.forum-confirm {
+    margin-top: 12px;
 }
 
 .forum-form-buttons {

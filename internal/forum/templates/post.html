@@ -1,0 +1,39 @@
+{{- /* A post of a topic; dot is postCard (view.Card). */}}
+{{define "forum-post"}}
+{{- with .Post}}
+{{- if .Deleted}}
+{{- /* One line in the post's place, with its anchor and number (design/decisions.md, 20); its text
+     never reaches the template. */}}
+<article class="forum-post deleted-stub" id="post-{{.ID}}">
+    <span>{{t $.Lang "forum.posts.deleted"}}</span>
+    <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
+</article>
+{{- else}}
+<article class="forum-post{{if .AuthorModerator}} mod{{end}}" id="post-{{.ID}}">
+    <div class="forum-post-author">
+        <span class="name">{{.AuthorName}}</span>
+        <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
+        <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
+    </div>
+    <div class="forum-post-main">
+        <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span>
+            {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
+            <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>
+        <div class="forum-post-body">{{markdown .Body}}</div>
+        {{- if $.Actions}}
+        {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
+        {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
+        {{- /* Only the actions the viewer may take (design/decisions.md, 8). Session B of block 3
+             puts "❝ Quote" first and adds it to the condition. */}}
+        {{- if or $edit $delete}}
+        <div class="forum-post-actions">
+            {{- if $edit}}<a class="f-icon forum-edit-post" href="{{.URL}}/edit">✎ {{t $.Lang "common.edit"}}</a>{{end}}
+            {{- if $delete}}<a class="f-icon danger forum-delete-post" href="{{.URL}}/delete">× {{t $.Lang "common.delete"}}</a>{{end}}
+        </div>
+        {{- end}}
+        {{- end}}
+    </div>
+</article>
+{{- end}}
+{{- end}}
+{{end}}

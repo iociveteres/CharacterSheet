@@ -31,6 +31,15 @@ func TestRights(t *testing.T) {
 	signInToReply := func(t Topic) func(Viewer) bool { return func(v Viewer) bool { return v.SignInToReply(t) } }
 	readsTopic := func(t Topic) func(Viewer) bool { return func(v Viewer) bool { return v.CanReadTopic(t) } }
 
+	// Posts by the member (id 1), the moderator (id 2) and someone else (id 3).
+	ownReply := post{ID: 11, AuthorID: member.ID, Number: 2}
+	ownFirst := post{ID: 10, AuthorID: member.ID, Number: 1}
+	ownDeleted := post{ID: 12, AuthorID: member.ID, Number: 3, DeletedAt: &deletedAt}
+	othersReply := post{ID: 13, AuthorID: 3, Number: 4}
+	modsReply := post{ID: 14, AuthorID: moderator.ID, Number: 5}
+	edit := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanEditPost(t, p) } }
+	del := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanDeletePost(t, p) } }
+
 	tests := []struct {
 		name   string
 		viewer Viewer
@@ -70,6 +79,29 @@ func TestRights(t *testing.T) {
 		{"guest signs in to reply in a closed topic", guest, signInToReply(closed), false},
 		{"guest signs in to reply in a deleted topic", guest, signInToReply(deleted), false},
 		{"member signs in to reply", member, signInToReply(open), false},
+
+		{"guest edits a post", guest, edit(open, othersReply), false},
+		{"author edits a reply", member, edit(open, ownReply), true},
+		{"author edits the first post", member, edit(open, ownFirst), true},
+		{"author edits a deleted post", member, edit(open, ownDeleted), false},
+		{"author edits in a closed topic", member, edit(closed, ownReply), false},
+		{"author edits in a deleted topic", member, edit(deleted, ownReply), false},
+		{"member edits another's post", member, edit(open, othersReply), false},
+		{"moderator edits another's post", moderator, edit(open, othersReply), false},
+		{"moderator edits their post", moderator, edit(open, modsReply), true},
+		{"moderator edits their post in a closed topic", moderator, edit(closed, modsReply), true},
+		{"moderator edits their post in a deleted topic", moderator, edit(deleted, modsReply), false},
+
+		{"guest deletes a post", guest, del(open, othersReply), false},
+		{"author deletes a reply", member, del(open, ownReply), true},
+		{"author deletes the first post", member, del(open, ownFirst), false},
+		{"author deletes a deleted post", member, del(open, ownDeleted), false},
+		{"author deletes in a closed topic", member, del(closed, ownReply), false},
+		{"author deletes in a deleted topic", member, del(deleted, ownReply), false},
+		{"member deletes another's post", member, del(open, othersReply), false},
+		{"moderator deletes another's post", moderator, del(open, othersReply), false},
+		{"moderator deletes their post", moderator, del(open, modsReply), true},
+		{"moderator deletes their post in a closed topic", moderator, del(closed, modsReply), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

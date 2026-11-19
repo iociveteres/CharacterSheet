@@ -19,28 +19,7 @@
     {{template "forum-pagination" .Pagination}}
 
     <div class="forum-posts">
-        {{range .Posts}}
-        {{if .Deleted}}
-        {{- /* One line in the post's place, with its anchor and number (design/decisions.md, 20). */}}
-        <article class="forum-post deleted-stub" id="post-{{.ID}}">
-            <span>{{t $.Lang "forum.posts.deleted"}}</span>
-            <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
-        </article>
-        {{else}}
-        <article class="forum-post{{if .AuthorModerator}} mod{{end}}" id="post-{{.ID}}">
-            <div class="forum-post-author">
-                <span class="name">{{.AuthorName}}</span>
-                <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
-                <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
-            </div>
-            <div class="forum-post-main">
-                <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span><a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>
-                <div class="forum-post-body">{{markdown .Body}}</div>
-                {{- /* Block 3 adds div.forum-post-actions here, under the text on the right. */}}
-            </div>
-        </article>
-        {{end}}
-        {{end}}
+        {{range .Posts}}{{template "forum-post" ($.Card $.Topic.Topic . true)}}{{end}}
     </div>
 
     {{template "forum-pagination" .Pagination}}

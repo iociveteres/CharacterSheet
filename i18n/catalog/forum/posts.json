@@ -10,5 +10,10 @@
   "forum.posts.moderator": { "en": "Moderator", "ru": "Модератор", "note": "роль под именем автора сообщения; её нельзя получить, назвавшись чужим именем" },
   "forum.posts.postsLabel": { "en": "Posts:", "ru": "Сообщений:", "note": "в колонке автора, перед числом его сообщений на форуме" },
   "forum.posts.registeredLabel": { "en": "Joined:", "ru": "Регистрация:", "note": "в колонке автора, перед днём регистрации на сайте, «02.10.2026»" },
-  "forum.posts.closedButModerator": { "en": "The topic is closed, but you are a moderator and can reply.", "ru": "Тема закрыта, но вы модератор и можете ответить.", "note": "над полем ответа в закрытой теме, видит только модератор" }
+  "forum.posts.closedButModerator": { "en": "The topic is closed, but you are a moderator and can reply.", "ru": "Тема закрыта, но вы модератор и можете ответить.", "note": "над полем ответа в закрытой теме, видит только модератор" },
+  "forum.posts.edited": { "en": "edited", "ru": "изменено", "note": "в строке времени сообщения, перед тем, как давно его правили: «изменено 5 минут назад»" },
+  "forum.posts.editTitle": { "en": "Edit post", "ru": "Изменение сообщения", "note": "заголовок страницы с формой правки своего сообщения" },
+  "forum.posts.yourPost": { "en": "Your post", "ru": "Ваше сообщение", "note": "в форме правки: под именем пишущего (перед номером #12) и подпись поля" },
+  "forum.posts.deleteTitle": { "en": "Delete this post?", "ru": "Удалить сообщение?", "note": "заголовок страницы, которая просит подтвердить удаление своего сообщения" },
+  "forum.posts.deleteNote": { "en": "The post will be replaced in the topic by a line saying it was deleted.", "ru": "В теме на месте сообщения останется строка «Сообщение удалено».", "note": "на странице подтверждения удаления, над кнопками «Отмена» и «Удалить»" }
 }

@@ -1,0 +1,20 @@
+<div id="forum">
+    {{- with .Post.Topic}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    {{- end}}
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.posts.deleteTitle"}}</h2></div></div>
+
+    {{template "forum-post" .Card}}
+
+    {{- /* The step of confirmation without a script (DESIGN.md, «Buttons by role»: Delete asks to
+         confirm). */}}
+    <form class="forum-form forum-confirm" action="{{.Post.URL}}/delete" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <p class="meta">{{t .Lang "forum.posts.deleteNote"}}</p>
+        <div class="forum-form-buttons">
+            <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
+            <button type="submit" class="f-btn f-secondary danger">{{t .Lang "common.delete"}}</button>
+        </div>
+    </form>
+</div>

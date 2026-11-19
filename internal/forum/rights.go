@@ -36,3 +36,20 @@ func (v Viewer) SignInToStartTopic(s Section) bool {
 func (v Viewer) SignInToReply(t Topic) bool {
 	return !v.SignedIn() && !t.Deleted() && !t.Closed
 }
+
+// CanEditPost: the author edits their own post while it and its topic stand; in a closed topic only
+// a moderator edits theirs, as only a moderator replies there (decision 9 of the plan). Nobody
+// edits another's post, a moderator neither. Block 5 adds the ban.
+func (v Viewer) CanEditPost(t Topic, p post) bool {
+	return v.ownsLivePost(t, p)
+}
+
+// CanDeletePost is CanEditPost but for the first post, which opens the topic: it goes only with
+// the topic. Block 5 lets moderators delete any reply.
+func (v Viewer) CanDeletePost(t Topic, p post) bool {
+	return v.ownsLivePost(t, p) && !p.First()
+}
+
+func (v Viewer) ownsLivePost(t Topic, p post) bool {
+	return v.SignedIn() && p.AuthorID == v.ID && !p.Deleted() && !t.Deleted() && (!t.Closed || v.Moderator)
+}
