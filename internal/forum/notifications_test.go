@@ -2,6 +2,7 @@ package forum
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -238,9 +239,9 @@ func TestQuotedPosts(t *testing.T) {
 	}
 }
 
-// Each moderator action on another's content in the requirements notifies its author with the
-// title at the time, the reason and what else the action has; the others notify nobody, and a
-// moderator's action on their own content notifies nobody.
+// Each moderator action on another's content that notifies (notifiedActions) gives its author one
+// notification with the title at the time, the reason and what else the action has; pinning
+// notifies nobody, and neither does a moderator's action on their own content.
 func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 	s := newNotifyScene(t)
 	other := newSection(t, s.db, "other")
@@ -252,73 +253,79 @@ func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 		t.Helper()
 		redirectedTo(t, s.h.post(t, s.f, target, form))
 	}
-	// last is the newest notification of the user, after it the count of theirs.
-	last := func(userID int) (notice, int) {
+	lastBan := func() int {
 		t.Helper()
-		list := notices(t, s.db, userID)
-		if len(list) == 0 {
-			return notice{}, 0
-		}
-		return list[len(list)-1], len(list)
+		var id int
+		assert.NilError(t, s.db.QueryRow(context.Background(), `SELECT max(id) FROM forum_bans`).Scan(&id))
+		return id
 	}
+	weekLater := at(10).AddDate(0, 0, 7).Format(time.RFC3339)
 
-	post(postURL(reply)+"/delete", url.Values{"reason": {"rude"}})
-	n, _ := last(s.bob)
-	assert.Equal(t, n.String(), fmt.Sprintf("post.delete topic=%d post=%d count=1 read=false", s.topic, reply))
-	assert.Equal(t, n.Params["reason"], "rude")
-	assert.Equal(t, n.Params["title"], "title")
-
-	post(postURL(reply)+"/restore", url.Values{})
-	n, _ = last(s.bob)
-	assert.Equal(t, n.String(), fmt.Sprintf("post.restore topic=%d post=%d count=1 read=false", s.topic, reply))
-	_, hasReason := n.Params["reason"]
-	assert.Equal(t, hasReason, false)
-
-	// Renamed first: the next notifications keep the title of their time.
-	post(modURL(s.topic, topicRename), url.Values{"title": {"renamed"}})
-	post(modURL(s.topic, topicPin), url.Values{})
-	post(modURL(s.topic, topicClose), url.Values{"reason": {"done"}})
-	n, count := last(s.alice)
-	assert.Equal(t, n.String(), fmt.Sprintf("topic.close topic=%d post=0 count=1 read=false", s.topic))
-	assert.Equal(t, n.Params["title"], "renamed")
-	assert.Equal(t, n.Params["reason"], "done")
-	assert.Equal(t, count, 2) // the read replies and the closing: renaming and pinning notify nobody
-	post(modURL(s.topic, topicOpen), url.Values{})
-	post(modURL(s.topic, topicMove), url.Values{"section": {fmt.Sprint(other)}})
-	n, count = last(s.alice)
-	assert.Equal(t, n.Kind, string(actionMoveTopic))
-	assert.Equal(t, n.Params["section"], "other")
-	assert.Equal(t, count, 3)
-	post(modURL(s.topic, topicDelete), url.Values{"reason": {"gone"}})
-	n, _ = last(s.alice)
-	assert.Equal(t, n.String(), fmt.Sprintf("topic.delete topic=%d post=0 count=1 read=false", s.topic))
-	post(modURL(s.topic, topicRestore), url.Values{})
-	_, count = last(s.alice)
-	assert.Equal(t, count, 4)
-
-	post(banURL(reply), url.Values{"duration": {"7"}, "reason": {"spam"}})
-	n, _ = last(s.bob)
-	assert.Equal(t, n.String(), fmt.Sprintf("user.ban topic=%d post=%d count=1 read=false", s.topic, reply))
-	assert.Equal(t, n.Params["reason"], "spam")
-	assert.Equal(t, n.Params["title"], "renamed")
-	end, err := time.Parse(time.RFC3339, n.Params["expiresAt"].(string))
-	assert.NilError(t, err)
-	assert.Equal(t, end.Equal(at(10).AddDate(0, 0, 7)), true)
-	// Until lifted: the term is there, as null.
-	post(banURL(reply), url.Values{"duration": {"0"}, "reason": {"spam again"}})
-	n, count = last(s.bob)
-	expires, ok := n.Params["expiresAt"]
-	assert.Equal(t, ok && expires == nil, true)
-	var banID int
-	assert.NilError(t, s.db.QueryRow(context.Background(), `SELECT max(id) FROM forum_bans`).Scan(&banID))
-	post(liftURL(banID), url.Values{})
-	_, after := last(s.bob)
-	assert.Equal(t, after, count)
+	// In order: each step leaves the topic as the next one needs it. params are all the parameters
+	// of the notification, as JSON gives them back.
+	steps := []struct {
+		name     string
+		target   func() string
+		form     url.Values
+		user     int
+		want     string
+		params   map[string]any
+		notifies bool
+	}{
+		{"delete post", func() string { return postURL(reply) + "/delete" }, url.Values{"reason": {"rude"}}, s.bob,
+			fmt.Sprintf("post.delete topic=%d post=%d", s.topic, reply), map[string]any{"title": "title", "reason": "rude"}, true},
+		{"restore post", func() string { return postURL(reply) + "/restore" }, url.Values{}, s.bob,
+			fmt.Sprintf("post.restore topic=%d post=%d", s.topic, reply), map[string]any{"title": "title"}, true},
+		{"rename", func() string { return modURL(s.topic, topicRename) }, url.Values{"title": {"renamed"}}, s.alice,
+			fmt.Sprintf("topic.rename topic=%d post=0", s.topic), map[string]any{"title": "renamed", "oldTitle": "title"}, true},
+		{"pin", func() string { return modURL(s.topic, topicPin) }, url.Values{}, s.alice, "", nil, false},
+		{"close", func() string { return modURL(s.topic, topicClose) }, url.Values{"reason": {"done"}}, s.alice,
+			fmt.Sprintf("topic.close topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "done"}, true},
+		{"open", func() string { return modURL(s.topic, topicOpen) }, url.Values{}, s.alice,
+			fmt.Sprintf("topic.open topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true},
+		{"move", func() string { return modURL(s.topic, topicMove) }, url.Values{"section": {fmt.Sprint(other)}}, s.alice,
+			fmt.Sprintf("topic.move topic=%d post=0", s.topic), map[string]any{"title": "renamed", "section": "other"}, true},
+		{"delete topic", func() string { return modURL(s.topic, topicDelete) }, url.Values{"reason": {"gone"}}, s.alice,
+			fmt.Sprintf("topic.delete topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "gone"}, true},
+		{"restore topic", func() string { return modURL(s.topic, topicRestore) }, url.Values{}, s.alice,
+			fmt.Sprintf("topic.restore topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true},
+		{"ban for a week", func() string { return banURL(reply) }, url.Values{"duration": {"7"}, "reason": {"spam"}}, s.bob,
+			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, reply),
+			map[string]any{"title": "renamed", "reason": "spam", "expiresAt": weekLater}, true},
+		{"ban until lifted", func() string { return banURL(reply) }, url.Values{"duration": {"0"}, "reason": {"again"}}, s.bob,
+			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, reply),
+			map[string]any{"title": "renamed", "reason": "again", "expiresAt": nil}, true},
+		{"lift the ban", func() string { return liftURL(lastBan()) }, url.Values{}, s.bob,
+			"user.unban topic=0 post=0", map[string]any{}, true},
+	}
+	for _, step := range steps {
+		before := len(notices(t, s.db, step.user))
+		post(step.target(), step.form)
+		list := notices(t, s.db, step.user)
+		if !step.notifies {
+			if len(list) != before {
+				t.Errorf("%s: %d notifications, want %d", step.name, len(list), before)
+			}
+			continue
+		}
+		if len(list) != before+1 {
+			t.Fatalf("%s: %d notifications, want %d", step.name, len(list), before+1)
+		}
+		n := list[len(list)-1]
+		assert.Equal(t, n.String(), step.want+" count=1 read=false")
+		got, _ := json.Marshal(n.Params)
+		want, _ := json.Marshal(step.params)
+		if string(got) != string(want) {
+			t.Errorf("%s: params %s, want %s", step.name, got, want)
+		}
+	}
 
 	// The moderator's own topic and post: no notification to the moderator.
 	modTopic, _ := mustCreateTopic(t, s.f, s.section, s.mod, "mod's", at(5))
 	modReply := mustReply(t, s.f, modTopic, s.mod, "mod's reply", at(6))
-	post(modURL(modTopic, topicClose), url.Values{})
+	for _, a := range []topicAction{topicRename, topicClose, topicOpen, topicMove, topicDelete, topicRestore} {
+		post(modURL(modTopic, a), url.Values{"title": {"mod's renamed"}, "section": {fmt.Sprint(other)}})
+	}
 	post(postURL(modReply)+"/delete", url.Values{})
 	post(postURL(modReply)+"/restore", url.Values{})
 	assert.Equal(t, len(notices(t, s.db, s.mod)), 0)

@@ -20,7 +20,8 @@ import (
 
 // notificationKind is the code of forum_notifications.kind. Codes are stored: never rename one.
 // A moderator's action on the reader's content goes under the code of the action in the log
-// (notifiedActions).
+// (notifiedActions). The page words a kind by the key forum.notifications.text.<kind>.
+// i18n-keys: forum.notifications.text.*
 type notificationKind string
 
 const (
@@ -32,16 +33,20 @@ const (
 	notifyQuote notificationKind = "quote"
 )
 
-// notifiedActions are the moderators' actions that notify the author of their target
-// (_prd/forum/requirements.md, «Уведомления»). Opening, restoring and renaming a topic and lifting
-// a ban undo or change nothing of the author's own and notify nobody.
+// notifiedActions are the moderators' actions that notify the author of their target: those of
+// the requirements, and opening, restoring and renaming a topic and lifting a ban (the author's
+// answer of 2026-11-19). Pinning a topic and the actions on sections notify nobody.
 var notifiedActions = map[modAction]bool{
-	actionDeletePost:  true,
-	actionRestorePost: true,
-	actionMoveTopic:   true,
-	actionCloseTopic:  true,
-	actionDeleteTopic: true,
-	actionBanUser:     true,
+	actionDeletePost:   true,
+	actionRestorePost:  true,
+	actionRenameTopic:  true,
+	actionMoveTopic:    true,
+	actionCloseTopic:   true,
+	actionOpenTopic:    true,
+	actionDeleteTopic:  true,
+	actionRestoreTopic: true,
+	actionBanUser:      true,
+	actionUnbanUser:    true,
 }
 
 // notificationsKeptFor: a user's read notifications older than this go when they get a new one,
@@ -145,8 +150,9 @@ func quotedPosts(body string) []int {
 
 // notifyOfModeration tells the author of the target of a moderator's action of it, in the
 // transaction of moderate; a moderator's action on their own content notifies nobody. The
-// parameters keep the title of the topic at the time, the moderator's reason, the section a topic
-// went to and the end of a ban.
+// parameters keep the title of the topic at the time (the new one after a rename, with the old),
+// the moderator's reason, the section a topic went to and the end of a ban. Lifting a ban has no
+// topic and no parameters.
 func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 	if !notifiedActions[e.Action] {
 		return nil
@@ -156,29 +162,34 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 	switch e.Action {
 	case actionDeletePost, actionRestorePost:
 		recipient = "p.author_id"
-	case actionBanUser:
+	case actionBanUser, actionUnbanUser:
 		recipient = "u.id"
 	}
 	params := map[string]any{}
 	if e.Reason != "" {
 		params["reason"] = e.Reason
 	}
-	if e.Action == actionBanUser {
+	switch e.Action {
+	case actionBanUser:
 		// null: until lifted.
 		params["expiresAt"] = e.Data["expiresAt"]
+	case actionRenameTopic:
+		params["oldTitle"] = e.Data["title"]
 	}
 	_, err := deliver(ctx, tx, e.At, `
 		INSERT INTO forum_notifications (user_id, kind, topic_id, post_id, params, created_at, updated_at)
 		SELECT `+recipient+`, $1, t.id, p.id,
-		       jsonb_build_object('title', t.title)
+		       jsonb_strip_nulls(jsonb_build_object('title', t.title))
 		       || CASE WHEN $1 = '`+string(actionMoveTopic)+`' THEN jsonb_build_object('section', s.name) ELSE '{}' END
 		       || $5::jsonb,
 		       $6, $6
-		FROM forum_topics t
-		JOIN forum_sections s ON s.id = t.section_id
+		-- Every target may be missing: lifting a ban has only its user.
+		FROM (SELECT) one
+		LEFT JOIN forum_topics t ON t.id = $2
+		LEFT JOIN forum_sections s ON s.id = t.section_id
 		LEFT JOIN forum_posts p ON p.id = $3
 		LEFT JOIN users u ON u.id = $4
-		WHERE t.id = $2 AND `+recipient+` IS NOT NULL AND `+recipient+` <> $7
+		WHERE `+recipient+` IS NOT NULL AND `+recipient+` <> $7
 		RETURNING user_id`,
 		string(e.Action), e.TopicID, e.PostID, e.UserID, params, e.At, e.ModeratorID)
 	return err
