@@ -1,51 +1,77 @@
-<div class="forum">
-    <nav class="forum-breadcrumbs">
-        <a href="/forum/">{{t .Lang "forum.sections.title"}}</a> ›
-        <a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a>
-    </nav>
-    <h2 class="forum-topic-heading">{{.Topic.Title}}</h2>
-    {{with .Topic}}
-    {{if .Pinned}}<span class="forum-label forum-label-pinned">{{t $.Lang "forum.topics.pinned"}}</span>{{end}}
-    {{if .Closed}}<span class="forum-label forum-label-closed">{{t $.Lang "forum.topics.closed"}}</span>{{end}}
-    {{if .Deleted}}<span class="forum-label forum-label-deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
-    {{end}}
+<div id="forum">
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a></nav>
+
+    <div class="forum-head">
+        <div class="forum-head-text">
+            {{with .Topic}}
+            <h2>{{.Title}}
+                {{- if or .Pinned .Closed}}<span class="forum-marks forum-topic-title-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
+                {{- if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}</h2>
+            <div class="forum-topic-meta">
+                <span><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
+                <span>{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
+            </div>
+            {{end}}
+        </div>
+        {{- /* Blocks 5 and 6 put the subscription and the moderation menu on the right, in
+             div.forum-actions (design/decisions.md, 16). */}}
+    </div>
+
     {{template "forum-pagination" .Pagination}}
+
     <div class="forum-posts">
         {{range .Posts}}
-        {{- /* A deleted post keeps its place and anchor; how it looks is block 3. */}}
-        <article class="forum-post{{if .Deleted}} forum-post-deleted{{end}}" id="post-{{.ID}}">
-            {{if .Deleted}}
-            <a class="forum-post-link" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
-            <p class="forum-post-placeholder">{{t $.Lang "forum.posts.deleted"}}</p>
-            {{else}}
-            <header class="forum-post-header">
-                <div class="forum-post-author">
-                    <span class="forum-author">{{.AuthorName}}</span>
-                    <span class="forum-author-posts">{{t $.Lang "forum.posts.authorPosts" "count" .AuthorPosts}}</span>
-                    <span class="forum-author-registered">{{t $.Lang "forum.posts.registered" "date" (humanDay $.Lang .AuthorRegisteredAt $.TimeZone)}}</span>
-                </div>
-                <span class="forum-time">{{humanDate $.Lang .CreatedAt $.TimeZone}}</span>
-                <a class="forum-post-link" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
-            </header>
-            <div class="forum-post-body">{{markdown .Body}}</div>
-            {{end}}
+        {{if .Deleted}}
+        {{- /* One line in the post's place, with its anchor and number (design/decisions.md, 20). */}}
+        <article class="forum-post deleted-stub" id="post-{{.ID}}">
+            <span>{{t $.Lang "forum.posts.deleted"}}</span>
+            <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
+        </article>
+        {{else}}
+        <article class="forum-post{{if .AuthorModerator}} mod{{end}}" id="post-{{.ID}}">
+            <div class="forum-post-author">
+                <span class="name">{{.AuthorName}}</span>
+                <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
+                <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{.AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
+            </div>
+            <div class="forum-post-main">
+                <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span><a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>
+                <div class="forum-post-body">{{markdown .Body}}</div>
+                {{- /* Block 3 adds div.forum-post-actions here, under the text on the right. */}}
+            </div>
         </article>
         {{end}}
+        {{end}}
     </div>
+
     {{template "forum-pagination" .Pagination}}
+
     {{if eq .Pagination.Current .Pagination.Total}}
+    {{if .Topic.Closed}}
+    <div class="forum-notice">{{template "forum-lock-icon"}} {{t .Lang "forum.topics.closedNotice"}}</div>
+    {{end}}
     {{if .Viewer.CanReply .Topic.Topic}}
-    <form class="forum-form forum-reply" id="reply" action="{{.Topic.URL}}/reply" method="POST">
+    {{- /* The reply form looks like a post: the writer on the left (design/decisions.md, 19). */}}
+    <form class="forum-post reply" id="reply" action="{{.Topic.URL}}/reply" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-        <label class="forum-field-label" for="forum-reply-body">{{t .Lang "forum.posts.yourReply"}}</label>
-        {{with .Form.Errors.body}}<span class="forum-field-error error" id="forum-reply-body-error">{{.}}</span>{{end}}
-        <textarea id="forum-reply-body" name="body" rows="8" required
-            {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-reply-body-error"{{end}}>{{.Form.Body}}</textarea>
-        <p class="forum-form-hint">{{t .Lang "forum.posts.markdownHint"}}</p>
-        <button type="submit" class="forum-submit">{{t .Lang "forum.posts.reply"}}</button>
+        <div class="forum-post-author">
+            <span class="name">{{.Viewer.Name}}</span>
+            <span>{{t .Lang "forum.posts.yourReply"}}</span>
+        </div>
+        <div class="forum-post-main forum-form">
+            {{if .Topic.Closed}}<span class="meta">{{t .Lang "forum.posts.closedButModerator"}}</span>{{end}}
+            {{- /* Block 3 puts the Text / Preview tabs over the field. */}}
+            <textarea id="forum-reply-body" name="body" rows="6" required aria-label="{{t .Lang "forum.posts.yourReply"}}"
+                {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-reply-body-error"{{end}}>{{.Form.Body}}</textarea>
+            {{with .Form.Errors.body}}<span class="error field-error" id="forum-reply-body-error">{{.}}</span>{{end}}
+            <div class="forum-form-buttons">
+                <span class="meta left">{{t .Lang "forum.posts.markdownHint"}}</span>
+                <button type="submit" class="f-btn f-primary">{{t .Lang "forum.posts.reply"}}</button>
+            </div>
+        </div>
     </form>
     {{else if .Viewer.SignInToReply .Topic.Topic}}
-    <p class="forum-sign-in"><a href="{{.Topic.URL}}/reply" rel="nofollow">{{t .Lang "forum.posts.signInToReply"}}</a></p>
+    <div class="forum-notice plain forum-sign-in"><a href="{{.Topic.URL}}/reply" rel="nofollow">{{t .Lang "forum.posts.signInToReply"}}</a></div>
     {{end}}
     {{end}}
 </div>

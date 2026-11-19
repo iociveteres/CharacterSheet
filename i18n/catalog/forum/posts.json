@@ -1,11 +1,14 @@
 {
-  "forum.posts.deleted": { "en": "This post was deleted.", "ru": "Сообщение удалено.", "note": "на месте удалённого сообщения в теме" },
-  "forum.posts.authorPosts": { "en": {"one": "{count} post", "other": "{count} posts"}, "ru": {"one": "{count} сообщение", "few": "{count} сообщения", "many": "{count} сообщений"}, "note": "под именем автора: сколько он написал на форуме" },
-  "forum.posts.registered": { "en": "Joined {date}", "ru": "Регистрация: {date}", "note": "под именем автора; date — день регистрации на сайте, «2 января 2026»" },
+  "forum.posts.deleted": { "en": "Post deleted", "ru": "Сообщение удалено", "note": "одна строка на месте удалённого сообщения в теме" },
   "forum.posts.link": { "en": "Link to this post", "ru": "Ссылка на сообщение", "note": "подсказка у номера сообщения #12, который ведёт на само сообщение" },
   "forum.posts.body": { "en": "Message", "ru": "Сообщение", "note": "поле формы новой темы: текст первого сообщения" },
-  "forum.posts.yourReply": { "en": "Your reply", "ru": "Ваш ответ", "note": "подпись поля формы ответа под последней страницей темы" },
+  "forum.posts.yourReply": { "en": "Your reply", "ru": "Ваш ответ", "note": "у формы ответа под последней страницей темы: под именем пишущего и подпись поля" },
   "forum.posts.reply": { "en": "Reply", "ru": "Ответить", "note": "кнопка отправки ответа в тему" },
   "forum.posts.signInToReply": { "en": "Log in to reply", "ru": "Войдите, чтобы ответить", "note": "ссылка на вход для гостя вместо формы ответа" },
-  "forum.posts.markdownHint": { "en": "Markdown: **bold**, *italic*, [link](https://…), > quote, `code`, ||spoiler||", "ru": "Markdown: **жирный**, *курсив*, [ссылка](https://…), > цитата, `код`, ||спойлер||", "note": "подсказка под полем сообщения; разметку оставить как есть, переводить только слова" }
+  "forum.posts.markdownHint": { "en": "Markdown: **bold**, *italic*, [link](https://…), > quote, `code`, ||spoiler||", "ru": "Markdown: **жирный**, *курсив*, [ссылка](https://…), > цитата, `код`, ||спойлер||", "note": "подсказка под полем сообщения; разметку оставить как есть, переводить только слова" },
+  "forum.posts.member": { "en": "Member", "ru": "Участник", "note": "роль под именем автора сообщения" },
+  "forum.posts.moderator": { "en": "Moderator", "ru": "Модератор", "note": "роль под именем автора сообщения; её нельзя получить, назвавшись чужим именем" },
+  "forum.posts.postsLabel": { "en": "Posts:", "ru": "Сообщений:", "note": "в колонке автора, перед числом его сообщений на форуме" },
+  "forum.posts.registeredLabel": { "en": "Joined:", "ru": "Регистрация:", "note": "в колонке автора, перед днём регистрации на сайте, «02.10.2026»" },
+  "forum.posts.closedButModerator": { "en": "The topic is closed, but you are a moderator and can reply.", "ru": "Тема закрыта, но вы модератор и можете ответить.", "note": "над полем ответа в закрытой теме, видит только модератор" }
 }

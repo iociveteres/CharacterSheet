@@ -166,7 +166,7 @@ func TestTopicPage(t *testing.T) {
 	}
 	assert.Equal(t, found(path+"?page=3"), true)
 	body := string(host.page.Body)
-	assert.Equal(t, strings.Count(body, `<article class="forum-post forum-post-deleted"`), 5)
+	assert.Equal(t, strings.Count(body, `<article class="forum-post deleted-stub"`), 5)
 	assert.Equal(t, strings.Contains(body, "reply 44"), false)
 
 	// A deleted topic is a 404 for all but moderators.
@@ -183,11 +183,13 @@ func TestTopicPosts(t *testing.T) {
 	ctx := context.Background()
 	alice := forumtest.User(t, db, "alice", at(-60*24))
 	bob := forumtest.User(t, db, "bob", at(0))
+	moderator := newModerator(t, db, "moderator")
 	section := newSection(t, db, "section")
 
 	topic, first := mustCreateTopic(t, f, section, alice, "topic", at(1))
 	deleted := mustReply(t, f, topic, alice, "deleted reply", at(2))
 	mustReply(t, f, topic, bob, "reply", at(3))
+	mustReply(t, f, topic, moderator, "reply", at(4))
 	deletePost(t, db, deleted)
 	// The posts of a deleted topic are not counted either: nobody but moderators can find them.
 	other, _ := mustCreateTopic(t, f, section, alice, "other", at(4))
@@ -197,7 +199,7 @@ func TestTopicPosts(t *testing.T) {
 
 	posts, err := f.topicPosts(ctx, topic, 1)
 	assert.NilError(t, err)
-	assert.Equal(t, len(posts), 3)
+	assert.Equal(t, len(posts), 4)
 	assert.Equal(t, posts[0].ID, first)
 	assert.Equal(t, posts[0].AuthorName, "alice")
 	assert.Equal(t, posts[0].AuthorRegisteredAt.Equal(at(-60*24)), true)
@@ -205,6 +207,9 @@ func TestTopicPosts(t *testing.T) {
 	assert.Equal(t, posts[1].Deleted(), true)
 	assert.Equal(t, posts[1].Body, "")
 	assert.Equal(t, posts[2].AuthorPosts, 1)
+	// The role comes with the posts, not a query per author.
+	assert.Equal(t, posts[0].AuthorModerator, false)
+	assert.Equal(t, posts[3].AuthorModerator, true)
 	for i, p := range posts {
 		assert.Equal(t, p.Number, i+1)
 	}

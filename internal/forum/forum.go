@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -48,6 +49,8 @@ type Forum struct {
 	host      Host
 	templates *template.Template
 	mux       *http.ServeMux
+	// now is the time the pages count "5 minutes ago" from; tests set it.
+	now func() time.Time
 }
 
 //go:embed templates/*.html
@@ -57,16 +60,15 @@ var templateFiles embed.FS
 func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 	ts, err := template.New("forum").
 		Funcs(template.FuncMap{
-			"t":         i18n.TemplateT,
-			"humanDate": i18n.FormatDate, // the site's name: {{humanDate .Lang .CreatedAt .TimeZone}}
-			"humanDay":  i18n.FormatDay,
-			"markdown":  renderMarkdown,
+			"t":        i18n.TemplateT,
+			"humanDay": i18n.FormatDay,
+			"markdown": renderMarkdown,
 		}).
 		ParseFS(templateFiles, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}
-	f := &Forum{db: db, baseURL: strings.TrimRight(baseURL, "/"), host: host, templates: ts}
+	f := &Forum{db: db, baseURL: strings.TrimRight(baseURL, "/"), host: host, templates: ts, now: time.Now}
 	f.mux = f.routes()
 	return f, nil
 }
@@ -104,6 +106,7 @@ type view struct {
 	TimeZone  *time.Location
 	CSRFToken string
 	Viewer    Viewer
+	Now       time.Time
 }
 
 func (f *Forum) view(r *http.Request) view {
@@ -111,7 +114,20 @@ func (f *Forum) view(r *http.Request) view {
 		Lang:      i18n.FromContext(r.Context()),
 		TimeZone:  util.GetTimeLocation(r),
 		CSRFToken: f.host.CSRFToken(r),
+		Now:       f.now(),
 	}
+}
+
+// Time is a time of the forum as its pages show it: how long ago, the full date on hover
+// (_prd/forum/design/decisions.md, 4). In a template: {{$.Time .CreatedAt}}.
+func (v view) Time(t time.Time) template.HTML {
+	if t.IsZero() {
+		return ""
+	}
+	return template.HTML(fmt.Sprintf(`<time datetime="%s" title="%s">%s</time>`,
+		t.UTC().Format(time.RFC3339),
+		template.HTMLEscapeString(i18n.FormatDate(v.Lang, t, v.TimeZone)),
+		template.HTMLEscapeString(i18n.FormatAgo(v.Lang, t, v.Now, v.TimeZone))))
 }
 
 // render executes the template of the page file name (templates/<name>) into page.Body and

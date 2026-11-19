@@ -27,14 +27,17 @@ func (s Section) URL() string {
 // are not stored (_prd/forum/plan.md, «Данные»).
 type sectionSummary struct {
 	Section
-	// TopicCount and LastPost count only what a guest sees, for moderators too.
+	// TopicCount, PostCount and LastPost count only what a guest sees, for moderators too: posts
+	// that are not deleted in topics that are not deleted.
 	TopicCount int
+	PostCount  int
 	// LastPost is nil while the section has no visible post.
 	LastPost *lastPost
 }
 
 type lastPost struct {
 	PostID     int
+	TopicID    int
 	TopicTitle string
 	AuthorName string
 	At         time.Time
@@ -44,15 +47,21 @@ func (p lastPost) URL() string {
 	return postURL(p.PostID)
 }
 
+func (p lastPost) TopicURL() string {
+	return Topic{ID: p.TopicID}.URL()
+}
+
 // sections reads the sections of the home in one query, whatever the number of topics.
 func (f *Forum) sections(ctx context.Context) ([]sectionSummary, error) {
 	rows, err := f.db.Query(ctx, `
 		SELECT s.id, s.name, s.description, s.position, s.mods_only_topics,
 		       (SELECT count(*) FROM forum_topics t WHERE t.section_id = s.id AND t.deleted_at IS NULL),
-		       l.post_id, l.title, l.author_name, l.at
+		       (SELECT count(*) FROM forum_posts p JOIN forum_topics t ON t.id = p.topic_id
+		        WHERE t.section_id = s.id AND t.deleted_at IS NULL AND p.deleted_at IS NULL),
+		       l.post_id, l.topic_id, l.title, l.author_name, l.at
 		FROM forum_sections s
 		LEFT JOIN LATERAL (
-			SELECT t.last_post_id AS post_id, t.title, u.name AS author_name, t.last_post_at AS at
+			SELECT t.last_post_id AS post_id, t.id AS topic_id, t.title, u.name AS author_name, t.last_post_at AS at
 			FROM forum_topics t
 			JOIN forum_posts p ON p.id = t.last_post_id
 			JOIN users u ON u.id = p.author_id
@@ -66,13 +75,13 @@ func (f *Forum) sections(ctx context.Context) ([]sectionSummary, error) {
 	}
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (sectionSummary, error) {
 		var s sectionSummary
-		var postID *int
+		var postID, topicID *int
 		var title, author *string
 		var at *time.Time
 		err := row.Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics,
-			&s.TopicCount, &postID, &title, &author, &at)
+			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &author, &at)
 		if postID != nil {
-			s.LastPost = &lastPost{PostID: *postID, TopicTitle: *title, AuthorName: *author, At: *at}
+			s.LastPost = &lastPost{PostID: *postID, TopicID: *topicID, TopicTitle: *title, AuthorName: *author, At: *at}
 		}
 		return s, err
 	})
@@ -118,6 +127,28 @@ type topicRow struct {
 	AuthorName string
 	// LastAuthorName is empty when every post of the topic is deleted.
 	LastAuthorName string
+	// PostCount counts the deleted posts too, as the pages of the topic do.
+	PostCount int
+}
+
+// Pages link the pages of a long topic from its row: all of them up to four, else the first and
+// the last two ("1 … 6 7"); none for a topic of one page.
+func (t topicRow) Pages() []pageLink {
+	total := pageCount(t.PostCount, postsPerPage)
+	if total < 2 {
+		return nil
+	}
+	var links []pageLink
+	for n := 1; n <= total; n++ {
+		if total > 4 && n > 1 && n < total-1 {
+			if n == 2 {
+				links = append(links, pageLink{Gap: true})
+			}
+			continue
+		}
+		links = append(links, pageLink{Number: n, URL: pageURL(t.URL(), n)})
+	}
+	return links
 }
 
 func (t topicRow) LastPostURL() string {
@@ -132,7 +163,8 @@ func (t topicRow) LastPostURL() string {
 func (f *Forum) sectionTopics(ctx context.Context, sectionID, page int, v Viewer) ([]topicRow, error) {
 	rows, err := f.db.Query(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
-		       t.reply_count, t.last_post_id, t.last_post_at, a.name, lu.name
+		       t.reply_count, t.last_post_id, t.last_post_at, a.name, lu.name,
+		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id)
 		FROM forum_topics t
 		JOIN users a ON a.id = t.author_id
 		LEFT JOIN forum_posts lp ON lp.id = t.last_post_id
@@ -147,7 +179,7 @@ func (f *Forum) sectionTopics(ctx context.Context, sectionID, page int, v Viewer
 		var t topicRow
 		var lastAuthor *string
 		err := row.Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt,
-			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthor)
+			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthor, &t.PostCount)
 		if lastAuthor != nil {
 			t.LastAuthorName = *lastAuthor
 		}

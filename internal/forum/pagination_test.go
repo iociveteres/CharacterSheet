@@ -53,3 +53,34 @@ func TestPageCount(t *testing.T) {
 		assert.Equal(t, pageCount(tt.items, postsPerPage), tt.want)
 	}
 }
+
+func TestTopicRowPages(t *testing.T) {
+	show := func(posts int) string {
+		var parts []string
+		for _, l := range (topicRow{Topic: Topic{ID: 7}, PostCount: posts}).Pages() {
+			if l.Gap {
+				parts = append(parts, "…")
+			} else {
+				parts = append(parts, fmt.Sprint(l.Number))
+			}
+		}
+		return strings.Join(parts, " ")
+	}
+	tests := []struct {
+		posts int
+		want  string
+	}{
+		{1, ""},
+		{postsPerPage, ""},
+		{postsPerPage + 1, "1 2"},
+		{4 * postsPerPage, "1 2 3 4"},
+		{4*postsPerPage + 1, "1 … 4 5"},
+		{7 * postsPerPage, "1 … 6 7"},
+	}
+	for _, tt := range tests {
+		assert.Equal(t, show(tt.posts), tt.want)
+	}
+	pages := (topicRow{Topic: Topic{ID: 7}, PostCount: 3 * postsPerPage}).Pages()
+	assert.Equal(t, pages[0].URL, "/forum/topic/7")
+	assert.Equal(t, pages[2].URL, "/forum/topic/7?page=3")
+}

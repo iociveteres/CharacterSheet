@@ -133,6 +133,7 @@ func TestSectionTopicsOrder(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, strings.Join(topicTitles(rows), ","), "b,a,d,c")
 	assert.Equal(t, rows[1].ReplyCount, 1)
+	assert.Equal(t, rows[1].PostCount, 2)
 	assert.Equal(t, rows[1].AuthorName, "author")
 	assert.Equal(t, rows[1].LastAuthorName, "author")
 }
@@ -166,14 +167,14 @@ func TestSectionPages(t *testing.T) {
 		}
 	}
 	assert.Equal(t, found(0, path), true)
-	assert.Equal(t, strings.Count(string(host.page.Body), `class="forum-topic"`), 30)
+	assert.Equal(t, strings.Count(string(host.page.Body), `<li class="forum-row`), 30)
 	assert.Equal(t, host.page.Canonical, "https://example.com"+path)
 	assert.Equal(t, found(0, path+"?page=2"), false)
 
 	// The 31st topic pushes the oldest to the second page.
 	mustCreateTopic(t, f, section, author, "topic 31", at(31))
 	assert.Equal(t, found(0, path+"?page=2"), true)
-	assert.Equal(t, strings.Count(string(host.page.Body), `class="forum-topic"`), 1)
+	assert.Equal(t, strings.Count(string(host.page.Body), `<li class="forum-row`), 1)
 	assert.StringContains(t, string(host.page.Body), "topic 01")
 	assert.Equal(t, host.page.Canonical, "https://example.com"+path+"?page=2")
 	assert.Equal(t, found(0, path+"?page=3"), false)
@@ -208,7 +209,8 @@ func TestHomeSectionCounters(t *testing.T) {
 	empty := newSection(t, db, "empty")
 
 	old, _ := mustCreateTopic(t, f, section, alice, "old", at(1))
-	mustCreateTopic(t, f, section, alice, "newer", at(2))
+	newer, _ := mustCreateTopic(t, f, section, alice, "newer", at(2))
+	deletePost(t, db, mustReply(t, f, newer, bob, "deleted reply", at(2)))
 	lastReply := mustReply(t, f, old, bob, "reply", at(3))
 	// Neither a deleted topic nor a topic whose posts are all deleted holds the last post.
 	deleted, _ := mustCreateTopic(t, f, section, alice, "deleted", at(4))
@@ -224,14 +226,18 @@ func TestHomeSectionCounters(t *testing.T) {
 	}
 	got := byID[section]
 	assert.Equal(t, got.TopicCount, 3)
+	// Visible posts of visible topics: two in "old", the first of "newer".
+	assert.Equal(t, got.PostCount, 3)
 	if got.LastPost == nil {
 		t.Fatal("no last post")
 	}
 	assert.Equal(t, got.LastPost.PostID, lastReply)
+	assert.Equal(t, got.LastPost.TopicID, old)
 	assert.Equal(t, got.LastPost.TopicTitle, "old")
 	assert.Equal(t, got.LastPost.AuthorName, "bob")
 	assert.Equal(t, got.LastPost.At.Equal(at(3)), true)
 	assert.Equal(t, byID[empty].TopicCount, 0)
+	assert.Equal(t, byID[empty].PostCount, 0)
 	assert.Equal(t, byID[empty].LastPost == nil, true)
 }
 

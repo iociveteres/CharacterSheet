@@ -45,7 +45,7 @@ func TestForumHomeForGuest(t *testing.T) {
 		assert.StringContains(t, body, `<a href='/forum/'>`)
 
 		// The sections in order of position, the one added above first.
-		items := strings.Split(body, `class="forum-section"`)
+		items := strings.Split(body, `<li class="forum-row`)
 		assert.Equal(t, len(items), 1+6)
 		assert.StringContains(t, items[1], "Tavern &amp; dice")
 		assert.StringContains(t, items[1], "Anything &lt;off topic&gt;")

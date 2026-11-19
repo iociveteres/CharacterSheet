@@ -1,20 +1,26 @@
-<div class="forum">
-    <nav class="forum-breadcrumbs">
-        <a href="/forum/">{{t .Lang "forum.sections.title"}}</a> ›
-        <a href="{{.Section.URL}}">{{.Section.Name}}</a>
-    </nav>
-    <h2 class="forum-topic-heading">{{t .Lang "forum.topics.new"}}</h2>
-    <form class="forum-form" action="{{.Section.URL}}/new" method="POST">
+<div id="forum">
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.topics.new"}}</h2></div></div>
+
+    {{- /* An error goes under its field, the field gets a red frame (design/decisions.md, 17). */}}
+    <form class="forum-form forum-panel" action="{{.Section.URL}}/new" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-        <label class="forum-field-label" for="forum-topic-title">{{t .Lang "forum.topics.title"}}</label>
-        {{with .Form.Errors.title}}<span class="forum-field-error error" id="forum-topic-title-error">{{.}}</span>{{end}}
+        <label class="field-label" for="forum-topic-title">{{t .Lang "forum.topics.title"}}</label>
         <input type="text" id="forum-topic-title" name="title" value="{{.Form.Title}}" required
             {{- with .Form.Errors.title}} aria-invalid="true" aria-describedby="forum-topic-title-error"{{end}}>
-        <label class="forum-field-label" for="forum-topic-body">{{t .Lang "forum.posts.body"}}</label>
-        {{with .Form.Errors.body}}<span class="forum-field-error error" id="forum-topic-body-error">{{.}}</span>{{end}}
+        {{with .Form.Errors.title}}<span class="error field-error" id="forum-topic-title-error">{{.}}</span>{{end}}
+
+        <label class="field-label" for="forum-topic-body">{{t .Lang "forum.posts.body"}}</label>
+        {{- /* Block 3 puts the Text / Preview tabs over the field. */}}
         <textarea id="forum-topic-body" name="body" rows="12" required
             {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-topic-body-error"{{end}}>{{.Form.Body}}</textarea>
-        <p class="forum-form-hint">{{t .Lang "forum.posts.markdownHint"}}</p>
-        <button type="submit" class="forum-submit">{{t .Lang "common.create"}}</button>
+        {{with .Form.Errors.body}}<span class="error field-error" id="forum-topic-body-error">{{.}}</span>{{end}}
+
+        <div class="forum-form-buttons">
+            <span class="meta left">{{t .Lang "forum.posts.markdownHint"}}</span>
+            <a class="f-btn f-secondary" href="{{.Section.URL}}">{{t .Lang "common.cancel"}}</a>
+            <button type="submit" class="f-btn f-primary">{{t .Lang "common.create"}}</button>
+        </div>
     </form>
 </div>

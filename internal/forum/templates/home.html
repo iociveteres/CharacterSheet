@@ -1,20 +1,32 @@
-<div class="forum">
-    <h2>{{t .Lang "forum.sections.title"}}</h2>
-    <ul class="forum-sections">
-        {{range .Sections}}
-        <li class="forum-section">
-            <h3 class="forum-section-name"><a href="{{.URL}}">{{.Name}}</a></h3>
-            {{with .Description}}<p class="forum-section-description">{{.}}</p>{{end}}
-            <div class="forum-section-topics">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}}</div>
-            {{with .LastPost}}
-            <div class="forum-section-last">
-                <span class="forum-last-label">{{t $.Lang "forum.sections.lastPost"}}</span>
-                <a class="forum-last-topic" href="{{.URL}}">{{.TopicTitle}}</a>
-                <span class="forum-author">{{.AuthorName}}</span>
-                <span class="forum-time">{{humanDate $.Lang .At $.TimeZone}}</span>
-            </div>
+<div id="forum">
+    <div class="forum-head">
+        <div class="forum-head-text"><h2>{{t .Lang "forum.sections.title"}}</h2></div>
+        {{- /* Blocks 4–6 put their buttons on the right, in div.forum-actions (design/decisions.md, 12, 15). */}}
+    </div>
+    <div>
+        <div class="forum-list-head forum-sections">
+            <span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>
+        </div>
+        <ul class="forum-list forum-sections">
+            {{range .Sections}}
+            {{- /* The first span is the column of the unread dot (block 4). */}}
+            <li class="forum-row">
+                <span class="unread-dot"></span>
+                <div class="forum-row-main">
+                    <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                    {{with .Description}}<span class="meta">{{.}}</span>{{end}}
+                    <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                </div>
+                <div class="forum-row-last">
+                    {{with .LastPost}}
+                    <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
+                    <span class="by"><span class="forum-author-name">{{.AuthorName}}</span><a href="{{.URL}}">{{$.Time .At}}</a></span>
+                    {{else}}
+                    <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
+                    {{end}}
+                </div>
+            </li>
             {{end}}
-        </li>
-        {{end}}
-    </ul>
+        </ul>
+    </div>
 </div>

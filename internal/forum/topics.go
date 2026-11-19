@@ -116,7 +116,8 @@ func insertPost(ctx context.Context, tx pgx.Tx, topicID, authorID int, body stri
 // topicPage is a topic as its page shows it.
 type topicPage struct {
 	Topic
-	Section Section
+	AuthorName string
+	Section    Section
 	// PostCount counts the deleted posts too: they keep their place and pages.
 	PostCount int
 	// FirstPost is the beginning of the first post for the page description, empty when it is
@@ -131,12 +132,13 @@ func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 	var first *string
 	err := f.db.QueryRow(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
-		       t.reply_count, t.last_post_id, t.last_post_at,
+		       t.reply_count, t.last_post_id, t.last_post_at, a.name,
 		       s.id, s.name, s.description, s.position, s.mods_only_topics,
 		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
 		       fp.body
 		FROM forum_topics t
 		JOIN forum_sections s ON s.id = t.section_id
+		JOIN users a ON a.id = t.author_id
 		LEFT JOIN LATERAL (
 			-- Enough of the text for a description; a cut in the middle of the Markdown only
 			-- costs its tail.
@@ -145,7 +147,7 @@ func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 		) fp ON true
 		WHERE t.id = $1`, id).
 		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
-			&t.ReplyCount, &t.LastPostID, &t.LastPostAt,
+			&t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName,
 			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
 			&t.PostCount, &first)
 	if first != nil {
@@ -170,6 +172,9 @@ type post struct {
 	// AuthorPosts counts the visible posts of the author in topics that are not deleted: what a
 	// guest can find.
 	AuthorPosts int
+	// AuthorModerator shows the moderator's role, which a name cannot fake (_prd/forum/plan.md,
+	// amendment 6).
+	AuthorModerator bool
 }
 
 func (p post) Deleted() bool {
@@ -200,7 +205,8 @@ func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, erro
 			GROUP BY p.author_id
 		)
 		SELECT page.id, page.author_id, page.body, page.created_at, page.edited_at, page.deleted_at,
-		       u.name, u.created_at, COALESCE(c.n, 0)
+		       u.name, u.created_at, COALESCE(c.n, 0),
+		       EXISTS (SELECT 1 FROM forum_moderators m WHERE m.user_id = page.author_id)
 		FROM page
 		JOIN users u ON u.id = page.author_id
 		LEFT JOIN counts c ON c.author_id = page.author_id
@@ -211,7 +217,7 @@ func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, erro
 	posts, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (post, error) {
 		var p post
 		err := row.Scan(&p.ID, &p.AuthorID, &p.Body, &p.CreatedAt, &p.EditedAt, &p.DeletedAt,
-			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts)
+			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts, &p.AuthorModerator)
 		return p, err
 	})
 	for i := range posts {

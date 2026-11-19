@@ -2,10 +2,13 @@ package forum
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/assert"
 	"charactersheet.iociveteres.net/internal/forum/forumtest"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -83,4 +86,20 @@ func deleteTopic(t *testing.T, db *pgxpool.Pool, topicID int) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// A time is shown as how long ago, counted from the forum's now, with the full date on hover.
+func TestViewTime(t *testing.T) {
+	v := view{Lang: "en", TimeZone: time.UTC, Now: at(90)}
+	got := string(v.Time(at(0)))
+	if !strings.HasPrefix(got, `<time datetime="2026-02-01T00:00:00Z" title="`+i18n.FormatDate("en", at(0), time.UTC)+`">`) {
+		t.Errorf("Time = %s", got)
+	}
+	// Ninety minutes ago is not the full date; a year ago is.
+	if strings.Contains(got, ">"+i18n.FormatDate("en", at(0), time.UTC)+"<") {
+		t.Errorf("Time = %s", got)
+	}
+	v.Now = at(0).AddDate(1, 0, 1)
+	assert.StringContains(t, string(v.Time(at(0))), ">"+i18n.FormatDate("en", at(0), time.UTC)+"</time>")
+	assert.Equal(t, string(v.Time(time.Time{})), "")
 }

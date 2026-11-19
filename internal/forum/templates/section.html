@@ -1,36 +1,57 @@
-<div class="forum">
+<div id="forum">
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
-    <h2 class="forum-section-title">{{.Section.Name}}</h2>
-    {{with .Section.Description}}<p class="forum-section-description">{{.}}</p>{{end}}
-    {{if .Viewer.CanStartTopic .Section}}
-    <p class="forum-actions"><a class="forum-new-topic" href="{{.Section.URL}}/new">{{t .Lang "forum.topics.new"}}</a></p>
-    {{else if .Viewer.SignInToStartTopic .Section}}
-    <p class="forum-actions forum-sign-in"><a href="{{.Section.URL}}/new" rel="nofollow">{{t .Lang "forum.topics.signInToStart"}}</a></p>
-    {{end}}
-    {{template "forum-pagination" .Pagination}}
-    {{if .Topics}}
-    <ol class="forum-topics">
-        {{range .Topics}}
-        <li class="forum-topic{{if .Pinned}} forum-topic-pinned{{end}}{{if .Deleted}} forum-topic-deleted{{end}}">
-            <div class="forum-topic-main">
-                <a class="forum-topic-title" href="{{.URL}}">{{.Title}}</a>
-                {{if .Pinned}}<span class="forum-label forum-label-pinned">{{t $.Lang "forum.topics.pinned"}}</span>{{end}}
-                {{if .Closed}}<span class="forum-label forum-label-closed">{{t $.Lang "forum.topics.closed"}}</span>{{end}}
-                {{if .Deleted}}<span class="forum-label forum-label-deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
-                <div class="forum-topic-author forum-author">{{.AuthorName}}</div>
-            </div>
-            <div class="forum-topic-replies">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</div>
-            {{if .LastPostID}}
-            <div class="forum-topic-last">
-                <span class="forum-author">{{.LastAuthorName}}</span>
-                <a class="forum-time" href="{{.LastPostURL}}">{{humanDate $.Lang .LastPostAt $.TimeZone}}</a>
-            </div>
+
+    <div class="forum-head">
+        <div class="forum-head-text">
+            <h2>{{.Section.Name}}</h2>
+            {{with .Section.Description}}<span class="forum-description">{{.}}</span>{{end}}
+        </div>
+    </div>
+
+    <div class="forum-toolbar">
+        {{template "forum-pagination" .Pagination}}
+        {{- /* Block 4 adds «Mark as read» before the new topic button. */}}
+        <div class="forum-actions">
+            {{if .Viewer.CanStartTopic .Section}}
+            <a class="f-btn f-primary forum-new-topic" href="{{.Section.URL}}/new">+ {{t .Lang "forum.topics.new"}}</a>
+            {{else if .Viewer.SignInToStartTopic .Section}}
+            <a class="f-btn f-secondary forum-sign-in" href="{{.Section.URL}}/new" rel="nofollow">{{t .Lang "forum.topics.signInToStart"}}</a>
             {{end}}
-        </li>
-        {{end}}
-    </ol>
+        </div>
+    </div>
+
+    {{if .Topics}}
+    <div>
+        <div class="forum-list-head forum-topics">
+            <span></span><span>{{t .Lang "forum.topics.topic"}}</span><span class="forum-col-count">{{t .Lang "forum.topics.replies"}}</span><span class="forum-col-last">{{t .Lang "forum.sections.lastPost"}}</span>
+        </div>
+        <ol class="forum-list forum-topics">
+            {{range .Topics}}
+            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}">
+                <span class="unread-dot"></span>
+                <div class="forum-row-main">
+                    <div>
+                        <a class="forum-row-title" href="{{.URL}}">{{.Title}}</a>
+                        {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
+                        {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                        {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}
+                    </div>
+                    <span class="meta"><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
+                </div>
+                {{- /* The column head names the number; on a phone, where the head is hidden, the words. */}}
+                <div class="forum-row-count"><span class="forum-count-number">{{.ReplyCount}}</span><span class="forum-count-words">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span></div>
+                <div class="forum-row-last">
+                    {{if .LastPostID}}<span class="by"><span class="forum-author-name">{{.LastAuthorName}}</span><a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
+                </div>
+            </li>
+            {{end}}
+        </ol>
+    </div>
     {{else}}
-    <p class="forum-empty">{{t .Lang "forum.topics.empty"}}</p>
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.topics.empty"}}</p></div>
     {{end}}
-    {{template "forum-pagination" .Pagination}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
 </div>
