@@ -25,3 +25,18 @@ func FormatDate(lang string, t time.Time, loc *time.Location) string {
 	}
 	return t.Format("02 Jan 2006 at 15:04")
 }
+
+// FormatDay is FormatDate without the time, "17 Mar 2022" or "17 марта 2022".
+func FormatDay(lang string, t time.Time, loc *time.Location) string {
+	if t.IsZero() {
+		return ""
+	}
+	if loc == nil {
+		loc = time.UTC
+	}
+	t = t.In(loc)
+	if lang == "ru" {
+		return fmt.Sprintf("%d %s %d", t.Day(), ruMonths[t.Month()-1], t.Year())
+	}
+	return t.Format("02 Jan 2006")
+}
