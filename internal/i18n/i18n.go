@@ -104,9 +104,42 @@ func translate(c map[string]map[string]message, lang, key string, params ...Para
 		}
 	}
 	for name, v := range p {
-		text = strings.ReplaceAll(text, "{"+name+"}", fmt.Sprint(v))
+		value := fmt.Sprint(v)
+		// Only count is a quantity for sure; a year, an id or "#1024" in another param stays as is.
+		if rv := reflect.ValueOf(v); name == "count" && (rv.CanInt() || rv.CanUint()) {
+			value = groupDigits(value)
+		}
+		text = strings.ReplaceAll(text, "{"+name+"}", value)
 	}
 	return text
+}
+
+// FormatCount writes a quantity as the param count of T does: from 1000 on, its thousands are
+// set apart by a narrow no-break space (U+202F), "1 024", in every language. For a number shown
+// without T, as "Posts: 1 024".
+func FormatCount(n int) string {
+	return groupDigits(strconv.Itoa(n))
+}
+
+// groupDigits sets the thousands of a decimal integer apart; ui/static/js/i18n formatCount does
+// the same on the client.
+func groupDigits(s string) string {
+	sign := ""
+	if strings.HasPrefix(s, "-") {
+		sign, s = "-", s[1:]
+	}
+	if len(s) < 4 {
+		return sign + s
+	}
+	var b strings.Builder
+	b.WriteString(sign)
+	for i, d := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			b.WriteRune('\u202f')
+		}
+		b.WriteRune(d)
+	}
+	return b.String()
 }
 
 // TemplateT is "t" in the html templates of the site and of the forum: {{t .Lang "site.nav.rooms"}},

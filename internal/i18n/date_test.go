@@ -14,7 +14,7 @@ func TestFormatDay(t *testing.T) {
 		loc  *time.Location
 		want string
 	}{
-		{name: "en", lang: "en", tm: time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC), want: "3/17/2022"},
+		{name: "en", lang: "en", tm: time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC), want: "17 Mar 2022"},
 		{name: "ru", lang: "ru", tm: time.Date(2026, 1, 2, 9, 5, 0, 0, time.UTC), want: "02.01.2026"},
 		{name: "in the viewer's zone", lang: "ru", tm: time.Date(2025, 12, 31, 23, 30, 0, 0, time.UTC), loc: cet, want: "01.01.2026"},
 		{name: "empty", lang: "en", tm: time.Time{}, want: ""},

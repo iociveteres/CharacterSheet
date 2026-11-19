@@ -240,7 +240,8 @@ function clearHue(opts = {}) {
 
     function formatCount(n) {
         const text = n <= 0 ? forms.zero : (forms[plural.select(n)] ?? forms.other);
-        return text?.replace('{count}', String(n));
+        // Thousands apart by a narrow no-break space, as i18n.FormatCount and t() write a count.
+        return text?.replace('{count}', String(n).replace(/\B(?=(\d{3})+$)/g, '\u202f'));
     }
 
     async function updateCount() {

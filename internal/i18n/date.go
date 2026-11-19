@@ -26,7 +26,7 @@ func FormatDate(lang string, t time.Time, loc *time.Location) string {
 	return t.Format("02 Jan 2006 at 15:04")
 }
 
-// FormatDay is the day of t in digits, as a locale writes it: "10/2/2026" or "02.10.2026".
+// FormatDay is the day of t, "02 Oct 2026" as the site's dates in English, "02.10.2026" in Russian.
 func FormatDay(lang string, t time.Time, loc *time.Location) string {
 	if t.IsZero() {
 		return ""
@@ -38,7 +38,7 @@ func FormatDay(lang string, t time.Time, loc *time.Location) string {
 	if lang == "ru" {
 		return t.Format("02.01.2006")
 	}
-	return t.Format("1/2/2006")
+	return t.Format("02 Jan 2006")
 }
 
 // FormatAgo is how long before now t was, "5 minutes ago" or "2 месяца назад"; from a year back

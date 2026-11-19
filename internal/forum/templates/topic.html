@@ -32,7 +32,7 @@
             <div class="forum-post-author">
                 <span class="name">{{.AuthorName}}</span>
                 <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
-                <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{.AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
+                <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
             </div>
             <div class="forum-post-main">
                 <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span><a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>

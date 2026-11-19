@@ -511,7 +511,7 @@ main.forum-wide {
     color: var(--accent);
 }
 
-/* Label and value pairs: "Posts: 1024", "Joined: 10/2/2026". */
+/* Label and value pairs: "Posts: 1 024", "Joined: 02 Oct 2026". */
 .forum-post-author .facts {
     display: grid;
     grid-template-columns: auto auto;

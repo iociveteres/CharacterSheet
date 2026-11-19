@@ -62,6 +62,7 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 		Funcs(template.FuncMap{
 			"t":        i18n.TemplateT,
 			"humanDay": i18n.FormatDay,
+			"count":    i18n.FormatCount, // a number without t: {{count .AuthorPosts}}
 			"markdown": renderMarkdown,
 		}).
 		ParseFS(templateFiles, "templates/*.html")
