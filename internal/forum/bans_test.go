@@ -320,7 +320,7 @@ func fillPattern(t *testing.T, pattern string, values map[string]string) (method
 func forumState(t *testing.T, db *pgxpool.Pool) string {
 	t.Helper()
 	var state []string
-	for _, table := range []string{"forum_sections", "forum_moderators", "forum_topics", "forum_posts", "forum_bans", "forum_mod_log"} {
+	for _, table := range []string{"forum_sections", "forum_moderators", "forum_topics", "forum_posts", "forum_bans", "forum_mod_log", "forum_subscriptions", "forum_notifications"} {
 		var s string
 		err := db.QueryRow(context.Background(),
 			`SELECT COALESCE(string_agg(x::text, ',' ORDER BY x::text), '') FROM `+table+` x`).Scan(&s)

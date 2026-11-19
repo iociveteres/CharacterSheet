@@ -70,7 +70,8 @@ func postURL(id int) string {
 }
 
 // createTopic opens a topic with its first post at the given time, in one transaction with the
-// recount and the author's read mark. The caller checks the rights and the lengths.
+// recount, the author's read mark and their subscription (decision 11 of the plan). The caller
+// checks the rights and the lengths.
 func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title, body string, at time.Time) (topicID, postID int, err error) {
 	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
 		err := tx.QueryRow(ctx, `
@@ -85,6 +86,9 @@ func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title,
 		if err := recountTopic(ctx, tx, topicID); err != nil {
 			return err
 		}
+		if err := subscribe(ctx, tx, authorID, topicID, at); err != nil {
+			return err
+		}
 		return readTopicUpTo(ctx, tx, authorID, topicID, postID)
 	})
 	if err != nil {
@@ -93,8 +97,9 @@ func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title,
 	return topicID, postID, nil
 }
 
-// reply adds a post to the topic at the given time, in one transaction with the recount and the
-// author's read mark. The caller checks the rights (CanReply) and the length.
+// reply adds a post to the topic at the given time, in one transaction with the recount, the
+// author's read mark and the notifications of the post. A reply does not subscribe its author
+// (decision 11 of the plan). The caller checks the rights (CanReply) and the length.
 func (f *Forum) reply(ctx context.Context, topicID, authorID int, body string, at time.Time) (postID int, err error) {
 	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
 		if postID, err = insertPost(ctx, tx, topicID, authorID, body, at); err != nil {
@@ -104,7 +109,10 @@ func (f *Forum) reply(ctx context.Context, topicID, authorID int, body string, a
 			return err
 		}
 		// The author has read up to their post: their own reply never makes the topic unread.
-		return readTopicUpTo(ctx, tx, authorID, topicID, postID)
+		if err := readTopicUpTo(ctx, tx, authorID, topicID, postID); err != nil {
+			return err
+		}
+		return notifyOfReply(ctx, tx, topicID, postID, authorID, body, at)
 	})
 	if err != nil {
 		return 0, err
@@ -134,11 +142,14 @@ type topicPage struct {
 	// stands.
 	DeletedByName string
 	DeleteReason  string
+	// Subscribed: the viewer gets the replies of the topic (block 6).
+	Subscribed bool
 }
 
-// loadTopic reads the topic with its section in one query; pgx.ErrNoRows for a topic that does not
-// exist. Whether the viewer may read it is the caller's question (CanReadTopic).
-func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
+// loadTopic reads the topic with its section and whether the viewer (0: a guest) is subscribed to
+// it in one query; pgx.ErrNoRows for a topic that does not exist. Whether the viewer may read it is
+// the caller's question (CanReadTopic).
+func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, error) {
 	var t topicPage
 	var first, deletedBy, reason *string
 	err := f.db.QueryRow(ctx, `
@@ -149,7 +160,8 @@ func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 		       fp.body, d.name,
 		       (SELECT l.reason FROM forum_mod_log l
 		        WHERE t.deleted_at IS NOT NULL AND l.topic_id = t.id AND l.action = $2
-		        ORDER BY l.id DESC LIMIT 1)
+		        ORDER BY l.id DESC LIMIT 1),
+		       EXISTS (SELECT 1 FROM forum_subscriptions sub WHERE sub.user_id = $3 AND sub.topic_id = t.id)
 		FROM forum_topics t
 		JOIN forum_sections s ON s.id = t.section_id
 		JOIN users a ON a.id = t.author_id
@@ -160,11 +172,11 @@ func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 			SELECT CASE WHEN p.deleted_at IS NULL THEN left(p.body, 2000) END AS body
 			FROM forum_posts p WHERE p.topic_id = t.id ORDER BY p.id LIMIT 1
 		) fp ON true
-		WHERE t.id = $1`, id, string(actionDeleteTopic)).
+		WHERE t.id = $1`, id, string(actionDeleteTopic), viewerID).
 		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
 			&t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName,
 			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
-			&t.PostCount, &first, &deletedBy, &reason)
+			&t.PostCount, &first, &deletedBy, &reason, &t.Subscribed)
 	if first != nil {
 		t.FirstPost = *first
 	}
@@ -290,7 +302,7 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	t, err := f.loadTopic(r.Context(), id)
+	t, err := f.loadTopic(r.Context(), id, v.Viewer.ID)
 	if errors.Is(err, pgx.ErrNoRows) || err == nil && !v.Viewer.CanReadTopic(t.Topic) {
 		f.host.NotFound(w, r)
 		return

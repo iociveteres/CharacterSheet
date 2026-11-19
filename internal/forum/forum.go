@@ -4,7 +4,6 @@ package forum
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -84,11 +83,6 @@ func (f *Forum) Handler() http.Handler {
 	return f.mux
 }
 
-// UnreadNotifications is the counter next to the forum link of the site nav.
-func (f *Forum) UnreadNotifications(ctx context.Context, userID int) (int, error) {
-	return 0, nil
-}
-
 // routeMux is a ServeMux that remembers its patterns: ServeMux does not list them, and the test of
 // bans goes through every address that writes (bans_test.go).
 type routeMux struct {
@@ -122,6 +116,8 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/topic/{id}/unread", f.withView(f.firstUnread))
 	mux.HandleFunc("POST /forum/read", f.withView(f.markAllRead))
 	mux.HandleFunc("POST /forum/section/{id}/read", f.withView(f.markSectionRead))
+	mux.HandleFunc("POST /forum/topic/{id}/subscribe", f.withView(f.subscription(true)))
+	mux.HandleFunc("POST /forum/topic/{id}/unsubscribe", f.withView(f.subscription(false)))
 	mux.HandleFunc("GET /forum/topic/{id}/mod/{action}", f.withView(f.moderateTopic))
 	mux.HandleFunc("POST /forum/topic/{id}/mod/{action}", f.withView(f.moderateTopic))
 	mux.HandleFunc("GET /forum/mod/sections", f.withView(f.sectionsPage))

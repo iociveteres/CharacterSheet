@@ -41,7 +41,7 @@ func (f *Forum) loadPost(ctx context.Context, id int, v Viewer) (postTarget, err
 	if err != nil {
 		return postTarget{}, err
 	}
-	p.Topic, err = f.loadTopic(ctx, topicID)
+	p.Topic, err = f.loadTopic(ctx, topicID, v.ID)
 	return p, err
 }
 

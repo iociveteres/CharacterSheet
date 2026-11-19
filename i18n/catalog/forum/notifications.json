@@ -1,0 +1,5 @@
+{
+  "forum.notifications.subscribe": { "en": "Subscribe", "ru": "Подписаться", "note": "кнопка в шапке темы: получать уведомления о новых ответах в ней" },
+  "forum.notifications.subscribed": { "en": "Subscribed", "ru": "Вы подписаны", "note": "та же кнопка, когда подписка включена (перед текстом стоит ✓); нажатие отписывает" },
+  "forum.notifications.subscribeHint": { "en": "Notify me of new replies", "ru": "Уведомлять о новых ответах", "note": "подсказка при наведении на кнопку подписки на тему" }
+}

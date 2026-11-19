@@ -13,10 +13,20 @@
             </div>
             {{end}}
         </div>
-        {{- /* The subscription (block 6) goes before the moderation menu (design/decisions.md, 16). */}}
-        {{- if .Viewer.CanModerate}}
+        {{- $subscribe := .Viewer.CanSubscribe .Topic.Topic}}
+        {{- if or $subscribe .Viewer.CanModerate}}
         <div class="forum-actions">
-            {{- template "forum-topic-mod-menu" .}}
+            {{- /* A toggle before the moderation menu: filled while on (design/decisions.md, 16). */}}
+            {{- if $subscribe}}
+            <form action="{{.Topic.URL}}/{{if .Topic.Subscribed}}unsubscribe{{else}}subscribe{{end}}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="page" value="{{.Pagination.Current}}">
+                <button type="submit" class="f-btn f-secondary forum-subscribe{{if .Topic.Subscribed}} on{{end}}" aria-pressed="{{.Topic.Subscribed}}" title="{{t .Lang "forum.notifications.subscribeHint"}}">
+                    {{- if .Topic.Subscribed}}✓ {{t .Lang "forum.notifications.subscribed"}}{{else}}{{t .Lang "forum.notifications.subscribe"}}{{end -}}
+                </button>
+            </form>
+            {{- end}}
+            {{- if .Viewer.CanModerate}}{{template "forum-topic-mod-menu" .}}{{end}}
         </div>
         {{- end}}
     </div>

@@ -194,6 +194,17 @@ main.forum-wide {
     background: var(--button-bg-subtle-hover);
 }
 
+/* A toggle that is on, as the subscription to a topic (design/decisions.md, 16): filled. */
+#forum .f-secondary.on {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+    border-color: var(--button-border);
+}
+
+#forum .f-secondary.on:hover {
+    background: var(--button-bg-hover);
+}
+
 /* Delete looks secondary and reddens on hover (DESIGN.md, «Buttons by role»). */
 #forum .f-secondary.danger:hover {
     color: var(--accent-attention);

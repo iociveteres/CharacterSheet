@@ -60,9 +60,9 @@ var errNoChange = errors.New("forum: nothing to change")
 
 var errNotModerator = errors.New("forum: not a moderator")
 
-// moderate is the one way of every moderator action: the change, its line in the log and (block 6)
-// the notification of whom it concerns, in one transaction. A new action is a modAction and a
-// modChange; this function stays as it is. The handler has asked rights.go already; moderate only
+// moderate is the one way of every moderator action: the change, its line in the log and the
+// notification of whom it concerns (notifyOfModeration), in one transaction. A new action is a
+// modAction and a modChange; this function stays as it is. The handler has asked rights.go already; moderate only
 // refuses a viewer who is not a moderator at all.
 func (f *Forum) moderate(ctx context.Context, by Viewer, at time.Time, e modEntry, change modChange) error {
 	if !by.Moderator {
@@ -85,8 +85,7 @@ func (f *Forum) moderate(ctx context.Context, by Viewer, at time.Time, e modEntr
 		if err != nil {
 			return err
 		}
-		// Block 6: the notification of whom the action concerns goes here, with tx and e.
-		return nil
+		return notifyOfModeration(ctx, tx, e)
 	})
 	if errors.Is(err, errNoChange) {
 		return nil

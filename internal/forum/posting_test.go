@@ -275,7 +275,7 @@ func TestFormsOffered(t *testing.T) {
 		mustReply(t, f, long, alice, "reply", at(i))
 	}
 
-	const newTopicLink, replyForm = `forum-new-topic"`, `action="/forum/topic/`
+	const newTopicLink, replyForm = `forum-new-topic"`, `/reply#reply" method="POST"`
 	tests := []struct {
 		name         string
 		viewer       int

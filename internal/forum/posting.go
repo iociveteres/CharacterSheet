@@ -274,7 +274,7 @@ func (f *Forum) topicForReply(w http.ResponseWriter, r *http.Request, v view) (t
 		f.host.RedirectToLogin(w, r)
 		return topicPage{}, false
 	}
-	t, err := f.loadTopic(r.Context(), id)
+	t, err := f.loadTopic(r.Context(), id, v.Viewer.ID)
 	if errors.Is(err, pgx.ErrNoRows) || err == nil && !v.Viewer.CanReadTopic(t.Topic) {
 		f.host.NotFound(w, r)
 		return topicPage{}, false

@@ -172,7 +172,7 @@ func (f *Forum) moderateTopic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.RedirectToLogin(w, r)
 		return
 	}
-	t, err := f.loadTopic(r.Context(), id)
+	t, err := f.loadTopic(r.Context(), id, v.Viewer.ID)
 	if errors.Is(err, pgx.ErrNoRows) || err == nil && !v.Viewer.CanReadTopic(t.Topic) {
 		f.host.NotFound(w, r)
 		return
