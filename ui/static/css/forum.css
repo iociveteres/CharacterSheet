@@ -1,12 +1,39 @@
 /* Forum pages (internal/forum/templates), linked only by them. The site header and nav at phone
-   width are in main.css: they belong to the site. */
+   width are in main.css: they belong to the site. Backgrounds by level as in DESIGN.md: the page
+   is bg, a topic or a post is bg-item, what is nested in a post bg-item2, deeper bg-item3. */
 
 .forum {
     overflow-wrap: anywhere;
 }
 
+/* main.css styles every nav as the site nav, and main.js marks the first nav link to the current
+   path as live: the breadcrumbs and the pagination are navs too (page 1 of a topic links to the
+   topic's own path). */
+.forum nav {
+    display: block;
+    justify-content: flex-start;
+    height: auto;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.forum nav a.live {
+    color: var(--link);
+    cursor: pointer;
+}
+
+.forum nav a.live:hover {
+    text-decoration: underline;
+}
+
+.forum nav a.live:after {
+    display: none;
+}
+
 /* main.css gives every ul a disc and an indent. */
-.forum-sections {
+.forum-sections,
+.forum-topics {
     list-style: none;
     padding: 0;
     display: flex;
@@ -14,17 +41,430 @@
     gap: 8px;
 }
 
-.forum-section {
+.forum-section,
+.forum-topic,
+.forum-post,
+.forum-form {
     background: var(--bg-item);
     border: 1px solid var(--border-light);
     border-radius: 4px;
+}
+
+.forum-section {
     padding: 10px 14px;
 }
 
 .forum-section-name {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .forum-section-description {
     color: var(--text-secondary);
+}
+
+.forum-section-topics,
+.forum-section-last,
+.forum-author-posts,
+.forum-author-registered,
+.forum-time,
+.forum-topic-author,
+.forum-topic-replies,
+.forum-topic-last,
+.forum-breadcrumbs,
+.forum-form-hint {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+.forum-section-last {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 8px;
+}
+
+.forum-breadcrumbs {
+    margin-bottom: 6px;
+}
+
+/* main.css: h2 is 22px with 20px below; the labels and actions sit under it. */
+.forum-section-title,
+.forum-topic-heading {
+    margin-bottom: 8px;
+}
+
+.forum-section-title + .forum-section-description {
+    margin-top: -4px;
+    margin-bottom: 8px;
+}
+
+.forum-empty {
+    color: var(--text-secondary);
+    margin: 16px 0;
+}
+
+/* Labels */
+
+.forum-label {
+    display: inline-block;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 0 6px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text-secondary);
+    vertical-align: 2px;
+    white-space: nowrap;
+}
+
+.forum-label-pinned {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.forum-label-closed {
+    border-color: var(--accent-notice);
+    color: var(--accent-notice);
+}
+
+.forum-label-deleted {
+    border-color: var(--accent-attention);
+    color: var(--accent-attention);
+}
+
+/* Topics of a section */
+
+.forum-topic {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 13em);
+    align-items: center;
+    column-gap: 16px;
+    padding: 8px 12px;
+}
+
+.forum-topic-title {
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+.forum-topic-replies {
+    white-space: nowrap;
+}
+
+.forum-topic-last {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+
+.forum-topic-deleted {
+    opacity: 0.65;
+}
+
+/* Pagination */
+
+.forum nav.forum-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0;
+}
+
+.forum-page {
+    min-width: 2em;
+    padding: 0 8px;
+    text-align: center;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    background: var(--button-bg-subtle);
+    color: var(--text);
+}
+
+.forum nav a.forum-page {
+    color: var(--text);
+}
+
+.forum nav a.forum-page:hover {
+    background: var(--button-bg-subtle-hover);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.forum-page-current {
+    background: var(--button-bg);
+    border-color: var(--button-bg);
+    color: var(--text-on-color);
+    font-weight: 700;
+}
+
+.forum-page-gap {
+    color: var(--text-secondary);
+    padding: 0 2px;
+}
+
+/* Posts */
+
+.forum-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.forum-post-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 12px;
+    padding: 6px 12px;
+    background: var(--bg-item2);
+    border-bottom: 1px solid var(--border-light);
+    border-radius: 4px 4px 0 0;
+}
+
+.forum-post-author {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.forum-post-author .forum-author {
+    font-weight: 700;
+}
+
+/* At the right edge also when the time wraps under the author on a phone. */
+.forum-post-link {
+    margin-left: auto;
+    color: var(--text-secondary);
+}
+
+.forum-post-deleted {
+    display: flex;
+    gap: 12px;
+    padding: 6px 12px;
+}
+
+.forum-post-placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* The Markdown of a post (internal/forum/markdown.go). The reset in main.css takes every margin
+   away, so the blocks get theirs back here. */
+
+.forum-post-body {
+    padding: 10px 12px;
+}
+
+.forum-post-body > * + *,
+.forum-post-body li > * + *,
+.forum-post-body blockquote > * + * {
+    margin-top: 0.6em;
+}
+
+/* Headings stay below the topic heading (h2 of main.css, 22px). */
+.forum-post-body h1,
+.forum-post-body h2,
+.forum-post-body h3,
+.forum-post-body h4,
+.forum-post-body h5,
+.forum-post-body h6 {
+    font-size: 18px;
+    margin-bottom: 0;
+}
+
+.forum-post-body h1 {
+    font-size: 21px;
+}
+
+.forum-post-body h2 {
+    font-size: 20px;
+}
+
+.forum-post-body h3 {
+    font-size: 19px;
+}
+
+.forum-post-body ul,
+.forum-post-body ol {
+    padding-left: 1.6em;
+}
+
+.forum-post-body ol {
+    list-style-type: decimal;
+}
+
+.forum-post-body li ul {
+    list-style-type: circle;
+}
+
+.forum-post-body blockquote {
+    padding: 4px 10px;
+    border-left: 3px solid var(--border-dark);
+    background: var(--bg-item2);
+    border-radius: 0 3px 3px 0;
+}
+
+/* The site font is monospace already; the browser's own for code would differ in face and size. */
+.forum-post-body code,
+.forum-post-body pre {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.forum-post-body code {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--bg-item2);
+}
+
+.forum-post-body blockquote code {
+    background: var(--bg-item3);
+}
+
+/* A long line of code scrolls inside its block, not the page. */
+.forum-post-body pre {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--bg-item2);
+    overflow-x: auto;
+    overflow-wrap: normal;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-dark) transparent;
+}
+
+.forum-post-body pre code {
+    padding: 0;
+    background: none;
+}
+
+.forum-post-body hr {
+    border: none;
+    border-top: 1px solid var(--border-medium);
+}
+
+/* ||spoiler||: a bar until hovered or focused; it has tabindex, so a tap on a phone focuses it
+   and a tap elsewhere hides it again. While hidden, a link inside takes no tap: the first tap
+   opens the spoiler instead of following an unseen link. */
+.forum-post-body .spoiler {
+    background: var(--border-dark);
+    color: transparent;
+    border-radius: 3px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.forum-post-body .spoiler:not(:hover):not(:focus-within) * {
+    color: transparent;
+    background: transparent;
+    text-decoration-color: transparent;
+}
+
+.forum-post-body .spoiler:not(:hover):not(:focus-within) a {
+    pointer-events: none;
+}
+
+.forum-post-body .spoiler:hover,
+.forum-post-body .spoiler:focus-within {
+    background: var(--bg-item3);
+    color: inherit;
+}
+
+.forum-post-body .spoiler:focus-visible {
+    outline: 1px solid var(--accent);
+}
+
+/* Forms */
+
+.forum-actions {
+    margin: 4px 0 10px;
+}
+
+/* A primary button, one per area (DESIGN.md). */
+.forum-new-topic,
+.forum .forum-submit {
+    display: inline-block;
+    padding: 6px 18px;
+    border: none;
+    border-radius: 3px;
+    background: var(--button-bg);
+    color: var(--text-on-color);
+    font: inherit;
+    font-weight: 700;
+}
+
+.forum-new-topic:hover,
+.forum .forum-submit:hover {
+    background: var(--button-bg-hover);
+    color: var(--text-on-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.forum-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 12px;
+}
+
+.forum-reply {
+    margin-top: 16px;
+}
+
+.forum-field-label {
+    font-weight: 700;
+}
+
+.forum-field-label:not(:first-of-type) {
+    margin-top: 8px;
+}
+
+/* main.css and common.css: inputs on bg-light with wide padding, a textarea of fixed height. */
+.forum-form input[type="text"],
+.forum-form textarea {
+    width: 100%;
+    padding: 6px 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+}
+
+.forum-form textarea {
+    height: auto;
+    min-height: 8em;
+    resize: vertical;
+}
+
+.forum .forum-submit {
+    align-self: flex-start;
+    margin-top: 6px;
+}
+
+.forum-posts ~ .forum-sign-in {
+    margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+    .forum-topic {
+        grid-template-columns: auto minmax(0, 1fr);
+        row-gap: 2px;
+    }
+
+    .forum-topic-main {
+        grid-column: 1 / -1;
+    }
+
+    .forum-post-header,
+    .forum-post-body,
+    .forum-form {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }
