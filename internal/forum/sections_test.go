@@ -32,6 +32,9 @@ func (h *testHost) Render(_ http.ResponseWriter, _ *http.Request, status int, pa
 	h.status, h.page = status, page
 }
 func (h *testHost) NotFound(http.ResponseWriter, *http.Request) { h.notFound = true }
+func (h *testHost) RedirectToLogin(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
 func (h *testHost) ServerError(_ http.ResponseWriter, _ *http.Request, err error) {
 	h.err = err
 }

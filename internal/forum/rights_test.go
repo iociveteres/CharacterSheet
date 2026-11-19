@@ -25,6 +25,10 @@ func TestRights(t *testing.T) {
 	deleted := Topic{ID: 3, SectionID: questions.ID, DeletedAt: &deletedAt}
 	start := func(s Section) func(Viewer) bool { return func(v Viewer) bool { return v.CanStartTopic(s) } }
 	reply := func(t Topic) func(Viewer) bool { return func(v Viewer) bool { return v.CanReply(t) } }
+	signInToStart := func(s Section) func(Viewer) bool {
+		return func(v Viewer) bool { return v.SignInToStartTopic(s) }
+	}
+	signInToReply := func(t Topic) func(Viewer) bool { return func(v Viewer) bool { return v.SignInToReply(t) } }
 	readsTopic := func(t Topic) func(Viewer) bool { return func(v Viewer) bool { return v.CanReadTopic(t) } }
 
 	tests := []struct {
@@ -58,6 +62,14 @@ func TestRights(t *testing.T) {
 		{"moderator replies in a closed topic", moderator, reply(closed), true},
 		{"member replies in a deleted topic", member, reply(deleted), false},
 		{"moderator replies in a deleted topic", moderator, reply(deleted), false},
+
+		{"guest signs in to start a topic", guest, signInToStart(questions), true},
+		{"guest signs in to start a topic in news", guest, signInToStart(news), false},
+		{"member signs in to start a topic", member, signInToStart(questions), false},
+		{"guest signs in to reply", guest, signInToReply(open), true},
+		{"guest signs in to reply in a closed topic", guest, signInToReply(closed), false},
+		{"guest signs in to reply in a deleted topic", guest, signInToReply(deleted), false},
+		{"member signs in to reply", member, signInToReply(open), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

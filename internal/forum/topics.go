@@ -225,6 +225,8 @@ type topicData struct {
 	Topic      topicPage
 	Posts      []post
 	Pagination pagination
+	// Form is the reply form under the last page, with what was typed when it had an error.
+	Form postForm
 }
 
 func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
@@ -243,12 +245,16 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.ServerError(w, r, err)
 		return
 	}
-	pages := pageCount(t.PostCount, postsPerPage)
-	if page > pages {
+	if page > pageCount(t.PostCount, postsPerPage) {
 		f.host.NotFound(w, r)
 		return
 	}
-	posts, err := f.topicPosts(r.Context(), id, page)
+	f.renderTopic(w, r, v, t, page, postForm{}, http.StatusOK)
+}
+
+// renderTopic shows an existing page of a topic the viewer may read.
+func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t topicPage, page int, form postForm, status int) {
+	posts, err := f.topicPosts(r.Context(), t.ID, page)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
@@ -261,9 +267,10 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 		view:       v,
 		Topic:      t,
 		Posts:      posts,
-		Pagination: pagination{Lang: v.Lang, Path: t.URL(), Current: page, Total: pages},
+		Pagination: pagination{Lang: v.Lang, Path: t.URL(), Current: page, Total: pageCount(t.PostCount, postsPerPage)},
+		Form:       form,
 	}
-	f.render(w, r, http.StatusOK, "topic.html", data, Page{
+	f.render(w, r, status, "topic.html", data, Page{
 		Title:       t.Title,
 		Description: description,
 		Canonical:   f.baseURL + pageURL(t.URL(), page),

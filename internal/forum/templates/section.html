@@ -2,6 +2,11 @@
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
     <h2 class="forum-section-title">{{.Section.Name}}</h2>
     {{with .Section.Description}}<p class="forum-section-description">{{.}}</p>{{end}}
+    {{if .Viewer.CanStartTopic .Section}}
+    <p class="forum-actions"><a class="forum-new-topic" href="{{.Section.URL}}/new">{{t .Lang "forum.topics.new"}}</a></p>
+    {{else if .Viewer.SignInToStartTopic .Section}}
+    <p class="forum-actions forum-sign-in"><a href="{{.Section.URL}}/new" rel="nofollow">{{t .Lang "forum.topics.signInToStart"}}</a></p>
+    {{end}}
     {{template "forum-pagination" .Pagination}}
     {{if .Topics}}
     <ol class="forum-topics">

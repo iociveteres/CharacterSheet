@@ -30,6 +30,9 @@ type Host interface {
 	ServerError(w http.ResponseWriter, r *http.Request, err error)
 	// NotFound answers as the site answers an unknown address.
 	NotFound(w http.ResponseWriter, r *http.Request)
+	// RedirectToLogin sends a guest to the login page, which brings them back to r.URL.Path once
+	// signed in.
+	RedirectToLogin(w http.ResponseWriter, r *http.Request)
 }
 
 type Page struct {
@@ -85,6 +88,10 @@ func (f *Forum) routes() *http.ServeMux {
 	mux.HandleFunc("GET /forum/section/{id}", f.withView(f.section))
 	mux.HandleFunc("GET /forum/topic/{id}", f.withView(f.topic))
 	mux.HandleFunc("GET /forum/post/{id}", f.withView(f.post))
+	mux.HandleFunc("GET /forum/section/{id}/new", f.withView(f.newTopic))
+	mux.HandleFunc("POST /forum/section/{id}/new", f.withView(f.newTopic))
+	mux.HandleFunc("GET /forum/topic/{id}/reply", f.withView(f.replyLink))
+	mux.HandleFunc("POST /forum/topic/{id}/reply", f.withView(f.replyPost))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux

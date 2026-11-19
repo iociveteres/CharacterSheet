@@ -59,3 +59,7 @@ func (h forumHost) ServerError(w http.ResponseWriter, r *http.Request, err error
 func (h forumHost) NotFound(w http.ResponseWriter, r *http.Request) {
 	h.app.notFound(w)
 }
+
+func (h forumHost) RedirectToLogin(w http.ResponseWriter, r *http.Request) {
+	h.app.redirectToLogin(w, r)
+}

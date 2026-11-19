@@ -2,5 +2,10 @@
   "forum.posts.deleted": { "en": "This post was deleted.", "ru": "Сообщение удалено.", "note": "на месте удалённого сообщения в теме" },
   "forum.posts.authorPosts": { "en": {"one": "{count} post", "other": "{count} posts"}, "ru": {"one": "{count} сообщение", "few": "{count} сообщения", "many": "{count} сообщений"}, "note": "под именем автора: сколько он написал на форуме" },
   "forum.posts.registered": { "en": "Joined {date}", "ru": "Регистрация: {date}", "note": "под именем автора; date — день регистрации на сайте, «2 января 2026»" },
-  "forum.posts.link": { "en": "Link to this post", "ru": "Ссылка на сообщение", "note": "подсказка у номера сообщения #12, который ведёт на само сообщение" }
+  "forum.posts.link": { "en": "Link to this post", "ru": "Ссылка на сообщение", "note": "подсказка у номера сообщения #12, который ведёт на само сообщение" },
+  "forum.posts.body": { "en": "Message", "ru": "Сообщение", "note": "поле формы новой темы: текст первого сообщения" },
+  "forum.posts.yourReply": { "en": "Your reply", "ru": "Ваш ответ", "note": "подпись поля формы ответа под последней страницей темы" },
+  "forum.posts.reply": { "en": "Reply", "ru": "Ответить", "note": "кнопка отправки ответа в тему" },
+  "forum.posts.signInToReply": { "en": "Log in to reply", "ru": "Войдите, чтобы ответить", "note": "ссылка на вход для гостя вместо формы ответа" },
+  "forum.posts.markdownHint": { "en": "Markdown: **bold**, *italic*, [link](https://…), > quote, `code`, ||spoiler||", "ru": "Markdown: **жирный**, *курсив*, [ссылка](https://…), > цитата, `код`, ||спойлер||", "note": "подсказка под полем сообщения; разметку оставить как есть, переводить только слова" }
 }

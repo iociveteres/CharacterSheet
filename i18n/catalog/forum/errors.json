@@ -1,0 +1,3 @@
+{
+  "forum.errors.tooLong": { "en": {"one": "This field must be at most {count} character long", "other": "This field must be at most {count} characters long"}, "ru": {"one": "Не длиннее {count} символа", "few": "Не длиннее {count} символов", "many": "Не длиннее {count} символов"}, "note": "ошибка формы: заголовок темы или сообщение длиннее предела; пара к server.errors.form.minChars" }
+}

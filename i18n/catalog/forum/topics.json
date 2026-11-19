@@ -6,5 +6,8 @@
   "forum.topics.empty": { "en": "No topics in this section yet.", "ru": "В этом разделе пока нет тем." },
   "forum.topics.pages": { "en": "Pages", "ru": "Страницы", "note": "для экранного диктора: номера страниц раздела или темы" },
   "forum.topics.previousPage": { "en": "Previous page", "ru": "Предыдущая страница", "note": "для экранного диктора: стрелка ←" },
-  "forum.topics.nextPage": { "en": "Next page", "ru": "Следующая страница", "note": "для экранного диктора: стрелка →" }
+  "forum.topics.nextPage": { "en": "Next page", "ru": "Следующая страница", "note": "для экранного диктора: стрелка →" },
+  "forum.topics.new": { "en": "New topic", "ru": "Новая тема", "note": "ссылка в разделе, заголовок страницы и формы новой темы" },
+  "forum.topics.title": { "en": "Title", "ru": "Заголовок", "note": "поле формы новой темы: заголовок темы" },
+  "forum.topics.signInToStart": { "en": "Log in to start a topic", "ru": "Войдите, чтобы создать тему", "note": "ссылка на вход для гостя вместо ссылки «Новая тема»" }
 }

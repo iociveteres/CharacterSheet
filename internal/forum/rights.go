@@ -26,3 +26,13 @@ func (v Viewer) CanStartTopic(s Section) bool {
 func (v Viewer) CanReply(t Topic) bool {
 	return v.SignedIn() && !t.Deleted() && (!t.Closed || v.Moderator)
 }
+
+// SignInToStartTopic: a guest gets a link to sign in where a member could start a topic.
+func (v Viewer) SignInToStartTopic(s Section) bool {
+	return !v.SignedIn() && !s.ModsOnlyTopics
+}
+
+// SignInToReply: a guest gets a link to sign in where a member could reply.
+func (v Viewer) SignInToReply(t Topic) bool {
+	return !v.SignedIn() && !t.Deleted() && !t.Closed
+}

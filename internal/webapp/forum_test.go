@@ -104,3 +104,23 @@ func TestForumUnknownAddress(t *testing.T) {
 		assert.Equal(t, header.Get("Content-Type"), siteHeader.Get("Content-Type"))
 	}
 }
+
+// TestForumLoginComesBack: the forum's link to sign in and reply brings the guest back to it.
+func TestForumLoginComesBack(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+
+	code, header, _ := ts.get(t, "/forum/topic/1/reply")
+	assert.Equal(t, code, http.StatusSeeOther)
+	assert.Equal(t, header.Get("Location"), "/user/login")
+
+	_, _, body := ts.get(t, "/user/login")
+	form := url.Values{}
+	form.Add("email", "alice@example.com")
+	form.Add("password", "pa$$word")
+	form.Add("csrf_token", extractCSRFToken(t, body))
+	code, header, _ = ts.postForm(t, "/user/login", form)
+	assert.Equal(t, code, http.StatusSeeOther)
+	assert.Equal(t, header.Get("Location"), "/forum/topic/1/reply")
+}

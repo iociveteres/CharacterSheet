@@ -33,4 +33,19 @@
         {{end}}
     </div>
     {{template "forum-pagination" .Pagination}}
+    {{if eq .Pagination.Current .Pagination.Total}}
+    {{if .Viewer.CanReply .Topic.Topic}}
+    <form class="forum-form forum-reply" id="reply" action="{{.Topic.URL}}/reply" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <label class="forum-field-label" for="forum-reply-body">{{t .Lang "forum.posts.yourReply"}}</label>
+        {{with .Form.Errors.body}}<span class="forum-field-error error" id="forum-reply-body-error">{{.}}</span>{{end}}
+        <textarea id="forum-reply-body" name="body" rows="8" required
+            {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-reply-body-error"{{end}}>{{.Form.Body}}</textarea>
+        <p class="forum-form-hint">{{t .Lang "forum.posts.markdownHint"}}</p>
+        <button type="submit" class="forum-submit">{{t .Lang "forum.posts.reply"}}</button>
+    </form>
+    {{else if .Viewer.SignInToReply .Topic.Topic}}
+    <p class="forum-sign-in"><a href="{{.Topic.URL}}/reply" rel="nofollow">{{t .Lang "forum.posts.signInToReply"}}</a></p>
+    {{end}}
+    {{end}}
 </div>

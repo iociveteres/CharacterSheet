@@ -65,13 +65,18 @@ func (app *Application) recoverPanic(next http.Handler) http.Handler {
 func (app *Application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !app.isAuthenticated(r) {
-			app.SessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			app.redirectToLogin(w, r)
 			return
 		}
 		w.Header().Add("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
+}
+
+// redirectToLogin sends a guest to the login page, which returns them to r.URL.Path afterwards.
+func (app *Application) redirectToLogin(w http.ResponseWriter, r *http.Request) {
+	app.SessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
 func noSurf(next http.Handler) http.Handler {

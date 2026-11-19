@@ -1,0 +1,20 @@
+<div class="forum">
+    <nav class="forum-breadcrumbs">
+        <a href="/forum/">{{t .Lang "forum.sections.title"}}</a> ›
+        <a href="{{.Section.URL}}">{{.Section.Name}}</a>
+    </nav>
+    <h2 class="forum-topic-heading">{{t .Lang "forum.topics.new"}}</h2>
+    <form class="forum-form" action="{{.Section.URL}}/new" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <label class="forum-field-label" for="forum-topic-title">{{t .Lang "forum.topics.title"}}</label>
+        {{with .Form.Errors.title}}<span class="forum-field-error error" id="forum-topic-title-error">{{.}}</span>{{end}}
+        <input type="text" id="forum-topic-title" name="title" value="{{.Form.Title}}" required
+            {{- with .Form.Errors.title}} aria-invalid="true" aria-describedby="forum-topic-title-error"{{end}}>
+        <label class="forum-field-label" for="forum-topic-body">{{t .Lang "forum.posts.body"}}</label>
+        {{with .Form.Errors.body}}<span class="forum-field-error error" id="forum-topic-body-error">{{.}}</span>{{end}}
+        <textarea id="forum-topic-body" name="body" rows="12" required
+            {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-topic-body-error"{{end}}>{{.Form.Body}}</textarea>
+        <p class="forum-form-hint">{{t .Lang "forum.posts.markdownHint"}}</p>
+        <button type="submit" class="forum-submit">{{t .Lang "common.create"}}</button>
+    </form>
+</div>
