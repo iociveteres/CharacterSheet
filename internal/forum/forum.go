@@ -106,6 +106,8 @@ func (f *Forum) routes() *http.ServeMux {
 	mux.HandleFunc("GET /forum/topic/{id}/unread", f.withView(f.firstUnread))
 	mux.HandleFunc("POST /forum/read", f.withView(f.markAllRead))
 	mux.HandleFunc("POST /forum/section/{id}/read", f.withView(f.markSectionRead))
+	mux.HandleFunc("GET /forum/topic/{id}/mod/{action}", f.withView(f.moderateTopic))
+	mux.HandleFunc("POST /forum/topic/{id}/mod/{action}", f.withView(f.moderateTopic))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux

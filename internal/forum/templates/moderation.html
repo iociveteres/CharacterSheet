@@ -1,0 +1,31 @@
+{{- /* The menu "Moderation ▾" of a topic's head, for moderators only (design/decisions.md, 16):
+     links to the page of each action, whose form has the reason. A deleted topic only comes back.
+     Dot is topicData. */}}
+{{define "forum-topic-mod-menu"}}
+{{- $t := .Topic}}
+{{- if or (.Viewer.CanModerateTopic $t.Topic) (.Viewer.CanRestoreTopic $t.Topic)}}
+<details class="forum-menu forum-mod-menu">
+    <summary class="f-btn f-secondary">{{t .Lang "forum.moderation.menu"}} ▾</summary>
+    <div class="forum-menu-panel">
+        {{- if .Viewer.CanModerateTopic $t.Topic}}
+        <a href="{{$t.URL}}/mod/rename">✎ {{t .Lang "common.rename"}}</a>
+        {{- if $t.Pinned}}
+        <a href="{{$t.URL}}/mod/unpin">{{t .Lang "forum.moderation.unpin"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/pin">{{t .Lang "forum.moderation.pin"}}</a>
+        {{- end}}
+        {{- if $t.Closed}}
+        <a href="{{$t.URL}}/mod/open">{{t .Lang "forum.moderation.open"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/close">{{t .Lang "forum.moderation.close"}}</a>
+        {{- end}}
+        <a href="{{$t.URL}}/mod/move">{{t .Lang "forum.moderation.move"}}</a>
+        <hr>
+        <a class="danger" href="{{$t.URL}}/mod/delete">{{t .Lang "forum.moderation.deleteTopic"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/restore">↺ {{t .Lang "forum.moderation.restoreTopic"}}</a>
+        {{- end}}
+    </div>
+</details>
+{{- end}}
+{{- end}}

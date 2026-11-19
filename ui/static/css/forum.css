@@ -95,6 +95,56 @@ main.forum-wide {
     align-self: flex-start;
 }
 
+/* The moderator's menu "Moderation ▾" (design/decisions.md, 15, 16): a <details>, so it opens
+   without a script; the panel lies over the page, as a menu. It opens leftwards from the button's
+   right edge on a phone too: the buttons of a head stay on the right when they wrap under it. */
+.forum-menu {
+    position: relative;
+}
+
+.forum-menu > summary {
+    list-style: none;
+}
+
+.forum-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 0;
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+#forum .forum-menu-panel a {
+    padding: 4px 14px;
+    color: var(--text);
+}
+
+#forum .forum-menu-panel a:hover {
+    background: var(--bg-item2);
+    text-decoration: none;
+}
+
+#forum .forum-menu-panel a.danger {
+    color: var(--accent-attention);
+}
+
+.forum-menu-panel hr {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 4px 0;
+}
+
 /* Pagination on the left, actions on the right. */
 .forum-toolbar {
     display: flex;
@@ -485,6 +535,11 @@ main.forum-wide {
     align-self: center;
 }
 
+/* A deleted topic, as its moderator reads it: the stripe of what is gone. */
+.forum-notice.forum-deleted-notice {
+    border-left-color: var(--accent-attention);
+}
+
 /* A heading for screen readers only: the home has no visible one (design/decisions.md, 12). */
 .forum-visually-hidden {
     position: absolute;
@@ -831,6 +886,21 @@ main.forum-wide {
     height: auto;
     min-height: 180px;
     resize: vertical;
+}
+
+#forum .forum-form select {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+/* A reason is a line or two, not a post. */
+#forum .forum-form textarea.forum-reason {
+    min-height: 80px;
 }
 
 /* The error is under its field (design/decisions.md, 17); main.css colours a field only after an

@@ -130,35 +130,49 @@ type topicPage struct {
 	// FirstPost is the beginning of the first post for the page description, empty when it is
 	// deleted.
 	FirstPost string
+	// Who deleted the topic and why, from the log, for the moderator who opens it; empty while it
+	// stands.
+	DeletedByName string
+	DeleteReason  string
 }
 
 // loadTopic reads the topic with its section in one query; pgx.ErrNoRows for a topic that does not
 // exist. Whether the viewer may read it is the caller's question (CanReadTopic).
 func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 	var t topicPage
-	var first *string
+	var first, deletedBy, reason *string
 	err := f.db.QueryRow(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
 		       t.reply_count, t.last_post_id, t.last_post_at, a.name,
 		       s.id, s.name, s.description, s.position, s.mods_only_topics,
 		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
-		       fp.body
+		       fp.body, d.name,
+		       (SELECT l.reason FROM forum_mod_log l
+		        WHERE t.deleted_at IS NOT NULL AND l.topic_id = t.id AND l.action = $2
+		        ORDER BY l.id DESC LIMIT 1)
 		FROM forum_topics t
 		JOIN forum_sections s ON s.id = t.section_id
 		JOIN users a ON a.id = t.author_id
+		LEFT JOIN users d ON d.id = t.deleted_by AND t.deleted_at IS NOT NULL
 		LEFT JOIN LATERAL (
 			-- Enough of the text for a description; a cut in the middle of the Markdown only
 			-- costs its tail.
 			SELECT CASE WHEN p.deleted_at IS NULL THEN left(p.body, 2000) END AS body
 			FROM forum_posts p WHERE p.topic_id = t.id ORDER BY p.id LIMIT 1
 		) fp ON true
-		WHERE t.id = $1`, id).
+		WHERE t.id = $1`, id, string(actionDeleteTopic)).
 		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
 			&t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName,
 			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
-			&t.PostCount, &first)
+			&t.PostCount, &first, &deletedBy, &reason)
 	if first != nil {
 		t.FirstPost = *first
+	}
+	if deletedBy != nil {
+		t.DeletedByName = *deletedBy
+	}
+	if reason != nil {
+		t.DeleteReason = *reason
 	}
 	return t, err
 }

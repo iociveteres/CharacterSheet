@@ -12,9 +12,18 @@
             </div>
             {{end}}
         </div>
-        {{- /* Blocks 5 and 6 put the subscription and the moderation menu on the right, in
-             div.forum-actions (design/decisions.md, 16). */}}
+        {{- /* The subscription (block 6) goes before the moderation menu (design/decisions.md, 16). */}}
+        {{- if .Viewer.CanModerate}}
+        <div class="forum-actions">
+            {{- template "forum-topic-mod-menu" .}}
+        </div>
+        {{- end}}
     </div>
+
+    {{- /* Only a moderator reads a deleted topic: who deleted it, when, why (design/decisions.md, 20). */}}
+    {{with .Topic}}{{if .Deleted}}
+    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> {{.DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
+    {{end}}{{end}}
 
     {{template "forum-pagination" .Pagination}}
 

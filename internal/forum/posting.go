@@ -58,13 +58,18 @@ func (p *postForm) tabStatus(lang string) int {
 }
 
 func (p *postForm) checkTitle(lang string) {
-	if !validator.NotBlank(p.Title) {
-		p.AddError("title", i18n.T(lang, "server.errors.form.blank"))
+	checkTitle(&p.Validator, p.Title, lang)
+}
+
+// checkTitle puts the error of a topic's title, new or renamed, on the field "title".
+func checkTitle(v *validator.Validator, title, lang string) {
+	if !validator.NotBlank(title) {
+		v.AddError("title", i18n.T(lang, "server.errors.form.blank"))
 		return
 	}
-	p.Check(validator.MinChars(p.Title, titleMinChars), "title",
+	v.Check(validator.MinChars(title, titleMinChars), "title",
 		i18n.T(lang, "server.errors.form.minChars", i18n.Params{"count": titleMinChars}))
-	p.Check(validator.MaxChars(p.Title, titleMaxChars), "title",
+	v.Check(validator.MaxChars(title, titleMaxChars), "title",
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": titleMaxChars}))
 }
 
