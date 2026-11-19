@@ -23,8 +23,8 @@
   "site.home.feature.rooms": { "en": "Rooms, chat, dice roller", "ru": "Комнаты, чат, броски кубиков" },
   "site.home.feature.roles": { "en": "Role-based permissions", "ru": "Права доступа по ролям" },
   "site.home.feature.export": { "en": "Export/import character to JSON", "ru": "Экспорт и импорт персонажа в JSON" },
-  "site.home.bestOn": { "en": "Best experienced on a PC or tablet", "ru": "Удобнее всего с компьютера или планшета" },
+  "site.home.bestOn": { "en": "Best experienced on a PC or tablet.", "ru": "Удобнее всего с компьютера или планшета." },
   "site.home.online.title": { "en": "Players currently online", "ru": "Сколько игроков сейчас на сайте", "note": "подсказка у счётчика онлайна" },
-  "site.home.online.none": { "en": "Be the first online!", "ru": "Пока никого — будьте первым!", "note": "счётчик онлайна при нуле" },
+  "site.home.online.none": { "en": "Be the first online!", "ru": "Онлайн пока никого — будьте первым!", "note": "счётчик онлайна при нуле" },
   "site.home.online.count": { "en": {"one": "{count} player online now.", "other": "{count} players online now."}, "ru": {"one": "Сейчас онлайн {count} игрок.", "few": "Сейчас онлайн {count} игрока.", "many": "Сейчас онлайн {count} игроков."}, "note": "счётчик онлайна; main.js обновляет его теми же формами" }
 }
