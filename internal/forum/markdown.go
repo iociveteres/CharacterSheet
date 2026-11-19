@@ -2,9 +2,11 @@ package forum
 
 import (
 	"bytes"
+	stdhtml "html"
 	"html/template"
 	"net/url"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -224,4 +226,47 @@ func (spoilerRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 		}
 		return ast.WalkContinue, nil
 	})
+}
+
+// descriptionLength is the length of a page description that search engines show whole.
+const descriptionLength = 160
+
+// plainText is the text of a post without its Markdown for a page description, cut to limit
+// characters at a word with an ellipsis. Spoilers and code blocks are left out: the description
+// shows in search results and link previews.
+func plainText(src string, limit int) string {
+	source := []byte(src)
+	var b strings.Builder
+	ast.Walk(markdown.Parser().Parse(text.NewReader(source)), func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			if n.Type() == ast.TypeBlock {
+				b.WriteByte(' ')
+			}
+			return ast.WalkContinue, nil
+		}
+		switch n := n.(type) {
+		case *spoilerNode, *ast.CodeBlock, *ast.FencedCodeBlock:
+			return ast.WalkSkipChildren, nil
+		case *ast.Text:
+			b.Write(n.Segment.Value(source))
+			if n.SoftLineBreak() || n.HardLineBreak() {
+				b.WriteByte(' ')
+			}
+		case *ast.String:
+			b.Write(n.Value)
+		case *ast.AutoLink:
+			b.Write(n.Label(source))
+		}
+		return ast.WalkContinue, nil
+	})
+	words := strings.Fields(stdhtml.UnescapeString(b.String()))
+	s := strings.Join(words, " ")
+	if utf8.RuneCountInString(s) <= limit {
+		return s
+	}
+	cut := []rune(s)[:limit]
+	if i := strings.LastIndexByte(string(cut), ' '); i > 0 {
+		return string(cut)[:i] + "…"
+	}
+	return string(cut) + "…"
 }

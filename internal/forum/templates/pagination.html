@@ -1,0 +1,14 @@
+{{/* The pages of a section or a topic; the data is a pagination (pagination.go). */}}
+{{define "forum-pagination"}}{{if gt .Total 1}}
+<nav class="forum-pagination" aria-label="{{t .Lang "forum.topics.pages"}}">
+    {{with .PrevURL}}<a class="forum-page forum-page-prev" href="{{.}}" rel="prev" aria-label="{{t $.Lang "forum.topics.previousPage"}}">←</a>{{end}}
+    {{range .Links}}
+    {{if .Gap}}<span class="forum-page-gap">…</span>
+    {{else if .Current}}<span class="forum-page forum-page-current" aria-current="page">{{.Number}}</span>
+    {{else}}<a class="forum-page" href="{{.URL}}">{{.Number}}</a>
+    {{end}}
+    {{end}}
+    {{with .NextURL}}<a class="forum-page forum-page-next" href="{{.}}" rel="next" aria-label="{{t $.Lang "forum.topics.nextPage"}}">→</a>{{end}}
+</nav>
+{{end}}{{end}}
+

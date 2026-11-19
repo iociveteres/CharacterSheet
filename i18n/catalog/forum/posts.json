@@ -1,0 +1,6 @@
+{
+  "forum.posts.deleted": { "en": "This post was deleted.", "ru": "Сообщение удалено.", "note": "на месте удалённого сообщения в теме" },
+  "forum.posts.authorPosts": { "en": {"one": "{count} post", "other": "{count} posts"}, "ru": {"one": "{count} сообщение", "few": "{count} сообщения", "many": "{count} сообщений"}, "note": "под именем автора: сколько он написал на форуме" },
+  "forum.posts.registered": { "en": "Joined {date}", "ru": "Регистрация: {date}", "note": "под именем автора; date — день регистрации на сайте, «2 января 2026»" },
+  "forum.posts.link": { "en": "Link to this post", "ru": "Ссылка на сообщение", "note": "подсказка у номера сообщения #12, который ведёт на само сообщение" }
+}

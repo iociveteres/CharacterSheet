@@ -27,12 +27,9 @@ func readTopic(t *testing.T, db *pgxpool.Pool, id int) Topic {
 	return topic
 }
 
-func insertPost(t *testing.T, tx pgx.Tx, topicID, authorID int, at time.Time) int {
+func insertTestPost(t *testing.T, tx pgx.Tx, topicID, authorID int, at time.Time) int {
 	t.Helper()
-	var id int
-	err := tx.QueryRow(context.Background(), `
-		INSERT INTO forum_posts (topic_id, author_id, body, created_at) VALUES ($1, $2, 'text', $3)
-		RETURNING id`, topicID, authorID, at).Scan(&id)
+	id, err := insertPost(context.Background(), tx, topicID, authorID, "text", at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,14 +85,14 @@ func TestRecountTopic(t *testing.T) {
 		VALUES ((SELECT min(id) FROM forum_sections), $1, 'topic', $2) RETURNING id`,
 		author, topicCreated).Scan(&topicID)
 	assert.NilError(t, err)
-	first = insertPost(t, tx, topicID, author, day(1))
+	first = insertTestPost(t, tx, topicID, author, day(1))
 	assert.NilError(t, recountTopic(ctx, tx, topicID))
 	assert.NilError(t, tx.Commit(ctx))
 	check(topicID, 0, &first, day(1))
 
 	var r1, r2 int
-	change(topicID, func(tx pgx.Tx) { r1 = insertPost(t, tx, topicID, author, day(2)) })
-	change(topicID, func(tx pgx.Tx) { r2 = insertPost(t, tx, topicID, author, day(3)) })
+	change(topicID, func(tx pgx.Tx) { r1 = insertTestPost(t, tx, topicID, author, day(2)) })
+	change(topicID, func(tx pgx.Tx) { r2 = insertTestPost(t, tx, topicID, author, day(3)) })
 	check(topicID, 2, &r2, day(3))
 
 	change(topicID, setDeleted(r2, true))
@@ -143,8 +140,8 @@ func TestRecountTopicConcurrentReplies(t *testing.T) {
 	}
 	// Both insert before either recounts: the order that deadlocks with a lock too strong.
 	tx1, tx2 := begin(), begin()
-	insertPost(t, tx1, topicID, author, now)
-	last := insertPost(t, tx2, topicID, author, now.Add(time.Minute))
+	insertTestPost(t, tx1, topicID, author, now)
+	last := insertTestPost(t, tx2, topicID, author, now.Add(time.Minute))
 	assert.NilError(t, recountTopic(ctx, tx1, topicID))
 
 	done := make(chan error, 1)

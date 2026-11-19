@@ -28,6 +28,10 @@ CREATE TABLE forum_topics (
 CREATE INDEX forum_topics_section_activity_idx
     ON forum_topics (section_id, pinned DESC, last_post_at DESC, id DESC);
 
+-- The forum home: the number of visible topics of a section and its last post.
+CREATE INDEX forum_topics_section_last_post_idx
+    ON forum_topics (section_id, last_post_at DESC) WHERE deleted_at IS NULL;
+
 -- Ids grow with time: "read up to post N" compares ids.
 CREATE TABLE forum_posts (
     id         int GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

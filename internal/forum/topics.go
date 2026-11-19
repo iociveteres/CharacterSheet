@@ -2,6 +2,9 @@ package forum
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -56,4 +59,241 @@ func recountTopic(ctx context.Context, tx pgx.Tx, topicID int) error {
 		) l ON true
 		WHERE t.id = $1`, topicID)
 	return err
+}
+
+func (t Topic) URL() string {
+	return "/forum/topic/" + strconv.Itoa(t.ID)
+}
+
+func postURL(id int) string {
+	return "/forum/post/" + strconv.Itoa(id)
+}
+
+// createTopic opens a topic with its first post at the given time, in one transaction with the
+// recount. The caller checks the rights and the lengths.
+func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title, body string, at time.Time) (topicID, postID int, err error) {
+	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
+		err := tx.QueryRow(ctx, `
+			INSERT INTO forum_topics (section_id, author_id, title, created_at, last_post_at)
+			VALUES ($1, $2, $3, $4, $4) RETURNING id`, sectionID, authorID, title, at).Scan(&topicID)
+		if err != nil {
+			return err
+		}
+		if postID, err = insertPost(ctx, tx, topicID, authorID, body, at); err != nil {
+			return err
+		}
+		return recountTopic(ctx, tx, topicID)
+	})
+	if err != nil {
+		return 0, 0, err
+	}
+	return topicID, postID, nil
+}
+
+// reply adds a post to the topic at the given time, in one transaction with the recount. The
+// caller checks the rights (CanReply) and the length.
+func (f *Forum) reply(ctx context.Context, topicID, authorID int, body string, at time.Time) (postID int, err error) {
+	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
+		if postID, err = insertPost(ctx, tx, topicID, authorID, body, at); err != nil {
+			return err
+		}
+		return recountTopic(ctx, tx, topicID)
+	})
+	if err != nil {
+		return 0, err
+	}
+	return postID, nil
+}
+
+func insertPost(ctx context.Context, tx pgx.Tx, topicID, authorID int, body string, at time.Time) (int, error) {
+	var id int
+	err := tx.QueryRow(ctx, `
+		INSERT INTO forum_posts (topic_id, author_id, body, created_at) VALUES ($1, $2, $3, $4)
+		RETURNING id`, topicID, authorID, body, at).Scan(&id)
+	return id, err
+}
+
+// topicPage is a topic as its page shows it.
+type topicPage struct {
+	Topic
+	Section Section
+	// PostCount counts the deleted posts too: they keep their place and pages.
+	PostCount int
+	// FirstPost is the beginning of the first post for the page description, empty when it is
+	// deleted.
+	FirstPost string
+}
+
+// loadTopic reads the topic with its section in one query; pgx.ErrNoRows for a topic that does not
+// exist. Whether the viewer may read it is the caller's question (CanReadTopic).
+func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
+	var t topicPage
+	var first *string
+	err := f.db.QueryRow(ctx, `
+		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
+		       t.reply_count, t.last_post_id, t.last_post_at,
+		       s.id, s.name, s.description, s.position, s.mods_only_topics,
+		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
+		       fp.body
+		FROM forum_topics t
+		JOIN forum_sections s ON s.id = t.section_id
+		LEFT JOIN LATERAL (
+			-- Enough of the text for a description; a cut in the middle of the Markdown only
+			-- costs its tail.
+			SELECT CASE WHEN p.deleted_at IS NULL THEN left(p.body, 2000) END AS body
+			FROM forum_posts p WHERE p.topic_id = t.id ORDER BY p.id LIMIT 1
+		) fp ON true
+		WHERE t.id = $1`, id).
+		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
+			&t.ReplyCount, &t.LastPostID, &t.LastPostAt,
+			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
+			&t.PostCount, &first)
+	if first != nil {
+		t.FirstPost = *first
+	}
+	return t, err
+}
+
+// post is a post of the topic page.
+type post struct {
+	ID       int
+	AuthorID int
+	// Body is empty for a deleted post: its text never reaches the template.
+	Body      string
+	CreatedAt time.Time
+	EditedAt  *time.Time
+	DeletedAt *time.Time
+	// Number is the place of the post in the topic, from 1.
+	Number             int
+	AuthorName         string
+	AuthorRegisteredAt time.Time
+	// AuthorPosts counts the visible posts of the author in topics that are not deleted: what a
+	// guest can find.
+	AuthorPosts int
+}
+
+func (p post) Deleted() bool {
+	return p.DeletedAt != nil
+}
+
+func (p post) URL() string {
+	return postURL(p.ID)
+}
+
+// topicPosts reads one page of the topic with its authors and their post counts in one query.
+func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, error) {
+	offset := (page - 1) * postsPerPage
+	rows, err := f.db.Query(ctx, `
+		WITH page AS (
+			SELECT id, author_id, CASE WHEN deleted_at IS NULL THEN body ELSE '' END AS body,
+			       created_at, edited_at, deleted_at
+			FROM forum_posts
+			WHERE topic_id = $1
+			ORDER BY id
+			LIMIT $2 OFFSET $3
+		), counts AS (
+			SELECT p.author_id, count(*) AS n
+			FROM forum_posts p
+			JOIN forum_topics t ON t.id = p.topic_id
+			WHERE p.author_id IN (SELECT author_id FROM page)
+			  AND p.deleted_at IS NULL AND t.deleted_at IS NULL
+			GROUP BY p.author_id
+		)
+		SELECT page.id, page.author_id, page.body, page.created_at, page.edited_at, page.deleted_at,
+		       u.name, u.created_at, COALESCE(c.n, 0)
+		FROM page
+		JOIN users u ON u.id = page.author_id
+		LEFT JOIN counts c ON c.author_id = page.author_id
+		ORDER BY page.id`, topicID, postsPerPage, offset)
+	if err != nil {
+		return nil, err
+	}
+	posts, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (post, error) {
+		var p post
+		err := row.Scan(&p.ID, &p.AuthorID, &p.Body, &p.CreatedAt, &p.EditedAt, &p.DeletedAt,
+			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts)
+		return p, err
+	})
+	for i := range posts {
+		posts[i].Number = offset + i + 1
+	}
+	return posts, err
+}
+
+type topicData struct {
+	view
+	Topic      topicPage
+	Posts      []post
+	Pagination pagination
+}
+
+func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
+	id, ok := idParam(r)
+	page, pageOK := pageParam(r)
+	if !ok || !pageOK {
+		f.host.NotFound(w, r)
+		return
+	}
+	t, err := f.loadTopic(r.Context(), id)
+	if errors.Is(err, pgx.ErrNoRows) || err == nil && !v.Viewer.CanReadTopic(t.Topic) {
+		f.host.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	pages := pageCount(t.PostCount, postsPerPage)
+	if page > pages {
+		f.host.NotFound(w, r)
+		return
+	}
+	posts, err := f.topicPosts(r.Context(), id, page)
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	description := plainText(t.FirstPost, descriptionLength)
+	if description == "" {
+		description = t.Title
+	}
+	data := topicData{
+		view:       v,
+		Topic:      t,
+		Posts:      posts,
+		Pagination: pagination{Lang: v.Lang, Path: t.URL(), Current: page, Total: pages},
+	}
+	f.render(w, r, http.StatusOK, "topic.html", data, Page{
+		Title:       t.Title,
+		Description: description,
+		Canonical:   f.baseURL + pageURL(t.URL(), page),
+	})
+}
+
+// post sends /forum/post/{id} to the page of its topic that holds it, with its anchor. Deleted
+// posts keep their place, so the page of a post never changes.
+func (f *Forum) post(w http.ResponseWriter, r *http.Request, v view) {
+	id, ok := idParam(r)
+	if !ok {
+		f.host.NotFound(w, r)
+		return
+	}
+	var t Topic
+	var before int
+	err := f.db.QueryRow(r.Context(), `
+		SELECT t.id, t.deleted_at,
+		       (SELECT count(*) FROM forum_posts q WHERE q.topic_id = p.topic_id AND q.id < p.id)
+		FROM forum_posts p
+		JOIN forum_topics t ON t.id = p.topic_id
+		WHERE p.id = $1`, id).Scan(&t.ID, &t.DeletedAt, &before)
+	if errors.Is(err, pgx.ErrNoRows) || err == nil && !v.Viewer.CanReadTopic(t) {
+		f.host.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	page := before/postsPerPage + 1
+	http.Redirect(w, r, pageURL(t.URL(), page)+"#post-"+strconv.Itoa(id), http.StatusFound)
 }

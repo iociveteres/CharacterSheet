@@ -1,0 +1,36 @@
+<div class="forum">
+    <nav class="forum-breadcrumbs">
+        <a href="/forum/">{{t .Lang "forum.sections.title"}}</a> ›
+        <a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a>
+    </nav>
+    <h2 class="forum-topic-heading">{{.Topic.Title}}</h2>
+    {{with .Topic}}
+    {{if .Pinned}}<span class="forum-label forum-label-pinned">{{t $.Lang "forum.topics.pinned"}}</span>{{end}}
+    {{if .Closed}}<span class="forum-label forum-label-closed">{{t $.Lang "forum.topics.closed"}}</span>{{end}}
+    {{if .Deleted}}<span class="forum-label forum-label-deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+    {{end}}
+    {{template "forum-pagination" .Pagination}}
+    <div class="forum-posts">
+        {{range .Posts}}
+        {{- /* A deleted post keeps its place and anchor; how it looks is block 3. */}}
+        <article class="forum-post{{if .Deleted}} forum-post-deleted{{end}}" id="post-{{.ID}}">
+            {{if .Deleted}}
+            <a class="forum-post-link" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
+            <p class="forum-post-placeholder">{{t $.Lang "forum.posts.deleted"}}</p>
+            {{else}}
+            <header class="forum-post-header">
+                <div class="forum-post-author">
+                    <span class="forum-author">{{.AuthorName}}</span>
+                    <span class="forum-author-posts">{{t $.Lang "forum.posts.authorPosts" "count" .AuthorPosts}}</span>
+                    <span class="forum-author-registered">{{t $.Lang "forum.posts.registered" "date" (humanDay $.Lang .AuthorRegisteredAt $.TimeZone)}}</span>
+                </div>
+                <span class="forum-time">{{humanDate $.Lang .CreatedAt $.TimeZone}}</span>
+                <a class="forum-post-link" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
+            </header>
+            <div class="forum-post-body">{{markdown .Body}}</div>
+            {{end}}
+        </article>
+        {{end}}
+    </div>
+    {{template "forum-pagination" .Pagination}}
+</div>

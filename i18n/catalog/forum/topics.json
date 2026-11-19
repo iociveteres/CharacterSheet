@@ -1,0 +1,10 @@
+{
+  "forum.topics.replyCount": { "en": {"one": "{count} reply", "other": "{count} replies"}, "ru": {"one": "{count} ответ", "few": "{count} ответа", "many": "{count} ответов"}, "note": "число ответов в теме, в списке тем раздела" },
+  "forum.topics.pinned": { "en": "Pinned", "ru": "Закреплена", "note": "метка темы, которая стоит в разделе сверху" },
+  "forum.topics.closed": { "en": "Closed", "ru": "Закрыта", "note": "метка темы, в которой отвечают только модераторы" },
+  "forum.topics.deleted": { "en": "Deleted", "ru": "Удалена", "note": "метка удалённой темы; её видят только модераторы" },
+  "forum.topics.empty": { "en": "No topics in this section yet.", "ru": "В этом разделе пока нет тем." },
+  "forum.topics.pages": { "en": "Pages", "ru": "Страницы", "note": "для экранного диктора: номера страниц раздела или темы" },
+  "forum.topics.previousPage": { "en": "Previous page", "ru": "Предыдущая страница", "note": "для экранного диктора: стрелка ←" },
+  "forum.topics.nextPage": { "en": "Next page", "ru": "Следующая страница", "note": "для экранного диктора: стрелка →" }
+}

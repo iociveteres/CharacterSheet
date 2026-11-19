@@ -81,3 +81,28 @@ func TestRenderMarkdown(t *testing.T) {
 		})
 	}
 }
+
+func TestPlainText(t *testing.T) {
+	tests := []struct {
+		name, src string
+		limit     int
+		want      string
+	}{
+		{"marks go, words stay", "**bold**, *italic* and `code`", 100, "bold, italic and code"},
+		{"link text, not its address", "see [the rules](https://example.com/rules)", 100, "see the rules"},
+		{"bare address", "at https://example.com now", 100, "at https://example.com now"},
+		{"spoiler left out", "the end: ||everyone dies|| really", 100, "the end: really"},
+		{"code block left out", "before\n\n```\nfunc main() {}\n```\n\nafter", 100, "before after"},
+		{"blocks and lines joined by spaces", "# Title\n\nline one\nline two\n\n- item\n> quote", 100, "Title line one line two item quote"},
+		{"entities resolved", "Tom &amp; Jerry", 100, "Tom & Jerry"},
+		{"short enough", "one two three", 13, "one two three"},
+		{"cut at a word", "one two three four", 12, "one two…"},
+		{"a word longer than the limit", "abcdefghijklmnop", 14, "abcdefghijklmn…"},
+		{"nothing but a spoiler", "||secret||", 100, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, plainText(tt.src, tt.limit), tt.want)
+		})
+	}
+}

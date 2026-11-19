@@ -56,6 +56,7 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 		Funcs(template.FuncMap{
 			"t":         i18n.TemplateT,
 			"humanDate": i18n.FormatDate, // the site's name: {{humanDate .Lang .CreatedAt .TimeZone}}
+			"humanDay":  i18n.FormatDay,
 			"markdown":  renderMarkdown,
 		}).
 		ParseFS(templateFiles, "templates/*.html")
@@ -81,6 +82,9 @@ func (f *Forum) UnreadNotifications(ctx context.Context, userID int) (int, error
 func (f *Forum) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /forum/{$}", f.withView(f.home))
+	mux.HandleFunc("GET /forum/section/{id}", f.withView(f.section))
+	mux.HandleFunc("GET /forum/topic/{id}", f.withView(f.topic))
+	mux.HandleFunc("GET /forum/post/{id}", f.withView(f.post))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux

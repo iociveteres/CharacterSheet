@@ -1,0 +1,31 @@
+<div class="forum">
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+    <h2 class="forum-section-title">{{.Section.Name}}</h2>
+    {{with .Section.Description}}<p class="forum-section-description">{{.}}</p>{{end}}
+    {{template "forum-pagination" .Pagination}}
+    {{if .Topics}}
+    <ol class="forum-topics">
+        {{range .Topics}}
+        <li class="forum-topic{{if .Pinned}} forum-topic-pinned{{end}}{{if .Deleted}} forum-topic-deleted{{end}}">
+            <div class="forum-topic-main">
+                <a class="forum-topic-title" href="{{.URL}}">{{.Title}}</a>
+                {{if .Pinned}}<span class="forum-label forum-label-pinned">{{t $.Lang "forum.topics.pinned"}}</span>{{end}}
+                {{if .Closed}}<span class="forum-label forum-label-closed">{{t $.Lang "forum.topics.closed"}}</span>{{end}}
+                {{if .Deleted}}<span class="forum-label forum-label-deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                <div class="forum-topic-author forum-author">{{.AuthorName}}</div>
+            </div>
+            <div class="forum-topic-replies">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</div>
+            {{if .LastPostID}}
+            <div class="forum-topic-last">
+                <span class="forum-author">{{.LastAuthorName}}</span>
+                <a class="forum-time" href="{{.LastPostURL}}">{{humanDate $.Lang .LastPostAt $.TimeZone}}</a>
+            </div>
+            {{end}}
+        </li>
+        {{end}}
+    </ol>
+    {{else}}
+    <p class="forum-empty">{{t .Lang "forum.topics.empty"}}</p>
+    {{end}}
+    {{template "forum-pagination" .Pagination}}
+</div>
