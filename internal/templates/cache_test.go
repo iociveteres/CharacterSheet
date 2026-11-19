@@ -81,6 +81,7 @@ func TestPagesRenderInEveryLanguage(t *testing.T) {
 			IsAuthenticated:         true,
 			ShowIncidentNotice:      true,
 			OnlineUsers:             2,
+			Embedded:                &EmbeddedPage{Title: "title", Body: "<p>body</p>"},
 		}
 	}
 	for lang, pages := range cache {
@@ -113,4 +114,38 @@ func TestHomeSlidesByLanguage(t *testing.T) {
 		}
 	}
 	assert.StringContains(t, slideURL("de", "2-character-info", "light", "webp"), "/static/img/slides/2-character-info-en-light.webp?v=")
+}
+
+// Only an embedded page asks for a viewport and names its canonical address: the site pages
+// are laid out for desktops.
+func TestEmbeddedPageHead(t *testing.T) {
+	cache, err := NewTemplateCache()
+	assert.NilError(t, err)
+	render := func(page string, data *Data) string {
+		buf := new(bytes.Buffer)
+		ts := cache["en"][page]
+		ts.Funcs(template.FuncMap{"reverseRev": func(name string, _ ...string) string { return "/" + name }})
+		assert.NilError(t, ts.ExecuteTemplate(buf, "base", data))
+		head, _, _ := strings.Cut(buf.String(), "</head>")
+		return head
+	}
+
+	head := render("about.html", &Data{Lang: "en"})
+	for _, tag := range []string{`name="viewport"`, `rel="canonical"`, `name="robots"`} {
+		if strings.Contains(head, tag) {
+			t.Errorf("a site page has %s", tag)
+		}
+	}
+	assert.StringContains(t, head, `name="description"`)
+
+	head = render("embedded.html", &Data{Lang: "en", Embedded: &EmbeddedPage{
+		Title: "Forum", Description: "About the forum", Canonical: "https://example.com/forum/",
+		NoIndex: true, Styles: []string{"css/forum.css"}, Body: "<p>body</p>",
+	}})
+	assert.StringContains(t, head, `<meta name="viewport"`)
+	assert.StringContains(t, head, `<link rel="canonical" href='https://example.com/forum/'>`)
+	assert.StringContains(t, head, `<meta name="robots" content="noindex">`)
+	assert.StringContains(t, head, `<meta name="description" content='About the forum'>`)
+	assert.StringContains(t, head, `<title>Forum - Character Sheet</title>`)
+	assert.StringContains(t, head, `href='/static/css/forum.css?v=`)
 }

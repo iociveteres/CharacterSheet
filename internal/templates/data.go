@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"html/template"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
@@ -38,4 +39,15 @@ type Data struct {
 	ShowIncidentNotice      bool
 	Token                   string
 	OnlineUsers             int
+	Embedded                *EmbeddedPage // set only for embedded.html
+}
+
+// EmbeddedPage is a page rendered elsewhere (the forum) and shown inside the site layout.
+// Unlike the site pages it asks for a viewport: it is laid out for phones.
+type EmbeddedPage struct {
+	Title, Description, Canonical string
+	NoIndex                       bool
+	// Styles and Scripts are paths under /static, after the site's own.
+	Styles, Scripts []string
+	Body            template.HTML
 }
