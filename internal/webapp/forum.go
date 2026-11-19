@@ -2,6 +2,8 @@ package webapp
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"charactersheet.iociveteres.net/internal/forum"
@@ -56,6 +58,13 @@ func (h forumHost) Render(w http.ResponseWriter, r *http.Request, status int, pa
 
 func (h forumHost) ServerError(w http.ResponseWriter, r *http.Request, err error) {
 	h.app.serverError(w, err)
+}
+
+func (h forumHost) LogError(r *http.Request, err error) {
+	if errors.Is(err, context.Canceled) {
+		return
+	}
+	h.app.ErrorLog.Output(2, fmt.Sprintf("forum %s %s: %v", r.Method, r.URL.Path, err))
 }
 
 func (h forumHost) NotFound(w http.ResponseWriter, r *http.Request) {

@@ -1,17 +1,27 @@
 <div id="forum">
     {{- /* No visible heading: the page is plainly the forum (design/decisions.md, 12); the h2 keeps
-         the page's outline for screen readers. Blocks 4–6 put a div.forum-actions of their buttons
-         here, on the right above the list. */}}
+         the page's outline for screen readers. The buttons are a line on the right above the list,
+         none for a guest; blocks 5–6 add theirs to the same div.forum-actions. */}}
     <h2 class="forum-visually-hidden">{{t .Lang "forum.sections.title"}}</h2>
+    {{if .Viewer.SignedIn}}
+    <div class="forum-head">
+        <div class="forum-actions">
+            <form method="post" action="/forum/read">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>
+            </form>
+        </div>
+    </div>
+    {{end}}
     <div>
         <div class="forum-list-head forum-sections">
             <span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>
         </div>
         <ul class="forum-list forum-sections">
             {{range .Sections}}
-            {{- /* The first span is the column of the unread dot (block 4). */}}
-            <li class="forum-row">
-                <span class="unread-dot"></span>
+            {{- /* The first span is the column of the unread dot. */}}
+            <li class="forum-row{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
                 <div class="forum-row-main">
                     <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
                     {{with .Description}}<span class="meta">{{.}}</span>{{end}}

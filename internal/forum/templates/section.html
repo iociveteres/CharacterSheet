@@ -6,9 +6,14 @@
             <h2>{{.Section.Name}}</h2>
             {{with .Section.Description}}<span class="forum-description">{{.}}</span>{{end}}
         </div>
-        {{- /* Level with the heading, under it on a phone; block 4 adds «Mark as read» before the
-             new topic button. */}}
+        {{- /* Level with the heading, under it on a phone. */}}
         <div class="forum-actions forum-head-top">
+            {{if .Viewer.SignedIn}}
+            <form method="post" action="{{.Section.URL}}/read">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.topics.markRead"}}</button>
+            </form>
+            {{end}}
             {{if .Viewer.CanStartTopic .Section}}
             <a class="f-btn f-primary forum-new-topic" href="{{.Section.URL}}/new">+ {{t .Lang "forum.topics.new"}}</a>
             {{else if .Viewer.SignInToStartTopic .Section}}
@@ -28,11 +33,12 @@
         </div>
         <ol class="forum-list forum-topics">
             {{range .Topics}}
-            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}">
-                <span class="unread-dot"></span>
+            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
                 <div class="forum-row-main">
                     <div>
-                        <a class="forum-row-title" href="{{.URL}}">{{.Title}}</a>
+                        {{- /* An unread topic opens at its first unread post. */}}
+                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{.Title}}</a>
                         {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
                         {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
                         {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}

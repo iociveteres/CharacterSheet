@@ -23,6 +23,8 @@ type testHost struct {
 	status   int
 	page     Page
 	notFound bool
+	// logged is what the forum wrote to the error log and served the page after.
+	logged []error
 }
 
 func (h *testHost) UserID(*http.Request) (int, bool) { return h.userID, h.userID != 0 }
@@ -35,6 +37,7 @@ func (h *testHost) NotFound(http.ResponseWriter, *http.Request) { h.notFound = t
 func (h *testHost) RedirectToLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
+func (h *testHost) LogError(_ *http.Request, err error) { h.logged = append(h.logged, err) }
 func (h *testHost) ServerError(_ http.ResponseWriter, _ *http.Request, err error) {
 	h.err = err
 }
@@ -75,7 +78,7 @@ func TestSectionsByPosition(t *testing.T) {
 	ctx := context.Background()
 
 	// The starting sections of the migration, then one moved to the top.
-	sections, err := f.sections(ctx)
+	sections, err := f.sections(ctx, Viewer{})
 	assert.NilError(t, err)
 	assert.Equal(t, len(sections), 5)
 	modsOnly := 0
@@ -92,7 +95,7 @@ func TestSectionsByPosition(t *testing.T) {
 	if _, err := db.Exec(ctx, `UPDATE forum_sections SET position = 0 WHERE id = $1`, last.ID); err != nil {
 		t.Fatal(err)
 	}
-	sections, err = f.sections(ctx)
+	sections, err = f.sections(ctx, Viewer{})
 	assert.NilError(t, err)
 	assert.Equal(t, sections[0].ID, last.ID)
 	assert.Equal(t, sections[0].Name, last.Name)
@@ -218,7 +221,7 @@ func TestHomeSectionCounters(t *testing.T) {
 	_, emptied := mustCreateTopic(t, f, section, alice, "emptied", at(5))
 	deletePost(t, db, emptied)
 
-	sections, err := f.sections(ctx)
+	sections, err := f.sections(ctx, Viewer{})
 	assert.NilError(t, err)
 	byID := map[int]sectionSummary{}
 	for _, s := range sections {
@@ -268,17 +271,24 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 	write := newTestForum(t, db, &testHost{})
 
 	moderator := newModerator(t, db, "moderator")
+	// A participant with marks of a topic, a section and the forum: the lists read them in the
+	// same query.
+	reader := forumtest.User(t, db, "reader", at(0))
 	section := newSection(t, db, "section")
 	topic, firstPost := mustCreateTopic(t, write, section, moderator, "topic", at(0))
+	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, firstPost))
+	assert.NilError(t, write.markRead(ctx, reader, &section))
+	assert.NilError(t, write.markRead(ctx, reader, nil))
 	targets := []string{
 		"/forum/",
 		fmt.Sprintf("/forum/section/%d", section),
 		fmt.Sprintf("/forum/topic/%d", topic),
+		fmt.Sprintf("/forum/topic/%d/unread", topic),
 		fmt.Sprintf("/forum/post/%d", firstPost),
 	}
 	queries := func() map[string]int64 {
 		got := map[string]int64{}
-		for _, viewer := range []int{0, moderator} {
+		for _, viewer := range []int{0, moderator, reader} {
 			host.userID = viewer
 			for _, target := range targets {
 				counter.n.Store(0)

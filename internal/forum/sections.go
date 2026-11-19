@@ -33,6 +33,8 @@ type sectionSummary struct {
 	PostCount  int
 	// LastPost is nil while the section has no visible post.
 	LastPost *lastPost
+	// Unread is whether a visible topic of the section is unread by the viewer; never for a guest.
+	Unread bool
 }
 
 type lastPost struct {
@@ -51,15 +53,24 @@ func (p lastPost) TopicURL() string {
 	return Topic{ID: p.TopicID}.URL()
 }
 
-// sections reads the sections of the home in one query, whatever the number of topics.
-func (f *Forum) sections(ctx context.Context) ([]sectionSummary, error) {
+// sections reads the sections of the home in one query, whatever the number of topics, with
+// whether each has an unread topic (reads.go).
+func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error) {
+	// A guest is user 0: no marks join and $1 > 0 skips the search for unread topics.
 	rows, err := f.db.Query(ctx, `
 		SELECT s.id, s.name, s.description, s.position, s.mods_only_topics,
 		       (SELECT count(*) FROM forum_topics t WHERE t.section_id = s.id AND t.deleted_at IS NULL),
 		       (SELECT count(*) FROM forum_posts p JOIN forum_topics t ON t.id = p.topic_id
 		        WHERE t.section_id = s.id AND t.deleted_at IS NULL AND p.deleted_at IS NULL),
-		       l.post_id, l.topic_id, l.title, l.author_name, l.at
+		       l.post_id, l.topic_id, l.title, l.author_name, l.at,
+		       $1 > 0 AND EXISTS (
+		           SELECT 1 FROM forum_topics t
+		           LEFT JOIN forum_topic_reads r ON r.user_id = $1 AND r.topic_id = t.id
+		           WHERE t.section_id = s.id AND t.deleted_at IS NULL AND t.last_post_at > $2
+		             AND t.last_post_id > GREATEST(r.last_read_post_id, sm.post_id, fm.post_id, 0))
 		FROM forum_sections s
+		LEFT JOIN forum_read_marks sm ON sm.user_id = $1 AND sm.section_id = s.id
+		LEFT JOIN forum_read_marks fm ON fm.user_id = $1 AND fm.section_id IS NULL
 		LEFT JOIN LATERAL (
 			SELECT t.last_post_id AS post_id, t.id AS topic_id, t.title, u.name AS author_name, t.last_post_at AS at
 			FROM forum_topics t
@@ -69,7 +80,7 @@ func (f *Forum) sections(ctx context.Context) ([]sectionSummary, error) {
 			ORDER BY t.last_post_at DESC, t.id DESC
 			LIMIT 1
 		) l ON true
-		ORDER BY s.position, s.id`)
+		ORDER BY s.position, s.id`, v.ID, v.RegisteredAt)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +90,7 @@ func (f *Forum) sections(ctx context.Context) ([]sectionSummary, error) {
 		var title, author *string
 		var at *time.Time
 		err := row.Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics,
-			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &author, &at)
+			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &author, &at, &s.Unread)
 		if postID != nil {
 			s.LastPost = &lastPost{PostID: *postID, TopicID: *topicID, TopicTitle: *title, AuthorName: *author, At: *at}
 		}
@@ -93,7 +104,7 @@ type homeData struct {
 }
 
 func (f *Forum) home(w http.ResponseWriter, r *http.Request, v view) {
-	sections, err := f.sections(r.Context())
+	sections, err := f.sections(r.Context(), v.Viewer)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
@@ -129,6 +140,8 @@ type topicRow struct {
 	LastAuthorName string
 	// PostCount counts the deleted posts too, as the pages of the topic do.
 	PostCount int
+	// Unread is never true for a guest (reads.go).
+	Unread bool
 }
 
 // Pages link the pages of a long topic from its row: all of them up to four, else the first and
@@ -160,18 +173,25 @@ func (t topicRow) LastPostURL() string {
 
 // sectionTopics reads one page of the section in one query: pinned first, then by last activity,
 // as the index forum_topics_section_activity_idx orders them. Deleted topics only for moderators.
+// The viewer's marks come in the same query: whether a topic is unread (reads.go).
 func (f *Forum) sectionTopics(ctx context.Context, sectionID, page int, v Viewer) ([]topicRow, error) {
+	// A guest is user 0: no marks join and $5 > 0 keeps every topic read.
 	rows, err := f.db.Query(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
 		       t.reply_count, t.last_post_id, t.last_post_at, a.name, lu.name,
-		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id)
+		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
+		       COALESCE($5 > 0 AND t.last_post_at > $6
+		                AND t.last_post_id > GREATEST(r.last_read_post_id, sm.post_id, fm.post_id, 0), false)
 		FROM forum_topics t
 		JOIN users a ON a.id = t.author_id
 		LEFT JOIN forum_posts lp ON lp.id = t.last_post_id
 		LEFT JOIN users lu ON lu.id = lp.author_id
+		LEFT JOIN forum_topic_reads r ON r.user_id = $5 AND r.topic_id = t.id
+		LEFT JOIN forum_read_marks sm ON sm.user_id = $5 AND sm.section_id = t.section_id
+		LEFT JOIN forum_read_marks fm ON fm.user_id = $5 AND fm.section_id IS NULL
 		WHERE t.section_id = $1 AND ($2 OR t.deleted_at IS NULL)
 		ORDER BY t.pinned DESC, t.last_post_at DESC, t.id DESC
-		LIMIT $3 OFFSET $4`, sectionID, v.Moderator, topicsPerPage, (page-1)*topicsPerPage)
+		LIMIT $3 OFFSET $4`, sectionID, v.Moderator, topicsPerPage, (page-1)*topicsPerPage, v.ID, v.RegisteredAt)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +199,7 @@ func (f *Forum) sectionTopics(ctx context.Context, sectionID, page int, v Viewer
 		var t topicRow
 		var lastAuthor *string
 		err := row.Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt,
-			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthor, &t.PostCount)
+			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthor, &t.PostCount, &t.Unread)
 		if lastAuthor != nil {
 			t.LastAuthorName = *lastAuthor
 		}

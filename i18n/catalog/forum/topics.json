@@ -12,5 +12,7 @@
   "forum.topics.signInToStart": { "en": "Log in to start a topic", "ru": "Войдите, чтобы создать тему", "note": "ссылка на вход для гостя вместо ссылки «Новая тема»" },
   "forum.topics.topic": { "en": "Topic", "ru": "Тема", "note": "шапка столбца списка тем раздела" },
   "forum.topics.replies": { "en": "Replies", "ru": "Ответы", "note": "шапка столбца с числом ответов в списке тем раздела" },
-  "forum.topics.closedNotice": { "en": "The topic is closed: only moderators can reply.", "ru": "Тема закрыта: отвечать могут только модераторы.", "note": "плашка под последней страницей закрытой темы" }
+  "forum.topics.closedNotice": { "en": "The topic is closed: only moderators can reply.", "ru": "Тема закрыта: отвечать могут только модераторы.", "note": "плашка под последней страницей закрытой темы" },
+  "forum.topics.markRead": { "en": "Mark as read", "ru": "Отметить прочитанным", "note": "кнопка в шапке раздела рядом с «+ Новая тема»: все темы этого раздела становятся прочитанными" },
+  "forum.topics.unread": { "en": "There are unread posts", "ru": "Есть непрочитанное", "note": "подсказка к синей точке слева от темы или раздела, где есть сообщения, которых человек ещё не видел" }
 }

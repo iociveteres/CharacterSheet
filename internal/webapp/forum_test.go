@@ -67,7 +67,7 @@ func TestForumPostWithoutCSRFToken(t *testing.T) {
 	ts := newTestServer(t, app.Routes())
 	defer ts.Close()
 
-	for _, path := range []string{"/forum/", "/forum/preview"} {
+	for _, path := range []string{"/forum/", "/forum/preview", "/forum/read"} {
 		code, _, _ := ts.postForm(t, path, url.Values{"body": {"text"}})
 		assert.Equal(t, code, http.StatusBadRequest)
 	}

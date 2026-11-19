@@ -70,7 +70,7 @@ func postURL(id int) string {
 }
 
 // createTopic opens a topic with its first post at the given time, in one transaction with the
-// recount. The caller checks the rights and the lengths.
+// recount and the author's read mark. The caller checks the rights and the lengths.
 func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title, body string, at time.Time) (topicID, postID int, err error) {
 	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
 		err := tx.QueryRow(ctx, `
@@ -82,7 +82,10 @@ func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title,
 		if postID, err = insertPost(ctx, tx, topicID, authorID, body, at); err != nil {
 			return err
 		}
-		return recountTopic(ctx, tx, topicID)
+		if err := recountTopic(ctx, tx, topicID); err != nil {
+			return err
+		}
+		return readTopicUpTo(ctx, tx, authorID, topicID, postID)
 	})
 	if err != nil {
 		return 0, 0, err
@@ -90,14 +93,18 @@ func (f *Forum) createTopic(ctx context.Context, sectionID, authorID int, title,
 	return topicID, postID, nil
 }
 
-// reply adds a post to the topic at the given time, in one transaction with the recount. The
-// caller checks the rights (CanReply) and the length.
+// reply adds a post to the topic at the given time, in one transaction with the recount and the
+// author's read mark. The caller checks the rights (CanReply) and the length.
 func (f *Forum) reply(ctx context.Context, topicID, authorID int, body string, at time.Time) (postID int, err error) {
 	err = pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
 		if postID, err = insertPost(ctx, tx, topicID, authorID, body, at); err != nil {
 			return err
 		}
-		return recountTopic(ctx, tx, topicID)
+		if err := recountTopic(ctx, tx, topicID); err != nil {
+			return err
+		}
+		// The author has read up to their post: their own reply never makes the topic unread.
+		return readTopicUpTo(ctx, tx, authorID, topicID, postID)
 	})
 	if err != nil {
 		return 0, err
@@ -284,6 +291,12 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
+	}
+	if v.Viewer.SignedIn() && len(posts) > 0 {
+		// The page is worth more than the mark: a failed write is logged and the page served.
+		if err := readTopicUpTo(r.Context(), f.db, v.Viewer.ID, t.ID, posts[len(posts)-1].ID); err != nil {
+			f.host.LogError(r, err)
+		}
 	}
 	description := plainText(t.FirstPost, descriptionLength)
 	if description == "" {

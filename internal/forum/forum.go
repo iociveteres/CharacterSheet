@@ -29,6 +29,8 @@ type Host interface {
 	// Render wraps the page into the site layout.
 	Render(w http.ResponseWriter, r *http.Request, status int, page Page)
 	ServerError(w http.ResponseWriter, r *http.Request, err error)
+	// LogError writes down an error the page is still served after, as the site's error log.
+	LogError(r *http.Request, err error)
 	// NotFound answers as the site answers an unknown address.
 	NotFound(w http.ResponseWriter, r *http.Request)
 	// RedirectToLogin sends a guest to the login page, which brings them back to r.URL.Path once
@@ -101,6 +103,9 @@ func (f *Forum) routes() *http.ServeMux {
 	mux.HandleFunc("POST /forum/post/{id}/delete", f.withView(f.deletePost))
 	mux.HandleFunc("GET /forum/post/{id}/quote", f.withView(f.quotePost))
 	mux.HandleFunc("POST /forum/preview", f.withView(f.preview))
+	mux.HandleFunc("GET /forum/topic/{id}/unread", f.withView(f.firstUnread))
+	mux.HandleFunc("POST /forum/read", f.withView(f.markAllRead))
+	mux.HandleFunc("POST /forum/section/{id}/read", f.withView(f.markSectionRead))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux
