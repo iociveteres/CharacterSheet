@@ -1,1 +1,12 @@
-<h2>{{t .Lang "forum.sections.title"}}</h2>
+<div class="forum">
+    <h2>{{t .Lang "forum.sections.title"}}</h2>
+    {{- /* Section names become links to their topics in block 2, with /forum/section/{id}. */}}
+    <ul class="forum-sections">
+        {{range .Sections}}
+        <li class="forum-section">
+            <h3 class="forum-section-name">{{.Name}}</h3>
+            {{with .Description}}<p class="forum-section-description">{{.}}</p>{{end}}
+        </li>
+        {{end}}
+    </ul>
+</div>

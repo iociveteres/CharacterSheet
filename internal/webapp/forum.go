@@ -46,6 +46,7 @@ func (h forumHost) Render(w http.ResponseWriter, r *http.Request, status int, pa
 		Description: page.Description,
 		Canonical:   page.Canonical,
 		NoIndex:     page.NoIndex,
+		Styles:      []string{"css/forum.css"},
 		Body:        page.Body,
 	}
 	h.app.render(w, status, "embedded.html", "base", data)

@@ -1,4 +1,4 @@
 {
-  "forum.sections.title": { "en": "Forum", "ru": "Форум", "note": "заголовок главной форума и вкладки браузера" },
+  "forum.sections.title": { "en": "Forum", "ru": "Форум", "note": "заголовок главной форума и вкладки браузера, ссылка в навигации сайта" },
   "forum.sections.description": { "en": "Discussions of the character sheet and Warhammer tabletop RPGs: news, questions, bug reports and looking for a game.", "ru": "Обсуждение листа персонажа и настольных ролевых игр по Warhammer: новости, вопросы, ошибки и поиск игры.", "note": "meta description главной форума, видна в поисковиках" }
 }

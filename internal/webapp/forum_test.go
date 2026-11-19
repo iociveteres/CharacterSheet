@@ -4,13 +4,29 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/forum"
+	"charactersheet.iociveteres.net/internal/forum/forumtest"
 )
 
 func TestForumHomeForGuest(t *testing.T) {
 	app := newTestApplication(t)
+	db := forumtest.NewDB(t)
+	var err error
+	app.Forum, err = forum.New(db, "https://example.com", app.ForumHost())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Above the starting sections of the migration.
+	_, err = db.Exec(context.Background(), `
+		INSERT INTO forum_sections (name, description, position)
+		VALUES ('Tavern & dice', 'Anything <off topic>', 0)`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ts := newTestServer(t, app.Routes())
 	defer ts.Close()
 
@@ -25,6 +41,14 @@ func TestForumHomeForGuest(t *testing.T) {
 		assert.StringContains(t, body, `<nav class="site-wide">`)
 		assert.StringContains(t, body, `<meta name="viewport"`)
 		assert.StringContains(t, body, `<link rel="canonical" href='https://example.com/forum/'>`)
+		assert.StringContains(t, body, `href='/static/css/forum.css?v=`)
+		assert.StringContains(t, body, `<a href='/forum/'>`)
+
+		// The sections in order of position, the one added above first.
+		items := strings.Split(body, `class="forum-section"`)
+		assert.Equal(t, len(items), 1+6)
+		assert.StringContains(t, items[1], "Tavern &amp; dice")
+		assert.StringContains(t, items[1], "Anything &lt;off topic&gt;")
 	}
 }
 

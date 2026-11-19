@@ -1,0 +1,30 @@
+/* Forum pages (internal/forum/templates), linked only by them. The site header and nav at phone
+   width are in main.css: they belong to the site. */
+
+.forum {
+    overflow-wrap: anywhere;
+}
+
+/* main.css gives every ul a disc and an indent. */
+.forum-sections {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.forum-section {
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 10px 14px;
+}
+
+.forum-section-name {
+    font-size: 18px;
+}
+
+.forum-section-description {
+    color: var(--text-secondary);
+}

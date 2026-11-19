@@ -66,7 +66,8 @@ func newTestApplication(t *testing.T) *Application {
 		SessionManager: sessionManager,
 		Mailer:         &testMailer{},
 	})
-	// No pool: the forum home reads no tables yet.
+	// No pool: a test that opens a forum page makes its own forum on forumtest.NewDB, the
+	// schema and migrations cost every test that gets one.
 	app.Forum, err = forum.New(nil, "https://example.com", app.ForumHost())
 	if err != nil {
 		t.Fatal(err)
