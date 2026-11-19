@@ -56,9 +56,22 @@ func (v Viewer) CanEditPost(t Topic, p post) bool {
 }
 
 // CanDeletePost is CanEditPost but for the first post, which opens the topic: it goes only with
-// the topic. Block 5 (session B) lets moderators delete any reply, through moderate.
+// the topic. A moderator deletes any reply in a topic that stands; another's goes through moderate
+// (DeletesAsModerator).
 func (v Viewer) CanDeletePost(t Topic, p post) bool {
-	return v.ownsLivePost(t, p) && !p.First()
+	return !p.First() && (v.ownsLivePost(t, p) || v.Moderator && !p.Deleted() && !t.Deleted())
+}
+
+// DeletesAsModerator: deleting this post is a moderator's action, with a reason and a line in the
+// log, not the author taking back their own words.
+func (v Viewer) DeletesAsModerator(p post) bool {
+	return v.Moderator && p.AuthorID != v.ID
+}
+
+// CanReadDeletedPosts: a moderator reads the text of a deleted post, who deleted it and why; the
+// others see a line in its place.
+func (v Viewer) CanReadDeletedPosts() bool {
+	return v.Moderator
 }
 
 // CanQuote: whoever may reply in the topic quotes a post that is not deleted; a guest, a banned

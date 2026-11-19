@@ -21,6 +21,8 @@ const (
 	actionMoveTopic    modAction = "topic.move"
 	actionDeleteTopic  modAction = "topic.delete"
 	actionRestoreTopic modAction = "topic.restore"
+	actionDeletePost   modAction = "post.delete"
+	actionRestorePost  modAction = "post.restore"
 )
 
 // modEntry is a row of forum_mod_log: what a moderator did, to what, why. A target is 0 when the

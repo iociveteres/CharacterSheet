@@ -17,5 +17,9 @@
   "forum.moderation.reason": { "en": "Reason", "ru": "Причина", "note": "поле формы действия модератора" },
   "forum.moderation.reasonOptional": { "en": "Optional. It goes to the moderation log.", "ru": "Необязательно. Попадёт в журнал модерации.", "note": "подсказка под полем «Причина»" },
   "forum.moderation.sameSection": { "en": "The topic is already in this section.", "ru": "Тема уже в этом разделе.", "note": "ошибка под выбором раздела при переносе темы" },
-  "forum.moderation.noSection": { "en": "Choose a section.", "ru": "Выберите раздел.", "note": "ошибка под выбором раздела: такого раздела нет" }
+  "forum.moderation.noSection": { "en": "Choose a section.", "ru": "Выберите раздел.", "note": "ошибка под выбором раздела: такого раздела нет" },
+  "forum.moderation.postDeleted": { "en": "Deleted", "ru": "Удалено", "note": "у удалённого сообщения, которое видит модератор: «Удалено: имя, время — причина»; после слова стоит двоеточие" },
+  "forum.moderation.deletePostNote": { "en": "Readers will see a line saying the post was deleted in its place; moderators still read it and can restore it.", "ru": "Читатели увидят на месте сообщения строку «Сообщение удалено»; модераторы по-прежнему видят текст и могут его восстановить.", "note": "на странице, где модератор подтверждает удаление чужого сообщения, над полем причины" },
+  "forum.moderation.restorePost": { "en": "Restore the post", "ru": "Восстановить сообщение", "note": "заголовок страницы, где модератор возвращает удалённое сообщение" },
+  "forum.moderation.restorePostNote": { "en": "The post comes back to its place in the topic for everyone.", "ru": "Сообщение вернётся на своё место в теме для всех.", "note": "на странице восстановления сообщения, над полем причины" }
 }

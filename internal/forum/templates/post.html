@@ -1,7 +1,7 @@
 {{- /* A post of a topic; dot is postCard (view.Card). */}}
 {{define "forum-post"}}
 {{- with .Post}}
-{{- if .Deleted}}
+{{- if and .Deleted (not $.Viewer.CanReadDeletedPosts)}}
 {{- /* One line in the post's place, with its author, time, anchor and number (design/decisions.md,
      20); its text never reaches the template. */}}
 <article class="forum-post deleted-stub" id="post-{{.ID}}">
@@ -10,7 +10,9 @@
     <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
 </article>
 {{- else}}
-<article class="forum-post{{if .AuthorModerator}} mod{{end}}" id="post-{{.ID}}">
+{{- /* A moderator sees the whole card of a deleted post: a dashed red frame, faint text, who
+     deleted it, when and why, and the way back (design/decisions.md, 20). */}}
+<article class="forum-post{{if .AuthorModerator}} mod{{end}}{{if .Deleted}} deleted-mod{{end}}" id="post-{{.ID}}">
     <div class="forum-post-author">
         <span class="name">{{.AuthorName}}</span>
         <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
@@ -20,18 +22,24 @@
         <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span>
             {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
             <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>
+        {{- if .Deleted}}
+        <span class="deleted-note">{{t $.Lang "forum.moderation.postDeleted"}}: {{.DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</span>
+        {{- end}}
         <div class="forum-post-body">{{markdown .Body}}</div>
         {{- if $.Actions}}
         {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
         {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
         {{- $quote := $.Viewer.CanQuote $.Topic $.Post}}
+        {{- $restore := $.Viewer.CanRestorePost $.Topic $.Post}}
         {{- /* Only the actions the viewer may take (design/decisions.md, 8). Quote opens the reply
-             form on the last page of the topic with the quote in it. */}}
-        {{- if or $quote $edit $delete}}
+             form on the last page of the topic with the quote in it. A moderator deletes any reply
+             and restores a deleted post; Ban of block 5 (session C) goes after Delete. */}}
+        {{- if or $quote $edit $delete $restore}}
         <div class="forum-post-actions">
             {{- if $quote}}<a class="f-icon forum-quote-post" href="{{.URL}}/quote#reply" rel="nofollow">❝ {{t $.Lang "forum.posts.quote"}}</a>{{end}}
             {{- if $edit}}<a class="f-icon forum-edit-post" href="{{.URL}}/edit">✎ {{t $.Lang "common.edit"}}</a>{{end}}
             {{- if $delete}}<a class="f-icon danger forum-delete-post" href="{{.URL}}/delete">× {{t $.Lang "common.delete"}}</a>{{end}}
+            {{- if $restore}}<a class="f-icon forum-restore-post" href="{{.URL}}/restore">↺ {{t $.Lang "forum.moderation.restore"}}</a>{{end}}
         </div>
         {{- end}}
         {{- end}}

@@ -181,11 +181,15 @@ func (f *Forum) loadTopic(ctx context.Context, id int) (topicPage, error) {
 type post struct {
 	ID       int
 	AuthorID int
-	// Body is empty for a deleted post: its text never reaches the template.
+	// Body is empty for a deleted post unless the viewer reads deleted posts (a moderator): its
+	// text never reaches the template of anyone else.
 	Body      string
 	CreatedAt time.Time
 	EditedAt  *time.Time
 	DeletedAt *time.Time
+	// Who deleted the post and the reason of a moderator, for a moderator only; empty otherwise.
+	DeletedByName string
+	DeleteReason  string
 	// Number is the place of the post in the topic, from 1.
 	Number             int
 	AuthorName         string
@@ -226,12 +230,13 @@ func (v view) Card(t Topic, p post, actions bool) postCard {
 }
 
 // topicPosts reads one page of the topic with its authors and their post counts in one query.
-func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, error) {
+// What a deleted post holds comes only to a viewer who reads deleted posts.
+func (f *Forum) topicPosts(ctx context.Context, topicID, page int, v Viewer) ([]post, error) {
 	offset := (page - 1) * postsPerPage
 	rows, err := f.db.Query(ctx, `
 		WITH page AS (
-			SELECT id, author_id, CASE WHEN deleted_at IS NULL THEN body ELSE '' END AS body,
-			       created_at, edited_at, deleted_at
+			SELECT id, author_id, CASE WHEN deleted_at IS NULL OR $4 THEN body ELSE '' END AS body,
+			       created_at, edited_at, deleted_at, deleted_by
 			FROM forum_posts
 			WHERE topic_id = $1
 			ORDER BY id
@@ -246,18 +251,21 @@ func (f *Forum) topicPosts(ctx context.Context, topicID, page int) ([]post, erro
 		)
 		SELECT page.id, page.author_id, page.body, page.created_at, page.edited_at, page.deleted_at,
 		       u.name, u.created_at, COALESCE(c.n, 0),
-		       EXISTS (SELECT 1 FROM forum_moderators m WHERE m.user_id = page.author_id)
+		       EXISTS (SELECT 1 FROM forum_moderators m WHERE m.user_id = page.author_id),
+		       COALESCE(d.name, ''), `+deleteReasonSQL("page", "$4")+`
 		FROM page
 		JOIN users u ON u.id = page.author_id
 		LEFT JOIN counts c ON c.author_id = page.author_id
-		ORDER BY page.id`, topicID, postsPerPage, offset)
+		LEFT JOIN users d ON $4 AND d.id = page.deleted_by AND page.deleted_at IS NOT NULL
+		ORDER BY page.id`, topicID, postsPerPage, offset, v.CanReadDeletedPosts())
 	if err != nil {
 		return nil, err
 	}
 	posts, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (post, error) {
 		var p post
 		err := row.Scan(&p.ID, &p.AuthorID, &p.Body, &p.CreatedAt, &p.EditedAt, &p.DeletedAt,
-			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts, &p.AuthorModerator)
+			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts, &p.AuthorModerator,
+			&p.DeletedByName, &p.DeleteReason)
 		return p, err
 	})
 	for i := range posts {
@@ -301,7 +309,7 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 // renderTopic shows an existing page of a topic the viewer may read. noIndex is for the addresses
 // that show it with something in the reply form: a quote, a preview, an error.
 func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t topicPage, page int, form postForm, status int, noIndex bool) {
-	posts, err := f.topicPosts(r.Context(), t.ID, page)
+	posts, err := f.topicPosts(r.Context(), t.ID, page, v.Viewer)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return

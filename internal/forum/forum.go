@@ -101,6 +101,8 @@ func (f *Forum) routes() *http.ServeMux {
 	mux.HandleFunc("POST /forum/post/{id}/edit", f.withView(f.editPost))
 	mux.HandleFunc("GET /forum/post/{id}/delete", f.withView(f.deletePost))
 	mux.HandleFunc("POST /forum/post/{id}/delete", f.withView(f.deletePost))
+	mux.HandleFunc("GET /forum/post/{id}/restore", f.withView(f.restorePost))
+	mux.HandleFunc("POST /forum/post/{id}/restore", f.withView(f.restorePost))
 	mux.HandleFunc("GET /forum/post/{id}/quote", f.withView(f.quotePost))
 	mux.HandleFunc("POST /forum/preview", f.withView(f.preview))
 	mux.HandleFunc("GET /forum/topic/{id}/unread", f.withView(f.firstUnread))

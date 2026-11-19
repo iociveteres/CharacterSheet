@@ -8,10 +8,15 @@
     {{template "forum-post" .Card}}
 
     {{- /* The step of confirmation without a script (DESIGN.md, «Buttons by role»: Delete asks to
-         confirm). */}}
+         confirm). A moderator deleting another's post adds a reason for the log. */}}
     <form class="forum-form forum-confirm" action="{{.Post.URL}}/delete" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        {{- if .ByModerator}}
+        <p class="meta">{{t .Lang "forum.moderation.deletePostNote"}}</p>
+        {{- template "forum-mod-reason" ($.ReasonField .Form)}}
+        {{- else}}
         <p class="meta">{{t .Lang "forum.posts.deleteNote"}}</p>
+        {{- end}}
         <div class="forum-form-buttons">
             <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
             <button type="submit" class="f-btn f-secondary danger">{{t .Lang "common.delete"}}</button>

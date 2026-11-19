@@ -110,6 +110,17 @@ func readModForm(r *http.Request) (modForm, error) {
 	}, nil
 }
 
+// reasonField is the dot of the template "forum-mod-reason".
+type reasonField struct {
+	Lang string
+	Form modForm
+}
+
+// ReasonField is the reason of a moderator's form: {{template "forum-mod-reason" ($.ReasonField .Form)}}.
+func (v view) ReasonField(form modForm) reasonField {
+	return reasonField{Lang: v.Lang, Form: form}
+}
+
 func (m *modForm) checkReason(lang string) {
 	m.Check(validator.MaxChars(m.Reason, reasonMaxChars), "reason",
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": reasonMaxChars}))

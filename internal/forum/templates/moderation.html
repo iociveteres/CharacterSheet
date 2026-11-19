@@ -29,3 +29,13 @@
 </details>
 {{- end}}
 {{- end}}
+
+{{- /* The optional reason of a moderator's action, which goes to the log; its hint gives way to an
+     error. Dot is reasonField (view.ReasonField). */}}
+{{define "forum-mod-reason"}}
+        <label class="field-label" for="forum-mod-reason">{{t .Lang "forum.moderation.reason"}}</label>
+        <textarea class="forum-reason" id="forum-mod-reason" name="reason" rows="3"
+            {{- if .Form.Errors.reason}} aria-invalid="true" aria-describedby="forum-mod-reason-error"{{else}} aria-describedby="forum-mod-reason-hint"{{end}}>{{.Form.Reason}}</textarea>
+        {{with .Form.Errors.reason}}<span class="error field-error" id="forum-mod-reason-error">{{.}}</span>
+        {{- else}}<span class="meta" id="forum-mod-reason-hint">{{t .Lang "forum.moderation.reasonOptional"}}</span>{{end}}
+{{- end}}

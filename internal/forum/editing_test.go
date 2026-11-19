@@ -131,7 +131,6 @@ func TestChangePostRefused(t *testing.T) {
 		{"member edits another's post", bob, editURL(reply), http.StatusForbidden},
 		{"member deletes another's post", bob, deleteURL(reply), http.StatusForbidden},
 		{"moderator edits another's post", mod, editURL(reply), http.StatusForbidden},
-		{"moderator deletes another's post", mod, deleteURL(reply), http.StatusForbidden},
 		{"author deletes the first post", alice, deleteURL(first), http.StatusForbidden},
 		{"author edits a deleted post", alice, editURL(deleted), http.StatusForbidden},
 		{"author deletes a deleted post", alice, deleteURL(deleted), http.StatusForbidden},
@@ -246,7 +245,7 @@ func TestDeletedPostTextHidden(t *testing.T) {
 	}
 
 	// loadPost, which the pages of a single post and the quote read, never carries the text either.
-	p, err := f.loadPost(context.Background(), reply)
+	p, err := f.loadPost(context.Background(), reply, Viewer{})
 	assert.NilError(t, err)
 	assert.Equal(t, p.Body, "")
 }
@@ -270,19 +269,20 @@ func TestPostActionsOffered(t *testing.T) {
 	deleted := mustReply(t, f, open, alice, "deleted", at(2))
 	deletePost(t, db, deleted)
 
-	const quoteLink, editLink, deleteLink = `forum-quote-post"`, `forum-edit-post"`, `forum-delete-post"`
+	const quoteLink, editLink, deleteLink, restoreLink = `forum-quote-post"`, `forum-edit-post"`, `forum-delete-post"`, `forum-restore-post"`
 	tests := []struct {
-		name                string
-		viewer, topic       int
-		quote, edit, delete int // links on the page
+		name                         string
+		viewer, topic                int
+		quote, edit, delete, restore int // links on the page
 	}{
-		{"author", alice, open, 2, 2, 1},
-		{"author in a closed topic", alice, closed, 0, 0, 0},
-		{"another member", bob, open, 2, 0, 0},
-		{"another member in a closed topic", bob, closed, 0, 0, 0},
-		{"moderator", mod, open, 2, 0, 0},
-		{"moderator in a closed topic", mod, closed, 2, 0, 0},
-		{"guest", 0, open, 0, 0, 0},
+		{"author", alice, open, 2, 2, 1, 0},
+		{"author in a closed topic", alice, closed, 0, 0, 0, 0},
+		{"another member", bob, open, 2, 0, 0, 0},
+		{"another member in a closed topic", bob, closed, 0, 0, 0, 0},
+		// Another's reply but not the first post; the deleted one comes back.
+		{"moderator", mod, open, 2, 0, 1, 1},
+		{"moderator in a closed topic", mod, closed, 2, 0, 1, 0},
+		{"guest", 0, open, 0, 0, 0, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -292,7 +292,9 @@ func TestPostActionsOffered(t *testing.T) {
 			assert.Equal(t, strings.Count(page, quoteLink), tt.quote)
 			assert.Equal(t, strings.Count(page, editLink), tt.edit)
 			assert.Equal(t, strings.Count(page, deleteLink), tt.delete)
-			assert.Equal(t, strings.Count(page, `class="forum-post-actions"`), max(tt.quote, tt.edit, tt.delete))
+			assert.Equal(t, strings.Count(page, restoreLink), tt.restore)
+			// The deleted post has a line of its own: only the restore.
+			assert.Equal(t, strings.Count(page, `class="forum-post-actions"`), max(tt.quote, tt.edit, tt.delete)+tt.restore)
 		})
 	}
 }

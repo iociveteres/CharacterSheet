@@ -47,6 +47,8 @@ func TestRights(t *testing.T) {
 	quote := func(t Topic, p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanQuote(t, p) } }
 	isBanned := func(v Viewer) bool { return v.Banned() }
 	moderate := func(v Viewer) bool { return v.CanModerate() }
+	readsDeleted := func(v Viewer) bool { return v.CanReadDeletedPosts() }
+	asModerator := func(p post) func(Viewer) bool { return func(v Viewer) bool { return v.DeletesAsModerator(p) } }
 	restorePost := func(t Topic, p post) func(Viewer) bool {
 		return func(v Viewer) bool { return v.CanRestorePost(t, p) }
 	}
@@ -114,7 +116,11 @@ func TestRights(t *testing.T) {
 		{"author deletes in a closed topic", member, del(closed, ownReply), false},
 		{"author deletes in a deleted topic", member, del(deleted, ownReply), false},
 		{"member deletes another's post", member, del(open, othersReply), false},
-		{"moderator deletes another's post", moderator, del(open, othersReply), false},
+		{"moderator deletes another's post", moderator, del(open, othersReply), true},
+		{"moderator deletes another's post in a closed topic", moderator, del(closed, othersReply), true},
+		{"moderator deletes another's first post", moderator, del(open, othersFirst), false},
+		{"moderator deletes a deleted post", moderator, del(open, othersDeleted), false},
+		{"moderator deletes another's post in a deleted topic", moderator, del(deleted, othersReply), false},
 		{"moderator deletes their post", moderator, del(open, modsReply), true},
 		{"moderator deletes their post in a closed topic", moderator, del(closed, modsReply), true},
 
@@ -140,6 +146,14 @@ func TestRights(t *testing.T) {
 		{"member moderates", member, moderate, false},
 		{"banned user moderates", banned, moderate, false},
 		{"moderator moderates", moderator, moderate, true},
+
+		{"guest reads deleted posts", guest, readsDeleted, false},
+		{"member reads deleted posts", member, readsDeleted, false},
+		{"banned user reads deleted posts", banned, readsDeleted, false},
+		{"moderator reads deleted posts", moderator, readsDeleted, true},
+		{"member deletes their post as a moderator", member, asModerator(ownReply), false},
+		{"moderator deletes another's post as a moderator", moderator, asModerator(othersReply), true},
+		{"moderator deletes their post as a moderator", moderator, asModerator(modsReply), false},
 
 		{"member restores their deleted post", member, restorePost(open, ownDeleted), false},
 		{"moderator restores a deleted post", moderator, restorePost(open, othersDeleted), true},
@@ -232,11 +246,11 @@ func TestRightsMatrix(t *testing.T) {
 		{"banned", "mods-only", "closed", "read"},
 		{"banned", "mods-only", "deleted", ""},
 
-		{"moderator", "open", "open", "read start reply quote subscribe moderate ban"},
-		{"moderator", "open", "closed", "read start reply quote subscribe moderate ban"},
+		{"moderator", "open", "open", "read start reply delete quote subscribe moderate ban"},
+		{"moderator", "open", "closed", "read start reply delete quote subscribe moderate ban"},
 		{"moderator", "open", "deleted", "read start restore ban"},
-		{"moderator", "mods-only", "open", "read start reply quote subscribe moderate ban"},
-		{"moderator", "mods-only", "closed", "read start reply quote subscribe moderate ban"},
+		{"moderator", "mods-only", "open", "read start reply delete quote subscribe moderate ban"},
+		{"moderator", "mods-only", "closed", "read start reply delete quote subscribe moderate ban"},
 		{"moderator", "mods-only", "deleted", "read start restore ban"},
 	}
 	names := make([]string, 0, len(rights))

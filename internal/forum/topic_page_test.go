@@ -197,7 +197,7 @@ func TestTopicPosts(t *testing.T) {
 	gone, _ := mustCreateTopic(t, f, section, alice, "gone", at(6))
 	deleteTopic(t, db, gone)
 
-	posts, err := f.topicPosts(ctx, topic, 1)
+	posts, err := f.topicPosts(ctx, topic, 1, Viewer{})
 	assert.NilError(t, err)
 	assert.Equal(t, len(posts), 4)
 	assert.Equal(t, posts[0].ID, first)

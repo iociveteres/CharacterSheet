@@ -694,6 +694,24 @@ main.forum-wide {
     font-style: normal;
 }
 
+/* What a moderator sees of a deleted post: the whole card, dashed red, its text faint
+   (design/decisions.md, 20). Red outweighs the frame of :target: the post a moderator just deleted
+   is the one the browser comes back to. */
+.forum-post.deleted-mod {
+    border-style: dashed;
+    border-color: var(--accent-attention);
+}
+
+.forum-post.deleted-mod .forum-post-body {
+    opacity: 0.55;
+}
+
+.deleted-note {
+    font-size: 14px;
+    color: var(--accent-attention);
+    overflow-wrap: anywhere;
+}
+
 /* ===== Post text (Markdown, internal/forum/markdown.go) ===== */
 
 /* main.css takes every margin away; the gap gives the blocks theirs back. */
