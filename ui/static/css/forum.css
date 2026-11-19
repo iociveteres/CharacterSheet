@@ -90,6 +90,11 @@ main.forum-wide {
     margin-left: auto;
 }
 
+/* Level with the heading rather than with the description under it (the section page). */
+.forum-actions.forum-head-top {
+    align-self: flex-start;
+}
+
 /* Pagination on the left, actions on the right. */
 .forum-toolbar {
     display: flex;
@@ -445,6 +450,24 @@ main.forum-wide {
 .forum-notice.plain {
     border-left-color: var(--border-medium);
     text-align: center;
+}
+
+/* The guest's way to reply is as wide as its text, in the middle under the posts. */
+.forum-notice.forum-sign-in {
+    align-self: center;
+}
+
+/* A heading for screen readers only: the home has no visible one (design/decisions.md, 12). */
+.forum-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ===== Topic ===== */

@@ -8,8 +8,7 @@
                 {{- if or .Pinned .Closed}}<span class="forum-marks forum-topic-title-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
                 {{- if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}</h2>
             <div class="forum-topic-meta">
-                <span><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
-                <span>{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
+                <span><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}} · {{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
             </div>
             {{end}}
         </div>

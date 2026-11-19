@@ -6,12 +6,9 @@
             <h2>{{.Section.Name}}</h2>
             {{with .Section.Description}}<span class="forum-description">{{.}}</span>{{end}}
         </div>
-    </div>
-
-    <div class="forum-toolbar">
-        {{template "forum-pagination" .Pagination}}
-        {{- /* Block 4 adds «Mark as read» before the new topic button. */}}
-        <div class="forum-actions">
+        {{- /* Level with the heading, under it on a phone; block 4 adds «Mark as read» before the
+             new topic button. */}}
+        <div class="forum-actions forum-head-top">
             {{if .Viewer.CanStartTopic .Section}}
             <a class="f-btn f-primary forum-new-topic" href="{{.Section.URL}}/new">+ {{t .Lang "forum.topics.new"}}</a>
             {{else if .Viewer.SignInToStartTopic .Section}}
@@ -19,6 +16,10 @@
             {{end}}
         </div>
     </div>
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
 
     {{if .Topics}}
     <div>
