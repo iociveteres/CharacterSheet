@@ -291,7 +291,7 @@ main.forum-wide {
 .forum-row,
 .forum-list-head {
     display: grid;
-    grid-template-columns: 8px minmax(0, 1fr) 90px 300px;
+    grid-template-columns: 8px minmax(0, 1fr) 80px min(300px, 30%);
     gap: 4px 12px;
     align-items: center;
     padding: 10px 14px 10px 10px;
@@ -322,7 +322,7 @@ main.forum-wide {
    (design/decisions.md, 13). */
 .forum-sections .forum-row,
 .forum-list-head.forum-sections {
-    grid-template-columns: 8px minmax(0, 1fr) 380px;
+    grid-template-columns: 8px minmax(0, 1fr) min(380px, 38%);
 }
 
 .forum-counts {
@@ -815,23 +815,15 @@ main.forum-wide {
     border-radius: 3px;
 }
 
-/* ===== Phone ===== */
+/* ===== Narrow: lists ===== */
 
-@media (max-width: 600px) {
-    main.forum-wide {
-        padding-left: 8px;
-        padding-right: 8px;
-    }
-
-    #forum .forum-head h2 {
-        font-size: 21px;
-    }
-
+/* Below a tablet the columns would squeeze a title into a few words a line: a row becomes the
+   title with its counts and last post on lines under it. Posts keep their author column longer. */
+@media (max-width: 760px) {
     .forum-list-head {
         display: none;
     }
 
-    /* A row becomes the title with its lines under it. */
     .forum-row,
     .forum-sections .forum-row {
         grid-template-columns: 8px minmax(0, 1fr);
@@ -841,10 +833,6 @@ main.forum-wide {
     .forum-row > .forum-row-count,
     .forum-row > .forum-row-last {
         grid-column: 2;
-    }
-
-    #forum .forum-row-title {
-        font-size: 18px;
     }
 
     .forum-row-count {
@@ -882,6 +870,23 @@ main.forum-wide {
 
     .forum-row-last .by {
         justify-content: flex-start;
+    }
+}
+
+/* ===== Phone ===== */
+
+@media (max-width: 600px) {
+    main.forum-wide {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    #forum .forum-head h2 {
+        font-size: 21px;
+    }
+
+    #forum .forum-row-title {
+        font-size: 18px;
     }
 
     /* The author column folds into a line above the text. */
