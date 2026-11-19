@@ -2,10 +2,11 @@
 {{define "forum-post"}}
 {{- with .Post}}
 {{- if .Deleted}}
-{{- /* One line in the post's place, with its anchor and number (design/decisions.md, 20); its text
-     never reaches the template. */}}
+{{- /* One line in the post's place, with its author, time, anchor and number (design/decisions.md,
+     20); its text never reaches the template. */}}
 <article class="forum-post deleted-stub" id="post-{{.ID}}">
     <span>{{t $.Lang "forum.posts.deleted"}}</span>
+    <span class="by"><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
     <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
 </article>
 {{- else}}

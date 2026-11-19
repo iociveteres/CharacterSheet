@@ -615,17 +615,24 @@ main.forum-wide {
     margin-top: auto;
 }
 
-/* A deleted post keeps its place and number as one line (design/decisions.md, 20). */
+/* A deleted post keeps its place, author, time and number as one line (design/decisions.md, 20). */
 .forum-post.deleted-stub {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 12px;
+    gap: 2px 12px;
     padding: 6px 16px;
     background: transparent;
     border-style: dashed;
     font-size: 15px;
     color: var(--text-secondary);
     font-style: italic;
+}
+
+/* Who wrote it and when, as in the line under a topic title; not italic. */
+.forum-post.deleted-stub .by {
+    font-style: normal;
+    font-size: 14px;
 }
 
 #forum .forum-post.deleted-stub .num {

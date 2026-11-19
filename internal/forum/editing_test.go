@@ -198,7 +198,15 @@ func TestDeletePost(t *testing.T) {
 	// The link of the deleted post still leads to its place, where the topic shows a line for it.
 	h.get(t, f, postURL(last))
 	h.get(t, f, fmt.Sprintf("/forum/topic/%d", topicID))
-	assert.StringContains(t, string(h.page.Body), `<article class="forum-post deleted-stub" id="post-`+fmt.Sprint(last)+`"`)
+	page := string(h.page.Body)
+	stubAt := strings.Index(page, `<article class="forum-post deleted-stub" id="post-`+fmt.Sprint(last)+`"`)
+	if stubAt < 0 {
+		t.Fatal("no line in the place of the deleted post")
+	}
+	// The line keeps the author and the time of writing.
+	stub := page[stubAt : stubAt+strings.Index(page[stubAt:], "</article>")]
+	assert.StringContains(t, stub, `<span class="forum-author-name">alice</span>`)
+	assert.StringContains(t, stub, `<time datetime="`+at(2).UTC().Format(time.RFC3339)+`"`)
 }
 
 // TestDeletedPostTextHidden: the text of a deleted post reaches neither a guest nor another member,
