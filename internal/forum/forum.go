@@ -76,17 +76,19 @@ func (f *Forum) UnreadNotifications(ctx context.Context, userID int) (int, error
 
 func (f *Forum) routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /forum/{$}", f.home)
+	mux.HandleFunc("GET /forum/{$}", f.withView(f.home))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux
 }
 
-// view is what every page template gets; a page embeds it in its own data.
+// view is what every handler gets from withView and every page template sees; a page embeds it
+// in its own data.
 type view struct {
 	Lang      string
 	TimeZone  *time.Location
 	CSRFToken string
+	Viewer    Viewer
 }
 
 func (f *Forum) view(r *http.Request) view {

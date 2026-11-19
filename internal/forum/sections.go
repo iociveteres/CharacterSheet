@@ -27,8 +27,7 @@ func (f *Forum) sections(ctx context.Context) ([]Section, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[Section])
 }
 
-func (f *Forum) home(w http.ResponseWriter, r *http.Request) {
-	data := f.view(r)
+func (f *Forum) home(w http.ResponseWriter, r *http.Request, data view) {
 	f.render(w, r, http.StatusOK, "home.html", data, Page{
 		Title:       i18n.T(data.Lang, "forum.sections.title"),
 		Description: i18n.T(data.Lang, "forum.sections.description"),
