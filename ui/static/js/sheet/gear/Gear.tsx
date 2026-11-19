@@ -2,6 +2,7 @@
 // gear item and every implant add them to the character (kinds/computed.ts).
 import type { VNode } from "preact";
 import { useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -61,19 +62,22 @@ function GearArmour({ itemPath, enchantments, mods, addLine }: {
 }) {
     return (
         <fieldset class="gear-armour-fields">
-            <legend>Armour</legend>
+            <legend>{t("sheet.termsArms.gearType.armour")}</legend>
             <Scope dataId="armour">
                 <table class="gear-armour-table">
                     <thead>
-                        <tr><th></th><th>H</th><th>T</th><th>A</th><th>L</th></tr>
+                        <tr>
+                            <th></th><th>{t("sheet.gear.location.head")}</th><th>{t("sheet.gear.location.torso")}</th>
+                            <th>{t("sheet.gear.location.arms")}</th><th>{t("sheet.gear.location.legs")}</th>
+                        </tr>
                     </thead>
                     <tbody>
                         <ArmourRow dataId="ap" label="AP" itemPath={itemPath} />
-                        <ArmourRow dataId="superAp" label="SA" itemPath={itemPath} />
+                        <ArmourRow dataId="superAp" label={t("sheet.termsArms.armour.superArmour.short")} itemPath={itemPath} />
                     </tbody>
                 </table>
                 <div class="layout-row">
-                    <label class="gear-armour-special">Special:
+                    <label class="gear-armour-special">{`${t("sheet.termsArms.weaponField.special")}:`}
                         <TextField field="special" />
                     </label>
                 </div>
@@ -96,14 +100,14 @@ function GearWeight({ path }: { path: string }) {
     const item = resolvePath(state, path) as GearItem;
     const { own, factors, mods, total } = gearWeight(item);
     const title = [
-        `${own} ${String(item.name?.value || "own")}`,
+        `${own} ${String(item.name?.value || t("sheet.gear.own"))}`,
         ...factors.map(f => `× ${f.factor} ${f.source}`),
-        ...(mods ? [`+ ${mods} mods`] : []),
+        ...(mods ? [t("sheet.gear.weightMods", { weight: mods })] : []),
         `= ${total}`,
     ].join("\n");
     return (
         <TotalOrOwn total={factors.length || mods ? total : null} title={title} totalId="weightTotal" class="short textlike weight-total"
-            own={props => <NumberField field="weight" {...props} placeholder="wt." class="short textlike" />} />
+            own={props => <NumberField field="weight" {...props} placeholder={t("sheet.termsArms.weaponField.weight.short")} class="short textlike" />} />
     );
 }
 
@@ -156,14 +160,14 @@ function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks: UseW
     const addButtons = canEdit ? [
         weapon && attacks.addButton,
         parts && !armour && !weapon && !materialOpen && !hasMaterial(item) && (
-            <button key="material" type="button" class="add-line-button" data-id="addMaterial" onClick={() => setMaterialOpen(true)}>＋ material</button>
+            <button key="material" type="button" class="add-line-button" data-id="addMaterial" onClick={() => setMaterialOpen(true)}>{t("sheet.gear.addMaterial")}</button>
         ),
         parts && enchantmentIds.length === 0 && adding !== "enchantments" && (
             <button key="enchantment" type="button" class="add-line-button" data-id="addEnchantment"
-                title={`Add an enchantment\n${capacityTitle(item)}`} onClick={() => setAdding("enchantments")}>＋ ench.</button>
+                title={`${t("sheet.gear.enchantment.add")}\n${capacityTitle(item)}`} onClick={() => setAdding("enchantments")}>{t("sheet.gear.addEnchantment")}</button>
         ),
         (armour || weapon) && modIds.length === 0 && adding !== "mods" && (
-            <button key="mod" type="button" class="add-line-button" data-id="addMod" onClick={() => setAdding("mods")}>＋ mod</button>
+            <button key="mod" type="button" class="add-line-button" data-id="addMod" onClick={() => setAdding("mods")}>{t("sheet.gear.addMod")}</button>
         ),
         // Armour has its line in its frame, and ＋ condition under it.
         !armour && entryIds.length === 0 && <AddConditionButton key="condition" itemId={itemId} itemPath={path} />,
@@ -188,10 +192,10 @@ function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks: UseW
             <div class="collapsible-content">
                 <div class="layout-row centered-content gear-flags">
                     <Select field="gearType" options={GEAR_TYPES} />
-                    <label>Carried
+                    <label>{t("sheet.gear.carried")}
                         <Checkbox field="carried" class="custom" />
                     </label>
-                    <label>Equipped
+                    <label>{t("sheet.gear.equipped")}
                         <Checkbox field="equipped" class="custom" />
                     </label>
                     {parts && <parts.Flags path={path} />}
@@ -266,15 +270,15 @@ export function CarryWeight() {
             <div class="layout-row">
                 <label>S.b+T.b:</label>
                 <NumberField field="carryWeightBase" class="short" />
-                <label>Encumbrance:</label>
+                <label>{`${t("sheet.terms.stat.encumbrance")}:`}</label>
                 <ReadonlyField field="encumbrance" type="number" class="short" />
             </div>
             <div class="layout-row">
-                <label>Carry weight:</label>
+                <label>{`${t("sheet.terms.stat.carryWeight")}:`}</label>
                 <ReadonlyField field="carryWeight" type="number" class="short" />
-                <label>Lift weight:</label>
+                <label>{`${t("sheet.terms.stat.liftWeight")}:`}</label>
                 <ReadonlyField field="liftWeight" type="number" class="short" />
-                <label>Push weight:</label>
+                <label>{`${t("sheet.terms.stat.pushWeight")}:`}</label>
                 <ReadonlyField field="pushWeight" type="number" class="short" />
             </div>
         </Scope>

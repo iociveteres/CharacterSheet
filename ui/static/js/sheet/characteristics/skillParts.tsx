@@ -6,6 +6,7 @@ import { skillSummary } from "./characteristicSummary";
 import { peekAt } from "../core/sync";
 import { bonusSuccessesOf } from "./characteristicRules";
 import { useSheet } from "../components/context";
+import type { Label } from "../rollLabel";
 
 export const ADVANCES = ["plus0", "plus10", "plus20", "plus30"] as const;
 
@@ -51,7 +52,7 @@ export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string;
 }
 
 /** The test difficulty; a click rolls the test on the row's characteristic. */
-export function Difficulty({ rowPath, label }: { rowPath: string; label: () => string }) {
+export function Difficulty({ rowPath, label }: { rowPath: string; label: () => Label }) {
     const { state, rolls, preview } = useSheet();
     const title = hoverTitle(() => skillSummary(state, rowPath));
     if (preview) return <ReadonlyField field="difficulty" class="short" {...title} />;

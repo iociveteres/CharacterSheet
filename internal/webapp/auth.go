@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
@@ -27,6 +28,7 @@ func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form userSignupForm
 
 	err := app.decodePostForm(r, &form)
@@ -35,11 +37,11 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "name", "This field cannot be blank")
-	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
-	form.Check(validator.NotBlank(form.Password), "password", "This field cannot be blank")
-	form.Check(validator.MinChars(form.Password, 8), "password", "This field must be at least 8 characters long")
+	form.Check(validator.NotBlank(form.Name), "name", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.NotBlank(form.Email), "email", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", i18n.T(lang, "server.errors.form.email"))
+	form.Check(validator.NotBlank(form.Password), "password", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.MinChars(form.Password, 8), "password", i18n.T(lang, "server.errors.form.minChars", i18n.Params{"count": 8}))
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -48,10 +50,10 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := app.Models.Users.Insert(r.Context(), form.Name, form.Email, form.Password)
+	userID, err := app.Models.Users.Insert(r.Context(), form.Name, form.Email, form.Password, lang)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
-			form.AddError("email", "Email address is already in use")
+			form.AddError("email", i18n.T(lang, "server.errors.form.emailInUse"))
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
@@ -73,13 +75,13 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			"Name":           form.Name,
 		}
 
-		err := app.Mailer.Send(form.Email, "user_verification.html", data)
+		err := app.Mailer.Send(form.Email, lang, "user_verification", data)
 		if err != nil {
 			app.ErrorLog.Output(2, fmt.Sprintf("send verification email to %s: %s", form.Email, err))
 		}
 	})
 
-	app.SessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.signedUp"))
 	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
@@ -94,6 +96,7 @@ func (app *Application) userVerify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var token string
 	// it's single button form with no validation required
 	// hence why simpler way to parse form is used
@@ -111,7 +114,7 @@ func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if token == "" {
-		app.SessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+		app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.activationLinkInvalid"))
 		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		return
 	}
@@ -120,7 +123,7 @@ func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
-			app.SessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.activationLinkInvalid"))
 			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		default:
 			app.serverError(w, err)
@@ -135,7 +138,7 @@ func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.SessionManager.Put(r.Context(), "authenticatedUserID", userID)
-	app.SessionManager.Put(r.Context(), "flash", "Account successfully activated")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.activated"))
 
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
@@ -147,6 +150,7 @@ func (app *Application) userResendVerification(w http.ResponseWriter, r *http.Re
 }
 
 func (app *Application) userResendVerificationPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	userID := app.SessionManager.GetInt(r.Context(), "resendUserID")
 	if userID == 0 {
 		app.clientError(w, http.StatusBadRequest)
@@ -179,7 +183,7 @@ func (app *Application) userResendVerificationPost(w http.ResponseWriter, r *htt
 			"Name":           user.Name,
 		}
 
-		err := app.Mailer.Send(user.Email, "user_verification.html", data)
+		err := app.Mailer.Send(user.Email, mailLanguage(r, user), "user_verification", data)
 		if err != nil {
 			app.ErrorLog.Output(2, fmt.Sprintf("resend verification email to %s: %s", user.Email, err))
 		}
@@ -190,7 +194,7 @@ func (app *Application) userResendVerificationPost(w http.ResponseWriter, r *htt
 		app.serverError(w, err)
 		return
 	}
-	app.SessionManager.Put(r.Context(), "flash", "Your verification email has been resent. Check your email.")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.verificationResent"))
 	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
@@ -218,6 +222,7 @@ func (app *Application) userPasswordRequestReset(w http.ResponseWriter, r *http.
 }
 
 func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form userPasswordRequesRestForm
 
 	err := app.decodePostForm(r, &form)
@@ -226,8 +231,8 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.Check(validator.NotBlank(form.Email), "email", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", i18n.T(lang, "server.errors.form.email"))
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -241,7 +246,7 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		// early exit if no such user
 		// do not disclose it doesn't exist
 		if errors.Is(err, models.ErrNoRecord) {
-			app.SessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
+			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkSent"))
 			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
@@ -266,13 +271,13 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 			"Name":              user.Name,
 		}
 
-		err := app.Mailer.Send(user.Email, "password_change.html", data)
+		err := app.Mailer.Send(user.Email, mailLanguage(r, user), "password_change", data)
 		if err != nil {
 			app.ErrorLog.Output(2, fmt.Sprintf("send password reset email to %s: %s", user.Email, err))
 		}
 	})
 
-	app.SessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkSent"))
 	userAuthenticated := app.SessionManager.Exists(r.Context(), "authenticatedUserID")
 	if userAuthenticated {
 		http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
@@ -290,6 +295,7 @@ type accountPasswordResetForm struct {
 }
 
 func (app *Application) accountPasswordReset(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	params := httprouter.ParamsFromContext(r.Context())
 	changePasswordToken := params.ByName("token")
 
@@ -300,7 +306,7 @@ func (app *Application) accountPasswordReset(w http.ResponseWriter, r *http.Requ
 	}
 
 	if !exists {
-		app.SessionManager.Put(r.Context(), "flash", "Change password reset link is incorrect or expired")
+		app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkInvalid"))
 		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		return
 	}
@@ -312,6 +318,7 @@ func (app *Application) accountPasswordReset(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *Application) accountPasswordResetPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form accountPasswordResetForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -321,10 +328,10 @@ func (app *Application) accountPasswordResetPost(w http.ResponseWriter, r *http.
 
 	// token field is filled automatically and is hidden
 	// ideally change to set flash message
-	form.Check(validator.NotBlank(form.Token), "token", "This field cannot be blank")
-	form.Check(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
-	form.Check(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
-	form.Check(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+	form.Check(validator.NotBlank(form.Token), "token", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.MinChars(form.NewPassword, 8), "newPassword", i18n.T(lang, "server.errors.form.minChars", i18n.Params{"count": 8}))
+	form.Check(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", i18n.T(lang, "server.errors.form.passwordsMismatch"))
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -336,7 +343,7 @@ func (app *Application) accountPasswordResetPost(w http.ResponseWriter, r *http.
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
-			app.SessionManager.Put(r.Context(), "flash", "Change password reset link is incorrect or expired")
+			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkInvalid"))
 			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		default:
 			app.serverError(w, err)
@@ -350,7 +357,7 @@ func (app *Application) accountPasswordResetPost(w http.ResponseWriter, r *http.
 		return
 	}
 	app.SessionManager.Put(r.Context(), "authenticatedUserID", userID)
-	app.SessionManager.Put(r.Context(), "flash", "Password successfully changed!")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordReset"))
 
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
@@ -368,6 +375,7 @@ func (app *Application) userLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form userLoginForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -375,9 +383,9 @@ func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
-	form.Check(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Email), "email", i18n.T(lang, "server.errors.form.blank"))
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", i18n.T(lang, "server.errors.form.email"))
+	form.Check(validator.NotBlank(form.Password), "password", i18n.T(lang, "server.errors.form.blank"))
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -389,12 +397,12 @@ func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	id, err := app.Models.Users.Authenticate(r.Context(), form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			form.AddNonFieldError("Email or password is incorrect")
+			form.AddNonFieldError(i18n.T(lang, "server.errors.form.credentialsIncorrect"))
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "login.html", "base", data)
 		} else if errors.Is(err, models.ErrUserNotActivated) {
-			form.AddNonFieldError("Email is not verified")
+			form.AddNonFieldError(i18n.T(lang, "server.errors.form.emailNotVerified"))
 
 			err = app.SessionManager.RenewToken(r.Context())
 			if err != nil {
@@ -431,6 +439,7 @@ func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	// Use the RenewToken() method on the current session to change the session ID.
 	err := app.SessionManager.RenewToken(r.Context())
 	if err != nil {
@@ -442,7 +451,16 @@ func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	app.SessionManager.Remove(r.Context(), "authenticatedUserID")
 	// Add a flash message to the session to confirm to the user that they've been
 	// logged out.
-	app.SessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.loggedOut"))
 	// Redirect the user to the Application home page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// mailLanguage is the language of an email to user: the account's, or for an account without
+// one (made before languages) the language of the request, which its owner most likely sent.
+func mailLanguage(r *http.Request, user *models.User) string {
+	if i18n.Supported(user.Locale) {
+		return user.Locale
+	}
+	return i18n.FromContext(r.Context())
 }

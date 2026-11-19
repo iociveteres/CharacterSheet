@@ -8,6 +8,8 @@ import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } 
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
+import { t } from "../../i18n";
+import { code, NAME, SPACE, type Part } from "../rollLabel";
 
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */
 export type TechnoRule = "price" | "processes" | "hardware";
@@ -146,15 +148,20 @@ export function processShortfall(state: SheetSignals): Cost {
     };
 }
 
-/** What the last activation of a Compensator power paid, which a compensation roll can give back; null once settled. */
-export function compensationDue(state: SheetSignals): { name: string; x: number; energy: number; fatigue: number } | null {
+/**
+ * What the last activation of a Compensator power paid, which a compensation
+ * roll can give back, and the power's name, `part` in a roll label; null once settled.
+ */
+export function compensationDue(state: SheetSignals): { name: string; part: Part; x: number; energy: number; fatigue: number } | null {
     const id = textAt(state, "technoArcana.compensation.power");
     const energy = numberAt(state, "technoArcana.compensation.energy");
     const fatigue = numberAt(state, "technoArcana.compensation.fatigue");
     if (!id || energy + fatigue <= 0) return null;
     const power = techPowers(state).find(p => p.path.endsWith(`.powers.items.${id}`));
+    const typed = power ? textAt(state, `${power.path}.name`).trim() : "";
     return {
-        name: power ? textAt(state, `${power.path}.name`).trim() || "Tech Power" : "A deleted power",
+        name: typed || (power ? t("sheet.termsPowers.tech.techPower") : t("sheet.tech.deletedPower")),
+        part: typed || code(SPACE.name, power ? NAME.techPower : NAME.deletedTechPower),
         x: numberAt(state, "technoArcana.compensation.x"),
         energy,
         fatigue,
@@ -165,7 +172,7 @@ export function compensationDue(state: SheetSignals): { name: string; x: number;
 export const processes = sheetComputed((state: SheetSignals): Processes => {
     const powers: ProcessHeld[] = [];
     for (const { path, tabId } of techPowers(state)) {
-        const name = textAt(state, `${path}.name`).trim() || "Tech Power";
+        const name = textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.tech.techPower");
         const traits = techTraitsAt(state, path, numberAt(state, `${path}.inProcess.x`));
         const copies = numberAt(state, `${path}.inProcess.copies`);
         if (copies > 0) {

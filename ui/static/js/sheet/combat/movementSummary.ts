@@ -7,6 +7,7 @@ import { characteristicKeys } from "../characteristics/characteristicRules";
 import { addedLines } from "../characteristics/characteristicSummary";
 import { collectEntries } from "../modifiers/entries";
 import { textAt } from "../core/sync";
+import { t } from "../../i18n";
 import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
 
 /** The terms of `expr` with what each adds: "A.b +3", "Size +1", "+2" for a number; those adding 0 left out, as Size 0. */
@@ -38,7 +39,7 @@ export function movementSummary(state: SheetSignals, modePath: string, column: M
     const header = `${modeName(state, modePath)}: ${column.label} ${modeDistance(state, modePath, column)}`;
     const expr = textAt(state, `${modePath}.spd`);
     const problem = spdProblem(state, expr);
-    if (problem) return [header, `${problem}. Set the SPD under ⚙`];
+    if (problem) return [header, t("sheet.combat.movement.setSpd", { problem })];
 
     const spd = modeSpd(state, modePath)!;
     const mult = modeMult(state, modePath, column);
@@ -51,6 +52,6 @@ export function movementSummary(state: SheetSignals, modePath: string, column: M
         // A lone number, as "6" of Flyer (6), is the SPD itself.
         ...(terms.length === 1 && !conditions.length && /^[+-]?\d/.test(terms[0]) ? [] : terms),
         ...conditions,
-        ...(raw !== spd ? [`SPD ${raw} counts as ${MIN_SPD}`] : []),
+        ...(raw !== spd ? [t("sheet.combat.movement.countsAs", { raw, min: MIN_SPD })] : []),
     ];
 }

@@ -18,6 +18,7 @@ import { sheetName } from "../../characters";
 import { useClickOutside } from "../../components/useClickOutside";
 import { useEscape } from "../../components/overlay";
 import { useListSortable, type Drop } from "../../components/useListSortable";
+import { t } from "../../../i18n";
 
 const columnOf = (el: Element) => el.closest<HTMLElement>("[data-column]")?.dataset.column;
 
@@ -52,10 +53,10 @@ export function ParticipantColumn({ side }: { side: Side }) {
         <div class={picking ? "encounter-column participant-column picking" : "encounter-column participant-column"} data-column={side}>
             <div class="encounter-column-body" ref={body}>
                 <p class="encounter-column-title">
-                    <span>{side === "party" ? "Party" : "Enemies"}</span>
-                    <label class="encounter-by-initiative" title="Keep the cards in turn order; dragging one lets the order go">
+                    <span>{side === "party" ? t("room.encounter.side.party") : t("room.encounter.side.enemies")}</span>
+                    <label class="encounter-by-initiative" title={t("room.encounter.byInitiativeTitle")}>
                         <input type="checkbox" class="custom" checked={byInitiative} onChange={e => setColumnByInitiative(side, e.currentTarget.checked)} />
-                        By initiative
+                        {t("room.encounter.byInitiative")}
                     </label>
                 </p>
                 {mine.map(g => g.members.length > 1
@@ -65,7 +66,7 @@ export function ParticipantColumn({ side }: { side: Side }) {
             <div class="encounter-column-footer">
                 {side === "party" && <AddSheets />}
                 <button type="button" class={picking ? "encounter-group button-colored" : "encounter-group"} onClick={() => toggleGrouping(side)}>
-                    {picking ? "Join the picked" : "Group"}
+                    {picking ? t("room.encounter.groupPicked") : t("room.encounter.group")}
                 </button>
             </div>
         </div>
@@ -80,7 +81,7 @@ function Group({ group }: { group: GroupView }) {
             data-group-id={group.id} ref={frame}>
             <div class="encounter-group-header">
                 <span>{group.label} · {group.value ?? "—"}</span>
-                <button type="button" class="encounter-ungroup" title="Ungroup" aria-label="Ungroup" onClick={() => ungroup(group.id)}>⤫</button>
+                <button type="button" class="encounter-ungroup" title={t("room.encounter.ungroup")} aria-label={t("room.encounter.ungroup")} onClick={() => ungroup(group.id)}>⤫</button>
             </div>
             {group.members.map(m => <Member key={m.participant.id} p={m} />)}
         </div>
@@ -95,8 +96,8 @@ function Member({ p }: { p: ParticipantView }) {
 function DeletedCard({ p }: { p: ParticipantView }) {
     return (
         <div class="encounter-card-deleted" data-participant-id={p.participant.id} data-sheet-id={p.participant.sheetId} data-group-id={p.participant.groupId}>
-            <span>Deleted <span class="encounter-muted">{p.name}</span></span>
-            <button type="button" class="encounter-undo" onClick={() => undoRemoval(p.participant.id)}>Undo</button>
+            <span>{t("room.encounter.deleted")} <span class="encounter-muted">{p.name}</span></span>
+            <button type="button" class="encounter-undo" onClick={() => undoRemoval(p.participant.id)}>{t("common.undo")}</button>
         </div>
     );
 }
@@ -130,7 +131,7 @@ function Card({ p }: { p: ParticipantView }) {
     const picking = pick?.side === participant.side;
     const wounds = sheet ? woundsOf(sheet) : null;
     // A character leaves the party, and so every encounter of the room.
-    const removeLabel = participant.npc ? "Remove from the encounter" : "Remove from the party";
+    const removeLabel = participant.npc ? t("room.encounter.removeNpc") : t("room.encounter.removeCharacter");
     const classes = [
         "encounter-card",
         selected.value === participant.id && "selected",
@@ -145,34 +146,34 @@ function Card({ p }: { p: ParticipantView }) {
         <div class={classes} data-participant-id={participant.id} data-sheet-id={participant.sheetId} data-group-id={participant.groupId} onClick={onClick}>
             <div class="encounter-card-name">
                 {picking && (
-                    <input type="checkbox" class="custom encounter-pick" aria-label={`Pick ${p.name}`} disabled={!canPick(participant.id)}
+                    <input type="checkbox" class="custom encounter-pick" aria-label={t("room.encounter.pick", { name: p.name })} disabled={!canPick(participant.id)}
                         checked={pick.picked.includes(participant.id)} onChange={() => togglePicked(participant.id)} />
                 )}
                 {/* One line of text, cut at its end: the name for players gives way first. */}
                 <span class="encounter-card-names">
                     <span class="encounter-card-title">{p.name}</span>
                     {participant.displayName && (
-                        <span class="encounter-card-shown-as" title={`For players: ${participant.displayName}`}>{participant.displayName}</span>
+                        <span class="encounter-card-shown-as" title={t("room.encounter.forPlayersTitle", { name: participant.displayName })}>{participant.displayName}</span>
                     )}
                 </span>
-                <button type="button" class="encounter-icon encounter-open-sheet" title="Open the sheet" aria-label="Open the sheet"
+                <button type="button" class="encounter-icon encounter-open-sheet" title={t("room.encounter.openSheet")} aria-label={t("room.encounter.openSheet")}
                     disabled={!sheet} onClick={() => openPopup(participant.sheetId)}>↗</button>
                 {participant.npc && <NpcMenu p={p} />}
                 <button type="button" class="encounter-icon encounter-remove" title={removeLabel} aria-label={removeLabel}
                     onClick={() => removeParticipant(participant.id)}>×</button>
             </div>
             <div class="encounter-card-wounds">
-                <button type="button" class="encounter-wounds-minus" title="Take a wound" aria-label="Take a wound"
+                <button type="button" class="encounter-wounds-minus" title={t("room.encounter.takeWound")} aria-label={t("room.encounter.takeWound")}
                     disabled={!sheet} onClick={() => changeWounds(participant.id, -1)}>−</button>
                 <span class="encounter-wounds-value">
                     {wounds ? `${wounds.left}/${wounds.max}` : "…"}
                     {wounds && wounds.ablative > 0 && (
-                        <span class="encounter-ablative-left" title={`Ablative wounds: ${wounds.ablativeLeft} of ${wounds.ablative} left`}>
+                        <span class="encounter-ablative-left" title={t("sheet.statblock.ablativeTitle", { left: wounds.ablativeLeft, total: wounds.ablative })}>
                             {`+${wounds.ablativeLeft}`}
                         </span>
                     )}
                 </span>
-                <button type="button" class="encounter-wounds-plus" title="Heal a wound" aria-label="Heal a wound"
+                <button type="button" class="encounter-wounds-plus" title={t("room.encounter.healWound")} aria-label={t("room.encounter.healWound")}
                     disabled={!sheet} onClick={() => changeWounds(participant.id, 1)}>+</button>
                 {wounds && <WoundsBar wounds={wounds} />}
             </div>
@@ -227,35 +228,35 @@ function NpcMenu({ p }: { p: ParticipantView }) {
     };
     return (
         <span class="encounter-card-menu" ref={box}>
-            <button type="button" class="encounter-icon encounter-npc-menu-btn" title="NPC menu" aria-label="NPC menu" aria-expanded={open}
+            <button type="button" class="encounter-icon encounter-npc-menu-btn" title={t("room.encounter.npcMenu")} aria-label={t("room.encounter.npcMenu")} aria-expanded={open}
                 onClick={toggle}>⋯</button>
             {open && (
                 <div class="encounter-menu encounter-npc-menu" role="menu" ref={menu}>
                     <label class="encounter-npc-menu-field">
-                        <span class="encounter-muted">Name for players</span>
+                        <span class="encounter-muted">{t("room.encounter.nameForPlayers")}</span>
                         <span class="layout-row">
                             <input class="encounter-display-name" value={shownAs} maxLength={100} placeholder={p.name}
                                 onInput={e => setShownAs(e.currentTarget.value)}
                                 onKeyDown={e => e.key === "Enter" && saveShownAs()} />
-                            <button type="button" class="encounter-display-name-save" onClick={saveShownAs}>Save</button>
+                            <button type="button" class="encounter-display-name-save" onClick={saveShownAs}>{t("common.save")}</button>
                         </span>
                     </label>
                     <label class="encounter-npc-menu-field">
-                        <span class="encounter-muted">Copies</span>
+                        <span class="encounter-muted">{t("room.encounter.copies")}</span>
                         <span class="layout-row">
                             <input type="number" min={1} max={20} value={count} class="encounter-duplicate-count"
                                 onInput={e => setCount(Math.max(1, Math.min(20, Number(e.currentTarget.value) || 1)))} />
                             <button type="button" class="encounter-duplicate" onClick={() => {
                                 setOpen(false);
                                 duplicateNpc(p.participant.id, count);
-                            }}>Duplicate</button>
+                            }}>{t("common.duplicate")}</button>
                         </span>
                     </label>
                     {sourceName !== null && (
-                        <button type="button" role="menuitem" class="encounter-add-variant" title={`A new creature next to "${sourceName}"`} onClick={() => {
+                        <button type="button" role="menuitem" class="encounter-add-variant" title={t("room.encounter.variantTitle", { name: sourceName })} onClick={() => {
                             setOpen(false);
                             openAddVariant(p.participant.sheetId, p.name, sourceName);
-                        }}>Add variant to bestiary…</button>
+                        }}>{t("room.modals.addVariant.title")}…</button>
                     )}
                 </div>
             )}
@@ -271,7 +272,7 @@ function AddSheets() {
     return (
         <div class="encounter-add-sheets-box" ref={box}>
             <button type="button" class="button-colored encounter-add-sheets" aria-expanded={open} onClick={() => setAddSheetsOpen(!open)}>
-                Add sheets
+                {t("room.encounter.addSheets")}
             </button>
             {open && <AddSheetsPopup />}
         </div>
@@ -285,7 +286,7 @@ function AddSheetsPopup() {
     const ownerName = (id: number) => players.value.find(p => p.id === id)?.name ?? "";
     const toggle = (id: number) => setPicked(picked.includes(id) ? picked.filter(p => p !== id) : [...picked, id]);
     return (
-        <div class="encounter-add-sheets-popup layout-column" role="dialog" aria-label="Add sheets">
+        <div class="encounter-add-sheets-popup layout-column" role="dialog" aria-label={t("room.encounter.addSheets")}>
             <div class="encounter-sheet-list">
                 {sheets.value.map(s => (
                     <label key={s.id} class={added.has(s.id) ? "encounter-sheet-option encounter-muted" : "encounter-sheet-option"}>
@@ -297,9 +298,9 @@ function AddSheetsPopup() {
                         </span>
                     </label>
                 ))}
-                {!sheets.value.length && <p class="encounter-muted">The room has no sheets.</p>}
+                {!sheets.value.length && <p class="encounter-muted">{t("room.encounter.noSheets")}</p>}
             </div>
-            <button type="button" class="button-colored encounter-add-picked" disabled={!picked.length} onClick={() => addSheets(picked)}>Add</button>
+            <button type="button" class="button-colored encounter-add-picked" disabled={!picked.length} onClick={() => addSheets(picked)}>{t("common.add")}</button>
         </div>
     );
 }

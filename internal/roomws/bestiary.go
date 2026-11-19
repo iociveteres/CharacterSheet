@@ -23,13 +23,13 @@ type rollMsg struct {
 // rollResultMsg is a chat message of the roll (newChatMessageSentMsg) that is
 // not stored and has no author.
 type rollResultMsg struct {
-	Type          string                  `json:"type"`
-	EventID       string                  `json:"eventID"`
-	MessageBody   string                  `json:"messageBody"`
-	CommandResult string                  `json:"commandResult"`
-	Versus        *commands.VersusOutcome `json:"versus,omitempty"`
-	CharacterName *string                 `json:"characterName,omitempty"`
-	CreatedAt     string                  `json:"created"`
+	Type          string               `json:"type"`
+	EventID       string               `json:"eventID"`
+	MessageBody   string               `json:"messageBody"`
+	CommandResult string               `json:"commandResult"`
+	ResultData    *commands.ResultData `json:"resultData,omitempty"`
+	CharacterName *string              `json:"characterName,omitempty"`
+	CreatedAt     string               `json:"created"`
 }
 
 // rollHandler rolls the command the room would post to the chat and answers
@@ -52,7 +52,7 @@ func (app *Server) rollHandler(ctx context.Context, client *Client, hub *Hub, ra
 		EventID:       msg.EventID,
 		MessageBody:   msg.MessageBody,
 		CommandResult: r.Result,
-		Versus:        r.Versus,
+		ResultData:    r.Data,
 		CharacterName: msg.CharacterName,
 		CreatedAt:     time.Now().Format(time.RFC3339),
 	})

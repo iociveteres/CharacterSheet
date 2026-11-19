@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadState, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { attachComputeds } from "../kinds/computed";
 import { modeNameSuggestions, movementInsert, movementSuggestions, movementTraits } from "./movementSuggestions";
+import { optionLabel, optionValue } from "../schema/constants";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
@@ -63,11 +65,27 @@ describe("modeNameSuggestions", () => {
             ["From traits", ["Flight", "Hover"]],
             ["Modes", ["Land", "Burrow", "Swim", "Climb"]],
         ]);
-        expect(modeNameSuggestions(testState(), "sw").flatMap(g => g.options)).toEqual(["Swim"]);
+        expect(modeNameSuggestions(testState(), "sw").flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
     });
 
     it("lists every mode without traits", () => {
         withTraits();
-        expect(modeNameSuggestions(testState(), null)).toEqual([{ label: "Modes", options: ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] }]);
+        expect(modeNameSuggestions(testState(), null).map(g => [g.label, g.options.map(optionValue)]))
+            .toEqual([["Modes", ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"]]]);
+    });
+
+    it("shows the names in the page's language and keeps them English", async () => {
+        installDictionary("ru");
+        vi.resetModules();
+        const utils = await import("../components/testUtils");
+        const suggestions = await import("./movementSuggestions");
+        utils.loadState({ traits: { list: { items: { t0: { name: "Flyer (6)" }, t1: { name: "Hoverer (4)" } }, layouts: { t0: pos(0, 0), t1: pos(0, 1) } } } });
+        const groups = suggestions.modeNameSuggestions(utils.testState(), null);
+        expect(groups.map(g => g.options.map(optionValue))).toEqual([["Flight", "Hover"], ["Land", "Burrow", "Swim", "Climb"]]);
+        const swim = groups[1].options.find(o => optionValue(o) === "Swim")!;
+        expect(optionLabel(swim)).not.toBe("Swim");
+        // A query finds a mode by its label too.
+        const query = optionLabel(swim).toLowerCase();
+        expect(suggestions.modeNameSuggestions(utils.testState(), query).flatMap(g => g.options.map(optionValue))).toEqual(["Swim"]);
     });
 });

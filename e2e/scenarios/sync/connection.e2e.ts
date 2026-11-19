@@ -8,9 +8,6 @@ import { addItem, addTab, grid, openTab, selectTab, showGrid, tabIds } from "../
 import { useTable } from "../../lib/table";
 import { eventually, sleep } from "../../lib/wait";
 
-const LOST = "Connection lost: the sheet is read-only until it is back.";
-const RESTORED = "Connection restored.";
-const TOO_LARGE = "Your change was not saved: it is larger than 32 KB.";
 /** What room/socket.js logs itself while the connection is down. */
 const SOCKET_LOGS = [/^error: WebSocket error/, /WebSocket not connected, cannot send message/, /Max reconnection attempts reached/];
 const CONTROLS = [".add-button", ".add-tab-btn", ".drag-handle", ".delete-button", "#toggle-delete-mode"];
@@ -76,7 +73,7 @@ describe("connection", () => {
 
         gate.set("hold");
         await a.dropSocket();
-        await a.expectNotice(LOST);
+        await a.waitNotices(1);
         await eventually(() => editableFields(a), f => expect(f, "editable fields while offline").toEqual([]));
         expect(await controlCounts(a)).toEqual(Object.fromEntries(CONTROLS.map(sel => [sel, 0])));
 
@@ -88,7 +85,7 @@ describe("connection", () => {
 
         const n = await inserted(a);
         gate.set("pass");
-        await a.expectNotice(RESTORED, 10_000);
+        await a.waitNotices(2, 10_000);
         await reread(a, n);
         await a.expectValue("characterInfo.race", race);
         await a.openNavTab("talents");
@@ -104,7 +101,8 @@ describe("connection", () => {
         await a.openNavTab("gear");
         const n = await inserted(a);
         await a.dropSocket();
-        await a.expectNotice(RESTORED, 10_000);
+        // One notice when the connection is lost, another when it is back.
+        await a.waitNotices(2, 10_000);
         await reread(a, n);
         expect(await a.page.evaluate(() => (window.__e2e.root().getElementById("show-gear") as HTMLInputElement).checked), "the open navigation tab").toBe(true);
     });
@@ -125,8 +123,7 @@ describe("connection", () => {
             window.__e2e.write("characterInfo.race", v);
             window.__e2e.sockets.findLast(s => s.readyState === WebSocket.OPEN)!.close();
         }, unsent);
-        await a.expectNotice(LOST);
-        await a.expectNotice(RESTORED, 10_000);
+        await a.waitNotices(2, 10_000);
         await reread(a, n);
         await a.expectValue("characterInfo.race", stored);
 
@@ -148,14 +145,14 @@ describe("connection", () => {
 
         const n = await inserted(a);
         await a.write(path, "x".repeat(40 * 1024));
-        await a.expectNotice(TOO_LARGE);
+        const [tooLarge] = await a.waitNotices(1);
         await reread(a, n);
         await a.expectValue(path, "stored description");
         expect((await a.settledSheetMessages()).filter(m => m.path === path), "A sent the edit").toEqual([]);
 
         expect(await socketOpen(a), "A's socket is open").toBe(true);
         expect(await socketCount(a), "A did not reconnect").toBe(sockets);
-        expect(await a.page.evaluate(() => window.__e2e.notices), "no other notice").toEqual([TOO_LARGE]);
+        expect(await a.page.evaluate(() => window.__e2e.notices), "no other notice").toEqual([tooLarge]);
         await a.write(path, "small after");
         await b.expectValue(path, "small after");
     });
@@ -190,7 +187,7 @@ describe("connection", () => {
         gate.set("refuse");
         const start = Date.now();
         await a.dropSocket();
-        await a.expectNotice(LOST);
+        const [lost] = await a.waitNotices(1);
         await modal.waitFor({ state: "visible", timeout: 20_000 });
         const took = Date.now() - start;
         expect(gate.attempts - attempts, "retries").toBe(3);
@@ -200,6 +197,6 @@ describe("connection", () => {
         expect(gate.attempts - attempts, "no retry after giving up").toBe(3);
         expect(await modal.isVisible()).toBe(true);
         expect(await editableFields(a), "the sheet stays read-only").toEqual([]);
-        expect(await a.page.evaluate(() => window.__e2e.notices)).toEqual([LOST]);
+        expect(await a.page.evaluate(() => window.__e2e.notices)).toEqual([lost]);
     });
 });

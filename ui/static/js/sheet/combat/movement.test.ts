@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { conditionOf, loadState, testState } from "../components/testUtils";
 import { parseDamage, WEAPON_REFS } from "../rolls/damageExpression";
 import { movementSummary } from "./movementSummary";
@@ -62,9 +63,9 @@ describe("movement modes", () => {
             updateSignalAtPath(testState(), `${MOVE}.spd`, spd);
             expect(modeDistance(testState(), MOVE, HALF)).toBe("—");
         }
-        expect(spdProblem(testState(), "")).toBe("No SPD");
-        expect(spdProblem(testState(), "A.b+Fly")).toBe("Unknown: Fly");
-        expect(spdProblem(testState(), "2d5")).toBe("SPD takes no dice");
+        expect(spdProblem(testState(), "")).toBeTruthy();
+        expect(spdProblem(testState(), "A.b+Fly")).toContain("Fly");
+        expect(spdProblem(testState(), "2d5")).toBeTruthy();
         expect(spdProblem(testState(), "½S.b▲")).toBeNull();
     });
 
@@ -105,6 +106,25 @@ describe("movementSummary", () => {
     it("says why there is no distance", () => {
         updateSignalAtPath(testState(), `${MOVE}.spd`, "A.b+Fly");
         updateSignalAtPath(testState(), `${MOVE}.name`, "");
-        expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Mode: Half —", "Unknown: Fly. Set the SPD under ⚙"]);
+        expect(movementSummary(testState(), MOVE, HALF)).toEqual([expect.stringMatching(/ —$/), expect.stringContaining("Fly")]);
+    });
+
+    it("shows a mode of the rules and the columns in the page's language, the name kept English", async () => {
+        installDictionary("ru");
+        vi.resetModules();
+        const utils = await import("../components/testUtils");
+        const computeds = await import("../kinds/computed");
+        const sync = await import("../core/sync");
+        const movement = await import("./movement");
+        const summary = await import("./movementSummary");
+        utils.loadState(content());
+        computeds.attachComputeds(utils.testState());
+        sync.updateSignalAtPath(utils.testState(), `${MOVE}.spd`, "A.b - 2×Size - 4");
+        const lines = summary.movementSummary(utils.testState(), MOVE, movement.MOVE_COLUMNS[0]);
+        expect(lines.slice(1, 4)).toEqual(["A.b +3", "2×Size -2", "-4"]);
+        expect(lines[0]).toMatch(/ 0\.5$/);
+        expect(sync.valueAt(utils.testState(), `${MOVE}.name`)).toBe("Land");
+        sync.updateSignalAtPath(utils.testState(), `${MOVE}.name`, "Hover board");
+        expect(movement.modeName(utils.testState(), MOVE)).toBe("Hover board");
     });
 });

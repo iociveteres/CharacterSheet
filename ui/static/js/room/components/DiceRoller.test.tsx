@@ -106,7 +106,6 @@ describe("the dice popover", () => {
         const buttons = $$<HTMLButtonElement>(".custom-dice-roll-btn");
 
         expect(inputs.map(i => i.value)).toEqual(["", "2d10+5", "", "", ""]);
-        expect(inputs[0].placeholder).toBe("e.g., 2d10+5");
         expect(buttons.map(b => b.disabled)).toEqual([true, false, true, true, true]);
 
         click(buttons[1]);

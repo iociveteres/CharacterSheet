@@ -1,24 +1,25 @@
-{{define "title"}}Your Character Sheets{{end}}
+{{define "title"}}{{t .Lang "site.rooms.title"}}{{end}}
 {{define "main"}}
-<h2>Your Character Sheets</h2>
+<h2>{{t .Lang "site.rooms.title"}}</h2>
 <div class="container">
 
     <div class="controls">
-        <a href='{{reverseRev "RoomCreate"}}'>Create New Room</a>
+        <a href='{{reverseRev "RoomCreate"}}'>{{t .Lang "site.rooms.create.title"}}</a>
     </div>
 
+    {{/* i18n-keys: common.role.* */}}
     {{range .RoomsWithRole}}
     <div class="item">
         <div class="data">
             <div class="data">
                 <div class="name">{{.Room.Name}}</div>
-                <div class="meta created">Created {{humanDate .Room.CreatedAt $.TimeZone}}</div>
-                <div class="meta created">{{.UserRole}}</div>
+                <div class="meta created">{{t $.Lang "site.rooms.created" "date" (humanDate $.Lang .Room.CreatedAt $.TimeZone)}}</div>
+                <div class="meta created">{{t $.Lang (printf "common.role.%s" .UserRole)}}</div>
             </div>
         </div>
         <div class="controls">
-            <a href='{{reverseRev "RoomDelete" (str .Room.ID)}}' class="muted">Delete</a>
-            <a href='{{reverseRev "RoomView" (str .Room.ID)}}'>Open</a>
+            <a href='{{reverseRev "RoomDelete" (str .Room.ID)}}' class="muted">{{t $.Lang "common.delete"}}</a>
+            <a href='{{reverseRev "RoomView" (str .Room.ID)}}'>{{t $.Lang "common.open"}}</a>
         </div>
     </div>
     {{end}}

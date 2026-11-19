@@ -3,6 +3,7 @@
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import { inAny } from "../modifiers/entries";
+import { t } from "../../i18n";
 
 const SEPARATOR = /[\s,]/;
 
@@ -36,7 +37,9 @@ export function insertToken(text: string, caret: number, value: string, typed: b
 /** What Any picks of the sheet's `characteristics`, e.g. "all but Inf and Cor". */
 export function anyScope(characteristics: readonly Characteristic[]): string {
     const outside = characteristics.filter(c => !inAny(c.key)).map(c => c.key);
-    return outside.length ? `all but ${outside.join(" and ")}` : "all characteristics";
+    return outside.length
+        ? t("sheet.characteristics.anyScope.allBut", { keys: outside.join(` ${t("sheet.characteristics.anyScope.and")} `) })
+        : t("sheet.characteristics.anyScope.all");
 }
 
 /** Whether `word`, typed in upper case, begins the key or a word of the label. */
@@ -66,7 +69,7 @@ export function characteristicSuggestions(
     const word = excluding ? q.slice(1) : q;
 
     const leaveOut = {
-        label: "Leave out",
+        label: t("sheet.characteristics.suggest.leaveOut"),
         options: characteristics
             .filter(c => inAny(c.key) && !leftOut.has(c.key.toUpperCase()) && matches(c, word))
             .map(c => ({ value: `-${c.key}`, label: `-${c.key} — ${c.label}` })),
@@ -74,11 +77,11 @@ export function characteristicSuggestions(
     if (excluding) return leaveOut.options.length ? [leaveOut] : [];
 
     const all = {
-        label: "All",
-        options: !hasAny && "ANY".startsWith(q) ? [{ value: "Any", label: `Any — ${anyScope(characteristics)}` }] : [],
+        label: t("sheet.characteristics.suggest.all"),
+        options: !hasAny && "ANY".startsWith(q) ? [{ value: "Any", label: t("sheet.characteristics.suggest.any", { scope: anyScope(characteristics) }) }] : [],
     };
     const add = {
-        label: "Characteristics",
+        label: t("sheet.terms.block.characteristics"),
         options: characteristics
             // After Any only the ones it leaves out are worth adding.
             .filter(c => !named.has(c.key.toUpperCase()) && (!hasAny || !inAny(c.key)) && matches(c, word))

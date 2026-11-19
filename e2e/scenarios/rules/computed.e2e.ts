@@ -70,7 +70,7 @@ describe("computed values", () => {
         await fatigueIndicator("Not affected", false);
         await a.write("fatigue.fatigueCur", 1);
         await both(tab("player"), "skillsLeft.parry.difficulty", "20");
-        await fatigueIndicator("Taking −10 to affected rolls", true);
+        await fatigueIndicator(expect.stringContaining("−10"), true);
         await a.click({ path: "fatigue", sel: ".resource-stat .mod-toggle" });
         await a.write("fatigue.threshold.base", "1");
         await fatigueIndicator("Unconscious", true);

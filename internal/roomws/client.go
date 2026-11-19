@@ -52,6 +52,9 @@ type Client struct {
 	infoLog  *log.Logger
 	userID   int
 	timeZone *time.Location
+	// lang is the language of the page that opened the socket, for the text sent to this
+	// client alone.
+	lang string
 }
 
 type wsHandler func(ctx context.Context, client *Client, hub *Hub, raw []byte)

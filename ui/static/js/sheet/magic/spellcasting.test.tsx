@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
@@ -257,7 +257,7 @@ describe("the bar of Spellcasting", () => {
         const option = (key: string) => box(key)!.closest("label")!;
         expect(option("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
         expect(option("arcane").querySelector(".spellcasting-option-text")!.textContent).toBe("Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares");
-        expect(option("bard").title).toBe("Bard Spellcasting: Arts spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
+        expect(option("bard").title).toBe("Bard Spellcasting: Arts spells of the Bard, tested on their skill; Bardic Focus F.b");
         expect(option("bard").querySelector(".spellcasting-option-text")!.textContent).toBe("Bard spells, tested on their skill · Bardic Focus F.b");
 
         click("arcane");
@@ -281,7 +281,7 @@ describe("the bar of Spellcasting", () => {
 
     it("warns of a base PR past the casting characteristic, and the warning goes", () => {
         tab(content(["divine"], { s1: { name: "Bolt" } }, { psykana: { basePR: 4, tabs: grid({ t1: { name: "Tab", powers: grid({ s1: { name: "Bolt" } }) } }) } }));
-        expect($('[data-id="prCap"]')!.textContent).toBe("PR grows up to W.b (3)");
+        expect($('[data-id="prCap"]')!.textContent).toMatch(/W\.b \(3\)/);
         // Arcane's I.b is 4.
         click("arcane");
         expect($('[data-id="prCap"]')).toBeNull();

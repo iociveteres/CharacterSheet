@@ -8,6 +8,8 @@ import (
 )
 
 type Data struct {
+	Lang                    string // one of i18n.Languages
+	RequestURI              string // where the language switcher brings back
 	CurrentYear             int
 	CharacterSheet          *models.CharacterSheet
 	CharacterSheets         []*models.CharacterSheet

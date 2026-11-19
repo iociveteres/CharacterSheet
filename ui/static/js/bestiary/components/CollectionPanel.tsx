@@ -13,17 +13,18 @@ import { byline, kindInitials, quotaText } from "../format";
 import { Catalog } from "./Catalog";
 import { InlineName, Menu, MenuItem, useEscape } from "./common";
 import { useClickOutside } from "../../room/components/useClickOutside";
+import { t } from "../../i18n";
 
 export function CollectionPanel() {
     const collection = selectedCollection.value;
     return (
-        <section class="bestiary-panel bestiary-creatures" aria-label="Creatures">
+        <section class="bestiary-panel bestiary-creatures" aria-label={t("bestiary.shared.creatures")}>
             <div class="bestiary-panel-body">
                 {center.value === "catalog"
                     ? <Catalog />
                     : collection
                         ? <Collection key={collection.id} collection={collection} />
-                        : <p class="bestiary-muted">Pick or create a collection to keep creatures in.</p>}
+                        : <p class="bestiary-muted">{t("bestiary.collection.pickOrCreate")}</p>}
             </div>
             <div class="bestiary-panel-footer">
                 {quota.value && <QuotaLine quota={quota.value} />}
@@ -40,39 +41,45 @@ function Collection({ collection }: { collection: BestiaryCollection }) {
         <div class="bestiary-collection-view" data-collection-id={id} data-own={String(own)}>
             <div class="bestiary-header">
                 {own
-                    ? <InlineName name={collection.name} what="collection" maxLength={100} save={name => void editCollection(id, { name })}>
+                    ? <InlineName name={collection.name} renameLabel={t("bestiary.collection.rename")}
+                        fieldLabel={t("bestiary.collection.nameField")} maxLength={100} save={name => void editCollection(id, { name })}>
                         <h2 class="bestiary-title">{collection.name}</h2>
                     </InlineName>
                     : <h2 class="bestiary-title">{collection.name}</h2>}
                 {own
-                    ? <span class="bestiary-chip bestiary-visibility">{collection.visibility}</span>
-                    : <span class="bestiary-muted bestiary-owner">by {collection.owner}</span>}
+                    ? <span class="bestiary-chip bestiary-visibility">
+                        {collection.visibility === "public"
+                            ? t("bestiary.collections.visibility.public")
+                            : t("bestiary.collections.visibility.private")}
+                    </span>
+                    : <span class="bestiary-muted bestiary-owner">{t("bestiary.collection.by", { name: collection.owner })}</span>}
                 <span class="bestiary-spacer" />
                 {own
                     ? <div class="bestiary-collection-actions">
                         {/* The default collection is always private and never deleted. */}
                         {!collection.default && (collection.visibility === "private"
-                            ? <button type="button" class="button-linklike bestiary-action" onClick={() => void setVisibility(id, "public")}>Make public…</button>
-                            : <button type="button" class="button-linklike bestiary-action" onClick={() => void setVisibility(id, "private")}>Make private</button>)}
-                        <a class="bestiary-action bestiary-collection-export" href={collectionExportUrl(id)} download>Export</a>
+                            ? <button type="button" class="button-linklike bestiary-action" onClick={() => void setVisibility(id, "public")}>{t("bestiary.collection.makePublic")}</button>
+                            : <button type="button" class="button-linklike bestiary-action" onClick={() => void setVisibility(id, "private")}>{t("bestiary.collection.makePrivate")}</button>)}
+                        <a class="bestiary-action bestiary-collection-export" href={collectionExportUrl(id)} download>{t("common.export")}</a>
                         {!collection.default && (
-                            <button type="button" class="button-linklike bestiary-action danger" onClick={() => void deleteCollection(id)}>Delete</button>
+                            <button type="button" class="button-linklike bestiary-action danger" onClick={() => void deleteCollection(id)}>{t("common.delete")}</button>
                         )}
                     </div>
                     : <button type="button" class="bestiary-subscribe" aria-pressed={collection.subscribed}
                         onClick={() => void (collection.subscribed ? unsubscribe(id) : subscribe(id))}>
-                        {collection.subscribed ? "Unsubscribe" : "Subscribe"}
+                        {collection.subscribed ? t("bestiary.collection.unsubscribe") : t("bestiary.collection.subscribe")}
                     </button>}
             </div>
             <Description collection={collection} />
             <div class="bestiary-toolbar">
-                <input type="search" class="bestiary-search" placeholder="Search creatures" aria-label="Search creatures"
+                <input type="search" class="bestiary-search" placeholder={t("bestiary.shared.searchCreatures")}
+                    aria-label={t("bestiary.shared.searchCreatures")}
                     value={query.value} onInput={e => setQuery(e.currentTarget.value)} />
                 {own && <>
                     <NewCreature collectionId={id} />
                     {/* ↑ as the room's import of a character. */}
-                    <button type="button" class="bestiary-upload" title="Add creatures from exported sheets and collections"
-                        aria-label="Upload" onClick={() => files.current?.click()}>↑</button>
+                    <button type="button" class="bestiary-upload" title={t("bestiary.collection.uploadTitle")}
+                        aria-label={t("common.upload")} onClick={() => files.current?.click()}>↑</button>
                     <input type="file" ref={files} multiple accept=".json,application/json" hidden
                         onChange={e => {
                             const input = e.currentTarget;
@@ -83,8 +90,8 @@ function Collection({ collection }: { collection: BestiaryCollection }) {
                 </>}
             </div>
             <CreatureTable own={own} empty={query.value.trim()
-                ? "No creature matches."
-                : own ? "No creatures yet: make a new one, upload sheet files or save NPCs from a room." : "No creatures."} />
+                ? t("bestiary.collection.noMatch")
+                : own ? t("bestiary.collection.emptyOwn") : t("bestiary.collection.empty")} />
         </div>
     );
 }
@@ -137,17 +144,18 @@ function Description({ collection }: { collection: BestiaryCollection }) {
                                 toggle();
                             }
                         }}>{description}</p>
-                    : <button type="button" class="button-linklike bestiary-add-description" onClick={edit}>Add a description…</button>}
+                    : <button type="button" class="button-linklike bestiary-add-description" onClick={edit}>{t("bestiary.collection.addDescription")}</button>}
                 {own && description && (
-                    <button type="button" class="button-linklike bestiary-rename" title="Edit the description" aria-label="Edit the description"
+                    <button type="button" class="button-linklike bestiary-rename" title={t("bestiary.collection.editDescription")}
+                        aria-label={t("bestiary.collection.editDescription")}
                         onClick={edit}>✎</button>
                 )}
             </div>
             {card !== "closed" && (
                 <div class="bestiary-description-card">
                     {card === "edit"
-                        ? <textarea class="bestiary-description-field" aria-label="Description of the collection" maxLength={2000} rows={8}
-                            placeholder="What the collection is for, where its creatures come from." defaultValue={description}
+                        ? <textarea class="bestiary-description-field" aria-label={t("bestiary.collection.descriptionField")} maxLength={2000} rows={8}
+                            placeholder={t("bestiary.collection.descriptionPlaceholder")} defaultValue={description}
                             ref={el => el?.focus()}
                             onBlur={e => {
                                 setCard("closed");
@@ -165,12 +173,12 @@ function NewCreature({ collectionId }: { collectionId: number }) {
     const [kind, setKind] = useState<SheetKind>(sheetKinds[0]?.kind ?? "black_crusade");
     return <>
         {sheetKinds.length > 1 && (
-            <select class="bestiary-new-creature-kind" value={kind} aria-label="Kind of the new creature"
+            <select class="bestiary-new-creature-kind" value={kind} aria-label={t("bestiary.shared.newCreatureKind")}
                 onChange={e => setKind(e.currentTarget.value as SheetKind)}>
                 {sheetKinds.map(k => <option key={k.kind} value={k.kind}>{k.label}</option>)}
             </select>
         )}
-        <button type="button" class="bestiary-new-creature" onClick={() => void newCreature(collectionId, kind)}>New creature</button>
+        <button type="button" class="bestiary-new-creature" onClick={() => void newCreature(collectionId, kind)}>{t("bestiary.shared.newCreature")}</button>
     </>;
 }
 
@@ -181,7 +189,7 @@ function CreatureTable({ own, empty }: { own: boolean; empty: string }) {
     return (
         <table class="bestiary-table bestiary-creature-table">
             <thead>
-                <tr><th>Name</th><th>Kind</th><th /></tr>
+                <tr><th>{t("bestiary.collection.creatureName")}</th><th>{t("bestiary.collection.kind")}</th><th /></tr>
             </thead>
             <tbody>
                 {list.map(c => (
@@ -198,15 +206,15 @@ function CreatureTable({ own, empty }: { own: boolean; empty: string }) {
                         </td>
                         <td><span class="bestiary-chip" title={kindLabel(c.kind)}>{kindInitials(kindLabel(c.kind))}</span></td>
                         <td class="bestiary-row-menu">
-                            <Menu label="Creature menu" class="bestiary-creature-menu">
+                            <Menu label={t("bestiary.collection.creatureMenu")} class="bestiary-creature-menu">
                                 {own
                                     ? <>
-                                        <MenuItem onClick={() => openDialog({ type: "copy", id: c.id })}>Copy to…</MenuItem>
-                                        <MenuItem onClick={() => openDialog({ type: "move", id: c.id })}>Move to…</MenuItem>
+                                        <MenuItem onClick={() => openDialog({ type: "copy", id: c.id })}>{t("bestiary.collection.copyTo")}</MenuItem>
+                                        <MenuItem onClick={() => openDialog({ type: "move", id: c.id })}>{t("bestiary.collection.moveTo")}</MenuItem>
                                     </>
-                                    : <MenuItem onClick={() => openDialog({ type: "copy", id: c.id })}>Copy to my collection…</MenuItem>}
-                                <a role="menuitem" class="bestiary-menu-item" href={creatureExportUrl(c.id)} download>Export</a>
-                                {own && <MenuItem danger onClick={() => void deleteCreature(c.id)}>Delete</MenuItem>}
+                                    : <MenuItem onClick={() => openDialog({ type: "copy", id: c.id })}>{t("bestiary.collection.copyToMine")}</MenuItem>}
+                                <a role="menuitem" class="bestiary-menu-item" href={creatureExportUrl(c.id)} download>{t("common.export")}</a>
+                                {own && <MenuItem danger onClick={() => void deleteCreature(c.id)}>{t("common.delete")}</MenuItem>}
                             </Menu>
                         </td>
                     </tr>
@@ -218,7 +226,7 @@ function CreatureTable({ own, empty }: { own: boolean; empty: string }) {
 
 function QuotaLine({ quota }: { quota: Quota }) {
     return (
-        <span class="bestiary-muted bestiary-quota" title="NPCs in encounters and creatures in collections">
+        <span class="bestiary-muted bestiary-quota" title={t("bestiary.collection.quotaTitle")}>
             {quotaText(quota)}
         </span>
     );

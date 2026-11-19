@@ -2,18 +2,28 @@ package mocks
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
 
-type UserModel struct{}
+// UserModel knows user 1 (Alice); Locale is what SetLocale saved for her, InsertedLocale
+// the locale of the last Insert.
+type UserModel struct {
+	mu             sync.Mutex
+	Locale         string
+	InsertedLocale string
+}
 
-func (m *UserModel) Insert(ctx context.Context, name, email, password string) (int, error) {
+func (m *UserModel) Insert(ctx context.Context, name, email, password, locale string) (int, error) {
 	switch email {
 	case "dupe@example.com":
 		return 0, models.ErrDuplicateEmail
 	default:
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		m.InsertedLocale = locale
 		return 1, nil
 	}
 }
@@ -32,6 +42,31 @@ func (m *UserModel) Exists(ctx context.Context, id int) (bool, error) {
 	}
 }
 
+func (m *UserModel) locale() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Locale
+}
+
+func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
+	if id != 1 {
+		return "", models.ErrNoRecord
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Locale, nil
+}
+
+func (m *UserModel) SetLocale(ctx context.Context, id int, locale string) error {
+	if id != 1 {
+		return models.ErrNoRecord
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Locale = locale
+	return nil
+}
+
 func (m *UserModel) Get(ctx context.Context, id int) (*models.User, error) {
 	if id == 1 {
 		u := &models.User{
@@ -39,6 +74,7 @@ func (m *UserModel) Get(ctx context.Context, id int) (*models.User, error) {
 			Name:      "Alice",
 			Email:     "alice@example.com",
 			CreatedAt: time.Now(),
+			Locale:    m.locale(),
 		}
 		return u, nil
 	}
@@ -52,6 +88,7 @@ func (m *UserModel) GetByEmail(ctx context.Context, email string) (*models.User,
 			Name:      "Alice",
 			Email:     "alice@example.com",
 			CreatedAt: time.Now(),
+			Locale:    m.locale(),
 		}
 		return u, nil
 	}

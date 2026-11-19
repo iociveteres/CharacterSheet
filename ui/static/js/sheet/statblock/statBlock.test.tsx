@@ -4,6 +4,7 @@ import {
     hoverLines, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import type { Autocomplete } from "../autocomplete";
+import { installDictionary } from "../../i18n/testDictionary";
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
@@ -195,6 +196,19 @@ describe("StatBlock", () => {
         expect(section().classList.contains("collapsed")).toBe(true);
         act(() => toggle().click());
         expect(section().querySelector('[data-id="p1"]')).not.toBeNull();
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual([]);
+    });
+
+    it("keeps what is collapsed by the sections' English ids in any language", () => {
+        installDictionary("ru");
+        show();
+        // The armour comes first.
+        const section = () => $$(".stat-section")[0];
+        const toggle = () => section().querySelector<HTMLButtonElement>(".stat-section-toggle")!;
+        expect(toggle().getAttribute("aria-label")).toContain(section().querySelector(".stat-section-title h4")!.textContent);
+        act(() => toggle().click());
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual(["Armour"]);
+        act(() => toggle().click());
         expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual([]);
     });
 

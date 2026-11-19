@@ -1,4 +1,4 @@
-{{define "title"}}Login{{end}}
+{{define "title"}}{{t .Lang "site.auth.login.title"}}{{end}}
 {{define "main"}}
 <form action='{{reverseRev "UserLogin"}}' method='POST' novalidate>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
@@ -6,22 +6,22 @@
     <div class='error'>{{.}}</div>
     {{end}}
     <div>
-        <label>Email:</label>
+        <label>{{t .Lang "site.auth.email"}}</label>
         {{with .Form.Errors.email}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='email' name='email' value='{{.Form.Email}}'>
     </div>
     <div>
-        <label>Password:</label>
+        <label>{{t .Lang "site.auth.password"}}</label>
         {{with .Form.Errors.password}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='password' name='password'>
     </div>
     <div class="space-between-div">
-        <input type='submit' value='Login'>
-        <a class="end" href='{{reverseRev "PasswordRequestReset"}}'>Restore password</a>
+        <input type='submit' value='{{t .Lang "site.nav.login"}}'>
+        <a class="end" href='{{reverseRev "PasswordRequestReset"}}'>{{t .Lang "site.auth.login.restore"}}</a>
     </div>
 </form>
 {{end}}

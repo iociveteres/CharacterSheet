@@ -6,6 +6,7 @@
 // Sustain, and casting while two are sustained is −10. The test is the skill
 // the spell names, its ePR at most the level of that skill. Rules and
 // decisions: _prd/sheet_kinds/half_casters.md.
+import { t } from "../../i18n";
 import { skillLevel } from "../characteristics/difficulty";
 import { idsInOrder } from "../core/gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
@@ -21,6 +22,9 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ManaPool } from "../components/kindParts";
 
 const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное поддержание"];
+
+// The dictionary's word is lowercase, as in a sentence.
+const SPELL = t("sheet.termsPf.psykana.power");
 
 /** Whether the talents list has Expanded Sustain. */
 export const expandedSustain = (state: SheetSignals) => talentNames(state).some(name => EXPANDED_SUSTAIN.includes(nameKey(name)));
@@ -56,7 +60,7 @@ export function artsSustained(state: SheetSignals, exceptPath?: string): ArtsSus
         if (copies <= 0) continue;
         powers.push({
             path, tabId, copies,
-            name: textAt(state, `${path}.name`).trim() || "Spell",
+            name: textAt(state, `${path}.name`).trim() || SPELL[0].toUpperCase() + SPELL.slice(1),
             pr: numberAt(state, `${path}.sustain.pr`),
             free: false, overFree: false, taken: 0, arts: true,
             upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
@@ -151,7 +155,7 @@ function masteryNames(state: SheetSignals, stats: StatSet, base: string): string
 }
 
 /** How the level of a skill (skillLevel) reads: "untrained", "+0" to "+30". */
-export const SKILL_LEVEL_LABELS = ["untrained", "+0", "+10", "+20", "+30"];
+export const SKILL_LEVEL_LABELS = [t("sheet.magicPf.arts.untrained"), "+0", "+10", "+20", "+30"];
 
 export interface ArtsCap {
     /** The highest ePR of a cast: the skill's level, 1 at +0 to 4 at +30, 5 with its Mastery; 0 for a skill untrained or none. */
@@ -174,17 +178,18 @@ export function artsCap(state: SheetSignals, powerPath: string): ArtsCap {
     if (!found) return { max: 0, skill: "", source: "", hint: null, lost: !!base };
     const skill = testBaseLabel(state, stats, base);
     const level = skillLevel(found.skill);
-    if (level === 0) return { max: 0, skill, source: `Max 0: ${skill} is not trained`, hint: null };
-    const levelSource = { max: level, skill, source: `Max ${level}: ${skill} ${SKILL_LEVEL_LABELS[level]}`, hint: null };
+    if (level === 0) return { max: 0, skill, source: t("sheet.magicPf.arts.capUntrained", { skill }), hint: null };
+    const levelSource = { max: level, skill, source: t("sheet.magicPf.arts.capSource", { max: level, skill, level: SKILL_LEVEL_LABELS[level] }), hint: null };
     // Mastery needs the skill at +30.
     if (level < 4) return levelSource;
 
     const names = new Set(masteryNames(state, stats, base));
     const talents = talentNames(state);
     const mastery = talents.find(name => names.has(nameKey(name).match(MASTERY)?.[1] ?? ""));
-    if (mastery) return { max: 5, skill, source: `Max 5: ${mastery}`, hint: null };
+    if (mastery) return { max: 5, skill, source: t("sheet.magicPf.arts.capMastery", { mastery }), hint: null };
     const bare = talents.some(name => BARE_MASTERY.includes(nameKey(name)));
-    return { ...levelSource, hint: bare ? `Name its skill: Mastery (${skill})` : null };
+    // The talent is found by the skill's English name, not by its label.
+    return { ...levelSource, hint: bare ? t("sheet.magicPf.arts.masteryHint", { skill: skillFullName(state, stats, base) }) : null };
 }
 
 /** What a cast of the Arts spell at `powerPath` costs of its Focus: its Level, the level of the talent it is. */

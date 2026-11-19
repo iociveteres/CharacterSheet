@@ -1311,6 +1311,9 @@ body {
 
 .chat-input-container .send-btn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem;
   white-space: nowrap;
   align-self: flex-end;
@@ -2354,10 +2357,10 @@ body {
 
 .encounter-window button.encounter-add-creature {
   grid-column: 3;
+  width: 20px;
   height: 20px;
-  padding: 0 6px;
+  padding: 0;
   line-height: 1;
-  white-space: nowrap;
 }
 
 .encounter-collection:hover {

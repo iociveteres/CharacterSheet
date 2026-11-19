@@ -4,6 +4,7 @@
 // its edits of them go through their actions like any edit of a sheet.
 import { batch, effect } from "@preact/signals";
 import { confirm, send, showToast } from "../actions";
+import { t } from "../../i18n";
 import { runOrQueue } from "../dragFreeze";
 import { roomId } from "../state";
 import {
@@ -154,7 +155,7 @@ export async function openEncounter(id: number): Promise<void> {
         applyEncounter(payload.encounter);
     } catch (err) {
         console.error(err);
-        if (current === opening) showToast("The encounter could not be opened.");
+        if (current === opening) showToast(t("room.encounter.couldNotOpen"));
     }
 }
 
@@ -290,7 +291,7 @@ export function previewCreature(creature: Creature): void {
             console.error(err);
             if (current !== previewing) return;
             pickedForPreview.value = previewed.peek()?.id ?? null;
-            showToast(`"${creature.name}" could not be read.`);
+            showToast(t("room.encounter.couldNotRead", { name: creature.name }));
         });
 }
 
@@ -344,7 +345,7 @@ export function isCreated(eventID: string): boolean {
 
 export function createEncounter(): void {
     const count = encounterList.value?.encounters.length ?? 0;
-    const eventID = request({ type: "encounterCreate", name: `Encounter ${count + 1}` });
+    const eventID = request({ type: "encounterCreate", name: t("room.encounter.defaultName", { number: count + 1 }) });
     if (eventID !== null) creating.add(eventID);
 }
 
@@ -364,7 +365,7 @@ export function renameEncounter(name: string): void {
 
 export async function deleteEncounter(): Promise<void> {
     const state = encounter.value;
-    if (!state || !await confirm(`Delete encounter "${state.name}"?\n\nIts NPCs are deleted with it.`)) return;
+    if (!state || !await confirm(t("room.encounter.confirmDelete", { name: state.name }))) return;
     request({ type: "encounterDelete", encounterId: state.id });
 }
 
@@ -478,10 +479,10 @@ export function rollForNpcs(): void {
     const gone = new Set(pendingRemovals.value);
     const rolls = groups.value
         .filter(g => g.npc && g.value === null && g.leader?.sheet && !gone.has(g.leader.participant.id))
-        .map(g => ({ sheetId: g.leader!.participant.sheetId, name: g.playersLabel, expression: initiativeRollOf(g.leader!.sheet!) }))
+        .map(g => ({ sheetId: g.leader!.participant.sheetId, ...g.playersName, expression: initiativeRollOf(g.leader!.sheet!) }))
         .filter(r => r.expression);
     if (!rolls.length) {
-        showToast("Every NPC has its initiative.");
+        showToast(t("room.encounter.everyNpcRolled"));
         return;
     }
     const eventID = request({ type: "encounterRollInitiative", encounterId, rolls });
@@ -499,12 +500,10 @@ export function takeInitiativeTotals(eventID: string, totals: { sheetId: number;
 
 // — Files ———————————————————————————————————
 
-const npcCount = (n: number) => n === 1 ? "1 NPC" : `${n} NPCs`;
-
 function loadLine({ file, name, npcs, error, message }: EncounterLoadResult): string {
-    if (error === "quota") return `${file}: not enough room: ${message ?? "over the quota"}`;
-    if (error) return `${file}: not an encounter file`;
-    return `${file}: "${name}", ${npcCount(npcs)}`;
+    if (error === "quota") return t("room.encounter.file.quota", { file, message: message ?? t("room.encounter.file.overQuota") });
+    if (error) return t("room.encounter.file.notEncounter", { file });
+    return t("room.encounter.file.loaded", { file, name: name ?? "", count: npcs });
 }
 
 /**
@@ -517,7 +516,7 @@ export async function loadEncounterFiles(files: File[]): Promise<void> {
     try {
         const results = await loadFiles(roomId, files);
         // The server stops at the first file over the quota: the rest were not tried.
-        const skipped = files.slice(results.length).map(f => `${f.name}: not uploaded`);
+        const skipped = files.slice(results.length).map(f => t("room.encounter.file.skipped", { file: f.name }));
         showToast([...results.map(loadLine), ...skipped].join("\n"));
         const first = results.find(r => r.encounterId)?.encounterId;
         if (first) void openEncounter(first);
@@ -531,14 +530,14 @@ export async function replaceNpcsFromFile(file: File): Promise<void> {
     const state = encounter.value;
     if (!state) return;
     const npcs = state.participants.filter(p => p.npc).length;
-    if (!await confirm(`Replace the ${npcCount(npcs)} of "${state.name}" with the NPCs of ${file.name}?\n\nCharacters stay.`)) return;
+    if (!await confirm(t("room.encounter.confirmReplace", { count: npcs, name: state.name, file: file.name }))) return;
     try {
         const next = await replaceNpcs(state.id, file);
         // The room's socket brings this state too, and may have brought a newer one first.
         const open = encounter.peek();
         if (open?.id === next.id && next.version > open.version) applyEncounter(next);
     } catch (err) {
-        if (err instanceof ApiError && err.status === 400) showToast(`${file.name}: not an encounter file`);
+        if (err instanceof ApiError && err.status === 400) showToast(t("room.encounter.file.notEncounter", { file: file.name }));
         else bestiaryFailed(err);
     }
 }

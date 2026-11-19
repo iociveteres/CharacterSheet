@@ -2,11 +2,13 @@ package templates
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -18,7 +20,9 @@ func TestRoomStateEmbedsTheRoom(t *testing.T) {
 	folderID := 11
 	nasty := `</script><script>alert(1)</script> & "quotes"`
 	result := "15"
+	resultData := &commands.ResultData{Kind: commands.ResultKindVersus, Expression: "d100", Target: 50, Rolls: []commands.VersusRoll{{Roll: 15, Success: true, Degrees: 4}}}
 	data := &Data{
+		Lang: "en",
 		Room: &models.Room{ID: 5},
 		CurrentPlayerView: &models.PlayerView{
 			User:     &models.User{ID: 2, Name: "Player", Email: "player@example.com"},
@@ -37,10 +41,10 @@ func TestRoomStateEmbedsTheRoom(t *testing.T) {
 		}},
 		MessagePage: &models.MessagePage{HasMore: true, Messages: []models.MessageWithName{
 			{Message: models.Message{ID: 40, UserID: 1, MessageBody: nasty, CreatedAt: joined}, Username: nasty},
-			{Message: models.Message{ID: 41, UserID: 2, MessageBody: "/r d20", CommandResult: &result, CreatedAt: joined.Add(time.Minute)}, Username: "Player"},
+			{Message: models.Message{ID: 41, UserID: 2, MessageBody: "/r d20", CommandResult: &result, ResultData: resultData, CreatedAt: joined.Add(time.Minute)}, Username: "Player"},
 		}},
 		DicePresets:       []models.DicePreset{{SlotNumber: 3, DiceNotation: "2d10+5"}},
-		AvailableCommands: commands.AvailableCommands(),
+		AvailableCommands: commands.AvailableCommands("en"),
 		InviteLink:        "https://example.com/invite/abc",
 		CSRFToken:         "token",
 	}
@@ -75,11 +79,12 @@ func TestRoomStateEmbedsTheRoom(t *testing.T) {
 		} `json:"players"`
 		Chat struct {
 			Messages []struct {
-				ID            int     `json:"id"`
-				UserName      string  `json:"userName"`
-				MessageBody   string  `json:"messageBody"`
-				CommandResult *string `json:"commandResult"`
-				CreatedAt     string  `json:"createdAt"`
+				ID            int                  `json:"id"`
+				UserName      string               `json:"userName"`
+				MessageBody   string               `json:"messageBody"`
+				CommandResult *string              `json:"commandResult"`
+				ResultData    *commands.ResultData `json:"resultData"`
+				CreatedAt     string               `json:"createdAt"`
 			} `json:"messages"`
 			HasMore bool `json:"hasMore"`
 		} `json:"chat"`
@@ -143,6 +148,9 @@ func TestRoomStateEmbedsTheRoom(t *testing.T) {
 	if msgs[1].CommandResult == nil || *msgs[1].CommandResult != "15" {
 		t.Errorf("commandResult = %v, want 15", msgs[1].CommandResult)
 	}
+	if msgs[0].ResultData != nil || !reflect.DeepEqual(msgs[1].ResultData, resultData) {
+		t.Errorf("resultData = %v, %+v; want null and %+v", msgs[0].ResultData, msgs[1].ResultData, resultData)
+	}
 	if _, err := time.Parse(time.RFC3339, msgs[1].CreatedAt); err != nil {
 		t.Errorf("createdAt = %q: %v", msgs[1].CreatedAt, err)
 	}
@@ -153,7 +161,23 @@ func TestRoomStateEmbedsTheRoom(t *testing.T) {
 	if len(state.Commands) != len(data.AvailableCommands) || state.Commands[0].Command == "" {
 		t.Errorf("commands = %+v", state.Commands)
 	}
-	if len(state.SheetKinds) != len(models.SheetKinds()) || state.SheetKinds[0].Kind != "black_crusade" || state.SheetKinds[0].Label != "Black Crusade" {
+	if len(state.SheetKinds) != len(models.SheetKinds()) || state.SheetKinds[0].Kind != "black_crusade" || state.SheetKinds[0].Label == "" {
 		t.Errorf("sheetKinds = %+v", state.SheetKinds)
+	}
+}
+
+// A kind without its case in roomSheetKinds would show its English label.
+func TestSheetKindLabelsInEveryLanguage(t *testing.T) {
+	for _, lang := range i18n.Languages {
+		for _, k := range roomSheetKinds(lang) {
+			if k.Label == "" || strings.HasPrefix(k.Label, "common.") {
+				t.Errorf("%s: kind %s has label %q", lang, k.Kind, k.Label)
+			}
+		}
+	}
+	// Two kinds under one label would be told apart by nothing.
+	got := roomSheetKinds("ru")
+	if len(got) < 2 || got[0].Label == got[1].Label {
+		t.Errorf("ru kinds = %+v, want a label of each own", got)
 	}
 }

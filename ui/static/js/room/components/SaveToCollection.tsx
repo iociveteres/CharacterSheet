@@ -1,6 +1,7 @@
 // "Save to collection": a copy of a sheet of the room or of an NPC into a
 // collection of the user's bestiary, an existing one or a new one.
 import { useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { bestiary, savingSheet } from "../bestiary/state";
 import { closeSaveToCollection, saveToCollection } from "../bestiary/actions";
 import { quotaText } from "../../bestiary/format";
@@ -31,18 +32,18 @@ function SaveDialog({ name }: { name: string }) {
     };
     return (
         <div class="overlay open" onClick={closeOnOverlay(closeSaveToCollection)}>
-            <div class="modal layout-column save-to-collection-modal" role="dialog" aria-modal="true" aria-label="Save to collection">
-                <h3>Save "{name}" to a collection</h3>
+            <div class="modal layout-column save-to-collection-modal" role="dialog" aria-modal="true" aria-label={t("room.modals.saveToCollection.title")}>
+                <h3>{t("room.modals.saveToCollection.heading", { name })}</h3>
                 {data === null ? <p class="encounter-muted">…</p> : (
-                    <select class="save-to-collection-target" value={picked} aria-label="Collection"
+                    <select class="save-to-collection-target" value={picked} aria-label={t("room.modals.saveToCollection.collection")}
                         onChange={e => setTarget(e.currentTarget.value)}>
                         {own.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        <option value={NEW}>New collection…</option>
+                        <option value={NEW}>{t("room.modals.saveToCollection.new")}</option>
                     </select>
                 )}
                 {picked === NEW && (
-                    <input type="text" class="save-to-collection-name" placeholder="Name of the new collection" maxLength={100}
-                        aria-label="Name of the new collection" value={newName}
+                    <input type="text" class="save-to-collection-name" placeholder={t("room.modals.saveToCollection.newName")} maxLength={100}
+                        aria-label={t("room.modals.saveToCollection.newName")} value={newName}
                         onInput={e => setNewName(e.currentTarget.value)}
                         onKeyDown={e => {
                             if (e.key === "Enter") save();
@@ -50,8 +51,8 @@ function SaveDialog({ name }: { name: string }) {
                 )}
                 {data && <span class="encounter-muted save-to-collection-quota">{quotaText(data.quota)}</span>}
                 <div class="actions">
-                    <button type="button" class="button-colored" onClick={closeSaveToCollection}>Cancel</button>
-                    <button type="button" class="button-colored save-to-collection-save" disabled={!ready} onClick={save}>Save</button>
+                    <button type="button" class="button-colored" onClick={closeSaveToCollection}>{t("common.cancel")}</button>
+                    <button type="button" class="button-colored save-to-collection-save" disabled={!ready} onClick={save}>{t("common.save")}</button>
                 </div>
             </div>
         </div>

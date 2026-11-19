@@ -1,0 +1,3 @@
+{
+  "sheet.termsQualities.weapon.defensive": { "en": "Defensive", "ru": "Защитное", "note": "код сравнивает по имени (parry.ts, stanceRules.ts); не путать с Защитной стойкой" }
+}

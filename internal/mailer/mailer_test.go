@@ -1,0 +1,52 @@
+package mailer
+
+import (
+	"io/fs"
+	"strings"
+	"testing"
+)
+
+func TestRenderByLanguage(t *testing.T) {
+	data := map[string]any{"Name": "Alice", "ActivationLink": "https://example.com/verify/x"}
+	subjects := map[string]string{}
+	for _, lang := range []string{"en", "ru", "de"} {
+		msg, err := Render(lang, "user_verification", data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		subjects[lang] = msg.Subject
+		if !strings.Contains(msg.PlainBody, "https://example.com/verify/x") || !strings.Contains(msg.HTMLBody, `href="https://example.com/verify/x"`) {
+			t.Errorf("%s: the link is missing from the body", lang)
+		}
+	}
+	// No file in the language: the English one.
+	if subjects["en"] == "" || subjects["ru"] == subjects["en"] || subjects["de"] != subjects["en"] {
+		t.Errorf("subjects %q, want a Russian one and the English one for de", subjects)
+	}
+}
+
+// Every email renders in each language with the data its handler passes.
+func TestRenderEveryTemplate(t *testing.T) {
+	files, _ := fs.Glob(Templates, "templates/*.html")
+	if len(files) == 0 {
+		t.Fatal("no templates")
+	}
+	data := map[string]any{
+		"Name":              "Alice",
+		"ActivationLink":    "https://example.com/a",
+		"ResetPasswordLink": "https://example.com/r",
+		"User":              map[string]any{"Name": "Alice"},
+	}
+	for _, file := range files {
+		base := strings.TrimSuffix(strings.TrimPrefix(file, "templates/"), ".html")
+		name, lang, _ := strings.Cut(base, ".")
+		msg, err := Render(lang, name, data)
+		if err != nil {
+			t.Errorf("%s: %v", file, err)
+			continue
+		}
+		if msg.Subject == "" || !strings.Contains(msg.HTMLBody, "Alice") {
+			t.Errorf("%s: empty subject or body without the name", file)
+		}
+	}
+}

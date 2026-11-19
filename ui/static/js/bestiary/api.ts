@@ -2,6 +2,7 @@
 // and the room's "Add monsters" tab send the same requests.
 import type { Bestiary, BestiaryCollection, CatalogPage, Creature, UploadResult } from "./types.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import { t } from "../i18n";
 
 let csrfToken = "";
 
@@ -10,26 +11,29 @@ export function setCsrfToken(token: string): void {
     csrfToken = token;
 }
 
-/** A request the server did not take. A quota error carries the server's text and the code "quota". */
+/** A request the server did not take. A refusal with a reason carries its code ("quota", "gone", "notOwn"…) and the server's text in the user's language. */
 export class ApiError extends Error {
     constructor(readonly status: number, readonly code: string, message: string) {
         super(message);
     }
 }
 
-const STATUS_TEXT: Record<number, string> = {
-    400: "The server did not take the request.",
-    403: "That is not yours.",
-    404: "It is gone: reload the page.",
-};
+function statusText(status: number): string {
+    switch (status) {
+        case 400: return t("bestiary.messages.status400");
+        case 403: return t("bestiary.messages.status403");
+        case 404: return t("bestiary.messages.status404");
+        default: return t("bestiary.messages.requestFailed", { status });
+    }
+}
 
 async function apiError(res: Response): Promise<ApiError> {
-    // Only a quota error has a body of its own; the rest are plain status text.
+    // A refusal with a reason has a body of its own (internal/webapp bestiaryError); the rest are a bare status.
     if (res.headers.get("Content-Type")?.startsWith("application/json")) {
         const body = await res.json() as { code: string; message: string };
         return new ApiError(res.status, body.code, body.message);
     }
-    return new ApiError(res.status, "", STATUS_TEXT[res.status] ?? `The request failed: ${res.status}.`);
+    return new ApiError(res.status, "", statusText(res.status));
 }
 
 /** A request to the server with the page's CSRF token; a FormData body goes as it is, any other as JSON. */

@@ -44,7 +44,7 @@ describe("activateTechPower", () => {
         const listener = (e: Event) => { requestId = (e as CustomEvent).detail.requestId; };
         document.addEventListener("sheet:rollVersus", listener);
         const done = activateTechPower(testSheet(), T, {
-            x: 0, process: true, test: { target: 50, bonusSuccesses: 0, label: "Crown" }, energyAsFatigue: 0, ...over,
+            x: 0, process: true, test: { target: 50, bonusSuccesses: 0, label: { n: "Crown" } }, energyAsFatigue: 0, ...over,
         });
         document.removeEventListener("sheet:rollVersus", listener);
         return { done, requestId };

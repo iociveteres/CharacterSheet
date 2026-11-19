@@ -8,6 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
+import { versusOutcome } from "../../../ui/static/js/room/messages";
 
 describe("psykana", () => {
     const t = useTable("psykana");
@@ -116,7 +117,8 @@ describe("psykana", () => {
 
         await a.click(toggle);
         const text = async (id: string) => (await a.el({ path: "psykana", sel: `[data-id="${id}"]` })).evaluate(el => el.textContent);
-        expect(await text("phenomenaNote")).toBe("Pushed, phenomena are certain.");
+        // The note names a reason that calls for phenomena, here the push.
+        expect(await a.hasClass({ path: "psykana", sel: '[data-id="phenomenaNote"]' }, "attention"), "the note calls for phenomena").toBe(true);
         // Unbound: +5 per point of kick; Firebolt is sustained.
         expect([await text("nature"), await text("sustained"), await text("phenomenaTotal")]).toEqual(["+10", "+10", "1d100+20"]);
 
@@ -151,9 +153,9 @@ describe("psykana", () => {
         await a.blockRolls(false);
         await cast(shield, { sustain: false });
         const [roll] = await a.rolls();
-        const message = await a.waitReceived(m => m.type === "chatMessage" && !!m.versus, "the test's message");
-        expect(message.versus).toMatchObject({ target: roll.kind === "versus" ? roll.target : NaN });
-        await eventually(() => a.rollResults(), results => expect(results.map(r => r.outcome)).toEqual([message.versus]));
+        const message = await a.waitReceived(m => m.type === "chatMessage" && !!m.resultData, "the test's message");
+        expect(message.resultData).toMatchObject({ target: roll.kind === "versus" ? roll.target : NaN });
+        await eventually(() => a.rollResults(), results => expect(results.map(r => r.outcome)).toEqual([versusOutcome(message.resultData)]));
         await a.blockRolls();
     });
 

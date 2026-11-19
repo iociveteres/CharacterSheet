@@ -1,6 +1,7 @@
 // The computeds of carrying: what the character can carry, lift and push by
 // the carry weight base, and the weight of what it carries.
 import { computed } from "@preact/signals-core";
+import { t } from "../../i18n";
 import { coinsWeight } from "./coinRules";
 import { gearWeight } from "./gearItem";
 import type { SheetSignals } from "../schema/sheet";
@@ -29,20 +30,20 @@ export function attachGearComputeds(state: SheetSignals): void {
     Object.assign(state.carryWeightAndEncumbrance, {
         carryWeight: computed(() => {
             const b = base();
-            if (b > 45) return "too";
-            if (b < 0) return "such";
+            if (b > 45) return t("sheet.gear.carry.tooStrong1");
+            if (b < 0) return t("sheet.gear.carry.weak1");
             return CARRY_WEIGHT_TABLE[b];
         }),
         liftWeight: computed(() => {
             const b = base();
-            if (b > 45) return "strong";
-            if (b < 0) return "a puny";
+            if (b > 45) return t("sheet.gear.carry.tooStrong2");
+            if (b < 0) return t("sheet.gear.carry.weak2");
             return LIFT_WEIGHT_TABLE[b];
         }),
         pushWeight: computed(() => {
             const b = base();
-            if (b > 45) return "to hold!";
-            if (b < 0) return "weakling!";
+            if (b > 45) return t("sheet.gear.carry.tooStrong3");
+            if (b < 0) return t("sheet.gear.carry.weak3");
             return PUSH_WEIGHT_TABLE[b];
         }),
         encumbrance: computed(() => {

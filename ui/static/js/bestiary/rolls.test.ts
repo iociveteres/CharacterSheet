@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe("a roll of a sheet on the bestiary page", () => {
     it("goes to the server as the room's command, signed with the character", async () => {
-        const outcome = sheet.rolls.versus(45, 1, "Ballistic Skill");
+        const outcome = sheet.rolls.versus(45, 1, { n: "Ballistic Skill" });
         expect(sent).toEqual([{
             type: "roll",
             eventID: expect.any(String),
@@ -50,23 +50,24 @@ describe("a roll of a sheet on the bestiary page", () => {
             characterName: "Ork Boy",
         }]);
 
-        const versus = { roll: 12, target: 45, success: true, degrees: 4, crit: false, doubles: false };
+        const resultData = { kind: "versus", expression: "d100", target: 45, bonus: 1, rolls: [{ roll: 12, success: true, degrees: 4 }] };
         server("rollResult", {
             type: "rollResult", eventID: sent[0].eventID, messageBody: sent[0].messageBody,
-            commandResult: "d100 vs 45 [+1]:\n12, 4 success", versus, characterName: "Ork Boy", created: "2026-10-01T12:00:00Z",
+            commandResult: "d100 vs 45 [+1]:\n12, 4 success", resultData, characterName: "Ork Boy", created: "2026-10-01T12:00:00Z",
         });
 
-        await expect(outcome).resolves.toEqual(versus);
+        await expect(outcome).resolves.toEqual({ roll: 12, target: 45, success: true, degrees: 4, crit: false, doubles: false });
         expect(rolls.value).toEqual([expect.objectContaining({
             messageBody: "/r d100 vs 45 [+1]\n>> Ballistic Skill",
             commandResult: "d100 vs 45 [+1]:\n12, 4 success",
+            resultData,
             characterName: "Ork Boy",
             createdAt: "2026-10-01T12:00:00Z",
         })]);
     });
 
     it("gives the total of a dice expression", async () => {
-        const total = sheet.rolls.exact("1d10+4", "Choppa");
+        const total = sheet.rolls.exact("1d10+4", { n: "Choppa" });
         expect(sent[0].messageBody).toBe("/r 1d10+4\n>> Choppa");
         server("rollResult", {
             type: "rollResult", eventID: sent[0].eventID, messageBody: sent[0].messageBody,
@@ -76,22 +77,22 @@ describe("a roll of a sheet on the bestiary page", () => {
     });
 
     it("comes to nothing when the server refuses it, the socket drops or is closed", async () => {
-        const refused = sheet.rolls.exact("1d10", "");
+        const refused = sheet.rolls.exact("1d10", { n: "" });
         server("response", { type: "response", eventID: sent[0].eventID, OK: false, code: "validation" });
         await expect(refused).resolves.toBeNull();
 
-        const dropped = sheet.rolls.versus(30, 0, "");
+        const dropped = sheet.rolls.versus(30, 0, { n: "" });
         server("disconnected", {});
         await expect(dropped).resolves.toBeNull();
 
         offline = true;
-        await expect(sheet.rolls.versus(30, 0, "")).resolves.toBeNull();
+        await expect(sheet.rolls.versus(30, 0, { n: "" })).resolves.toBeNull();
         expect(rolls.value).toEqual([]);
     });
 
     it("keeps the last 20 in the feed", () => {
         for (let i = 1; i <= 25; i++) {
-            void sheet.rolls.exact(`${i}d10`, "");
+            void sheet.rolls.exact(`${i}d10`, { n: "" });
             const msg = sent.at(-1)!;
             server("rollResult", {
                 type: "rollResult", eventID: msg.eventID, messageBody: msg.messageBody,

@@ -3,6 +3,7 @@
 // and the list of them in the psykana bar. None of it shows while the sheet
 // does not count sustained powers (settings.psykana.sustained).
 import type { ComponentChildren } from "preact";
+import { t } from "../../i18n";
 import type { Signal } from "@preact/signals-core";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -45,25 +46,25 @@ export function SustainColumn({ choice, sustain, free, children }: {
     const x = (n: number | null | undefined) => (n === null || n === undefined ? "X" : String(n));
     return (
         <div class="roll-column sustain-column" data-id="sustainChoice">
-            <label class="column-label">Sustain</label>
+            <label class="column-label">{t("sheet.termsPowers.psy.sustain")}</label>
             <div class="roll-column-content">
                 {choice.full ? (
                     <span class="sustain-note" data-id="instant">
-                        {`Instant: ${choice.copies} of Repeatable (${x(choice.repeatable)}) sustained`}
+                        {t("sheet.magic.sustain.instant", { copies: choice.copies, x: x(choice.repeatable) })}
                     </span>
                 ) : (
-                    <label class="sustain-option" title={`Marks the ${terms.power} sustained if the test succeeds`}>
+                    <label class="sustain-option" title={terms.marksSustainedTitle}>
                         <input type="checkbox" class="custom" data-id="sustain" checked={sustain.value}
                             onChange={e => { sustain.value = e.currentTarget.checked; }} />
-                        On success
+                        {t("sheet.magic.sustain.onSuccess")}
                     </label>
                 )}
                 {!choice.full && choice.cycle !== undefined && (
                     <label class="sustain-option"
-                        title={choice.canBeFree ? "Sustaining it takes no PR" : `Free from ePR ${x(choice.cycle)}`}>
+                        title={choice.canBeFree ? t("sheet.magic.sustain.freeTitle") : t("sheet.magic.sustain.freeFrom", { x: x(choice.cycle) })}>
                         <input type="checkbox" class="custom" data-id="free" disabled={!choice.canBeFree || !sustain.value}
                             checked={choice.canBeFree && free.value} onChange={e => { free.value = e.currentTarget.checked; }} />
-                        {`Free (Cycle ${x(choice.cycle)})`}
+                        {t("sheet.magic.sustain.freeByCycle", { x: x(choice.cycle) })}
                     </label>
                 )}
                 {children}
@@ -74,14 +75,15 @@ export function SustainColumn({ choice, sustain, free, children }: {
 
 // The upkeep only while casts spend mana (Pathfinder Crusade). An Arts spell takes no PR: its ePR is the cast's, and it pays its Focus.
 const pillText = ({ copies, pr, free, upkeep, arts }: SustainedPower, upkeepShown: boolean) =>
-    `${copies > 1 ? `×${copies} · ` : ""}${arts ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} ${arts ? "Focus" : "mana"} a turn` : ""}`;
+    `${copies > 1 ? `×${copies} · ` : ""}${arts ? t("sheet.termsPowers.psy.ePR") : "PR"} ${pr}${free ? ` · ${t("sheet.magic.sustain.pill.freeMark")}` : ""}`
+    + `${upkeepShown && upkeep > 0 ? ` · ${arts ? t("sheet.magicPf.mana.pillUpkeepFocus", { upkeep }) : t("sheet.magicPf.mana.pillUpkeep", { upkeep })}` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
 const pillTitle = ({ free, overFree, arts }: SustainedPower) =>
-    arts ? "An Arts spell: it takes no PR, and counts towards the Arts limit"
-        : free ? "Free by Cycle: it takes no PR"
-            : overFree ? "Cast free by Cycle, but past the free ones ½I.b▲ allows: it takes PR"
-                : "It takes one PR per sustained cast";
+    arts ? t("sheet.magicPf.arts.pillTitle")
+        : free ? t("sheet.magic.sustain.pill.free")
+            : overFree ? t("sheet.magic.sustain.pill.overFree")
+                : t("sheet.magic.sustain.pill.taken");
 
 /** Ends one sustained cast of the power at `path`. */
 function DropButton({ power }: { power: SustainedPower }) {
@@ -89,7 +91,7 @@ function DropButton({ power }: { power: SustainedPower }) {
     if (!canEdit) return null;
     return (
         <button type="button" class="sustain-drop" data-id="dropSustain"
-            title={power.copies > 1 ? "Stop sustaining one of its casts" : "Stop sustaining it"}
+            title={power.copies > 1 ? t("sheet.magic.sustain.dropOne") : t("sheet.magic.sustain.drop")}
             onClick={() => actions.batch(`${power.path}.sustain`, { copies: power.copies - 1 })}>✕</button>
     );
 }
@@ -107,7 +109,7 @@ export function SustainPill({ path }: { path: string }) {
     if (!power) return null;
     return (
         <span class="sustain-pill" data-id="sustainPill" title={pillTitle(power)}>
-            <span class="sustain-text">{`Sustained ${pillText(power, sustained!.upkeepShown)}`}</span>
+            <span class="sustain-text">{t("sheet.magic.sustain.pill.text", { text: pillText(power, sustained!.upkeepShown) })}</span>
             <DropButton power={power} />
         </span>
     );
@@ -128,7 +130,7 @@ export function SustainedList({ linked = true }: { linked?: boolean }) {
             {sustained.powers.map(power => (
                 <span key={power.path} class="sustain-pill" title={pillTitle(power)}>
                     {linked ? (
-                        <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
+                        <button type="button" class="sustain-name" title={t("sheet.magic.sustain.openTab")} onClick={() => { tabs.value = power.tabId; }}>
                             {power.name}
                         </button>
                     ) : <b>{power.name}</b>}
@@ -138,7 +140,7 @@ export function SustainedList({ linked = true }: { linked?: boolean }) {
             ))}
             {sustained.powers.some(p => p.overFree) && (
                 <span class="sustain-warning" data-id="freeLimit">
-                    {`Cycle sustains at most ${sustained.freeLimit} free (½I.b▲); the rest take PR.`}
+                    {t("sheet.magic.sustain.freeLimit", { n: sustained.freeLimit })}
                 </span>
             )}
         </div>
@@ -159,21 +161,21 @@ export function SustainFields({ path }: { path: string }) {
     return (
         <Scope dataId="sustain" class="power-traits-sustain">
             {traits.repeatable === undefined ? (
-                <label title="Marked sustained: it takes one PR">
+                <label title={t("sheet.magic.sustain.markedTitle")}>
                     <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={numberAt(state, `${path}.sustain.copies`) > 0}
                         onChange={e => actions.batch(`${path}.sustain`, e.currentTarget.checked
                             // Marked by hand, it keeps the PR it has, else that of its last cast.
                             ? { copies: 1, pr: numberAt(state, `${path}.sustain.pr`) || numberAt(state, `${path}.cast.pr`) }
                             : { copies: 0 })} />
-                    Sustained
+                    {t("sheet.termsPowers.psy.sustained")}
                 </label>
             ) : (
-                <label title={`How many of its casts are sustained, up to ${of}; each takes one PR`}>
-                    {`Sustained casts (of ${of})`} <NumberField field="copies" class="short" />
+                <label title={t("sheet.magic.sustain.copiesTitle", { x: of })}>
+                    {t("sheet.magic.sustain.copies", { x: of })} <NumberField field="copies" class="short" />
                 </label>
             )}
-            <label title="The PR of its sustained cast">at <NumberField field="pr" class="short" /> PR</label>
-            {cycle && <label title="Cast free by Cycle: it takes no PR"><Checkbox field="free" class="custom" /> Free</label>}
+            <label title={t("sheet.magic.sustain.prTitle")}>{t("sheet.magic.sustain.at")} <NumberField field="pr" class="short" /> PR</label>
+            {cycle && <label title={t("sheet.magic.sustain.castFreeTitle")}><Checkbox field="free" class="custom" /> {t("sheet.magic.sustain.freeLabel")}</label>}
         </Scope>
     );
 }

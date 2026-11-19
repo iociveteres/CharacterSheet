@@ -15,6 +15,8 @@ import { SheetUiState } from "../core/ui";
 import { DragFreeze } from "../core/dragFreeze";
 import { applyRemoteToState, type RemoteSheetMessage, type RemoteTarget } from "../core/remote";
 import { createSheetRolls } from "../rollEvents";
+import type { Label } from "../rollLabel";
+import { labelText } from "../rollLabelText";
 import { SheetContext, type AutocompleteResult, type SheetEnv } from "./context";
 import { Autocomplete } from "../autocomplete";
 import { SheetScope } from "../lifecycle";
@@ -190,12 +192,13 @@ export function renderBlock(
 }
 
 /**
- * The dice and label of a roll event of the sheet, without what signs it and
- * brings its answer back (room/remote.test.ts checks those).
+ * The dice and label of a roll event of the sheet, the label in words as the
+ * chat shows it, without what signs it and brings its answer back
+ * (room/remote.test.ts checks those).
  */
 export function rollOf(detail: { [key: string]: unknown }): { [key: string]: unknown } {
     const { requestId: _, sheetID: __, characterName: ___, ...roll } = detail;
-    return roll;
+    return roll.label ? { ...roll, label: labelText(roll.label as Label) } : roll;
 }
 
 /** The title the element has once the pointer enters it (components/hoverTitle.ts), as its lines. */

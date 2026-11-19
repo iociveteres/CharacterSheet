@@ -8,6 +8,7 @@ import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
 import { useItemIds } from "./useItemIds";
 import { useSortable, type SortableOptions } from "./useSortable";
+import { t } from "../../i18n";
 
 export interface ItemGridProps {
     /** The grid's data-id: "conditions.list.items" at the top, "entries.items" inside an item. */
@@ -37,7 +38,7 @@ export interface ItemGridProps {
  * ends with an add button. Delete Mode stays the deletion-mode class on the
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
-export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared, addLabel = "＋ Add" }: ItemGridProps) {
+export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared, addLabel = `＋ ${t("common.add")}` }: ItemGridProps) {
     const { state, freeze, canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
     const columns = gridSpecOf(schemaOf(state), gridPath)?.columns ?? 1;

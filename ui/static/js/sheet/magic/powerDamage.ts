@@ -1,5 +1,6 @@
 // The damage and penetration of psychic powers, as rolls/damage.ts counts them:
 // PR in an expression is the PR of the power's cast.
+import { t } from "../../i18n";
 import { POWER_PR, POWER_REFS } from "../rolls/damageExpression";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./artsRules";
@@ -21,6 +22,7 @@ export function powerPR(state: SheetSignals, powerPath: string): number {
 export const POWER_DAMAGE: DamageOwner = {
     refs: (state, path) => ({ keys: refKeys(state), named: POWER_REFS, valueOf: ref => (ref === POWER_PR ? powerPR(state, path) : refValue(state, ref)) }),
     sources: (state, exceptPath, stat) => withMods(state, psychicPowers(state).map(({ path, tabPath }) => ({
-        path, group: textAt(state, `${tabPath}.name`).trim() || "Tab", label: textAt(state, `${path}.name`).trim() || "Psychic Power",
+        path, group: textAt(state, `${tabPath}.name`).trim() || t("sheet.powers.tab"),
+        label: textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.psy.psychicPower"),
     })), exceptPath, stat),
 };

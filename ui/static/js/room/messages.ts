@@ -2,6 +2,8 @@
 // exported, so tygo does not see them: these types follow them by hand.
 import type { RoomPlayer, RoomSheet } from "./payload.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import type { ResultData } from "./commands.gen";
+import type { Label } from "../sheet/api";
 
 export type RoomRole = RoomPlayer["role"];
 export type Visibility = RoomSheet["visibility"];
@@ -41,13 +43,15 @@ export interface ChatMessageMessage {
     userName: string;
     messageBody: string;
     commandResult?: string;
-    /** What a single d100 test came to; only live messages carry it. */
-    versus?: VersusOutcome;
+    /** commandResult as data, drawn in the viewer's language (commandResult.ts). */
+    resultData?: ResultData;
+    /** The label of a roll from a sheet, cut from the body: messageText() of commandResult.ts. */
+    labelData?: Label;
     characterName?: string;
     created: string;
 }
 
-/** internal/commands VersusOutcome. */
+/** What a single roll against a target came to, for the sheet that rolled it. */
 export interface VersusOutcome {
     roll: number;
     target: number;
@@ -57,6 +61,18 @@ export interface VersusOutcome {
     crit: boolean;
     /** 11, 22 … 99 and 100 of a plain d100. */
     doubles: boolean;
+}
+
+/**
+ * What a single roll against a target came to, for the sheet that rolled it; null for anything else.
+ * Here, not in commandResult.ts: e2e scenarios import it in node, where the sheet's modules can't load.
+ */
+export function versusOutcome(data: ResultData | null | undefined): VersusOutcome | null {
+    if (data?.kind !== "versus" || data.repeat || data.rolls.length !== 1) return null;
+    const roll = data.rolls[0];
+    return {
+        roll: roll.roll, target: data.target, success: roll.success, degrees: roll.degrees, crit: !!roll.crit, doubles: !!roll.doubles,
+    };
 }
 
 /** The server hands on the gamemaster's request as it is. */
@@ -84,6 +100,8 @@ export interface StoredChatMessage {
     messageBody: string;
     characterName?: string;
     commandResult?: string;
+    resultData?: ResultData;
+    labelData?: Label;
     createdAt: string;
 }
 
@@ -145,10 +163,15 @@ export interface DicePresetUpdatedMessage {
 
 // — To the server —————————————————————————
 
+/**
+ * A roll from a sheet has its label in the body as `>>` lines too: the server
+ * stores labelData in place of them when it takes it, the body whole when not.
+ */
 export interface ChatMessageRequest {
     type: "chatMessage";
     messageBody: string;
     characterName?: string;
+    labelData?: Label;
 }
 
 /** `offset` counts from the newest message. */
@@ -246,7 +269,7 @@ interface SheetRoll {
     sheetID: string;
     /** The name the roll is signed with; null for none. */
     characterName: string | null;
-    label: string;
+    label: Label;
 }
 
 /** sheet:rollVersus: a d100 test. */

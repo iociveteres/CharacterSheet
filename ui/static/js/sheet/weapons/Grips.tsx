@@ -6,6 +6,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import type { ReadonlySignal } from "@preact/signals-core";
+import { t } from "../../i18n";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, ReadonlyField, TextField } from "../components/fields";
@@ -16,16 +17,18 @@ import { useItemIds } from "../components/useItemIds";
 import { signed } from "../components/format";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { damageSuggestions } from "../rolls/damageSuggestions";
-import { gripTitle, type Grip } from "./gripRules";
+import { GRIP_SHORT, gripText, gripTitle, type Grip } from "./gripRules";
 import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "./melee";
-import { meleeRollName } from "./stanceRules";
+import { meleeRollTags } from "./stanceRules";
+import { code, label, MOD, NAME, SPACE, type Label } from "../rollLabel";
 import { parryAt, parryBonusSuccesses, parryModValue } from "./parry";
 import { peekAt, textAt, valueAt } from "../core/sync";
 import { ExprInput } from "../rolls/ModdedField";
+import type { SheetSignals } from "../schema/sheet";
 
 /** What a breakdown shows: the value's own base, the lines that changed it and the total. */
 export interface Breakdown {
-    /** The base and whose it is, for a value a field of the weapon holds. */
+    /** The base, for a value a field of the weapon holds, and whose it is when not the weapon's own. */
     base?: string;
     own?: string;
     lines: BreakdownLine[];
@@ -34,13 +37,13 @@ export interface Breakdown {
 
 /** The lines of `value`'s breakdown: a base not the weapon's own is the first, as "= 3 Mace". */
 const linesOf = ({ base, own, lines }: Breakdown): BreakdownLine[] =>
-    (!own || own === "Weapon" ? lines : [{ text: `= ${base}`, label: `${own} (Mh)` }, ...lines]);
+    (!own ? lines : [{ text: `= ${base}`, label: `${own} (${GRIP_SHORT.Mh})` }, ...lines]);
 
 /** The title of a total: the weapon's own value, what changed it and the total; none while nothing did. */
 export function breakdownTitle(value: Breakdown, ownTyped: string): string {
     const lines = linesOf(value);
     if (!lines.length) return "";
-    return [`${ownTyped || "—"} Weapon`, ...lines.map(l => `${l.text} ${l.label}`), `= ${value.text}`].join("\n");
+    return [`${ownTyped || "—"} ${t("sheet.termsArms.gearType.weapon")}`, ...lines.map(l => `${l.text} ${l.label}`), `= ${value.text}`].join("\n");
 }
 
 /** The lines of a breakdown and its total, as a grid of value and label. */
@@ -99,8 +102,8 @@ export function BreakdownField({ field, baseField, value, title, toggleTitle, pl
             {dropdown.open && (
                 <div class={`roll-dropdown mod-dropdown breakdown-dropdown visible${dropdownClass ? ` ${dropdownClass}` : ""}`}>
                     {baseField && (
-                        <label class="mod-base" title="The weapon's own value, as the rulebook gives it">
-                            <span class="column-label">Weapon</span>
+                        <label class="mod-base" title={t("sheet.weapons.ownValue")}>
+                            <span class="column-label">{t("sheet.termsArms.gearType.weapon")}</span>
                             <TextField field={baseField} inputRef={baseRef} placeholder={placeholder} />
                         </label>
                     )}
@@ -120,7 +123,7 @@ export function MeleeRangeField() {
     const own = String(peekAt(state, `${path}.range`) ?? "");
     return (
         <BreakdownField field="rangeTotal" baseField="range" value={range} title={breakdownTitle(range.value, own)}
-            toggleTitle="Rng of the weapon and what changes it" placeholder="2-4" dropdownClass="open-right" />
+            toggleTitle={t("sheet.weapons.rangeToggle")} placeholder="2-4" dropdownClass="open-right" />
     );
 }
 
@@ -131,7 +134,7 @@ function BalanceField({ attackPath }: { attackPath: string }) {
     const own = String(peekAt(state, `${attackPath}.balance`) ?? "");
     return (
         <BreakdownField field="balanceTotal" baseField="balance" value={balance} title={breakdownTitle(balance.value, own)}
-            toggleTitle="Balance of the weapon and what changes it" placeholder="0" />
+            toggleTitle={t("sheet.weapons.balanceToggle")} placeholder="0" />
     );
 }
 
@@ -178,14 +181,14 @@ function GripChips({ attackPath }: { attackPath: string }) {
     const hold = (id: string) => actions.change(joinPath(attackPath, "gripSelected"), id === grip.grips[0]?.id ? "" : id);
     const chip = (g: Grip, primary: boolean) => (
         <button key={g.id} type="button" class={g === grip.held ? "grip-chip selected" : "grip-chip"} disabled={!canEdit}
-            title={primary ? `Primary grip\n${gripTitle(g)}` : gripTitle(g)} onClick={() => hold(g.id)}>{g.id}</button>
+            title={primary ? `${t("sheet.weapons.grip.primary")}\n${gripTitle(g)}` : gripTitle(g)} onClick={() => hold(g.id)}>{gripText(g)}</button>
     );
     const [primary, ...alternatives] = grip.grips;
 
     if (editing) {
         return (
-            <TextField field="grip" inputRef={inputRef} class="grip-input" placeholder="2р [1р, Бл] or 2h [1h, Cl]"
-                title="The grips of the weapon: the primary, then the alternatives in brackets; + joins grips"
+            <TextField field="grip" inputRef={inputRef} class="grip-input" placeholder={t("sheet.weapons.grip.placeholder")}
+                title={t("sheet.weapons.grip.inputTitle")}
                 onBlur={() => setEditing(false)}
                 onKeyDown={e => {
                     if (e.key === "Enter") {
@@ -209,18 +212,12 @@ function GripChips({ attackPath }: { attackPath: string }) {
                     <span class="grip-bracket">]</span>
                 </>}
             </span>
-            {canEdit && <button type="button" class="grip-edit" title="Edit the grips of the weapon" onClick={open}>✎</button>}
+            {canEdit && <button type="button" class="grip-edit" title={t("sheet.weapons.grip.edit")} onClick={open}>✎</button>}
         </>
     );
 }
 
-const PARRY_EXPR_TITLE = [
-    "What the modifier adds to a Parry with the weapon:",
-    "3×bPR — three times the base psy rating",
-    "S.b, ½WS.b — the bonus of a characteristic, or a part of it",
-    "10, -5 — a number",
-    "Dice do not count. An unknown term turns the modifier off.",
-].join("\n");
+const PARRY_EXPR_TITLE = t("sheet.weapons.parry.exprTitle");
 
 function ParryModRow({ itemId, attackPath }: { itemId: string; attackPath: string }) {
     const { state, stats } = useSheet();
@@ -230,7 +227,7 @@ function ParryModRow({ itemId, attackPath }: { itemId: string; attackPath: strin
     const { keys, named, valueOf } = WEAPON_DAMAGE.refs(state, attackPath);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>
-            <Checkbox field="enabled" class="custom" title="Counts in the Parry" />
+            <Checkbox field="enabled" class="custom" title={t("sheet.weapons.parry.modCounts")} />
             <ExprInput path={path} keys={keys} named={named} placeholder="3×bPR, 10" title={PARRY_EXPR_TITLE}
                 suggest={query => damageSuggestions(stats.characteristics, query, valueOf, named)} />
             <span class="mod-added" data-id="added">{added === null ? "—" : signed(added)}</span>
@@ -239,6 +236,11 @@ function ParryModRow({ itemId, attackPath }: { itemId: string; attackPath: strin
         </Scope>
     );
 }
+
+/** The label of a Parry with the melee attack at `attackPath`: its name with its grip and stance, then Parry. */
+export const parryRollLabel = (state: SheetSignals, attackPath: string): Label =>
+    label(String(peekAt(state, `${attackPath}.name`) ?? "") || code(SPACE.name, NAME.meleeAttack),
+        { t: meleeRollTags(state, attackPath), m: [code(SPACE.mod, MOD.parry)] });
 
 /**
  * Parry with the melee attack at `attackPath`: "Parry:" rolls it; the total's
@@ -250,23 +252,24 @@ function ParryField({ attackPath }: { attackPath: string }) {
     const parry = useComputed(() => parryAt(state, attackPath));
     const { canParry, lines, text } = parry.value;
     const hasMods = useItemIds(`${attackPath}.parryMods.items`).ids.length > 0;
-    const title = canParry ? [...lines.map(l => `${l.text} ${l.label}`), `= ${text}`].join("\n") : "Balance -2: this weapon cannot parry";
+    const title = canParry ? [...lines.map(l => `${l.text} ${l.label}`), `= ${text}`].join("\n") : t("sheet.weapons.parry.cannot");
     const roll = () => {
         const { value } = parry.peek();
-        const name = String(peekAt(state, `${attackPath}.name`) || "Melee Attack");
-        void rolls.versus(value, parryBonusSuccesses(state), `${meleeRollName(state, attackPath, name)}, Parry`);
+        void rolls.versus(value, parryBonusSuccesses(state), parryRollLabel(state, attackPath));
     };
     const dim = canParry ? undefined : "dimmed";
     return (
         <div class="layout-row parry">
             {preview
-                ? <label class={dim}>Parry:</label>
-                : <label class={canParry ? "rollable" : "rollable dimmed"} title={canParry ? "Roll Parry with this weapon" : title} onClick={roll}>Parry:</label>}
-            <BreakdownField field="parryTotal" value={parry} title={title} toggleTitle="Parry with this weapon and its modifiers" totalClass={dim}>
+                ? <label class={dim}>{`${t("sheet.termsSkills.skill.parry")}:`}</label>
+                : <label class={canParry ? "rollable" : "rollable dimmed"} title={canParry ? t("sheet.weapons.parry.roll") : title} onClick={roll}>
+                    {`${t("sheet.termsSkills.skill.parry")}:`}
+                </label>}
+            <BreakdownField field="parryTotal" value={parry} title={title} toggleTitle={t("sheet.weapons.parry.toggle")} totalClass={dim}>
                 <div class="mods-header">
-                    <span class="column-label">Modifiers</span>
+                    <span class="column-label">{t("sheet.weapons.modifiers")}</span>
                 </div>
-                {!hasMods && <p class="mod-hint">Add 3×bPR, 10 or -5.</p>}
+                {!hasMods && <p class="mod-hint">{t("sheet.weapons.parry.hint")}</p>}
                 <ItemGrid dataId="parryMods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix="parry-mod"
                     renderItem={id => <ParryModRow itemId={id} attackPath={attackPath} />} />
             </BreakdownField>
@@ -279,11 +282,11 @@ export function GripRow({ attackPath, children }: { attackPath: string; children
     return (
         <div class="layout-row grip-row">
             <div class="layout-row grip">
-                <label>Grip:</label>
+                <label>{`${t("sheet.termsArms.weaponField.grip")}:`}</label>
                 <GripChips attackPath={attackPath} />
             </div>
             <div class="layout-row balance">
-                <label>Balance:</label>
+                <label>{`${t("sheet.termsArms.weaponField.balance")}:`}</label>
                 <BalanceField attackPath={attackPath} />
             </div>
             <ParryField attackPath={attackPath} />

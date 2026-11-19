@@ -6,6 +6,7 @@ import { nanoid } from "nanoid";
 import type { VersusOutcome } from "../room/messages";
 import type { SheetScope } from "./lifecycle";
 import type { SheetSignals } from "./schema/sheet";
+import type { Label } from "./rollLabel";
 
 export type { VersusOutcome };
 
@@ -41,9 +42,9 @@ export interface SheetRolls {
      * server, or null when it is no single test or the sheet is gone first.
      * `requestId` names the test, for a caller that keeps it.
      */
-    versus(target: number, bonusSuccesses: number, label: string, requestId?: string): Promise<VersusOutcome | null>;
+    versus(target: number, bonusSuccesses: number, label: Label, requestId?: string): Promise<VersusOutcome | null>;
     /** A dice expression such as "2d10+3"; resolves with its total, null when there is none or the sheet is gone. */
-    exact(expression: string, label: string): Promise<number | null>;
+    exact(expression: string, label: Label): Promise<number | null>;
 }
 
 /**

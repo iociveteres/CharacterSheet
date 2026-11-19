@@ -16,6 +16,9 @@ type newChatMessageMsg struct {
 	EventID       string  `json:"eventID"`
 	MessageBody   string  `json:"messageBody"`
 	CharacterName *string `json:"characterName,omitempty"`
+	// LabelData is the label of a roll from a sheet as data (rolllabel.go),
+	// which the body has as ">>" lines too.
+	LabelData json.RawMessage `json:"labelData,omitempty"`
 }
 
 type newChatMessageSentMsg struct {
@@ -26,11 +29,12 @@ type newChatMessageSentMsg struct {
 	UserName      string  `json:"userName"`
 	MessageBody   string  `json:"messageBody"`
 	CommandResult *string `json:"commandResult,omitempty"`
-	// Versus is not stored: only the sheet that rolled reads it, as the
-	// message comes back with its eventID.
-	Versus        *commands.VersusOutcome `json:"versus,omitempty"`
-	CharacterName *string                 `json:"characterName,omitempty"`
-	CreatedAt     string                  `json:"created"`
+	// ResultData is CommandResult as data: each viewer renders it in their
+	// language, and the sheet that rolled reads its outcome from it.
+	ResultData    *commands.ResultData `json:"resultData,omitempty"`
+	LabelData     json.RawMessage      `json:"labelData,omitempty"`
+	CharacterName *string              `json:"characterName,omitempty"`
+	CreatedAt     string               `json:"created"`
 }
 
 func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -41,21 +45,31 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 	}
 
 	var commandResult *string
-	var versus *commands.VersusOutcome
+	var resultData *commands.ResultData
 	if strings.HasPrefix(msg.MessageBody, "/") {
 		if r := commands.ParseAndExecuteCommand(msg.MessageBody); r.Success {
 			commandResult = &r.Result
-			versus = r.Versus
+			resultData = r.Data
 		}
 	}
 
-	app.postChatMessage(ctx, client, hub, msg.EventID, msg.MessageBody, commandResult, msg.CharacterName, versus)
+	// The label is stored once: as data when it is a label, in the body
+	// otherwise, as from a client older than labelData. The command above
+	// ran on the whole body, which ignores the ">>" lines.
+	body, labelData := msg.MessageBody, json.RawMessage(nil)
+	if cut, ok := bodyWithoutLabel(body); ok {
+		if labelData = storedLabel(msg.LabelData); labelData != nil {
+			body = cut
+		}
+	}
+
+	app.postChatMessage(ctx, client, hub, msg.EventID, body, commandResult, resultData, labelData, msg.CharacterName)
 }
 
 // postChatMessage stores a message of the client in the chat and sends it to
 // the whole room, the sender too; false when it replied with an error.
-func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub, eventID, body string, commandResult, characterName *string, versus *commands.VersusOutcome) bool {
-	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, body, commandResult, characterName)
+func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub, eventID, body string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) bool {
+	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, body, commandResult, resultData, labelData, characterName)
 	if app.wsModelError(hub, client, err, eventID, "create chat message") {
 		return false
 	}
@@ -68,7 +82,8 @@ func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub
 		UserName:      message.Username,
 		MessageBody:   body,
 		CommandResult: message.Message.CommandResult,
-		Versus:        versus,
+		ResultData:    message.Message.ResultData,
+		LabelData:     message.Message.LabelData,
 		CharacterName: message.Message.CharacterName,
 		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
 	}

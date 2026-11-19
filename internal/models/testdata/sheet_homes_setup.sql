@@ -35,3 +35,14 @@ CREATE TABLE character_sheets (
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- The chat as it is before migration 000049.
+CREATE TABLE room_messages (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    room_id        INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+    user_id        INT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    message_body   TEXT NOT NULL,
+    command_result TEXT,
+    character_name TEXT,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

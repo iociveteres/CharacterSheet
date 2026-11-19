@@ -75,6 +75,14 @@ jobs:
       - name: Sheet folders import only lower layers, the rest only sheet/api.ts
         run: npm run check:layers
 
+      - name: Catalog keys match the code
+        run: npm run check:i18n
+
+      - name: The client key types match the catalog
+        run: |
+          npm run gen:i18n
+          git diff --exit-code -- ui/static/js/i18n/keys.gen.ts
+
       - name: vitest
         run: npx vitest run
 

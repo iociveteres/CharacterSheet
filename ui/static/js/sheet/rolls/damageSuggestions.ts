@@ -5,12 +5,13 @@ import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import type { TextPart } from "../components/TextMarks";
 import { BASE_PR, POWER_PR, SIZE, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "./damageExpression";
+import { t } from "../../i18n";
 
 /** The references by name: the group they are listed in and what they are. */
 const NAMED: { [ref: string]: { group: string; label: string } } = {
-    [BASE_PR]: { group: "Psy rating", label: "base psy rating" },
-    [POWER_PR]: { group: "Psy rating", label: "psy rating of the cast" },
-    [SIZE]: { group: "Size", label: "size of the character" },
+    [BASE_PR]: { group: t("sheet.termsPowers.psy.psyRating"), label: t("sheet.rolls.ref.basePR") },
+    [POWER_PR]: { group: t("sheet.termsPowers.psy.psyRating"), label: t("sheet.rolls.ref.powerPR") },
+    [SIZE]: { group: t("sheet.terms.stat.size"), label: t("sheet.rolls.ref.size") },
 };
 const namedOf = (ref: string) => NAMED[ref] ?? { group: ref, label: ref };
 
@@ -69,10 +70,10 @@ const rating = (name: string) => name.replace(/^[a-z]+/, "").toUpperCase();
 
 // The parts and multiples of a reference the rulebooks use.
 const FACTORS = [
-    { prefix: "½", suffix: "", text: "half, rounded down" },
-    { prefix: "½", suffix: "▲", text: "half, rounded up" },
-    { prefix: "2×", suffix: "", text: "twice" },
-    { prefix: "3×", suffix: "", text: "three times" },
+    { prefix: "½", suffix: "", text: t("sheet.rolls.factor.half") },
+    { prefix: "½", suffix: "▲", text: t("sheet.rolls.factor.halfUp") },
+    { prefix: "2×", suffix: "", text: t("sheet.rolls.factor.twice") },
+    { prefix: "3×", suffix: "", text: t("sheet.rolls.factor.thrice") },
 ] as const;
 
 /**
@@ -106,9 +107,12 @@ export function damageSuggestions(
     const own = parseDamage(q, keys, named);
     const term = own.terms.length === 1 && own.invalid.length === 0 ? own.terms[0] : null;
     const round = {
-        label: "Rounding",
+        label: t("sheet.rolls.suggest.rounding"),
         options: term?.kind === "ref" && !Number.isInteger(term.factor) && !/[▲▼]$/.test(q)
-            ? [{ value: `${q}▲`, label: `${q}▲ — round up${adds(`${q}▲`)}` }, { value: `${q}▼`, label: `${q}▼ — round down${adds(q)}` }]
+            ? [
+                { value: `${q}▲`, label: `${q}▲ — ${t("sheet.rolls.suggest.roundUp")}${adds(`${q}▲`)}` },
+                { value: `${q}▼`, label: `${q}▼ — ${t("sheet.rolls.suggest.roundDown")}${adds(q)}` },
+            ]
             : [],
     };
     // "bs", "BS.b" or "bpr" without a factor: the reference the others would be of.
@@ -116,7 +120,7 @@ export function damageSuggestions(
     const key = factor || byName ? undefined : characteristics.find(c => c.key.toUpperCase() === word && word !== "")?.key;
     const ref = byName ?? (key ? `${key}.b` : null);
     const factors = {
-        label: "With a factor",
+        label: t("sheet.rolls.suggest.withFactor"),
         options: ref
             ? FACTORS.map(({ prefix: p, suffix, text }) => {
                 const value = `${p}${ref}${suffix}`;
@@ -125,14 +129,14 @@ export function damageSuggestions(
             : [],
     };
     const bonus = {
-        label: "Characteristic bonus",
+        label: t("sheet.terms.stat.characteristicBonus"),
         // "S" names Strength before the "Skill" of WS and BS.
         options: characteristics
             .filter(c => matches(c.key, c.label, word))
             .sort((a, b) => rank(a.key, word) - rank(b.key, word))
             .map(c => {
                 const value = `${prefix}${c.key}.b`;
-                return { value, label: `${value} — ${c.label} bonus${adds(value)}` };
+                return { value, label: `${value} — ${t("sheet.rolls.suggest.charBonus", { characteristic: c.label })}${adds(value)}` };
             }),
     };
     // A group per kind of reference by name: the psy ratings, Size.
@@ -146,12 +150,12 @@ export function damageSuggestions(
                 const option = { value, label: `${value} — ${namedOf(n).label}${adds(value)}` };
                 // Powers roll PR dice: "PRd10", "2×PRd10".
                 if (n !== POWER_PR || (factor && !whole)) return [option];
-                return [option, { value: `${value}d10`, label: `${value}d10 — d10 as many${adds(`${value}d10`)}` }];
+                return [option, { value: `${value}d10`, label: `${value}d10 — ${t("sheet.rolls.suggest.diceAsMany")}${adds(`${value}d10`)}` }];
             }),
     }));
     const count = whole ?? "1";
     const dieOptions = {
-        label: "Dice",
+        label: t("sheet.rolls.suggest.dice"),
         options: !dice || (factor && !whole) ? [] : ["d10", "d5"]
             .filter(d => !rest || d.startsWith(rest.toLowerCase()))
             .map(d => `${count}${d}`),

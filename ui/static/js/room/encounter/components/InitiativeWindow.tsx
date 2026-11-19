@@ -4,6 +4,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { initiativeWindowOpen, shownView } from "../state";
 import { toggleInitiativeWindow } from "../actions";
+import { t } from "../../../i18n";
+import { nameText } from "../order";
 
 type Point = { left: number; top: number };
 
@@ -90,18 +92,18 @@ export function InitiativeWindow() {
     };
 
     return (
-        <div ref={root} class="initiative-window" role="dialog" aria-label="Initiative" style={{ left: `${position.left}px`, top: `${position.top}px` }}>
+        <div ref={root} class="initiative-window" role="dialog" aria-label={t("sheet.terms.stat.initiative")} style={{ left: `${position.left}px`, top: `${position.top}px` }}>
             <div class="initiative-window-header" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
-                <span class="initiative-window-title">Initiative{view ? ` · round ${view.round}` : ""}</span>
-                <button type="button" class="initiative-window-close" aria-label="Close" onClick={toggleInitiativeWindow}>×</button>
+                <span class="initiative-window-title">{view ? t("room.encounter.window.title", { round: view.round }) : t("sheet.terms.stat.initiative")}</span>
+                <button type="button" class="initiative-window-close" aria-label={t("common.close")} onClick={toggleInitiativeWindow}>×</button>
             </div>
             <div class="initiative-window-body">
                 {view ? view.rows.map((row, i) => (
                     <div key={i} class={["encounter-order-row", i === view.current && "current", row.value === null && "encounter-muted"].filter(Boolean).join(" ")}>
-                        <span class="encounter-order-name">{row.name}</span>
+                        <span class="encounter-order-name">{nameText(row)}</span>
                         <span>{row.value ?? "—"}</span>
                     </div>
-                )) : <p class="encounter-muted">No encounter is shown.</p>}
+                )) : <p class="encounter-muted">{t("room.encounter.window.noneShown")}</p>}
             </div>
         </div>
     );

@@ -6,6 +6,7 @@
 // The layout gives it to Gear (kinds/tabs.tsx), so gear doesn't import weapons.
 import { useState } from "preact/hooks";
 import { nanoid } from "nanoid";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { createAtEnd } from "../core/columns";
 import { useSheet, type SheetEnv } from "../components/context";
@@ -17,8 +18,8 @@ import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "./Attacks";
 import { findEntry } from "./ItemLink";
 
 const BLOCKS = {
-    [MELEE_ATTACKS]: { collection: "melee", idPrefix: "melee-attack", heading: "Melee Attacks", mark: "⚔" },
-    [RANGED_ATTACKS]: { collection: "ranged", idPrefix: "ranged-attack", heading: "Ranged Attacks", mark: "➶" },
+    [MELEE_ATTACKS]: { collection: "melee", idPrefix: "melee-attack", heading: t("sheet.terms.block.meleeAttacks"), mark: "⚔" },
+    [RANGED_ATTACKS]: { collection: "ranged", idPrefix: "ranged-attack", heading: t("sheet.terms.block.rangedAttacks"), mark: "➶" },
 } as const;
 
 /**
@@ -90,8 +91,8 @@ function AddAttackButton({ itemId, adder, class: cls }: { itemId: string; adder:
     const { state } = useSheet();
     return (
         <button type="button" class={cls} data-id="addAttack" disabled={adder.busy}
-            title={`Create an attack of ${itemName(state.gear.list.items[itemId])} from the rulebook, linked to it`}
-            onClick={adder.add}>＋ attack</button>
+            title={t("sheet.weapons.linkedAttacks.create", { item: itemName(state.gear.list.items[itemId]) })}
+            onClick={adder.add}>{t("sheet.weapons.linkedAttacks.add")}</button>
     );
 }
 
@@ -105,15 +106,15 @@ function LinkedAttacks({ itemId, adder }: { itemId: string; adder: AttackAdder }
     return (
         <div class="item-mods attacks-row" data-id="attacks">
             <div class="mods-row">
-                <span class="mods-label">Attacks:</span>
+                <span class="mods-label">{`${t("sheet.kinds.attacks")}:`}</span>
                 {attacks.map(a => <AttackChip key={a.path} attack={a} />)}
                 {canEdit && !both && <AddAttackButton itemId={itemId} adder={adder} class="add-mod add-attack" />}
                 {canEdit && both && (
-                    <span class="attack-choice" data-id="attackChoice" title="The rulebook has the weapon held and thrown">
-                        <button type="button" class="add-mod" onClick={() => choose([MELEE_ATTACKS])}>Melee</button>
-                        <button type="button" class="add-mod" onClick={() => choose([RANGED_ATTACKS])}>Ranged</button>
-                        <button type="button" class="add-mod" onClick={() => choose([MELEE_ATTACKS, RANGED_ATTACKS])}>Both</button>
-                        <button type="button" class="add-mod" title="Cancel" onClick={cancel}>✖</button>
+                    <span class="attack-choice" data-id="attackChoice" title={t("sheet.weapons.linkedAttacks.choice")}>
+                        <button type="button" class="add-mod" onClick={() => choose([MELEE_ATTACKS])}>{t("sheet.weapons.linkedAttacks.melee")}</button>
+                        <button type="button" class="add-mod" onClick={() => choose([RANGED_ATTACKS])}>{t("sheet.weapons.linkedAttacks.ranged")}</button>
+                        <button type="button" class="add-mod" onClick={() => choose([MELEE_ATTACKS, RANGED_ATTACKS])}>{t("sheet.weapons.linkedAttacks.both")}</button>
+                        <button type="button" class="add-mod" title={t("common.cancel")} onClick={cancel}>✖</button>
                     </span>
                 )}
             </div>

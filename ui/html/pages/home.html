@@ -1,111 +1,111 @@
-{{define "title"}}Home{{end}}
+{{define "title"}}{{t .Lang "site.home.title"}}{{end}}
 {{define "main"}}
-<h2>Warhammer RP character sheet, simple and convenient</h2>
+<h2>{{t .Lang "site.home.heading"}}</h2>
 <div class="slideshow-container">
     <div class="slideshow-viewer">
         <div class="slide active" data-index="1" data-duration="8500">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/1-layout-light.webm?v={{version "img/slides/1-layout-light.webm"}}'
-                    data-dark='/static/img/slides/1-layout-dark.webm?v={{version "img/slides/1-layout-dark.webm"}}'
+                    data-light='{{slide .Lang "1-layout" "light" "webm"}}'
+                    data-dark='{{slide .Lang "1-layout" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">Room and character sheet</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.layout"}}</div>
         </div>
         <div class="slide" data-index="2">
-            <img data-light='/static/img/slides/2-character-info-light.webp?v={{version "img/slides/2-character-info-light.webp"}}'
-                data-dark='/static/img/slides/2-character-info-dark.webp?v={{version "img/slides/2-character-info-dark.webp"}}'
-                alt="Slide 2" class="theme-img">
-            <div class="slide-caption">Attributes, skills and notes</div>
+            <img data-light='{{slide .Lang "2-character-info" "light" "webp"}}'
+                data-dark='{{slide .Lang "2-character-info" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 2}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.characterInfo"}}</div>
         </div>
         <div class="slide" data-index="3">
-            <img data-light='/static/img/slides/3-combat-light.webp?v={{version "img/slides/3-combat-light.webp"}}'
-                data-dark='/static/img/slides/3-combat-dark.webp?v={{version "img/slides/3-combat-dark.webp"}}'
-                alt="Slide 3" class="theme-img">
-            <div class="slide-caption">Combat statistics</div>
+            <img data-light='{{slide .Lang "3-combat" "light" "webp"}}'
+                data-dark='{{slide .Lang "3-combat" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 3}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.combat"}}</div>
         </div>
         <div class="slide" data-index="4">
-            <img data-light='/static/img/slides/4-talents-light.webp?v={{version "img/slides/4-talents-light.webp"}}'
-                data-dark='/static/img/slides/4-talents-dark.webp?v={{version "img/slides/4-talents-dark.webp"}}'
-                alt="Slide 4" class="theme-img">
-            <div class="slide-caption">Traits and talents</div>
+            <img data-light='{{slide .Lang "4-talents" "light" "webp"}}'
+                data-dark='{{slide .Lang "4-talents" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 4}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.talents"}}</div>
         </div>
         <div class="slide" data-index="5">
-            <img data-light='/static/img/slides/5-gear-light.webp?v={{version "img/slides/5-gear-light.webp"}}'
-                data-dark='/static/img/slides/5-gear-dark.webp?v={{version "img/slides/5-gear-dark.webp"}}' alt="Slide 5"
+            <img data-light='{{slide .Lang "5-gear" "light" "webp"}}'
+                data-dark='{{slide .Lang "5-gear" "dark" "webp"}}' alt='{{t .Lang "site.home.slideAlt" "n" 5}}'
                 class="theme-img">
-            <div class="slide-caption">Gear and implants</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.gear"}}</div>
         </div>
         <div class="slide" data-index="6">
-            <img data-light='/static/img/slides/6-advancements-light.webp?v={{version "img/slides/6-advancements-light.webp"}}'
-                data-dark='/static/img/slides/6-advancements-dark.webp?v={{version "img/slides/6-advancements-dark.webp"}}'
-                alt="Slide 6" class="theme-img">
-            <div class="slide-caption">Advancements</div>
+            <img data-light='{{slide .Lang "6-advancements" "light" "webp"}}'
+                data-dark='{{slide .Lang "6-advancements" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 6}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.advancements"}}</div>
         </div>
         <div class="slide" data-index="7">
-            <img data-light='/static/img/slides/7-psykana-light.webp?v={{version "img/slides/7-psykana-light.webp"}}'
-                data-dark='/static/img/slides/7-psykana-dark.webp?v={{version "img/slides/7-psykana-dark.webp"}}'
-                alt="Slide 7" class="theme-img">
-            <div class="slide-caption">Psykana</div>
+            <img data-light='{{slide .Lang "7-psykana" "light" "webp"}}'
+                data-dark='{{slide .Lang "7-psykana" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 7}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.psykana"}}</div>
         </div>
         <div class="slide" data-index="8" data-duration="5000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/8-drag-n-drop-light.webm?v={{version "img/slides/8-drag-n-drop-light.webm"}}'
-                    data-dark='/static/img/slides/8-drag-n-drop-dark.webm?v={{version "img/slides/8-drag-n-drop-dark.webm"}}'
+                    data-light='{{slide .Lang "8-drag-n-drop" "light" "webm"}}'
+                    data-dark='{{slide .Lang "8-drag-n-drop" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">Drag and drop items between columns</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.dragDrop"}}</div>
         </div>
         <div class="slide" data-index="9" data-duration="10000">
             <video class="theme-video" muted loop playsinline preload="auto">
-                <source data-light='/static/img/slides/9-roll-light.webm?v={{version "img/slides/9-roll-light.webm"}}'
-                    data-dark='/static/img/slides/9-roll-dark.webm?v={{version "img/slides/9-roll-dark.webm"}}'
+                <source data-light='{{slide .Lang "9-roll" "light" "webm"}}'
+                    data-dark='{{slide .Lang "9-roll" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">Roll character stats with single command</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.roll"}}</div>
         </div>
         <div class="slide" data-index="10" data-duration="8000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/10-attack-roll-light.webm?v={{version "img/slides/10-attack-roll-light.webm"}}'
-                    data-dark='/static/img/slides/10-attack-roll-dark.webm?v={{version "img/slides/10-attack-roll-dark.webm"}}'
+                    data-light='{{slide .Lang "10-attack-roll" "light" "webm"}}'
+                    data-dark='{{slide .Lang "10-attack-roll" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">Configure attack roll in a few clicks</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.attackRoll"}}</div>
         </div>
         <div class="slide" data-index="11" data-duration="12000">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/11-autocomplete-light.webm?v={{version "img/slides/11-autocomplete-light.webm"}}'
-                    data-dark='/static/img/slides/11-autocomplete-dark.webm?v={{version "img/slides/11-autocomplete-dark.webm"}}'
+                    data-light='{{slide .Lang "11-autocomplete" "light" "webm"}}'
+                    data-dark='{{slide .Lang "11-autocomplete" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">Autocomplete and automation</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.autocomplete"}}</div>
         </div>
         <div class="slide" data-index="12" data-duration="15500">
             <video class="theme-video" muted loop playsinline preload="auto">
                 <source
-                    data-light='/static/img/slides/12-gm-mode-light.webm?v={{version "img/slides/12-gm-mode-light.webm"}}'
-                    data-dark='/static/img/slides/12-gm-mode-dark.webm?v={{version "img/slides/12-gm-mode-dark.webm"}}'
+                    data-light='{{slide .Lang "12-gm-mode" "light" "webm"}}'
+                    data-dark='{{slide .Lang "12-gm-mode" "dark" "webm"}}'
                     type="video/webm">
             </video>
-            <div class="slide-caption">GM mode: encounters, initiative, NPC stat blocks, all synced with players</div>
+            <div class="slide-caption">{{t .Lang "site.home.slide.gmMode"}}</div>
         </div>
         <div class="slide" data-index="13">
-            <img data-light='/static/img/slides/13-bestiary-light.webp?v={{version "img/slides/13-bestiary-light.webp"}}'
-                data-dark='/static/img/slides/13-bestiary-dark.webp?v={{version "img/slides/13-bestiary-dark.webp"}}'
-                alt="Slide 13" class="theme-img">
-            <div class="slide-caption">Bestiary: creature collections you can share</div>
+            <img data-light='{{slide .Lang "13-bestiary" "light" "webp"}}'
+                data-dark='{{slide .Lang "13-bestiary" "dark" "webp"}}'
+                alt='{{t .Lang "site.home.slideAlt" "n" 13}}' class="theme-img">
+            <div class="slide-caption">{{t .Lang "site.home.slide.bestiary"}}</div>
         </div>
 
         <!-- Navigation arrows -->
-        <button class="slide-nav prev" aria-label="Previous slide">
+        <button class="slide-nav prev" aria-label='{{t .Lang "site.home.previous"}}'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <button class="slide-nav next" aria-label="Next slide">
+        <button class="slide-nav next" aria-label='{{t .Lang "site.home.next"}}'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
@@ -114,40 +114,41 @@
 
     <!-- Dot indicators -->
     <div class="slide-dots">
-        <button class="slide-dot active" aria-label="Go to slide 1" data-index="1"></button>
-        <button class="slide-dot" aria-label="Go to slide 2" data-index="2"></button>
-        <button class="slide-dot" aria-label="Go to slide 3" data-index="3"></button>
-        <button class="slide-dot" aria-label="Go to slide 4" data-index="4"></button>
-        <button class="slide-dot" aria-label="Go to slide 5" data-index="5"></button>
-        <button class="slide-dot" aria-label="Go to slide 6" data-index="6"></button>
-        <button class="slide-dot" aria-label="Go to slide 7" data-index="7"></button>
-        <button class="slide-dot" aria-label="Go to slide 8" data-index="8"></button>
-        <button class="slide-dot" aria-label="Go to slide 9" data-index="9"></button>
-        <button class="slide-dot" aria-label="Go to slide 10" data-index="10"></button>
-        <button class="slide-dot" aria-label="Go to slide 11" data-index="11"></button>
-        <button class="slide-dot" aria-label="Go to slide 12" data-index="12"></button>
-        <button class="slide-dot" aria-label="Go to slide 13" data-index="13"></button>
+        <button class="slide-dot active" aria-label='{{t .Lang "site.home.goTo" "n" 1}}' data-index="1"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 2}}' data-index="2"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 3}}' data-index="3"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 4}}' data-index="4"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 5}}' data-index="5"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 6}}' data-index="6"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 7}}' data-index="7"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 8}}' data-index="8"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 9}}' data-index="9"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 10}}' data-index="10"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 11}}' data-index="11"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 12}}' data-index="12"></button>
+        <button class="slide-dot" aria-label='{{t .Lang "site.home.goTo" "n" 13}}' data-index="13"></button>
     </div>
 </div>
 
 <!-- Lightbox overlay -->
 <div class="lightbox" id="lightbox">
-    <button class="lightbox-close" aria-label="Close">×</button>
+    <button class="lightbox-close" aria-label='{{t .Lang "common.close"}}'>×</button>
     <img class="lightbox-image" alt="">
 </div>
 
 <ul>
-    <li>Well-considered layout, light and dark theme</li>
-    <li>Real-time data synchronization</li>
-    <li>Rooms, chat, dice roller</li>
-    <li>Role-based permissions</li>
-    <li>Export/import character to JSON</li>
+    <li>{{t .Lang "site.home.feature.layout"}}</li>
+    <li>{{t .Lang "site.home.feature.sync"}}</li>
+    <li>{{t .Lang "site.home.feature.rooms"}}</li>
+    <li>{{t .Lang "site.home.feature.roles"}}</li>
+    <li>{{t .Lang "site.home.feature.export"}}</li>
 </ul>
 
-Best experienced on a PC or tablet.
+{{t .Lang "site.home.bestOn"}}
 
-<span id="online-counter" class="online-counter" aria-live="polite" title="Players currently online">
-    {{formatOnlineCount .OnlineUsers}}
+<span id="online-counter" class="online-counter" aria-live="polite" title='{{t .Lang "site.home.online.title"}}'
+    data-forms='{{onlineCountForms .Lang}}'>
+    {{formatOnlineCount .Lang .OnlineUsers}}
 </span>
 <script defer src='/static/js/home.js?v={{version "js/home.js"}}' type="module"></script>
 {{end}}

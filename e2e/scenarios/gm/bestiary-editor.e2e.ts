@@ -37,7 +37,7 @@ async function openBestiary(page: Page, collection?: number): Promise<void> {
 /** Uploads a creature into the collection open on `page`; returns its id. */
 async function upload(page: Page, file: string, name: string): Promise<number> {
     await page.locator('.bestiary input[type="file"]').setInputFiles({ name: file, mimeType: "application/json", buffer: creatureFile(name) });
-    await expectToast(page, `${file}: 1 creature`);
+    await expectToast(page, file, 1);
     const row = page.locator(".bestiary-table tbody tr", { hasText: name });
     await row.waitFor();
     return Number(await row.getAttribute("data-creature-id"));

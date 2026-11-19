@@ -2,6 +2,7 @@
 // metal and their weight, with its ⚙ inside as a pool's maximum has it,
 // where the weight can be turned off (gear/coinRules.ts).
 import { useRef } from "preact/hooks";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
@@ -17,19 +18,19 @@ function CoinsWeight() {
     const kg = useComputed(() => coinsWeight(state)).value;
     const count = useComputed(() => coinCount(state)).value;
     return (
-        <div class="coins-weight">Weight:
+        <div class="coins-weight">{`${t("sheet.termsArms.weaponField.weight")}:`}
             <div class="mod-field resource-field dropdown-parent" ref={ref}>
-                <input type="text" data-id="weight" class="mod-total textlike" readOnly value={weighs ? String(kg) : ""} placeholder="off"
-                    title={weighs ? `${count} coins, ${COINS_PER_KG} to a kg` : "Not in the encumbrance"} onClick={dropdown.show} />
-                <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title="Whether the coins weigh"
+                <input type="text" data-id="weight" class="mod-total textlike" readOnly value={weighs ? String(kg) : ""} placeholder={t("sheet.gear.coins.off")}
+                    title={weighs ? t("sheet.gear.coins.count", { count, perKg: COINS_PER_KG }) : t("sheet.gear.coins.notCounted")} onClick={dropdown.show} />
+                <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={t("sheet.gear.coins.toggle")}
                     onClick={dropdown.toggle}>⚙</button>
                 {dropdown.open && (
                     <div class="roll-dropdown block-settings-dropdown visible">
                         <label class="block-rule">
                             <Checkbox field="countWeight" class="custom" />
                             <span>
-                                <span class="block-rule-label">Coins weigh</span>
-                                <span class="block-rule-text">{`${COINS_PER_KG} coins weigh 1 kg, counted in the encumbrance.`}</span>
+                                <span class="block-rule-label">{t("sheet.gear.coins.weigh")}</span>
+                                <span class="block-rule-text">{t("sheet.gear.coins.rule", { count: COINS_PER_KG })}</span>
                             </span>
                         </label>
                     </div>

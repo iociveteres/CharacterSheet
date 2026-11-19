@@ -1,15 +1,19 @@
 // The words a weapon entry (weapons/weaponBonus.ts) names weapons by: Melee or
 // Ranged, a melee group or ranged class, a melee profile, the name of a weapon
 // of the sheet, and "This item" inside a gear item.
-import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
+import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
 import { sheetComputed } from "../core/state";
 import type { Entry } from "./entries";
+import { t } from "../../i18n";
 
 /** The words that name all the weapons of a kind. */
-export const WEAPON_KINDS: readonly Option[] = [{ value: "melee", label: "Melee" }, { value: "ranged", label: "Ranged" }];
+export const WEAPON_KINDS: readonly Option[] = [
+    { value: "melee", label: t("sheet.termsArms.weaponKind.melee") },
+    { value: "ranged", label: t("sheet.termsArms.weaponKind.ranged") },
+];
 
 /** The melee groups and ranged classes, named as their selects show them. */
 export const WEAPON_GROUPS: readonly Option[] = [...MELEE_GROUPS, ...RANGED_CLASSES];
@@ -18,12 +22,13 @@ export const WEAPON_GROUPS: readonly Option[] = [...MELEE_GROUPS, ...RANGED_CLAS
 export const WEAPON_PROFILES: readonly Option[] = MELEE_PROFILES.filter(o => optionValue(o) !== "" && optionValue(o) !== "no");
 
 const lower = (s: string) => s.trim().toLowerCase();
-const KNOWN = new Set([...WEAPON_KINDS, ...WEAPON_GROUPS, ...WEAPON_PROFILES].flatMap(o => [lower(String(optionValue(o))), lower(optionLabel(o))]));
+// Values only: the labels are in the page's language, and the sheet must read the same for every viewer.
+const KNOWN = new Set([...WEAPON_KINDS, ...WEAPON_GROUPS, ...WEAPON_PROFILES].map(o => lower(String(optionValue(o)))));
 
 /** The words of an entry's name, separated by commas. */
 export const weaponWords = (name: string): string[] => name.split(",").map(lower).filter(Boolean);
 
-/** The word of an entry inside a gear item that names the attacks linked to the item. */
+/** The word of an entry inside a gear item that names the attacks linked to the item; English in every language, as the other words. */
 export const THIS_ITEM = "This item";
 const THIS_ITEM_WORD = lower(THIS_ITEM);
 

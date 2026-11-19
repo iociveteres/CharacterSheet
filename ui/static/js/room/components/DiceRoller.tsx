@@ -1,5 +1,6 @@
 // The dice roller over the right panel: its rolls go to the chat.
 import { useEffect, useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { dicePresets, diceSettings } from "../state";
 import {
     rollPreset, rollStandardDice, setDiceAmount, setDiceModifier, setDicePreset, setRollAgainst, toggleRollAgainst,
@@ -25,12 +26,12 @@ export function DiceRoller() {
 
     return (
         <>
-            <button onClick={() => setOpen(o => !o)} class="dice-roller-btn" type="button" title="Dice roller">⚄</button>
+            <button onClick={() => setOpen(o => !o)} class="dice-roller-btn" type="button" title={t("room.dice.title")}>⚄</button>
             <Transition show={open} name="popover">
                 <div class="dice-popover">
                     <div class="dice-popover-header">
-                        <span>Dice Roller</span>
-                        <button onClick={() => setOpen(false)} class="dice-close-btn" type="button" title="Close">×</button>
+                        <span>{t("room.dice.title")}</span>
+                        <button onClick={() => setOpen(false)} class="dice-close-btn" type="button" title={t("common.close")}>×</button>
                     </div>
                     <DiceSettingsForm />
                 </div>
@@ -57,7 +58,7 @@ function DiceSettingsForm() {
     return (
         <>
             <div class="roll-against-section">
-                <div class="roll-against-label">Roll against:</div>
+                <div class="roll-against-label">{t("room.dice.rollAgainst")}</div>
                 <div class="roll-against-grid">
                     {settings.rollAgainst.map((target, i) => (
                         <div key={i} class="roll-against-item">
@@ -72,7 +73,7 @@ function DiceSettingsForm() {
             </div>
 
             <div class="dice-modifier-section">
-                <div class="dice-modifier-label">Modifier:</div>
+                <div class="dice-modifier-label">{t("common.modifier")}:</div>
                 <div class="dice-modifier-grid">
                     <div class="dice-modifier-row">{NEGATIVE_MODIFIERS.map(modifier)}</div>
                     <div class="dice-modifier-row dice-modifier-zero-row">
@@ -87,7 +88,7 @@ function DiceSettingsForm() {
             </div>
 
             <div class="dice-amount-section">
-                <div class="dice-amount-label">Number of dice:</div>
+                <div class="dice-amount-label">{t("room.dice.amount")}</div>
                 <div class="dice-amount-radio">
                     {[1, 2, 3, 4, 5].map(n => (
                         <label key={n} class="dice-radio-label">
@@ -108,15 +109,15 @@ function DiceSettingsForm() {
             </div>
 
             <div class="custom-dice-section">
-                <div class="custom-dice-label">Custom rolls:</div>
+                <div class="custom-dice-label">{t("room.dice.custom")}</div>
                 {dicePresets.value.map((notation, i) => (
                     <div key={i} class="custom-dice-row">
                         <input type="text" value={notation} onInput={e => setDicePreset(i, e.currentTarget.value)}
                             onKeyDown={e => e.key === "Enter" && notation.trim() && roll(() => rollPreset(i))}
-                            placeholder={i === 0 ? "e.g., 2d10+5" : undefined} class="custom-dice-input" />
+                            placeholder={i === 0 ? t("room.dice.example") : undefined} class="custom-dice-input" />
                         <button onClick={() => roll(() => rollPreset(i))} class="custom-dice-roll-btn" type="button"
                             disabled={!notation.trim()}>
-                            Roll
+                            {t("common.roll")}
                         </button>
                     </div>
                 ))}

@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -605,10 +607,17 @@ func (e *QuotaError) Error() string {
 	return fmt.Sprintf("models: quota exceeded: %d of %d bytes used, %d more needed", e.Used, e.Limit, e.Adding)
 }
 
-// Message is the error as the user reads it, over the socket and over HTTP.
-func (e *QuotaError) Message() string {
-	return fmt.Sprintf("NPCs and creatures take %.1f of %.0f MB; this needs %.1f MB more.",
-		float64(e.Used)/(1<<20), float64(e.Limit)/(1<<20), float64(e.Adding)/(1<<20))
+// Message is the error as the user reads it in lang: it goes to the one who
+// asked, over the socket and over HTTP.
+func (e *QuotaError) Message(lang string) string {
+	mb := func(bytes int64, decimals int) string {
+		s := strconv.FormatFloat(float64(bytes)/(1<<20), 'f', decimals, 64)
+		if lang == "ru" {
+			s = strings.Replace(s, ".", ",", 1)
+		}
+		return s
+	}
+	return i18n.T(lang, "server.errors.quota", i18n.Params{"used": mb(e.Used, 1), "limit": mb(e.Limit, 0), "adding": mb(e.Adding, 1)})
 }
 
 // quotaUsed is what the NPCs and the creatures of the user take. The sum is

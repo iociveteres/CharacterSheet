@@ -23,14 +23,28 @@ import { parseDamage } from "./damageExpression";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type StatText, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 import type { SheetSignals } from "../schema/sheet";
+import { t } from "../../i18n";
 
-const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
+// Whole phrases per stat: Russian declines the noun ("в уроне", "к урону").
+const STAT_TEXTS: { [S in WeaponStat]: { counts: string; mods: string; addsTo: string } } = {
+    damage: {
+        counts: t("sheet.rolls.modded.damage.counts"),
+        mods: t("sheet.rolls.modded.damage.mods"),
+        addsTo: t("sheet.rolls.modded.damage.addsTo"),
+    },
+    pen: {
+        counts: t("sheet.rolls.modded.pen.counts"),
+        mods: t("sheet.rolls.modded.pen.mods"),
+        addsTo: t("sheet.rolls.modded.pen.addsTo"),
+    },
+};
 
 /** How the field of an owner of modified damage reads (rolls/damage.ts DamageOwner). */
 export interface FieldOwner {
     damage: DamageOwner;
-    /** The item in the texts, "weapon" or "power", and its label in the dropdown. */
-    noun: string;
+    /** The phrases that name the item, whole: Russian would decline its noun. */
+    texts: { copyTitle: string; noSources: string; noExpression: { [S in WeaponStat]: string } };
+    /** The item's label in the dropdown. */
     label: string;
     stats: { [S in WeaponStat]: { own: string; placeholder: string; hint: string } };
     exprPlaceholder: string;
@@ -46,17 +60,8 @@ export interface FieldOwner {
     note?: (state: SheetSignals, path: string, stat: WeaponStat) => string;
 }
 
-const exprTitle = (noun: string, owner: FieldOwner) => [
-    `What the modifier adds to the ${noun}:`,
-    "S.b — the bonus of a characteristic",
-    "½WS.b, 1/2 WS.b, 0.5WS.b — a part of it, rounded down; ½WS.b▲ rounds up",
-    "2×bPR — twice the base psy rating",
-    ...owner.exprHelp,
-    "2, -1 — a number",
-    "1d10 — dice; the base's dice of the same sides add up",
-    "S.b+2 — several at once",
-    "Case does not matter. An unknown term turns the modifier off.",
-].join("\n");
+const exprTitle = (stat: WeaponStat, owner: FieldOwner) =>
+    [STAT_TEXTS[stat].addsTo, t("sheet.rolls.modded.helpRefs"), ...owner.exprHelp, t("sheet.rolls.modded.helpRest")].join("\n");
 
 /**
  * The expression of the modifier at `path`, or its `field`, with suggestions
@@ -66,7 +71,7 @@ const exprTitle = (noun: string, owner: FieldOwner) => [
  * outlines it too; `off` says what that turns off.
  */
 export function ExprInput({
-    path, field = "expr", inputRef: outerRef, keys, named, suggest, insert = insertTerm, placeholder, title, empty = null, off = "The modifier is off.",
+    path, field = "expr", inputRef: outerRef, keys, named, suggest, insert = insertTerm, placeholder, title, empty = null, off = t("sheet.rolls.modifierOff"),
 }: {
     path: string; field?: string; inputRef?: RefObject<HTMLInputElement>; keys: readonly string[]; named: readonly string[];
     suggest: (query: string | null) => SuggestionGroup[]; placeholder: string; title: string; empty?: string | null; off?: string;
@@ -80,7 +85,7 @@ export function ExprInput({
     const typing = useQueryAtCaret(inputRef, termAt);
     const unfinished = typing !== null && suggest(typing).length > 0;
     const invalid = parseDamage(expr, keys, named).invalid.filter(t => !(unfinished && t === typing));
-    const reason = invalid.length ? `Unknown: ${invalid.join(", ")}` : unfinished ? null : empty;
+    const reason = invalid.length ? t("sheet.rolls.unknownTerms", { terms: invalid.join(", ") }) : unfinished ? null : empty;
     return (
         <span class="mod-expr-wrap">
             <SuggestField inputRef={inputRef} field={field} class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
@@ -92,24 +97,24 @@ export function ExprInput({
 }
 
 /** The expression of a modifier of the item at `itemPath`. */
-function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: string; noun: string; owner: FieldOwner }) {
+function ExprField({ path, itemPath, stat, owner }: { path: string; itemPath: string; stat: WeaponStat; owner: FieldOwner }) {
     const { state, stats } = useSheet();
     const { keys, named, valueOf } = owner.damage.refs(state, itemPath);
     return (
-        <ExprInput path={path} keys={keys} named={named} placeholder={owner.exprPlaceholder} title={exprTitle(noun, owner)}
+        <ExprInput path={path} keys={keys} named={named} placeholder={owner.exprPlaceholder} title={exprTitle(stat, owner)}
             suggest={query => damageSuggestions(stats.characteristics, query, valueOf, named)} />
     );
 }
 
-function ModRow({ itemId, itemPath, noun, owner }: { itemId: string; itemPath: string; noun: string; owner: FieldOwner }) {
+function ModRow({ itemId, itemPath, stat, owner }: { itemId: string; itemPath: string; stat: WeaponStat; owner: FieldOwner }) {
     const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     const added = useComputed(() => modAddedAt(state, owner.damage, itemPath, textAt(state, `${path}.expr`)));
     const enabled = !!valueAt(state, `${path}.enabled`);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>
-            <Checkbox field="enabled" class="custom" title={`Counts in the ${noun}`} />
-            <ExprField path={path} itemPath={itemPath} noun={noun} owner={owner} />
+            <Checkbox field="enabled" class="custom" title={STAT_TEXTS[stat].counts} />
+            <ExprField path={path} itemPath={itemPath} stat={stat} owner={owner} />
             <span class="mod-added" data-id="added">{added}</span>
             <DragHandle />
             <DeleteButton itemPath={path} />
@@ -128,14 +133,14 @@ function CopyFrom({ path, stat, owner }: { path: string; stat: WeaponStat; owner
     const groups = [...new Set(sources.map(s => s.group))];
     const copy = (from: string) => actions.batch(path, { [`${stat}Mods`]: modsGrid(untracked(() => modsAt(state, from, stat)), stat) });
     return (
-        <select class="mod-copy" title={`Replace the modifiers with those of another ${owner.noun}`} disabled={!canEdit}
+        <select class="mod-copy" title={owner.texts.copyTitle} disabled={!canEdit}
             onChange={e => {
                 const from = e.currentTarget.value;
                 e.currentTarget.value = "";
                 if (from) copy(from);
             }}>
-            <option value="">Copy from…</option>
-            {sources.length === 0 && <option value="" disabled>{`No other ${owner.noun} has modifiers`}</option>}
+            <option value="">{t("sheet.rolls.modded.copyFrom")}</option>
+            {sources.length === 0 && <option value="" disabled>{owner.texts.noSources}</option>}
             {groups.map(group => (
                 <optgroup key={group} label={group}>
                     {sources.filter(s => s.group === group).map(s => (
@@ -179,7 +184,6 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
     const { state } = useSheet();
     const path = usePath();
     const texts = owner.stats[stat];
-    const noun = STAT_NOUNS[stat];
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
     const dropdown = useDropdown(ref);
@@ -209,7 +213,7 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
         <div class="mod-field dropdown-parent" ref={ref}>
             <ReadonlyField field={`${stat}Total`} value={text} class="mod-total" onClick={editBase}
                 {...hoverTitle(() => modTitle(state, owner, path, stat))} />
-            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={`Modifiers of the ${noun}`}
+            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={STAT_TEXTS[stat].mods}
                 onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open: a dropdown per item would hold a sortable grid each. */}
             {dropdown.open && (
@@ -221,17 +225,17 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
                     {owner.Extra && <owner.Extra path={path} />}
                     <Added resolved={resolved} />
                     <div class="mods-header">
-                        <span class="column-label">Modifiers</span>
+                        <span class="column-label">{t("sheet.rolls.modifiers")}</span>
                         <CopyFrom path={path} stat={stat} owner={owner} />
                     </div>
                     {!hasMods && <p class="mod-hint">{texts.hint}</p>}
                     <ItemGrid dataId={`${stat}Mods.items`} class="weapon-mods" itemClass="weapon-mod" idPrefix={`${stat}-mod`}
-                        renderItem={id => <ModRow itemId={id} itemPath={path} noun={noun} owner={owner} />} />
+                        renderItem={id => <ModRow itemId={id} itemPath={path} stat={stat} owner={owner} />} />
                     {hasMods && base && !parsed && (
-                        <p class="mod-note">{`The ${owner.noun}'s ${noun} is no expression: the modifiers do not count.`}</p>
+                        <p class="mod-note">{owner.texts.noExpression[stat]}</p>
                     )}
                     <div class="mod-result">
-                        <span class="column-label">Total</span>
+                        <span class="column-label">{t("common.total")}</span>
                         <span class="mod-result-value" data-id="result">{text}</span>
                     </div>
                     {note && <p class="mod-note" data-id="note">{note}</p>}

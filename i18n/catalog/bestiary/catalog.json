@@ -1,0 +1,13 @@
+{
+  "bestiary.catalog.title": { "en": "Public collections", "ru": "Публичные коллекции", "note": "заголовок каталога чужих публичных коллекций" },
+  "bestiary.catalog.search": { "en": "Search collections", "ru": "Поиск коллекций" },
+  "bestiary.catalog.order": { "en": "Order", "ru": "Порядок", "note": "имя списка сортировки для скринридера" },
+  "bestiary.catalog.newest": { "en": "Newest", "ru": "Сначала новые", "note": "сортировка: последние опубликованные первыми" },
+  "bestiary.catalog.oldest": { "en": "Oldest", "ru": "Сначала старые" },
+  "bestiary.catalog.noMatch": { "en": "No public collection matches", "ru": "Публичных коллекций по запросу нет" },
+  "bestiary.catalog.entries": { "en": "Entries", "ru": "Существа", "note": "столбец: число существ в коллекции" },
+  "bestiary.catalog.published": { "en": "Published", "ru": "Опубликована", "note": "столбец: дата, когда коллекцию сделали публичной" },
+  "bestiary.catalog.subscribed": { "en": "Subscribed", "ru": "Подписка", "note": "столбец с флажком подписки" },
+  "bestiary.catalog.yours": { "en": "yours", "ru": "ваша", "note": "метка у своей коллекции в каталоге" },
+  "bestiary.catalog.subscribedTo": { "en": "Subscribed to {name}", "ru": "Подписка на «{name}»", "note": "имя флажка для скринридера; name — название коллекции" }
+}

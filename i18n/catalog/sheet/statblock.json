@@ -1,0 +1,21 @@
+{
+  "sheet.statblock.expand": { "en": "Expand", "ru": "Развернуть", "note": "кнопка у заголовка раздела стат-блока" },
+  "sheet.statblock.collapse": { "en": "Collapse", "ru": "Свернуть" },
+  "sheet.statblock.expandSection": { "en": "Expand {section}", "ru": "Развернуть: {section}", "note": "имя кнопки для скринридера" },
+  "sheet.statblock.collapseSection": { "en": "Collapse {section}", "ru": "Свернуть: {section}" },
+  "sheet.statblock.testCharacteristic": { "en": "Test {name}", "ru": "Тест: {name}", "note": "первая строка подсказки характеристики; name — её название" },
+  "sheet.statblock.ablative": { "en": "+{count} ablative", "ru": "+{count} аблативных", "note": "аблативные раны под ранами" },
+  "sheet.statblock.ablativeTitle": { "en": "Ablative wounds: {left} of {total} left", "ru": "Аблативные раны: осталось {left} из {total}" },
+  "sheet.statblock.shieldAp": { "en": "Shield AP", "ru": "AP щита" },
+  "sheet.statblock.prTitleArts": { "en": "The PR its damage counts: the ePR of its last cast, the Max of its skill before one", "ru": "PR, по которому считается урон: эPR последней манифестации, до неё Max навыка" },
+  "sheet.statblock.prTitle": { "en": "The PR its damage counts: that of its last cast, of a normal cast before one", "ru": "PR, по которому считается урон: PR последней манифестации, до неё — обычной" },
+  "sheet.statblock.maxPushTitle": { "en": "The most PR a kick adds", "ru": "Наибольший PR, который добавляет усиление" },
+  "sheet.statblock.perTurn": { "en": "+{count} a turn", "ru": "+{count} за Ход", "note": "сколько ⚙ или 🗲 восстанавливает Ход" },
+  "sheet.statblock.techPowers": { "en": "Tech powers", "ru": "Техночудеса", "note": "раздел стат-блока" },
+  "sheet.statblock.processCost": { "en": "Processes {cost} a turn", "ru": "Процессы {cost} за Ход" },
+  "sheet.statblock.processCostTitle": { "en": "What the Processes cost each turn", "ru": "Сколько Процессы стоят за Ход" },
+  "sheet.statblock.addCondition": { "en": "Add condition…", "ru": "Добавить состояние…" },
+  "sheet.statblock.trackers": { "en": "Trackers", "ru": "Счётчики", "note": "раздел стат-блока: блок Resource Trackers" },
+  "sheet.statblock.traitsAndTalents": { "en": "Traits and talents", "ru": "Трейты и таланты", "note": "раздел стат-блока" },
+  "sheet.statblock.stacksTitle": { "en": "Stack count", "ru": "Число стаков — подставляется вместо X в записях", "note": "подсказка поля X у состояния в стат-блоке" }
+}

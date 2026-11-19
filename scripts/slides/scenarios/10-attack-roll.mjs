@@ -12,14 +12,14 @@ export default {
         d.pos = { x: frame.x + frame.width * .42, y: frame.y + frame.height * .3 };
 
         const bow = page.locator('#ranged-attack .ranged-attack').first();
-        const option = (column, text) => bow.locator(`.roll-column.${column} .radio-option label`, { hasText: text });
+        const option = (column, value) => bow.locator(`.roll-column.${column} .radio-option label`).filter({ has: page.locator(`input[value="${value}"]`) });
         return d.record(frame, out, async () => {
             await d.pause(500);
-            await d.click(bow.locator('label.rollable', { hasText: 'Name:' }));
+            await d.click(bow.locator('.name > label.rollable'));
             await d.pause(500);
-            await d.click(option('aim', 'Full'));
+            await d.click(option('aim', 'full'));
             await d.pause(300);
-            await d.click(option('range', 'Short'));
+            await d.click(option('range', 'short'));
             await d.pause(400);
             await d.click(bow.locator('[data-id="rollButton"]'));
             await d.pause(300);

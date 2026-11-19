@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
 	"github.com/julienschmidt/httprouter"
@@ -89,7 +90,7 @@ func (app *Application) encounterExport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	f, err := app.Models.Encounters.Export(r.Context(), app.userID(r), id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	body, err := json.MarshalIndent(f, "", "  ")
@@ -99,7 +100,7 @@ func (app *Application) encounterExport(w http.ResponseWriter, r *http.Request) 
 	}
 	filename := fmt.Sprintf("%s_%s.json", f.Name, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	setDownload(w, filename)
 	w.Write(body)
 }
 
@@ -138,7 +139,7 @@ func (app *Application) encountersLoad(w http.ResponseWriter, r *http.Request) {
 	}
 	// Only the gamemaster of the room, before any file.
 	userID := app.userID(r)
-	if _, err := app.Models.Encounters.List(r.Context(), userID, roomID); app.bestiaryError(w, err) {
+	if _, err := app.Models.Encounters.List(r.Context(), userID, roomID); app.bestiaryError(w, r, err) {
 		return
 	}
 
@@ -162,15 +163,15 @@ func (app *Application) encountersLoad(w http.ResponseWriter, r *http.Request) {
 			results = append(results, result)
 			continue
 		}
-		state, err := app.Models.Encounters.Load(r.Context(), userID, roomID, f)
+		state, err := app.Models.Encounters.Load(r.Context(), userID, roomID, f, i18n.FromContext(r.Context()))
 		var quota *models.QuotaError
 		switch {
 		case errors.As(err, &quota):
-			result.Error, result.Message = "quota", quota.Message()
+			result.Error, result.Message = "quota", quota.Message(i18n.FromContext(r.Context()))
 			results = append(results, result)
 			app.writeJSON(w, http.StatusOK, results)
 			return
-		case app.bestiaryError(w, err):
+		case app.bestiaryError(w, r, err):
 			return
 		}
 		loaded = true
@@ -197,7 +198,7 @@ func (app *Application) encounterReplaceNpcs(w http.ResponseWriter, r *http.Requ
 	userID := app.userID(r)
 	// The room of the encounter, which only its gamemaster reads.
 	state, err := app.Models.Encounters.Get(r.Context(), userID, id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	headers := r.MultipartForm.File["file"]
@@ -211,12 +212,12 @@ func (app *Application) encounterReplaceNpcs(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	f, err := models.ParseEncounterFile(data)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	ref := models.EncounterRef{UserID: userID, RoomID: state.RoomID, EncounterID: id}
 	state, err = app.Models.Encounters.ReplaceNpcs(r.Context(), ref, f)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.WSServer.EncounterNpcsReplaced(r.Context(), state)

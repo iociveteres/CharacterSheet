@@ -10,21 +10,22 @@ import { BLACK_CRUSADE_PSYKANA_TERMS, BLACK_CRUSADE_STATS } from "../schema/cons
 import { sheetSchema } from "../schema/sheet";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
+import { t } from "../../i18n";
 
 export function BlackCrusade() {
     return (
         <Navigation>
             <PlayerSheetTab />
-            <CombatTab points="Infamy Points" />
+            <CombatTab points={t("sheet.terms.stat.infamyPoints")} />
             <TalentsTab />
             <GearTab />
             <AdvancementsTab />
 
-            <NavTab id="show-psykana" label="Psykana" panelId="psykana" panelClass="psykana">
+            <NavTab id="show-psykana" label={t("sheet.termsPowers.psy.psykana")} panelId="psykana" panelClass="psykana">
                 <Psykana />
             </NavTab>
 
-            <NavTab id="show-techno-arcana" label="Techno Arcana" panelId="techno-arcana" panelClass="techno-arcana">
+            <NavTab id="show-techno-arcana" label={t("sheet.terms.tab.technoArcana")} panelId="techno-arcana" panelClass="techno-arcana">
                 <TechnoArcana />
             </NavTab>
         </Navigation>

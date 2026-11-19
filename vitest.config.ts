@@ -13,5 +13,6 @@ export default defineConfig({
     test: {
         environment: "happy-dom",
         include: ["ui/static/js/**/*.test.{js,ts,tsx}", "scripts/**/*.test.mjs"],
+        setupFiles: ["ui/static/js/i18n/vitest.setup.ts"],
     },
 });

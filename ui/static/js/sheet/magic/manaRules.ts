@@ -7,6 +7,7 @@
 // Arts spells are not paid with mana but with the Focus of their class, a
 // pool each (focus.bard, magic/artsRules.ts): each pool counts only its spells.
 import { untracked } from "@preact/signals-core";
+import { t } from "../../i18n";
 import type { SheetOps } from "../core/actions";
 import { spend } from "../powers/spend";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
@@ -25,11 +26,12 @@ export const currentOf = (pool: ManaPool) => `${pool}.current`;
 
 export const MANA = currentOf("mana");
 
-/** What `pool` is called in the sheet: Mana, Bardic Focus. */
-export const poolName = (stats: StatSet, pool: ManaPool) => (pool === "mana" ? "Mana" : focusVariant(stats, pool)?.pool ?? pool);
-
-/** `pool` in a sentence: mana, Bardic Focus. */
-export const poolNoun = (stats: StatSet, pool: ManaPool) => (pool === "mana" ? "mana" : poolName(stats, pool));
+/**
+ * What `pool` is called in the sheet: Mana, Bardic Focus. A sentence that
+ * names the mana has a key of its own: Russian declines «мана», while a
+ * Focus, «Фокус Барда», reads the same in it.
+ */
+export const poolName = (stats: StatSet, pool: ManaPool) => (pool === "mana" ? t("sheet.termsPf.magic.mana") : focusVariant(stats, pool)?.pool ?? pool);
 
 /** What the expressions of the maximum name besides characteristic bonuses: the base PR. */
 export const MANA_REFS: readonly string[] = [BASE_PR];
@@ -53,7 +55,9 @@ export const sustainedShown = sheetComputed(state => (psykanaRule(state, "sustai
 /** Why a cast that costs `cost` cannot be paid from `pool`; null when it can, or casts spend none. */
 export function manaShortage(state: SheetSignals, cost: number, pool: ManaPool = "mana"): string | null {
     const left = numberAt(state, currentOf(pool));
-    return manaRule(state) && cost > left ? `Not enough ${poolNoun(statsOf(state), pool)}: the cast costs ${cost}, ${left} left` : null;
+    if (!manaRule(state) || cost <= left) return null;
+    return pool === "mana" ? t("sheet.magicPf.mana.shortage", { cost, left })
+        : t("sheet.magicPf.mana.shortagePool", { pool: poolName(statsOf(state), pool), cost, left });
 }
 
 export function payMana(sheet: Pick<SheetOps, "state" | "actions">, cost: number, pool: ManaPool = "mana") {

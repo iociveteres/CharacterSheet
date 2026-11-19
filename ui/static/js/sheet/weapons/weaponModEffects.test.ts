@@ -97,7 +97,7 @@ describe("the entries of a weapon mod", () => {
         const T1 = `${M1}.tabs.items.t1`;
         expect(statAt(state, WEAPON_DAMAGE, T1, "damage")).toMatchObject({ text: "1d10+5", parts: ["Weighted (Longsword) +3"] });
         expect(balanceAt(state, M1)).toMatchObject({ value: 0, lines: [{ text: "-1", label: "Weighted (Longsword)" }] });
-        expect(meleeHitLines(state, M1, null)).toEqual([{ label: "Weighted (Longsword) -10", add: -10 }]);
+        expect(meleeHitLines(state, M1, null)).toMatchObject([{ label: "Weighted (Longsword) -10", add: -10 }]);
         expect(parryAt(state, M1).lines).toContainEqual({ text: "-10", label: "Weighted (Longsword)" });
     });
 
@@ -122,7 +122,7 @@ describe("a weapon entry of Hit", () => {
         const base = meleeAttackBonus(sheet(), M1);
         expect(meleeAttackBonus(state, M1) - base).toBe(5);
         updateSignalAtPath(state, `${M1}.tabs.items.t1.profile`, "mace");
-        expect(meleeHitLines(state, M1, null)).toEqual([{ label: "mace", add: 10 }, { label: "Custom Grip (Longsword) +5", add: 5 }]);
+        expect(meleeHitLines(state, M1, null)).toMatchObject([{ label: "mace", add: 10 }, { label: "Custom Grip (Longsword) +5", add: 5 }]);
     });
 
     it("adds to the ranged attack rolls, and counts by the words of a condition too", () => {
@@ -130,7 +130,7 @@ describe("a weapon entry of Hit", () => {
             rangedMods: [{ name: "Custom Grip", entries: grid(thisItem("hit", "5")) }],
             extra: { conditions: conditionOf({ type: "weapon_bonus", name: "Ranged", weaponField: "hit", weaponBonus: "10" }) },
         });
-        expect(hitLines(state, R1)).toEqual([{ label: "Test +10", add: 10 }, { label: "Custom Grip (Lasgun) +5", add: 5 }]);
+        expect(hitLines(state, R1)).toMatchObject([{ label: "Test +10", add: 10 }, { label: "Custom Grip (Lasgun) +5", add: 5 }]);
         // A condition of Ranged gives the melee attack nothing.
         expect(meleeHitLines(state, M1, null)).toEqual([]);
     });

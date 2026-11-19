@@ -1,0 +1,21 @@
+{
+  "sheet.characteristics.suggest.leaveOut": { "en": "Leave out", "ru": "Исключить", "note": "группа подсказок в поле характеристик записи: -T после Any" },
+  "sheet.characteristics.suggest.all": { "en": "All", "ru": "Все", "note": "группа подсказок с одним вариантом Any" },
+  "sheet.characteristics.suggest.any": { "en": "Any — {scope}", "ru": "Any — {scope}", "note": "Any — слово, которое игрок пишет в поле, не переводится" },
+  "sheet.characteristics.suggest.specialisations": { "en": "Specialisations", "ru": "Специализации", "note": "группа подсказок склонностей, не связанных с характеристикой: Offence, Finesse…" },
+  "sheet.characteristics.anyScope.allBut": { "en": "all but {keys}", "ru": "все, кроме {keys}", "note": "что охватывает Any: «все, кроме Inf и Cor»" },
+  "sheet.characteristics.anyScope.and": { "en": "and", "ru": "и", "note": "между сокращениями в anyScope.allBut" },
+  "sheet.characteristics.anyScope.all": { "en": "all characteristics", "ru": "все характеристики" },
+  "sheet.characteristics.summary.sets": { "en": "{source} sets {value}", "ru": "{source} задаёт {value}", "note": "подсказка характеристики: запись Char. Override вместо постоянного значения" },
+  "sheet.characteristics.summary.permanent": { "en": "Permanent {value}", "ru": "Постоянное {value}", "note": "подсказка характеристики: постоянное значение" },
+  "sheet.characteristics.summary.atMost": { "en": "{source}: at most {total}", "ru": "{source}: не больше {total}", "note": "предел характеристики от предмета" },
+  "sheet.characteristics.summary.testsAt": { "en": "Tests at {value}:", "ru": "Тесты на {value}:", "note": "после этой строки — что прибавляют тесты" },
+  "sheet.characteristics.summary.onlyOn": { "en": "only on {domains}", "ru": "только для {domains}", "note": "бонус броска только для отмеченных бросков; domains — сокращения Стрелк., Рукоп.…" },
+  "sheet.characteristics.summary.notOn": { "en": "not on {domains}", "ru": "кроме {domains}" },
+  "sheet.characteristics.summary.unnatural": { "en": "Unnatural {key} {value}", "ru": "Сверхъестественная {key} {value}" },
+  "sheet.characteristics.summary.successes": { "en": {"one": "{signed} success on a passed test", "other": "{signed} successes on a passed test"}, "ru": {"one": "{signed} успех при пройденном тесте", "few": "{signed} успеха при пройденном тесте", "many": "{signed} успехов при пройденном тесте"}, "note": "signed — число со знаком, +1" },
+  "sheet.characteristics.summary.counts100": { "en": "Counts 100 of {value}", "ru": "Учитывается 100 из {value}", "note": "тест навыка считает характеристику не больше 100" },
+  "sheet.characteristics.summary.advances": { "en": "Advances {value}", "ru": "Продвижения {value}", "note": "прибавка от отмеченных продвижений навыка +0…+30" },
+  "sheet.characteristics.summary.untrained": { "en": "Untrained {value}", "ru": "Не обучен {value}", "note": "навык без продвижений: −20" },
+  "sheet.characteristics.summary.misc": { "en": "Misc {value}", "ru": "Прочее {value}", "note": "поле прочего бонуса навыка" }
+}

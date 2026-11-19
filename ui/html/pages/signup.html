@@ -1,30 +1,30 @@
-{{define "title"}}Signup{{end}}
+{{define "title"}}{{t .Lang "site.nav.signup"}}{{end}}
 {{define "main"}}
 <form action='{{reverseRev "UserSignup"}}' method='POST' novalidate>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     <div>
-        <label>Name:</label>
+        <label>{{t .Lang "site.auth.name"}}</label>
         {{with .Form.Errors.name}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='text' name='name' value='{{.Form.Name}}'>
     </div>
     <div>
-        <label>Email:</label>
+        <label>{{t .Lang "site.auth.email"}}</label>
         {{with .Form.Errors.email}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='email' name='email' value='{{.Form.Email}}'>
     </div>
     <div>
-        <label>Password:</label>
+        <label>{{t .Lang "site.auth.password"}}</label>
         {{with .Form.Errors.password}}
         <label class='error'>{{.}}</label>
         {{end}}
         <input type='password' name='password'>
     </div>
     <div>
-        <input type='submit' value='Signup'>
+        <input type='submit' value='{{t .Lang "site.auth.signup.submit"}}'>
     </div>
 </form>
 {{end}}

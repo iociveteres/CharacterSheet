@@ -4,6 +4,7 @@
 // does is in the title of its field; its numbers show where they count: the
 // weight, the AP cells, Ench. and the attacks' Pen. The kind gives them to
 // Gear (GearItemParts).
+import { t } from "../../i18n";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { useSheet } from "../components/context";
 import { Checkbox, Select } from "../components/fields";
@@ -13,13 +14,13 @@ import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../components/format";
 import { capLines } from "../characteristics/caps";
 import { materialCaps } from "./itemCaps";
-import { hasMaterial, hasMetalRim, materialOf, type Material } from "./materialRules";
+import { GEM_LABELS, hasMaterial, hasMetalRim, materialOf, type Material } from "./materialRules";
 import type { GearItem } from "../schema/sheet";
 import { resolvePath } from "../core/sync";
 
 const INLAY_OPTIONS: readonly Option[] = [
     { value: "", label: "—" },
-    ...INLAY_GEMS.map(g => ({ value: g.name, label: `${g.name} +${g.capacityBonus}` })),
+    ...INLAY_GEMS.map(g => ({ value: g.name, label: `${GEM_LABELS[g.name]} +${g.capacityBonus}` })),
 ];
 
 // Broken does something only to what has AP or deals damage; they have a material by default too.
@@ -30,7 +31,7 @@ const itemAt = (path: string) => resolvePath(useSheet().state, path) as GearItem
 export function BrokenFlag({ path }: { path: string }) {
     if (!BREAKS.has(itemAt(path).gearType?.value ?? "")) return null;
     return (
-        <label title="Broken: its AP is halved, rounded down">Broken
+        <label title={t("sheet.gear.material.brokenTitle")}>{t("sheet.termsPf.gear.broken")}
             <Checkbox field="broken" class="custom" />
         </label>
     );
@@ -47,12 +48,12 @@ export function materialEffects(state: SheetSignals, item: GearItem, material: M
     const gearType = item.gearType?.value;
     const caps = materialCaps(state, item);
     return [
-        material.weightFactor !== 1 && !hasMetalRim(item) ? `wt ×${material.weightFactor}` : "",
+        material.weightFactor !== 1 && !hasMetalRim(item) ? t("sheet.gear.material.weight", { factor: material.weightFactor }) : "",
         gearType === "armour" && material.ap !== 0 ? `AP ${signed(material.ap)}` : "",
         ...caps.map(({ key, cap }) => `Max.${key} ${cap.total} = ${capLines(cap).slice(0, -1).join(" ")}`),
-        gearType === "weapon" && material.pen !== 0 ? `Pen ${signed(material.pen)} in the attacks linked to the item` : "",
-        `Dur ${material.durability}`,
-        `Cap ×${material.capacityFactor}`,
+        gearType === "weapon" && material.pen !== 0 ? t("sheet.gear.material.pen", { pen: signed(material.pen) }) : "",
+        t("sheet.gear.material.durability", { value: material.durability }),
+        t("sheet.gear.material.capacity", { factor: material.capacityFactor }),
         !caps.length ? material.short : "",
         material.special && material.special !== material.short ? material.special : "",
     ].filter(Boolean);
@@ -78,12 +79,12 @@ export function MaterialRow({ path, open, setOpen }: { path: string; open: boole
         <div class="layout-row material-row" onFocusOut={onFocusOut}>
             {/* Not a label: a click on the dropdown inside one would go to the input. */}
             <Scope as="span" dataId="material" class="material-label">
-                <span>Material:</span>
+                <span>{`${t("sheet.termsPf.gear.material")}:`}</span>
                 <AutocompleteField field="name" itemPath={`${path}.material`} collection="materials" listAll autoFocus={open && !usual}
                     class="textlike material-input" placeholder="—"
                     title={material ? materialEffects(state, item, material).join("\n") : undefined} />
             </Scope>
-            <label class="material-label">Inlay:
+            <label class="material-label">{`${t("sheet.termsPf.gear.inlay")}:`}
                 <Select field="inlay" options={INLAY_OPTIONS} class="inlay-select" />
             </label>
         </div>

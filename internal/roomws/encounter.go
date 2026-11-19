@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -85,7 +86,7 @@ func (app *Server) encounterError(hub *Hub, client *Client, err error, eventID, 
 	case errors.As(err, &quota):
 		resp, _ := json.Marshal(WSResponse{
 			Type: "response", EventID: eventID, Code: "quota",
-			Message: quota.Message(),
+			Message: quota.Message(client.lang),
 		})
 		hub.ReplyToClient(client, resp)
 		return true
@@ -485,8 +486,10 @@ const (
 
 type initiativeRoll struct {
 	SheetID int `json:"sheetId"`
-	// Name is the NPC as the players see it.
+	// Name is the NPC as the players see it; empty for a group the
+	// gamemaster did not name, which goes by its number.
 	Name       string `json:"name"`
+	Group      int    `json:"group"`
 	Expression string `json:"expression"`
 }
 
@@ -508,7 +511,7 @@ type encounterRolledMsg struct {
 
 // encounterRollInitiativeHandler rolls the initiative of NPCs of the
 // encounter into one chat message, a line each under the name the players
-// see, and answers the sender with the totals, which its client writes into
+// see (ResultKindInitiative), and answers the sender with the totals, which its client writes into
 // the sheets.
 func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterRollInitiativeMsg
@@ -519,7 +522,9 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	sheetIDs := make([]int, len(msg.Rolls))
 	for i, r := range msg.Rolls {
 		sheetIDs[i] = r.SheetID
-		invalid = invalid || strings.TrimSpace(r.Name) == "" || utf8.RuneCountInString(r.Name) > maxRollName || len(r.Expression) > maxRollExpression
+		named := strings.TrimSpace(r.Name) != "" && r.Group == 0
+		numbered := r.Name == "" && r.Group > 0 && r.Group <= maxInitiativeRolls
+		invalid = invalid || !(named || numbered) || utf8.RuneCountInString(r.Name) > maxRollName || len(r.Expression) > maxRollExpression
 	}
 	if invalid {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
@@ -541,13 +546,24 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	}
 	lines := make([]string, len(msg.Rolls))
 	totals := make([]initiativeTotal, len(msg.Rolls))
+	// Rolls is empty rather than nil: the client's type promises an array.
+	data := &commands.ResultData{Kind: commands.ResultKindInitiative, Rolls: []commands.VersusRoll{}, Initiative: make([]commands.InitiativeRoll, len(msg.Rolls))}
 	for i, r := range msg.Rolls {
-		lines[i] = fmt.Sprintf("%s: %s = %d", strings.TrimSpace(r.Name), strings.ReplaceAll(r.Expression, " ", ""), rolled[i])
+		line := commands.InitiativeRoll{Name: strings.TrimSpace(r.Name), Group: r.Group, Expression: strings.ReplaceAll(r.Expression, " ", ""), Total: rolled[i]}
+		data.Initiative[i] = line
+		name := line.Name
+		if line.Group > 0 {
+			name = i18n.T(i18n.Default, "room.encounter.groupNumber", i18n.Params{"number": line.Group})
+		}
+		lines[i] = fmt.Sprintf("%s: %s = %d", name, line.Expression, line.Total)
 		totals[i] = initiativeTotal{SheetID: r.SheetID, Total: rolled[i]}
 	}
 
+	// Everyone in the room gets the message, so each client renders the data
+	// in its viewer's language; the English body and lines are what messages
+	// without data and older clients show.
 	result := strings.Join(lines, "\n")
-	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, nil, nil) {
+	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, data, nil, nil) {
 		return
 	}
 	reply, err := json.Marshal(encounterRolledMsg{Type: "encounterRolled", EventID: msg.EventID, Totals: totals})

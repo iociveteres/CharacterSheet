@@ -23,10 +23,11 @@ import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "./resourceStat";
 import { BASE_PR } from "./damageExpression";
+import { t } from "../../i18n";
 
-/** How the field of a stat reads. */
+/** How the field of a stat reads, in the page's language. */
 export interface StatTexts {
-    /** The stat in the titles: "maximum of cognition". */
+    /** The stat in the titles, lower case and as a subject: "maximum of cognition", "максимум когниции". */
     noun: string;
     /** What the rules give while the base is empty. */
     rule: string;
@@ -35,7 +36,12 @@ export interface StatTexts {
 }
 
 // The lists whose items give modifiers, by their label in the suggestions.
-const SOURCES: [string, string][] = [["Cybernetics", "cybernetics"], ["Talents", "talents"], ["Traits", "traits"], ["Gear", "gear"]];
+const SOURCES: [string, string][] = [
+    [t("sheet.terms.block.cybernetics"), "cybernetics"],
+    [t("sheet.terms.tab.talents"), "talents"],
+    [t("sheet.terms.block.traits"), "traits"],
+    [t("sheet.terms.tab.gear"), "gear"],
+];
 
 /** The names of the implants, talents, traits and gear of the sheet, as a modifier's source. */
 function sourceNames(state: SheetSignals, query: string | null): SuggestionGroup[] {
@@ -52,16 +58,14 @@ export const signed = (n: number) => (n < 0 ? String(n) : `+${n}`);
 
 /** How an expression naming `refs` is written. */
 const exprHelp = (refs: readonly string[]) => [
-    "-1, 2 — a number",
-    "I.b — the bonus of a characteristic",
-    ...(refs.includes(BASE_PR) ? ["bPR — the base PR"] : []),
-    "½I.b, 1/2 I.b — a part of it, rounded down; ½I.b▲ rounds up",
-    "2×I.b — a multiple",
-    "I.b+1 — several at once",
+    t("sheet.rolls.resource.help.number"),
+    t("sheet.rolls.resource.help.bonus"),
+    ...(refs.includes(BASE_PR) ? [t("sheet.rolls.resource.help.basePR")] : []),
+    t("sheet.rolls.resource.help.rest"),
 ];
 
 const exprTitle = (refs: readonly string[]) =>
-    ["What the modifier adds:", ...exprHelp(refs), "Case does not matter. Dice or an unknown term turn the modifier off."].join("\n");
+    [t("sheet.rolls.resource.help.addsTitle"), ...exprHelp(refs), t("sheet.rolls.resource.help.off")].join("\n");
 
 /**
  * The expression at `field` of `path`, with the suggestions of a damage
@@ -74,7 +78,7 @@ function ExprField({ path, field, inputRef, invalid, placeholder, title, off, re
     const { state, stats } = useSheet();
     return (
         <ExprInput path={path} field={field} inputRef={inputRef} keys={refKeys(state)} named={refs} placeholder={placeholder}
-            title={title} empty={invalid ? "Reads as no number" : null} off={off}
+            title={title} empty={invalid ? t("sheet.rolls.resource.noNumber") : null} off={off}
             suggest={query => damageSuggestions(stats.characteristics, query, ref => refValue(state, ref), refs, false)} />
     );
 }
@@ -88,13 +92,13 @@ export function ModRow({ itemId, resource = false, refs = RESOURCE_REFS }: { ite
     const enabled = !!valueAt(state, `${path}.enabled`);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod resource-mod" : "weapon-mod resource-mod disabled"}>
-            <Checkbox field="enabled" class="custom" title="Counts in the total" />
+            <Checkbox field="enabled" class="custom" title={t("sheet.rolls.resource.countsInTotal")} />
             <span class="mod-name-wrap">
-                <SuggestField field="name" class="mod-name" placeholder="Source" title="The implant, talent or item that gives it"
+                <SuggestField field="name" class="mod-name" placeholder={t("sheet.rolls.resource.source")} title={t("sheet.rolls.resource.sourceTitle")}
                     suggest={query => sourceNames(state, query)} />
             </span>
             <ExprField path={path} invalid={expr !== "" && value === null} placeholder="-1, ½I.b" title={exprTitle(refs)} refs={refs} />
-            {resource && <Select field="resource" options={RESOURCES} class="mod-resource" title="What it adds to: cognition or energy" />}
+            {resource && <Select field="resource" options={RESOURCES} class="mod-resource" title={t("sheet.rolls.resource.resourceTitle")} />}
             <span class="mod-added" data-id="added">{value === null ? "—" : signed(value)}</span>
             <DragHandle />
             <DeleteButton itemPath={path} />
@@ -119,11 +123,11 @@ export function StatField({ field, texts, fallback, value: count, refs = RESOURC
     const total = useComputed(() => value.value.total);
     const hasMods = useItemIds(`${path}.mods.items`).ids.length > 0;
     const { base, byDefault, baseValue, mods } = value.value;
-    const title = [
-        `${byDefault ? "By the rules" : "Base"} ${base}${baseValue === null ? ": reads as no number" : ` = ${baseValue}`}`,
-        ...mods.map(m => `${m.name || m.expr} ${signed(m.value)}`),
-    ].join("\n");
-    const baseTitle = [`The ${noun} before the modifiers; empty for the rules: ${rule}`, "", ...exprHelp(refs)].join("\n");
+    const baseLine = baseValue === null
+        ? (byDefault ? t("sheet.rolls.resource.byRulesNoNumber", { base }) : t("sheet.rolls.resource.baseNoNumber", { base }))
+        : (byDefault ? t("sheet.rolls.resource.byRulesValue", { base, value: baseValue }) : t("sheet.rolls.resource.baseValue", { base, value: baseValue }));
+    const title = [baseLine, ...mods.map(m => `${m.name || m.expr} ${signed(m.value)}`)].join("\n");
+    const baseTitle = [t("sheet.rolls.resource.baseTitle", { noun, rule }), "", ...exprHelp(refs)].join("\n");
 
     // A click on the total opens the dropdown at the base.
     const focusBase = useRef(false);
@@ -141,26 +145,26 @@ export function StatField({ field, texts, fallback, value: count, refs = RESOURC
     return (
         <div class="mod-field resource-field dropdown-parent" ref={ref}>
             <ReadonlyField field={`${field}Total`} value={total} type="number" class="mod-total" title={title} onClick={editBase} />
-            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={`Base and modifiers of the ${noun}`}
+            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={t("sheet.rolls.resource.toggleTitle", { noun })}
                 onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open, as ModdedField's. */}
             {dropdown.open && (
                 <Scope dataId={field} class="roll-dropdown mod-dropdown resource-dropdown visible">
                     <label class="mod-base">
-                        <span class="column-label">Base</span>
+                        <span class="column-label">{t("sheet.rolls.resource.base")}</span>
                         <ExprField path={path} field="base" inputRef={baseRef} invalid={!byDefault && baseValue === null}
-                            placeholder={fallback} title={baseTitle} off="Only the modifiers count." refs={refs} />
+                            placeholder={fallback} title={baseTitle} off={t("sheet.rolls.resource.onlyMods")} refs={refs} />
                     </label>
-                    {byDefault && <p class="mod-note-quiet" data-id="rule">{`By the rules: ${rule}`}</p>}
-                    {!byDefault && baseValue === null && <p class="mod-note" data-id="badBase">The base reads as no number: only the modifiers count.</p>}
+                    {byDefault && <p class="mod-note-quiet" data-id="rule">{t("sheet.rolls.resource.byRules", { rule })}</p>}
+                    {!byDefault && baseValue === null && <p class="mod-note" data-id="badBase">{t("sheet.rolls.resource.badBase")}</p>}
                     <div class="mods-header">
-                        <span class="column-label">Modifiers</span>
+                        <span class="column-label">{t("sheet.rolls.modifiers")}</span>
                     </div>
                     {!hasMods && <p class="mod-hint">{hint}</p>}
                     <ItemGrid dataId="mods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix={`${field}-mod`}
                         renderItem={id => <ModRow itemId={id} refs={refs} />} />
                     <div class="mod-result">
-                        <span class="column-label">Total</span>
+                        <span class="column-label">{t("common.total")}</span>
                         <span class="mod-result-value" data-id="result">{total}</span>
                     </div>
                 </Scope>
@@ -181,7 +185,7 @@ export function CurrentResource({ field, max }: { field: string; max: (state: Sh
     const over = numberAt(state, path) > top;
     return (
         <NumberField field={field} class={over ? "short over-max" : "short"} max={top}
-            title={over ? `More than the maximum, ${top}` : `Up to the maximum, ${top}`}
+            title={over ? t("sheet.rolls.resource.overMax", { max: top }) : t("sheet.rolls.resource.upToMax", { max: top })}
             onEdit={value => actions.change(path, value === null ? null : Math.min(value, top))} />
     );
 }

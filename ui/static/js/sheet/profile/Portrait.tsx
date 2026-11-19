@@ -7,6 +7,7 @@ import { render, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useSheet } from "../components/context";
 import { isImageFile, NOT_AN_IMAGE, PortraitEditor } from "./PortraitEditor";
+import { t } from "../../i18n";
 
 /** An image on its way to the server, shown in the frame meanwhile. */
 interface Upload {
@@ -121,12 +122,12 @@ export function Portrait() {
         <div ref={cell} class="portrait-cell" data-id="portrait">
             {src
                 ? (
-                    <div class={`portrait${state}`} title={editable ? "Edit the portrait" : undefined} {...frameProps}>
-                        <img src={src} alt="Portrait" />
+                    <div class={`portrait${state}`} title={editable ? t("sheet.profile.portrait.edit") : undefined} {...frameProps}>
+                        <img src={src} alt={t("sheet.profile.portrait.title")} />
                         {upload?.sending && <div class="spinner" />}
-                        {editable && <div class="edit-strip">✎ Edit</div>}
+                        {editable && <div class="edit-strip">{`✎ ${t("common.edit")}`}</div>}
                         <div class="corner">
-                            <button type="button" class="portrait-full-open" title="Full size" aria-label="Full size"
+                            <button type="button" class="portrait-full-open" title={t("sheet.profile.portrait.fullSize")} aria-label={t("sheet.profile.portrait.fullSize")}
                                 onClick={e => {
                                     e.stopPropagation();
                                     setFull(true);
@@ -138,7 +139,7 @@ export function Portrait() {
                     </div>
                 )
                 : (
-                    <div class={`portrait empty${state}`} title="Upload a portrait (or drop an image here)" {...frameProps}>+ Portrait</div>
+                    <div class={`portrait empty${state}`} title={t("sheet.profile.portrait.upload")} {...frameProps}>{`+ ${t("sheet.profile.portrait.title")}`}</div>
                 )}
             {canEdit && <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPicked} />}
             {error && <div class="portrait-error">{error}</div>}
@@ -191,13 +192,13 @@ function PortraitFull({ src, close }: { src: string; close: () => void }) {
     }, []);
 
     return (
-        <div class="portrait-full" role="dialog" aria-modal="true" aria-label="Portrait"
+        <div class="portrait-full" role="dialog" aria-modal="true" aria-label={t("sheet.profile.portrait.title")}
             onClick={e => {
                 if (e.target === e.currentTarget) close();
             }}>
             <figure>
-                <button type="button" class="portrait-full-close" title="Close" aria-label="Close" onClick={close}>×</button>
-                <img src={src} alt="Portrait" />
+                <button type="button" class="portrait-full-close" title={t("common.close")} aria-label={t("common.close")} onClick={close}>×</button>
+                <img src={src} alt={t("sheet.profile.portrait.title")} />
             </figure>
         </div>
     );

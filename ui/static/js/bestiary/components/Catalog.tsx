@@ -3,31 +3,32 @@
 import type { CatalogRow } from "../types.gen";
 import { catalogNext, catalogQuery, catalogRows, catalogSort, subscribedCollections } from "../state";
 import { loadCatalog, openFromCatalog, setCatalogSearch, subscribe, unsubscribe } from "../actions";
+import { lang, t } from "../../i18n";
 
 export function Catalog() {
     const rows = catalogRows.value;
     return (
         <div class="bestiary-catalog">
             <div class="bestiary-header">
-                <h2 class="bestiary-title">Public collections</h2>
+                <h2 class="bestiary-title">{t("bestiary.catalog.title")}</h2>
             </div>
             <div class="bestiary-toolbar">
-                <input type="search" class="bestiary-search bestiary-catalog-search" placeholder="Search collections"
-                    aria-label="Search collections" value={catalogQuery.value}
+                <input type="search" class="bestiary-search bestiary-catalog-search" placeholder={t("bestiary.catalog.search")}
+                    aria-label={t("bestiary.catalog.search")} value={catalogQuery.value}
                     onInput={e => setCatalogSearch({ q: e.currentTarget.value })} />
-                <select class="bestiary-catalog-sort" aria-label="Order" value={catalogSort.value}
+                <select class="bestiary-catalog-sort" aria-label={t("bestiary.catalog.order")} value={catalogSort.value}
                     onChange={e => setCatalogSearch({ sort: e.currentTarget.value === "old" ? "old" : "new" })}>
-                    <option value="new">Newest</option>
-                    <option value="old">Oldest</option>
+                    <option value="new">{t("bestiary.catalog.newest")}</option>
+                    <option value="old">{t("bestiary.catalog.oldest")}</option>
                 </select>
             </div>
             {rows === null
-                ? <p class="bestiary-muted">Loading…</p>
+                ? <p class="bestiary-muted">{t("common.loading")}</p>
                 : rows.length === 0
-                    ? <p class="bestiary-muted">No public collection matches.</p>
+                    ? <p class="bestiary-muted">{t("bestiary.catalog.noMatch")}</p>
                     : <CatalogTable rows={rows} />}
             {catalogNext.value !== null && (
-                <button type="button" class="bestiary-catalog-more" onClick={() => void loadCatalog(true)}>More</button>
+                <button type="button" class="bestiary-catalog-more" onClick={() => void loadCatalog(true)}>{t("common.more")}</button>
             )}
         </div>
     );
@@ -39,7 +40,13 @@ function CatalogTable({ rows }: { rows: CatalogRow[] }) {
     return (
         <table class="bestiary-table bestiary-catalog-table">
             <thead>
-                <tr><th>Name</th><th>Owner</th><th>Entries</th><th>Published</th><th>Subscribed</th></tr>
+                <tr>
+                    <th>{t("common.name")}</th>
+                    <th>{t("common.owner")}</th>
+                    <th>{t("bestiary.catalog.entries")}</th>
+                    <th>{t("bestiary.catalog.published")}</th>
+                    <th>{t("bestiary.catalog.subscribed")}</th>
+                </tr>
             </thead>
             <tbody>
                 {rows.map(c => (
@@ -52,18 +59,19 @@ function CatalogTable({ rows }: { rows: CatalogRow[] }) {
                         <td>
                             <div class="bestiary-catalog-name">
                                 {c.name}
-                                {c.own && <span class="bestiary-chip bestiary-yours">yours</span>}
+                                {c.own && <span class="bestiary-chip bestiary-yours">{t("bestiary.catalog.yours")}</span>}
                             </div>
                             {/* One line of it, all on hover; still a line without one: the rows are of one height. */}
                             <div class="bestiary-muted bestiary-catalog-description" title={c.description || undefined}>{c.description}</div>
                         </td>
                         <td class="bestiary-muted">{c.owner}</td>
                         <td>{c.creatures}</td>
-                        <td class="bestiary-muted">{new Date(c.publishedAt).toLocaleDateString()}</td>
+                        {/* English keeps the browser's format it had before the translation. */}
+                        <td class="bestiary-muted">{new Date(c.publishedAt).toLocaleDateString(lang() === "en" ? undefined : lang())}</td>
                         <td>
                             {!c.own && (
                                 <input type="checkbox" class="custom bestiary-catalog-subscribe" checked={subscribed.has(c.id)}
-                                    aria-label={`Subscribed to ${c.name}`}
+                                    aria-label={t("bestiary.catalog.subscribedTo", { name: c.name })}
                                     // Subscribing leaves the catalog open.
                                     onClick={e => e.stopPropagation()}
                                     onChange={e => {

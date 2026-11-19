@@ -10,6 +10,7 @@
 //      talents list, ×½ for every weapon, as Expanded Sustain counts.
 // The first two never take it below 1 half-action, the factors can: a
 // weapon reloaded with a half-action is reloaded as a free action.
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../components/format";
 import { nameKey, talentNames } from "../characteristics/skillNames";
@@ -21,7 +22,7 @@ import { weaponBonuses, type WeaponBonus } from "./weaponBonus";
 export type ReloadUnit = 1 | 2;
 
 /** What a total of no half-actions reads as. */
-export const FREE = "Free";
+export const FREE = t("sheet.weapons.reload.free");
 
 // "2", "½", "1½": whole units and a half-action.
 const RELOAD = /^(\d+)?\s*(½)?$/;
@@ -70,7 +71,7 @@ export function reloadAt(state: SheetSignals, path: string, unit: ReloadUnit): R
     const rapid = talentNames(state).find(name => RAPID_RELOAD.includes(nameKey(name)));
     const bonuses: WeaponBonus[] = [
         ...weaponBonuses(state, path, "reload"),
-        ...(rapid ? [{ factor: 0.5, roundUp: false, label: rapid }] : []),
+        ...(rapid ? [{ factor: 0.5, roundUp: false, label: rapid, part: rapid }] : []),
     ];
     const lines: BreakdownLine[] = [];
     let halves = own;

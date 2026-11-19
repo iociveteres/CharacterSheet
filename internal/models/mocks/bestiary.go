@@ -22,11 +22,11 @@ type BestiaryModel struct {
 func own(userID, collectionID int) error {
 	switch {
 	case collectionID == 2:
-		return models.ErrPermissionDenied
+		return models.ErrCollectionNotOwn
 	case collectionID != 1 && collectionID != 7:
-		return models.ErrNoRecord
+		return models.ErrCollectionGone
 	case userID != 1:
-		return models.ErrPermissionDenied
+		return models.ErrCollectionNotOwn
 	}
 	return nil
 }
@@ -53,7 +53,7 @@ func (m *BestiaryModel) Subscribe(ctx context.Context, userID, collectionID int)
 		return nil, err
 	}
 	if c.Own {
-		return nil, models.ErrInvalidBestiaryRequest
+		return nil, models.ErrOwnSubscription
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -92,7 +92,7 @@ func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collection
 		return nil, err
 	}
 	if collectionID == 7 && edit.Visibility != nil && *edit.Visibility == models.VisibilityPublic {
-		return nil, models.ErrInvalidBestiaryRequest
+		return nil, models.ErrDefaultPrivate
 	}
 	c := &models.BestiaryCollection{ID: 1, Name: "Orks"}
 	if edit.Name != nil {
@@ -121,7 +121,7 @@ func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, cr
 	return len(creatures), nil
 }
 
-func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind models.SheetKind) (*models.Creature, error) {
+func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind models.SheetKind, lang string) (*models.Creature, error) {
 	if !kind.IsValid() {
 		return nil, models.ErrInvalidBestiaryRequest
 	}

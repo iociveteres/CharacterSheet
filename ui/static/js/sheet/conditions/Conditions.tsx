@@ -11,6 +11,7 @@ import { resolvePath } from "../core/sync";
 import { conditionFactory } from "./conditionFactory";
 import { ConditionEntries } from "../entries/ConditionEntries";
 import { nameOption } from "../components/autocompleteOptions";
+import { t } from "../../i18n";
 
 const COLLECTION = "conditions";
 
@@ -30,7 +31,7 @@ export function ConditionItem({ itemId }: { itemId: string }) {
                     <AutocompleteField field="name" class="long textlike" itemPath={path} collection={COLLECTION} renderOption={nameOption} />
                 </ToggleField>
                 <label>
-                    X:<NumberField field="stacks" class="short" min="0" title="Stack count — uses in place of X in entries" />
+                    X:<NumberField field="stacks" class="short" min="0" title={t("sheet.conditions.stacksTitle")} />
                 </label>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
@@ -45,9 +46,9 @@ export function ConditionItem({ itemId }: { itemId: string }) {
 export function Conditions() {
     return (
         <div class="conditions-section layout-column">
-            <h3>Conditions</h3>
+            <h3>{t("sheet.terms.block.conditions")}</h3>
             <div class="condition-syntax-clarification">
-                Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:
+                {t("sheet.conditions.syntax")}
                 <Copyable>▲</Copyable>
                 <Copyable>▼</Copyable>
             </div>

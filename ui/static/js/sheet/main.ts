@@ -7,6 +7,7 @@ import type { SheetPayload } from "./payload";
 import { fetchSheet } from "./reload";
 import { editFailedNotice } from "./network";
 import { loadedStylesheet, renderSheetView, sheetStylesheet } from "./view";
+import { t } from "../i18n";
 
 const CONTAINER_ID = "character-sheet-container";
 const SHEET_LINK = 'a[href^="/sheet/view/"]';
@@ -75,7 +76,7 @@ function showError(message: string): void {
     if (!box) return;
     const error = document.createElement("div");
     error.className = "error";
-    error.textContent = `Failed to load sheet: ${message}`;
+    error.textContent = t("sheet.view.loadFailed", { message });
     box.replaceChildren(error);
 }
 
@@ -135,12 +136,12 @@ document.addEventListener("sheet:reloadFailed", e => {
 });
 
 document.addEventListener("ws:disconnected", () => {
-    if (shown) notify("Connection lost: the sheet is read-only until it is back.");
+    if (shown) notify(t("sheet.view.connectionLost"));
 });
 
 // reload.ts reads the sheets again.
 document.addEventListener("ws:reconnected", () => {
-    if (shown) notify("Connection restored.");
+    if (shown) notify(t("sheet.view.connectionRestored"));
 });
 
 // The room list drops a deleted sheet; the sheet goes with it.

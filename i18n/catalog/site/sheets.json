@@ -1,0 +1,6 @@
+{
+  "site.sheets.title": { "en": "Your Character Sheets", "ru": "Ваши листы персонажей" },
+  "site.sheets.room": { "en": "At {room}", "ru": "В комнате {room}", "note": "room — название комнаты, где лежит лист" },
+  "site.sheets.created": { "en": "Created {date}", "ru": "Создан {date}", "note": "лист; date — «2 января 2026 в 15:04»" },
+  "site.sheets.updated": { "en": "Last modified {date}", "ru": "Изменён {date}", "note": "лист; date — «2 января 2026 в 15:04»" }
+}

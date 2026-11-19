@@ -2,6 +2,7 @@
 // on a 300×300 stage under a 3:4 frame, moved and zoomed so that it always
 // covers the frame. What the frame shows is drawn at 360×480, the size the
 // server takes (internal/webapp/portraits.go).
+import { t } from "../../i18n";
 
 export const STAGE = 300;
 export const FRAME = { x: 60, y: 30, w: 180, h: 240 } as const;
@@ -99,6 +100,6 @@ export async function encodePortrait(image: CanvasImageSource, size: Size, crop:
     const webp = await toBlob(canvas, "image/webp", 0.8);
     if (webp?.type === "image/webp") return webp;
     const jpeg = await toBlob(canvas, "image/jpeg", 0.85);
-    if (!jpeg) throw new Error("The browser could not encode the portrait.");
+    if (!jpeg) throw new Error(t("sheet.profile.portrait.encodeFailed"));
     return jpeg;
 }

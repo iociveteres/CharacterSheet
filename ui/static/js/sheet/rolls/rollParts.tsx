@@ -5,7 +5,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ComponentChildren } from "preact";
 import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
-import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
+import { columnCode, modifierField, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
@@ -13,6 +13,8 @@ import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
 import { onDeletedSkill, rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
+import { t } from "../../i18n";
+import { code, label as labelOf, type Label, type Part } from "../rollLabel";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -50,7 +52,7 @@ export function RadioColumn({ column: { key, label, options } }: { column: RollC
                     options={options}
                     renderOption={(radio, value, text) => (
                         <div class="radio-option">
-                            <label>{radio}{text}</label>
+                            <label title={text}>{radio}<span class="radio-text">{text}</span></label>
                             <NumberField field={modifierField(value)} />
                         </div>
                     )}
@@ -63,7 +65,7 @@ export function RadioColumn({ column: { key, label, options } }: { column: RollC
 export function ExtraModifier({ n }: { n: 1 | 2 }) {
     return (
         <Scope dataId={`extra${n}`} class="extra-modifier">
-            <TextField field="name" placeholder={`Extra ${n}`} />
+            <TextField field="name" placeholder={t("sheet.rolls.extra", { n })} />
             <div class="roll-column-content">
                 <NumberField field="value" placeholder="0" />
                 <Checkbox field="enabled" class="custom" />
@@ -79,19 +81,22 @@ export function extraNames(state: SheetSignals, rollPath: string): string[] {
         .map(n => String(peekAt(state, `${rollPath}.extra${n}.name`)));
 }
 
-/** Names of the non-default options selected in the columns, for the roll label. */
-export function selectedNames(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): string[] {
-    const out: string[] = [];
-    for (const { key, default: def, names } of columns) {
-        const selected = String(peekAt(state, `${rollPath}.${key}.selected`) ?? "");
-        if (!selected || selected === def) continue;
-        out.push(names?.[selected] ?? selected);
+/**
+ * The codes of the non-default options selected in the columns, for the roll
+ * label, which words them in lower case (rollLabelText.ts); an option the
+ * column does not know reads as its value.
+ */
+export function selectedCodes(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): Part[] {
+    const out: Part[] = [];
+    for (const column of columns) {
+        const selected = String(peekAt(state, `${rollPath}.${column.key}.selected`) ?? "");
+        if (selected && selected !== column.default) out.push(code(columnCode(column), selected));
     }
     return out;
 }
 
-/** `name, modifier, modifier` or just the name. */
-export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
+/** `name (tag, tag), modifier, modifier`, without the brackets when there are no tags. */
+export const rollLabel = (name: Part, modifiers: Part[], tags: Part[] = []): Label => labelOf(name, { t: tags, m: modifiers });
 
 /** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
 export function useRollTest(block: TestBlock, rollPath: string, cast?: CastOn) {
@@ -109,11 +114,11 @@ export function TestSelect({ block, cast }: { block: TestBlock; cast?: CastOn })
     const deleted = onDeletedSkill(state, block, current);
     return (
         <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} class={deleted ? "dimmed" : undefined}
-            title={deleted ? "The custom skill of this test was deleted: the roll counts nothing for it. Pick another test, or another skill for the option under ⚙." : undefined} />
+            title={deleted ? t("sheet.rolls.test.skillDeleted") : undefined} />
     );
 }
 
-export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
+export function RollResult({ total, onRoll, disabled = false, title, button = t("common.roll"), children }: {
     total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; button?: string; children?: ComponentChildren;
 }) {
     return (
@@ -137,12 +142,12 @@ export function TestText({ text, note }: { text: string; note: string }) {
 
 /** The name label that opens the roll dropdown. */
 export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-    return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
+    return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>{`${t("common.name")}:`}</label>;
 }
 
 /** A damage label that rolls the damage of the item of `owner` at `itemPath` with its modifiers. */
-export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
-    owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
+export function DamageLabel({ owner, itemPath, label, children = `${t("sheet.termsArms.weaponField.dmg")}:` }: {
+    owner: DamageOwner; itemPath: string; label: () => Label; children?: ComponentChildren;
 }) {
     const { state, rolls, preview } = useSheet();
     if (preview) return <label>{children}</label>;

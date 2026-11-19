@@ -112,11 +112,42 @@ func TestBestiaryRequests(t *testing.T) {
 		assert.StringContains(t, body, `"format": "collection"`)
 	})
 
+	// A refusal the user can act on names its reason in the user's language.
+	t.Run("refusal", func(t *testing.T) {
+		messages := map[string]string{}
+		for _, lang := range []string{"en", "ru"} {
+			req, err := http.NewRequest(http.MethodPatch, ts.URL+"/bestiary/collections/2", strings.NewReader(`{"name":"Mine"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-CSRF-Token", token)
+			req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
+			rs, err := ts.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var body struct{ Code, Message string }
+			err = json.NewDecoder(rs.Body).Decode(&body)
+			rs.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, rs.StatusCode, http.StatusForbidden)
+			assert.Equal(t, body.Code, "notOwn")
+			messages[lang] = body.Message
+		}
+		if messages["en"] == "" || messages["en"] == messages["ru"] {
+			t.Errorf("messages %q, want one per language", messages)
+		}
+	})
+
 	t.Run("quota", func(t *testing.T) {
 		code, _, body := ts.send(t, http.MethodPost, "/bestiary/save", "application/json", strings.NewReader(`{"sheetId":1,"collectionId":1}`), token)
 		assert.Equal(t, code, http.StatusRequestEntityTooLarge)
 		assert.StringContains(t, body, `"code":"quota"`)
-		assert.StringContains(t, body, "NPCs and creatures take 10.0 of 10 MB")
+		// The quota used, in MB.
+		assert.StringContains(t, body, "10.0")
 	})
 }
 
@@ -167,7 +198,9 @@ func TestBestiaryUpload(t *testing.T) {
 	assert.Equal(t, results[0].Added, 1)
 	assert.Equal(t, results[1].Error, "invalid")
 	assert.Equal(t, results[2].Error, "quota")
-	assert.StringContains(t, results[2].Message, "NPCs and creatures take")
+	if results[2].Message == "" {
+		t.Error("the quota error has no message")
+	}
 
 	// A new creature counts against the same quota.
 	newCreature := func() (int, string) {

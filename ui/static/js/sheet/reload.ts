@@ -4,11 +4,12 @@
 // holder of a sheet then shows its new instance (sheet:replaced).
 import { replaceSheet, sheets } from "./instance";
 import type { SheetPayload } from "./payload";
+import { t } from "../i18n";
 
 /** The sheet as the server has it now, from /sheet/view/:id. */
 export async function fetchSheet(sheetId: string): Promise<SheetPayload> {
     const res = await fetch(`/sheet/view/${sheetId}`, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error(`Network error: ${res.status}`);
+    if (!res.ok) throw new Error(t("sheet.view.networkError", { status: res.status }));
     return await res.json() as SheetPayload;
 }
 

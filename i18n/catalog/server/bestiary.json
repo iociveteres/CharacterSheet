@@ -1,0 +1,14 @@
+{
+  "server.bestiary.creatureGone": { "en": "This creature is no longer available: reload the page", "ru": "Это существо больше недоступно, перезагрузите страницу", "note": "существо удалили или его коллекция стала личной" },
+  "server.bestiary.collectionGone": { "en": "This collection is no longer available: reload the page", "ru": "Эта коллекция больше недоступна, перезагрузите страницу", "note": "коллекцию удалили или владелец сделал её личной" },
+  "server.bestiary.creatureNotOwn": { "en": "This creature belongs to another user", "ru": "Это существо принадлежит другому пользователю", "note": "попытка изменить, переместить или удалить чужое существо" },
+  "server.bestiary.collectionNotOwn": { "en": "This collection belongs to another user", "ru": "Эта коллекция принадлежит другому пользователю", "note": "попытка изменить чужую коллекцию или положить в неё существо" },
+  "server.bestiary.collectionName": { "en": "A collection's name must be 1 to {max} characters long", "ru": "Название коллекции должно быть от 1 до {max} символов" },
+  "server.bestiary.description": { "en": "A collection's description must be at most {max} characters long", "ru": "Описание коллекции должно быть не длиннее {max} символов" },
+  "server.bestiary.creatureName": { "en": "A creature's name must be at most {max} characters long", "ru": "Имя существа должно быть не длиннее {max} символов" },
+  "server.bestiary.defaultPrivate": { "en": "The default collection always stays private", "ru": "Основная коллекция всегда остаётся личной" },
+  "server.bestiary.defaultKept": { "en": "The default collection cannot be deleted", "ru": "Основную коллекцию нельзя удалить" },
+  "server.bestiary.ownSubscription": { "en": "You cannot subscribe to your own collection", "ru": "Нельзя подписаться на свою коллекцию" },
+  "server.bestiary.variantSourceGone": { "en": "The creature this NPC was made from has been deleted: save the NPC to a collection instead", "ru": "Существо, из которого сделан этот НПС, удалено: сохраните НПС в коллекцию", "note": "«Добавить вариант в бестиарий»" },
+  "server.bestiary.variantSourceNotOwn": { "en": "The creature this NPC was made from belongs to another user: save the NPC to a collection instead", "ru": "Существо, из которого сделан этот НПС, принадлежит другому пользователю: сохраните НПС в коллекцию", "note": "«Добавить вариант в бестиарий» у НПС из чужой коллекции" }
+}

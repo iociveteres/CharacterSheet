@@ -3,6 +3,7 @@
 // gear next to it opens the dropdown with the weapon's own range and the
 // modifiers, which add or multiply.
 import { useEffect, useRef } from "preact/hooks";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
@@ -14,13 +15,7 @@ import { useItemIds } from "../components/useItemIds";
 import { THROWN_RANGE, rangeAt, rangeMod, type RangeMod } from "./rangeRules";
 import { textAt, valueAt } from "../core/sync";
 
-const EXPR_TITLE = [
-    "What the modifier does to the range:",
-    "×2, ×1.5, ×½ — multiplies it, rounded down; ×1.5▲ rounds up",
-    "+5, -5 — adds metres",
-    "S.b, 2×S.b — adds the bonus of a characteristic",
-    "The factors multiply the range with all that is added. An unknown term turns the modifier off.",
-].join("\n");
+const EXPR_TITLE = t("sheet.weapons.range.exprTitle");
 
 const modText = (mod: RangeMod) => ("factor" in mod ? `×${mod.factor}${mod.roundUp ? "▲" : ""}` : mod.add < 0 ? String(mod.add) : `+${mod.add}`);
 
@@ -33,9 +28,9 @@ function RangeModRow({ itemId }: { itemId: string }) {
     const invalid = expr.trim() !== "" && mod === null;
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>
-            <Checkbox field="enabled" class="custom" title="Counts in the range" />
+            <Checkbox field="enabled" class="custom" title={t("sheet.weapons.range.modCounts")} />
             <TextField field="expr" class={invalid ? "mod-expr invalid" : "mod-expr"} placeholder="×2, +5, S.b"
-                title={invalid ? `Reads as nothing. The modifier is off.\n\n${EXPR_TITLE}` : EXPR_TITLE} />
+                title={invalid ? `${t("sheet.weapons.range.invalid")}\n\n${EXPR_TITLE}` : EXPR_TITLE} />
             <span class="mod-added" data-id="added">{mod ? modText(mod) : "—"}</span>
             <DragHandle />
             <DeleteButton itemPath={path} />
@@ -54,7 +49,7 @@ export function RangeField() {
     const text = useComputed(() => range.value.text);
     const hasMods = useItemIds(`${path}.rangeMods.items`).ids.length > 0;
     const { base, byRule, baseValue, mods } = range.value;
-    const title = baseValue === null ? "" : [`${byRule ? "Thrown, by the rules" : "Weapon"} ${base} = ${baseValue}`, ...mods.map(m => `${m.expr} ${modText(m)}`)].join("\n");
+    const title = baseValue === null ? "" : [`${byRule ? t("sheet.weapons.range.thrownByRule") : t("sheet.termsArms.gearType.weapon")} ${base} = ${baseValue}`, ...mods.map(m => `${m.expr} ${modText(m)}`)].join("\n");
 
     // A click on the total opens the dropdown at the weapon's own range.
     const focusBase = useRef(false);
@@ -72,27 +67,27 @@ export function RangeField() {
     return (
         <div class="mod-field dropdown-parent" ref={ref}>
             <ReadonlyField field="rangeTotal" value={text} class="mod-total" onClick={editBase} title={title} />
-            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title="Modifiers of the range"
+            <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={t("sheet.weapons.range.toggle")}
                 onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open, as ModdedField's. */}
             {dropdown.open && (
                 <div class="roll-dropdown mod-dropdown visible">
-                    <label class="mod-base" title="The weapon's own range, as the rulebook gives it">
-                        <span class="column-label">Weapon</span>
+                    <label class="mod-base" title={t("sheet.weapons.range.own")}>
+                        <span class="column-label">{t("sheet.termsArms.gearType.weapon")}</span>
                         <TextField field="range" inputRef={baseRef} placeholder={byRule ? THROWN_RANGE : "50м, S.b×10м"} />
                     </label>
-                    {byRule && <p class="mod-note-quiet" data-id="rule">{`By the rules a thrown weapon or grenade throws ${THROWN_RANGE}.`}</p>}
+                    {byRule && <p class="mod-note-quiet" data-id="rule">{t("sheet.weapons.range.thrownRule", { range: THROWN_RANGE })}</p>}
                     <div class="mods-header">
-                        <span class="column-label">Modifiers</span>
+                        <span class="column-label">{t("sheet.weapons.modifiers")}</span>
                     </div>
-                    {!hasMods && <p class="mod-hint">×2 or ×1.5▼ multiplies; +5 or S.b adds.</p>}
+                    {!hasMods && <p class="mod-hint">{t("sheet.weapons.range.hint")}</p>}
                     <ItemGrid dataId="rangeMods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix="range-mod"
                         renderItem={id => <RangeModRow itemId={id} />} />
                     {hasMods && base && baseValue === null && (
-                        <p class="mod-note">The weapon's range is no expression: the modifiers do not count.</p>
+                        <p class="mod-note">{t("sheet.weapons.range.noExpression")}</p>
                     )}
                     <div class="mod-result">
-                        <span class="column-label">Total</span>
+                        <span class="column-label">{t("common.total")}</span>
                         <span class="mod-result-value" data-id="result">{text}</span>
                     </div>
                 </div>

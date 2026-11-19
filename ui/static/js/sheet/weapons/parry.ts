@@ -4,6 +4,7 @@
 // modifiers are without dice, as "+3×bPR" of a force staff, and the weapon
 // entries of Parry (weapons/weaponBonus.ts). Balance −2 cannot
 // parry: the sheet only says so. Reactive when read inside a computed.
+import { t } from "../../i18n";
 import { addTerms, emptySum, parseDamage } from "../rolls/damageExpression";
 import { signed } from "../components/format";
 import type { SheetSignals } from "../schema/sheet";
@@ -34,7 +35,7 @@ export interface Parry {
 export function parryModValue(state: SheetSignals, attackPath: string, expr: string): number | null {
     const { keys, named, valueOf } = WEAPON_DAMAGE.refs(state, attackPath);
     const { terms, invalid } = parseDamage(expr, keys, named);
-    if (invalid.length || !terms.length || terms.some(t => t.kind === "dice" || t.kind === "refDice")) return null;
+    if (invalid.length || !terms.length || terms.some(term => term.kind === "dice" || term.kind === "refDice")) return null;
     return addTerms(emptySum(), terms, valueOf).flat;
 }
 
@@ -42,7 +43,7 @@ export function parryModValue(state: SheetSignals, attackPath: string, expr: str
 export function parryAt(state: SheetSignals, attackPath: string): Parry {
     const skill = getRollValue(state, PARRY_SKILL);
     const characteristic = textAt(state, `skillsLeft.${PARRY_SKILL}.characteristic`) || textAt(state, `skillsRight.${PARRY_SKILL}.characteristic`) || "WS";
-    const lines: BreakdownLine[] = [{ text: String(skill), label: `Parry (${characteristic})` }];
+    const lines: BreakdownLine[] = [{ text: String(skill), label: `${t("sheet.termsSkills.skill.parry")} (${characteristic})` }];
     let value = skill;
     const add = (n: number, label: string) => {
         value += n;
@@ -51,9 +52,9 @@ export function parryAt(state: SheetSignals, attackPath: string): Parry {
 
     const balance = balanceAt(state, attackPath).value ?? 0;
     const balanceMod = BALANCE_MODIFIERS[balance];
-    if (balanceMod === null) lines.push({ text: "—", label: "Balance -2: cannot parry" });
-    else if (balanceMod !== 0) add(balanceMod, `Balance ${balance}`);
-    if (attackHasProperty(state, attackPath, "Defensive")) add(15, "Defensive");
+    if (balanceMod === null) lines.push({ text: "—", label: t("sheet.weapons.parry.cannotLine") });
+    else if (balanceMod !== 0) add(balanceMod, `${t("sheet.termsArms.weaponField.balance")} ${balance}`);
+    if (attackHasProperty(state, attackPath, "Defensive")) add(15, t("sheet.termsQualities.weapon.defensive"));
     for (const ws of heldGrip(state, attackPath).effects.ws) add(ws.add, ws.label);
     const grid = `${attackPath}.parryMods.items`;
     for (const id of idsInOrder(state, grid)) {

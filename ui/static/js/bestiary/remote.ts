@@ -3,6 +3,7 @@
 // handlers go through actions.ts, which alone writes the state.
 import { editFailedNotice } from "../sheet/api";
 import type { SheetChangeMessage } from "../room/messages";
+import { t } from "../i18n";
 import { creatureNamed, creatureSheetFailed, creatureSheetReplaced, creaturesDeleted, showToast } from "./actions";
 
 // The name of a creature is the name of the character in its sheet (creatureNamePath in internal/models/bestiary.go).
@@ -38,6 +39,6 @@ export function listenRemote(): void {
     });
     // socket.ts gives up after three reconnects.
     window.addEventListener("ws:connectionLost", () => {
-        showToast("Connection lost. Reload the page.");
+        showToast(t("bestiary.messages.connectionLost"));
     });
 }

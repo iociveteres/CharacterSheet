@@ -49,7 +49,6 @@ describe("the right panel", () => {
     it("starts hidden when the player hid it", () => {
         expect($("#room").classList.contains("panel-hidden")).toBe(true);
         expect($("#right-panel").classList.contains("hidden-panel")).toBe(true);
-        expect($(".toggle-panel-btn").title).toBe("Show sidebar");
         expect($(".toggle-panel-btn").textContent).toBe("←");
     });
 
@@ -58,7 +57,6 @@ describe("the right panel", () => {
 
         expect($("#room").classList.contains("panel-hidden")).toBe(false);
         expect($("#right-panel").classList.contains("hidden-panel")).toBe(false);
-        expect($(".toggle-panel-btn").title).toBe("Hide sidebar");
         expect($(".toggle-panel-btn").textContent).toBe("→");
         expect(localStorage.getItem("rightPanelVisible")).toBe("true");
 

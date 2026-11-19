@@ -3,6 +3,7 @@
 // (tokenAt, insertToken) with the aptitudes the list does not name yet.
 import { CHARACTERISTIC_APTITUDES, GENERAL_APTITUDE, type Characteristic, type StatSet } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
+import { t } from "../../i18n";
 
 /** Whether `word`, in upper case, begins the key or a word of the label. */
 const matches = ({ key, label }: Characteristic, word: string) =>
@@ -28,7 +29,7 @@ export function aptitudeSuggestions(stats: StatSet, text: string, query: string 
             .map(a => ({ value: a.key, label: `${a.key} — ${a.label}` })),
     });
     return [
-        group("Characteristics", CHARACTERISTIC_APTITUDES),
-        group("Specialisations", general ? [...stats.aptitudes, GENERAL_APTITUDE] : stats.aptitudes),
+        group(t("sheet.terms.block.characteristics"), CHARACTERISTIC_APTITUDES),
+        group(t("sheet.characteristics.suggest.specialisations"), general ? [...stats.aptitudes, GENERAL_APTITUDE] : stats.aptitudes),
     ].filter(g => g.options.length > 0);
 }

@@ -98,7 +98,7 @@ describe("the bestiary", () => {
         await dialog.locator(".save-to-collection-target").selectOption("new");
         await dialog.locator(".save-to-collection-name").fill(COLLECTION);
         await dialog.locator(".save-to-collection-save").click();
-        await expectToast(gm.page, `"${ORC}" saved to ${COLLECTION}`);
+        await expectToast(gm.page, ORC, COLLECTION);
 
         const [saved] = await collections(gm.page);
         collection = saved.id;
@@ -140,7 +140,7 @@ describe("the bestiary", () => {
         expect(await dialog.locator(".add-variant-name").inputValue()).toBe(name);
         await dialog.locator(".add-variant-name").fill(NOB);
         await dialog.locator(".add-variant-add").click();
-        await expectToast(gm.page, `"${NOB}" added to ${COLLECTION}`);
+        await expectToast(gm.page, NOB, COLLECTION);
 
         const creatures = await bestiary<Creature[]>(gm.page, "GET", `/bestiary/creatures?collection=${collection}`);
         expect(creatures.map(c => c.name)).toEqual([NOB, ORC]);
@@ -165,7 +165,7 @@ describe("the bestiary", () => {
         }
         // The copy goes on from the variant.
         await copy.locator(".encounter-npc-menu-btn").click();
-        expect(await copy.locator(".encounter-add-variant").getAttribute("title")).toBe(`A new creature next to "${NOB}"`);
+        expect(await copy.locator(".encounter-add-variant").getAttribute("title")).toContain(NOB);
         await copy.locator(".encounter-npc-menu-btn").click();
     });
 
@@ -212,12 +212,17 @@ describe("the bestiary", () => {
             const huge = file("huge.json", randomBytes(8 << 20).toString("base64"));
             await page.locator('.bestiary input[type="file"]').setInputFiles([file("first.json", "e2e Uploaded"), huge, file("last.json", "e2e Not uploaded")]);
 
-            const notice = page.locator(".toasts > .toast");
-            await notice.waitFor();
-            const text = await notice.textContent();
-            expect(text).toContain("first.json: 1 creature");
-            expect(text).toMatch(/huge\.json: NPCs and creatures take [\d.]+ of 10 MB; this needs [\d.]+ MB more\./);
-            expect(text).toContain("last.json: not uploaded");
+            // A line a file: what it added, the quota it ran into, and the file that was not tried.
+            const lines = (await expectToast(page, "first.json", "huge.json", "last.json")).split("\n");
+            expect(lines).toHaveLength(3);
+            expect(lines[0]).toContain("first.json");
+            expect(lines[0], "creatures added").toMatch(/\b1\b/);
+            expect(lines[1]).toContain("huge.json");
+            // The megabytes used, the 10 MB limit and the megabytes the file needs.
+            const numbers = lines[1].match(/\d+([.,]\d+)?/g)!.map(n => Number(n.replace(",", ".")));
+            expect(numbers, "the numbers of the quota").toEqual([expect.any(Number), 10, expect.any(Number)]);
+            expect(numbers[0], "used").toBeLessThanOrEqual(10);
+            expect(lines[2]).toContain("last.json");
             await eventually(() => page.locator(".bestiary-creature-name").allTextContents(),
                 names => expect(names.sort()).toEqual([BLANK, NOB, ORC, "e2e Uploaded"].sort()));
         } finally {

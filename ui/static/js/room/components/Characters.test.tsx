@@ -101,8 +101,8 @@ describe("my characters", () => {
         const row = $('[data-sheet-id="101"]')!;
 
         expect(row.querySelector(".meta.system")!.textContent).toBe("Black Crusade");
-        expect(row.querySelector(".meta.updated")!.textContent).toMatch(/^Modified 27 Sep 2026 at \d\d:00$/);
-        expect(row.querySelector(".meta.updated")!.getAttribute("title")).toMatch(/^Created 05 Jan 2026 at \d\d:00\nModified 27 Sep 2026 at \d\d:00$/);
+        expect(row.querySelector(".meta.updated")!.textContent).toMatch(/27 Sep 2026 at \d\d:00$/);
+        expect(row.querySelector(".meta.updated")!.getAttribute("title")).toMatch(/05 Jan 2026 at \d\d:00\n.*27 Sep 2026 at \d\d:00$/);
     });
 
     it("send a new sheet of the picked kind and remember the kind", () => {

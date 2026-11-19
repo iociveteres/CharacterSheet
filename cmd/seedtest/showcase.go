@@ -60,6 +60,10 @@ func seedShowcase(ctx context.Context, db *pgxpool.Pool, m models.Models, fixtur
 	if u.ID, err = ensureUser(ctx, db, m, u); err != nil {
 		return nil, fmt.Errorf("user %s: %w", u.Email, err)
 	}
+	// A language saved in the account would win over the lang cookie of scripts/slides.
+	if _, err := db.Exec(ctx, `UPDATE users SET locale = NULL WHERE id = $1`, u.ID); err != nil {
+		return nil, err
+	}
 
 	roomID, err := emptyRoom(ctx, db, m, u.ID, showcaseRoom)
 	if err != nil {

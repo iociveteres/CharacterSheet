@@ -3,6 +3,7 @@
 // builds these computeds when it mounts; a total and the breakdown under it
 // come from the same ones.
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
+import { t } from "../../i18n";
 import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr } from "../modifiers/entryValues";
@@ -81,7 +82,7 @@ export interface GearApTotal {
 export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" | "superAp" = "ap"): GearApTotal | null {
     const own = ownAp(item.armour, location, kind);
     if (own === null) return null;
-    const lines = [`${own} ${String(item.name?.value || "own")}`];
+    const lines = [`${own} ${String(item.name?.value || t("sheet.gear.own"))}`];
     if (kind === "superAp") return { own, total: own, modified: false, lines };
     let total = own;
     const material = materialOf(item);
@@ -96,7 +97,7 @@ export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" |
     }
     if (isBroken(item)) {
         total = Math.floor(total / 2);
-        lines.push("÷ 2 Broken");
+        lines.push(`÷ 2 ${t("sheet.termsPf.gear.broken")}`);
     }
     total = Math.max(0, total);
     const modified = lines.length > 1;

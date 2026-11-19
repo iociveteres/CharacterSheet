@@ -8,6 +8,7 @@ import { openPopup } from "../actions";
 import { openSaveToCollection } from "../../bestiary/actions";
 import { renderStatBlockView, useSheetView } from "../../../sheet/api";
 import { CreaturePreview } from "./AddMonsters";
+import { t } from "../../../i18n";
 
 export function StatBlockColumn() {
     const picked = participants.value.find(p => p.participant.id === selected.value);
@@ -19,7 +20,7 @@ export function StatBlockColumn() {
                     ? <CreaturePreview key={creature.id} creature={creature} />
                     : picked
                     ? <Picked key={picked.participant.id} p={picked} />
-                    : <p class="encounter-muted">Pick a participant to see their stat block.</p>}
+                    : <p class="encounter-muted">{t("room.encounter.pickParticipant")}</p>}
             </div>
         </div>
     );
@@ -35,14 +36,14 @@ function Picked({ p }: { p: ParticipantView }) {
                 <span class="statblock-name">{p.name}</span>
                 <span class="spacer" />
                 {participant.npc && (
-                    <button type="button" class="encounter-icon encounter-save-to-collection" title="Save to collection" aria-label="Save to collection"
+                    <button type="button" class="encounter-icon encounter-save-to-collection" title={t("room.modals.saveToCollection.title")} aria-label={t("room.modals.saveToCollection.title")}
                         onClick={() => openSaveToCollection(participant.sheetId, p.name)}><FloppyIcon /></button>
                 )}
-                <button type="button" class="encounter-icon encounter-open-sheet" title="Open the sheet" aria-label="Open the sheet"
+                <button type="button" class="encounter-icon encounter-open-sheet" title={t("room.encounter.openSheet")} aria-label={t("room.encounter.openSheet")}
                     disabled={!sheet} onClick={() => openPopup(participant.sheetId)}>↗</button>
             </div>
-            {participant.displayName && <div class="encounter-card-shown-as">for players: {participant.displayName}</div>}
-            {participant.sourceLabel && <div class="encounter-muted statblock-source">Source: {participant.sourceLabel}</div>}
+            {participant.displayName && <div class="encounter-card-shown-as">{t("room.encounter.forPlayersLine", { name: participant.displayName })}</div>}
+            {participant.sourceLabel && <div class="encounter-muted statblock-source">{t("bestiary.shared.source")} {participant.sourceLabel}</div>}
             {sheet ? <div class="statblock-body" ref={box} /> : <p class="encounter-muted">…</p>}
         </div>
     );

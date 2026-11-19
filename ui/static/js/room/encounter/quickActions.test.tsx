@@ -153,7 +153,8 @@ describe("removing", () => {
         click(card(5)!.querySelector<HTMLElement>(".encounter-remove"));
 
         expect(card(5)).toBeNull();
-        expect(deleted(5)!.textContent).toBe("Deleted ServitorUndo");
+        expect(deleted(5)!.textContent).toContain("Servitor");
+        expect(deleted(5)!.querySelector(".encounter-undo")).not.toBeNull();
         expect($('.encounter-order-row[data-group-id="13"]')).toBeNull();
         expect(toastBox.querySelector(".toast")).toBeNull();
         act(() => void vi.advanceTimersByTime(4900));
@@ -242,8 +243,8 @@ describe("the initiative buttons", () => {
     it("are over the order, with the round", () => {
         const section = $(".encounter-initiative")!;
         expect(section.compareDocumentPosition($(".encounter-order")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect($(".encounter-round")!.textContent).toBe("InitiativeRound 3");
-        expect([...section.querySelectorAll("button")].map(b => b.textContent)).toEqual(["Reset", "Roll for NPCs", "Show to players", "⏮ Prev", "Next ⏭"]);
+        expect($(".encounter-round")!.textContent).toMatch(/\b3$/);
+        expect([...section.querySelectorAll("button")].map(b => b.className)).toEqual(["encounter-reset", "encounter-roll-npcs", "encounter-show", "encounter-prev", "encounter-next"]);
     });
 
     it("resets at once: the sheets lose their initiative and the server is told", () => {
@@ -271,11 +272,10 @@ describe("the initiative buttons", () => {
 
     it("is out of the encounter menu", () => {
         click($(".encounter-menu-btn"));
-        const items = [...box.querySelectorAll(".encounter-menu button")].map(b => b.textContent ?? "");
+        const menu = $(".encounter-menu")!;
+        expect(menu.querySelector(".encounter-export")).not.toBeNull();
+        expect(menu.querySelectorAll(".encounter-reset, .encounter-roll-npcs, .encounter-show, .encounter-rename-btn")).toHaveLength(0);
         click($(".encounter-menu-btn"));
-
-        expect(items).toContain("Export");
-        expect(items.filter(i => /initiative|players|Rename/.test(i))).toEqual([]);
     });
 
     it("renames the open encounter with the pencil by the picker", () => {

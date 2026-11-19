@@ -7,18 +7,19 @@ import (
 	"errors"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type RoomMessagesModelInterface interface {
-	Create(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (int, time.Time, error)
+	Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (int, time.Time, error)
 	Get(ctx context.Context, id int) (*Message, error)
 	Remove(ctx context.Context, callerID, roomID, messageID int) error
 
 	// DTO
 	// is this even ok? it's convenient
-	CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (MessageWithName, error)
+	CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (MessageWithName, error)
 	// GetPage returns messages for a room using offset pagination: from..to (inclusive)
 	// The returned messages are ordered from newest -> oldest
 	// The maximum number of messages returned is 50 (clamped)
@@ -26,13 +27,19 @@ type RoomMessagesModelInterface interface {
 }
 
 type Message struct {
-	ID            int       `json:"id"`
-	RoomID        int       `json:"roomId"`
-	UserID        int       `json:"userId"`
-	MessageBody   string    `json:"messageBody"`
-	CharacterName *string   `json:"characterName,omitempty"`
-	CommandResult *string   `json:"commandResult,omitempty"`
-	CreatedAt     time.Time `json:"createdAt"`
+	ID            int     `json:"id"`
+	RoomID        int     `json:"roomId"`
+	UserID        int     `json:"userId"`
+	MessageBody   string  `json:"messageBody"`
+	CharacterName *string `json:"characterName,omitempty"`
+	CommandResult *string `json:"commandResult,omitempty"`
+	// ResultData is CommandResult as data, rendered by each viewer in their
+	// own language.
+	ResultData *commands.ResultData `json:"resultData,omitempty"`
+	// LabelData is the label of a roll from a sheet, cut from MessageBody
+	// (ui/static/js/sheet/rollLabel.ts); null for other messages.
+	LabelData json.RawMessage `json:"labelData,omitempty"`
+	CreatedAt time.Time       `json:"createdAt"`
 }
 
 type MessageWithName struct {
@@ -62,10 +69,10 @@ func (m Message) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (int, time.Time, error) {
+func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (int, time.Time, error) {
 	const stmt = `
-INSERT INTO room_messages (room_id, user_id, message_body, command_result, character_name)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO room_messages (room_id, user_id, message_body, command_result, result_data, label_data, character_name)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id, created_at;
 `
 
@@ -78,7 +85,7 @@ RETURNING id, created_at;
 		charName = sql.NullString{String: *characterName, Valid: true}
 	}
 
-	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, cmd, charName)
+	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, cmd, resultData, labelParam(labelData), charName)
 
 	var id int64
 	var createdAt time.Time
@@ -89,14 +96,14 @@ RETURNING id, created_at;
 	return int(id), createdAt, nil
 }
 
-func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (MessageWithName, error) {
+func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, labelData json.RawMessage, characterName *string) (MessageWithName, error) {
 	const stmt = `
 WITH inserted AS (
-    INSERT INTO room_messages (room_id, user_id, message_body, command_result, character_name)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, room_id, user_id, message_body, command_result, character_name, created_at
+    INSERT INTO room_messages (room_id, user_id, message_body, command_result, result_data, label_data, character_name)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING id, room_id, user_id, message_body, command_result, result_data, label_data, character_name, created_at
 )
-SELECT i.id, i.room_id, i.user_id, i.message_body, i.command_result, i.character_name, i.created_at, u.name
+SELECT i.id, i.room_id, i.user_id, i.message_body, i.command_result, i.result_data, i.label_data, i.character_name, i.created_at, u.name
 FROM inserted i
 JOIN users u ON u.id = i.user_id;
 `
@@ -105,7 +112,7 @@ JOIN users u ON u.id = i.user_id;
 		charName = sql.NullString{String: *characterName, Valid: true}
 	}
 
-	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, commandResult, charName)
+	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, commandResult, resultData, labelParam(labelData), charName)
 
 	var (
 		id                int64
@@ -115,10 +122,12 @@ JOIN users u ON u.id = i.user_id;
 		createdAt         time.Time
 		username          string
 		commandResultNull sql.NullString
+		resultDataOut     *commands.ResultData
+		labelDataOut      []byte
 		charNameNull      sql.NullString
 	)
 
-	if err := row.Scan(&id, &roomIDOut, &userIDOut, &body, &commandResultNull, &charNameNull, &createdAt, &username); err != nil {
+	if err := row.Scan(&id, &roomIDOut, &userIDOut, &body, &commandResultNull, &resultDataOut, &labelDataOut, &charNameNull, &createdAt, &username); err != nil {
 		return MessageWithName{}, err
 	}
 
@@ -139,10 +148,21 @@ JOIN users u ON u.id = i.user_id;
 		UserID:        userIDOut,
 		MessageBody:   body,
 		CommandResult: cmdResult,
+		ResultData:    resultDataOut,
+		LabelData:     labelDataOut,
 		CharacterName: charNameOut,
 		CreatedAt:     createdAt,
 	}
 	return MessageWithName{Message: msg, Username: username}, nil
+}
+
+// labelParam is labelData as a query parameter: NULL for none, since pgx
+// would send an empty json.RawMessage as an empty string, which is no JSON.
+func labelParam(labelData json.RawMessage) any {
+	if len(labelData) == 0 {
+		return nil
+	}
+	return string(labelData)
 }
 
 func (m *RoomMessagesModel) Get(ctx context.Context, id int) (*Message, error) {
@@ -210,7 +230,7 @@ func (m *RoomMessagesModel) GetMessagePage(ctx context.Context, roomID int, offs
 
 	// Query messages using offset, ordered by most recent first
 	const stmt = `
-SELECT m.id, m.room_id, m.user_id, m.message_body, m.command_result, m.character_name, m.created_at, u.name
+SELECT m.id, m.room_id, m.user_id, m.message_body, m.command_result, m.result_data, m.label_data, m.character_name, m.created_at, u.name
 FROM room_messages m
 JOIN users u ON u.id = m.user_id
 WHERE m.room_id = $1
@@ -232,11 +252,13 @@ LIMIT $3;
 			userIDOut    int
 			body         string
 			cmd          sql.NullString
+			resultData   *commands.ResultData
+			labelData    []byte
 			charNameNull sql.NullString
 			createdAt    time.Time
 			username     string
 		)
-		if err := rows.Scan(&id, &roomIDOut, &userIDOut, &body, &cmd, &charNameNull, &createdAt, &username); err != nil {
+		if err := rows.Scan(&id, &roomIDOut, &userIDOut, &body, &cmd, &resultData, &labelData, &charNameNull, &createdAt, &username); err != nil {
 			return &page, err
 		}
 
@@ -259,6 +281,8 @@ LIMIT $3;
 			UserID:        userIDOut,
 			MessageBody:   body,
 			CommandResult: commandResult,
+			ResultData:    resultData,
+			LabelData:     labelData,
 			CharacterName: charNameOut,
 			CreatedAt:     createdAt,
 		}

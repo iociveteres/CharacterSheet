@@ -6,6 +6,7 @@ import { isStackExpr, resolveStackExpr } from "../modifiers/entryValues";
 import { signed } from "../components/format";
 import type { Entry } from "../modifiers/entries";
 import { idsInOrder } from "../core/gridOrder";
+import { t } from "../../i18n";
 
 const filled = (s: { value: unknown } | undefined) => String(s?.value ?? "").trim() !== "";
 
@@ -16,22 +17,22 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
     switch (entry.type?.value) {
         case "char_bonus": {
             const bonus = value(entry.bonus), unnatural = value(entry.unnaturalBonus);
-            const parts = [bonus && signed(bonus), unnatural && `unnatural ${signed(unnatural)}`].filter(Boolean);
+            const parts = [bonus && signed(bonus), unnatural && t("sheet.conditions.summary.unnatural", { value: signed(unnatural) })].filter(Boolean);
             return name && parts.length ? `${name} ${parts.join(", ")}` : null;
         }
         case "char_cap": {
             const cap = value(entry.cap);
-            return name && cap > 0 ? `${name} at most ${cap}` : null;
+            return name && cap > 0 ? t("sheet.conditions.summary.atMost", { name, cap }) : null;
         }
         case "char_cap_bonus": {
             const bonus = value(entry.capBonus);
-            return name && bonus !== 0 ? `${name} caps ${signed(bonus)}` : null;
+            return name && bonus !== 0 ? t("sheet.conditions.summary.caps", { name, value: signed(bonus) }) : null;
         }
         case "char_override": {
             // A blank field overrides nothing, a 0 sets 0.
             const parts = [
                 filled(entry.overrideValue) && `= ${value(entry.overrideValue)}`,
-                filled(entry.overrideUnnatural) && `unnatural = ${value(entry.overrideUnnatural)}`,
+                filled(entry.overrideUnnatural) && t("sheet.conditions.summary.unnaturalSet", { value: value(entry.overrideUnnatural) }),
             ].filter(Boolean);
             return name && parts.length ? `${name} ${parts.join(", ")}` : null;
         }
@@ -40,9 +41,9 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             if (!name || bonus === 0) return null;
             const mode = entry.domainMode?.value;
             const domains = ROLL_DOMAINS.filter(d => entry.domains?.[d.value]?.value).map(d => d.label);
-            return mode && domains.length
-                ? `Tests on ${name} ${signed(bonus)} (${mode} ${domains.join(", ")})`
-                : `Tests on ${name} ${signed(bonus)}`;
+            const params = { name, bonus: signed(bonus), domains: domains.join(", ") };
+            if (!mode || !domains.length) return t("sheet.conditions.summary.tests", params);
+            return mode === "only" ? t("sheet.conditions.summary.testsOnly", params) : t("sheet.conditions.summary.testsExcept", params);
         }
         case "skill_bonus": {
             const bonus = value(entry.skillBonus);
@@ -50,15 +51,15 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
         }
         case "ablative_wounds": {
             const wounds = value(entry.ablativeWounds);
-            return wounds !== 0 ? `Ablative wounds ${signed(wounds)}` : null;
+            return wounds !== 0 ? `${t("sheet.terms.stat.ablativeWounds")} ${signed(wounds)}` : null;
         }
         case "initiative_bonus": {
             const bonus = value(entry.initiativeBonus);
-            return bonus !== 0 ? `Initiative ${signed(bonus)}` : null;
+            return bonus !== 0 ? `${t("sheet.terms.stat.initiative")} ${signed(bonus)}` : null;
         }
         case "movement_bonus": {
             const bonus = value(entry.movementBonus);
-            return bonus !== 0 ? `Movement ${signed(bonus)}` : null;
+            return bonus !== 0 ? `${t("sheet.terms.stat.movement")} ${signed(bonus)}` : null;
         }
         case "bonus_ap": {
             const ap = value(entry.apValue);
@@ -73,7 +74,7 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             const expr = (fieldKey === "dmg" || fieldKey === "pen") && !isStackExpr(typed);
             const bonus = value(entry.weaponBonus);
             const text = expr ? (/^[+-]/.test(typed) ? typed : `+${typed}`) : signed(bonus);
-            return name && (expr || bonus !== 0) ? `${name}: ${field ? optionLabel(field) : "Rng"} ${text}` : null;
+            return name && (expr || bonus !== 0) ? `${name}: ${optionLabel(field ?? WEAPON_FIELDS[0])} ${text}` : null;
         }
         default:
             return null;

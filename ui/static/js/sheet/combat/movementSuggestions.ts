@@ -8,11 +8,9 @@ import type { SheetSignals } from "../schema/sheet";
 import { MOVEMENT_REFS } from "../rolls/damageExpression";
 import { damageSuggestions, insertTerm } from "../rolls/damageSuggestions";
 import { idsInOrder } from "../core/gridOrder";
-import { movementRefValue } from "./movement";
+import { MODE_LABELS, MODE_NAMES, movementRefValue } from "./movement";
 import { textAt } from "../core/sync";
-
-/** The names a mode is suggested, in this order. */
-export const MODE_NAMES = ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] as const;
+import { t } from "../../i18n";
 
 // Flyer, Hoverer and Burrower (X) move by their mode at SPD X, size ignored;
 // Digitigrade (X) adds X on foot.
@@ -50,12 +48,12 @@ const wholeSpds = (state: SheetSignals) =>
 export function movementSuggestions(state: SheetSignals, characteristics: readonly Characteristic[], query: string | null): SuggestionGroup[] {
     const q = (query ?? "").trim().toLowerCase();
     const traits = {
-        label: "From traits",
+        label: t("sheet.combat.movement.fromTraits"),
         options: movementTraits(state)
             .filter(({ name, value }) => !q || String(value).startsWith(q) || name.toLowerCase().includes(q))
             .map(({ name, trait, value }) => (MODE_OF_TRAIT[trait]
-                ? { value: String(value), label: `${value} — ${name}, size ignored` }
-                : { value: String(value), label: `+${value} — ${name}, on foot` })),
+                ? { value: String(value), label: t("sheet.combat.movement.wholeSpd", { value, trait: name }) }
+                : { value: String(value), label: t("sheet.combat.movement.onFoot", { value, trait: name }) })),
     };
     const rest = damageSuggestions(characteristics, query, ref => movementRefValue(state, ref), MOVEMENT_REFS, false);
     return [traits, ...rest].filter(g => g.options.length > 0);
@@ -73,8 +71,14 @@ export const movementInsert = (state: SheetSignals) => (text: string, caret: num
 export function modeNameSuggestions(state: SheetSignals, query: string | null): SuggestionGroup[] {
     const fromTraits = [...new Set(movementTraits(state).flatMap(t => (MODE_OF_TRAIT[t.trait] ? [MODE_OF_TRAIT[t.trait]] : [])))];
     const groups = [
-        { label: "From traits", options: fromTraits.map(name => ({ value: name, label: `${name} — from traits` })) },
-        { label: "Modes", options: MODE_NAMES.filter(name => !fromTraits.includes(name)) },
+        {
+            label: t("sheet.combat.movement.fromTraits"),
+            options: fromTraits.map(name => ({ value: name, label: t("sheet.combat.movement.modeFromTraits", { mode: MODE_LABELS[name] }) })),
+        },
+        {
+            label: t("sheet.combat.movement.modesGroup"),
+            options: MODE_NAMES.filter(name => !fromTraits.includes(name)).map(name => ({ value: name, label: MODE_LABELS[name] })),
+        },
     ];
     return filterGroups(groups.filter(g => g.options.length > 0), query);
 }
