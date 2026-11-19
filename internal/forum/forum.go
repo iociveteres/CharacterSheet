@@ -53,7 +53,11 @@ var templateFiles embed.FS
 // New takes the site address without a trailing slash, as BASE_URL.
 func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 	ts, err := template.New("forum").
-		Funcs(template.FuncMap{"t": i18n.TemplateT}).
+		Funcs(template.FuncMap{
+			"t":         i18n.TemplateT,
+			"humanDate": i18n.FormatDate, // the site's name: {{humanDate .Lang .CreatedAt .TimeZone}}
+			"markdown":  renderMarkdown,
+		}).
 		ParseFS(templateFiles, "templates/*.html")
 	if err != nil {
 		return nil, err
