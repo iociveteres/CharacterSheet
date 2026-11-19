@@ -42,6 +42,8 @@
             <textarea id="forum-reply-body" name="body" rows="6" required aria-label="{{t .Lang "forum.posts.yourReply"}}"
                 {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="forum-reply-body-error"{{end}}>{{.Form.Body}}</textarea>
             {{with .Form.Errors.body}}<span class="error field-error" id="forum-reply-body-error">{{.}}</span>{{end}}
+            {{- /* What is not about one field: the limit of how often one writes. */}}
+            {{range .Form.NonFieldErrors}}<span class="error forum-form-error">{{.}}</span>{{end}}
             <div class="forum-form-buttons">
                 <span class="meta left">{{t .Lang "forum.posts.markdownHint"}}</span>
                 <button type="submit" class="f-btn f-primary">{{t .Lang "forum.posts.reply"}}</button>

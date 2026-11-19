@@ -826,7 +826,8 @@ main.forum-wide {
     border-color: var(--accent-attention);
 }
 
-#forum .forum-form .field-error {
+#forum .forum-form .field-error,
+#forum .forum-form .forum-form-error {
     font-size: 15px;
 }
 

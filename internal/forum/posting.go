@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/validator"
@@ -69,7 +68,8 @@ type newTopicData struct {
 }
 
 // newTopic is the page of the new topic form and the address it posts to. A guest goes to sign in
-// and comes back here; a member in a section of moderators' topics gets 403.
+// and comes back here; a member in a section of moderators' topics gets 403; a topic over the
+// limit of topicLimit gets the form back with 429.
 func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 	id, ok := idParam(r)
 	if !ok {
@@ -95,6 +95,7 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 		return
 	}
 	data := newTopicData{view: v, Section: s}
+	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if data.Form, err = readPostForm(r); err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -102,8 +103,20 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 		}
 		data.Form.checkTitle(v.Lang)
 		data.Form.checkBody(v.Lang)
+		status = http.StatusUnprocessableEntity
 		if data.Form.Valid() {
-			_, postID, err := f.createTopic(r.Context(), s.ID, v.Viewer.ID, data.Form.Title, data.Form.Body, time.Now())
+			next, err := f.nextTopicAt(r.Context(), v.Viewer, v.Now)
+			if err != nil {
+				f.host.ServerError(w, r, err)
+				return
+			}
+			if next.After(v.Now) {
+				data.Form.AddNonFieldError(tooOften(v.Lang, next, v.Now))
+				status = http.StatusTooManyRequests
+			}
+		}
+		if data.Form.Valid() {
+			_, postID, err := f.createTopic(r.Context(), s.ID, v.Viewer.ID, data.Form.Title, data.Form.Body, v.Now)
 			if err != nil {
 				f.host.ServerError(w, r, err)
 				return
@@ -111,10 +124,6 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 			http.Redirect(w, r, postURL(postID), http.StatusSeeOther)
 			return
 		}
-	}
-	status := http.StatusOK
-	if r.Method == http.MethodPost {
-		status = http.StatusUnprocessableEntity
 	}
 	f.render(w, r, status, "new_topic.html", data, Page{
 		Title:   i18n.T(v.Lang, "forum.topics.new"),
@@ -134,7 +143,7 @@ func (f *Forum) replyLink(w http.ResponseWriter, r *http.Request, v view) {
 
 // replyPost adds a reply. A guest goes to sign in; a reply the viewer may not make (a closed topic
 // for a member, a deleted topic for a moderator) gets 403; an error of the form shows the last page
-// of the topic again with the text and 422.
+// of the topic again with the text and 422, a reply over the limit of replyLimit with 429.
 func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 	t, ok := f.topicForReply(w, r, v)
 	if !ok {
@@ -154,7 +163,17 @@ func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusUnprocessableEntity)
 		return
 	}
-	postID, err := f.reply(r.Context(), t.ID, v.Viewer.ID, form.Body, time.Now())
+	next, err := f.nextReplyAt(r.Context(), v.Viewer, v.Now)
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	if next.After(v.Now) {
+		form.AddNonFieldError(tooOften(v.Lang, next, v.Now))
+		f.renderTopic(w, r, v, t, pageCount(t.PostCount, postsPerPage), form, http.StatusTooManyRequests)
+		return
+	}
+	postID, err := f.reply(r.Context(), t.ID, v.Viewer.ID, form.Body, v.Now)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
