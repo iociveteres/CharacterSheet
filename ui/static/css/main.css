@@ -152,6 +152,48 @@ nav a.live:after {
     pointer-events: none;
 }
 
+/* Header and nav at phone width. Only pages with a viewport meta (the forum's) get this narrow:
+   without it a phone lays the page out about 980px wide (_prd/forum/plan.md, amendment 5). */
+@media (max-width: 600px) {
+    .site-inner {
+        padding: 2px 8px;
+    }
+
+    header .recolor {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    h1,
+    h1 a {
+        font-size: 20px;
+        line-height: 1.2;
+    }
+
+    nav {
+        height: auto;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .site-wide .site-inner,
+    nav div {
+        flex-wrap: wrap;
+        gap: 4px 1em;
+    }
+
+    /* The marker under the current link points at the nav's bottom edge from its own row. */
+    nav a.live:after {
+        display: none;
+    }
+
+    main {
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
+}
+
 button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):not(.close) {
     background-color: var(--button-bg);
     border-radius: 3px;
