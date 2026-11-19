@@ -10,16 +10,6 @@
             {{end}}
         </div>
         <div>
-            <!-- Language names stay in their own language, untranslated. -->
-            <!-- main.js submits the form when the choice changes. -->
-            <form action='{{reverseRev "Language"}}' method='POST' id='language-form'>
-                <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
-                <input type='hidden' name='redirect' value='{{.RequestURI}}'>
-                <select name='lang' class='padding-small' aria-label='{{t .Lang "site.nav.language"}}'>
-                    <option value='en' lang='en' {{if eq .Lang "en"}}selected{{end}}>English</option>
-                    <option value='ru' lang='ru' {{if eq .Lang "ru"}}selected{{end}}>Русский</option>
-                </select>
-            </form>
             <!-- Toggle the links based on authentication status -->
             {{if .IsAuthenticated}}
             <a href='{{reverseRev "AccountView"}}'>{{t .Lang "site.nav.account"}}</a>

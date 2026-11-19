@@ -31,6 +31,19 @@ header {
     gap: 12px;
 }
 
+#language-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.language-globe {
+    fill: none;
+    stroke: var(--text-secondary);
+    stroke-width: 1.2;
+}
+
 /* full-width bar */
 .site-wide {
     width: 100%;

@@ -51,7 +51,7 @@ function nowSec() { return Math.floor(Date.now() / 1000); }
 	});
 })();
 
-// language select in the nav
+// language select in the header
 (function () {
 	const form = document.getElementById('language-form');
 	if (!form) return;
