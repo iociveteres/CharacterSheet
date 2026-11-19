@@ -364,21 +364,27 @@ body:has(.bestiary) > header {
   text-align: left;
 }
 
-.bestiary-creature-table th:nth-child(2),
-.bestiary-catalog-table th:nth-child(3) {
+.bestiary-creature-table th:nth-child(2) {
   width: 4.5em;
+}
+
+/* The count, date and subscription columns are as wide as their widest cell, the
+   header included, so no language cuts a header; the name takes what is left. */
+.bestiary-catalog-table {
+  table-layout: auto;
+}
+
+.bestiary-catalog-table :is(th, td):nth-child(n+3) {
+  width: 1%;
 }
 
 .bestiary-catalog-table th:nth-child(2) {
   width: 25%;
 }
 
-.bestiary-catalog-table th:nth-child(4) {
-  width: 6.5em;
-}
-
-.bestiary-catalog-table th:nth-child(5) {
-  width: 6em;
+/* Without it the name's unwrapped text would widen the table instead of ending in an ellipsis. */
+.bestiary-catalog-table :is(th, td):first-child {
+  max-width: 0;
 }
 
 .bestiary-catalog-table :is(th, td):nth-child(5) {
