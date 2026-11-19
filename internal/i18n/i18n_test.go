@@ -110,3 +110,14 @@ func TestFromContext(t *testing.T) {
 	assert.Equal(t, FromContext(context.Background()), Default)
 	assert.Equal(t, FromContext(WithLang(context.Background(), "ru")), "ru")
 }
+
+// The t of the templates takes params as name/value pairs.
+func TestTemplateT(t *testing.T) {
+	got, err := TemplateT("ru", "site.home.online.count", "count", 21)
+	assert.NilError(t, err)
+	assert.StringContains(t, got, "21")
+	_, err = TemplateT("ru", "common.close", "count")
+	assert.NotNilError(t, err)
+	_, err = TemplateT("ru", "common.close", 1, 2)
+	assert.NotNilError(t, err)
+}

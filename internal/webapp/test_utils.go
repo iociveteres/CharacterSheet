@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
@@ -55,7 +56,7 @@ func newTestApplication(t *testing.T) *Application {
 	}
 
 	quiet := log.New(io.Discard, "", 0)
-	return NewApplication(&Dependencies{
+	app := NewApplication(&Dependencies{
 		ErrorLog:       quiet,
 		InfoLog:        quiet,
 		Models:         models,
@@ -65,6 +66,12 @@ func newTestApplication(t *testing.T) *Application {
 		SessionManager: sessionManager,
 		Mailer:         &testMailer{},
 	})
+	// No pool: the forum home reads no tables yet.
+	app.Forum, err = forum.New(nil, "https://example.com", app.ForumHost())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return app
 }
 
 type sentMail struct {

@@ -109,6 +109,23 @@ func translate(c map[string]map[string]message, lang, key string, params ...Para
 	return text
 }
 
+// TemplateT is "t" in the html templates of the site and of the forum: {{t .Lang "site.nav.rooms"}},
+// params as name/value pairs: {{t .Lang "x.y" "count" 3}}.
+func TemplateT(lang, key string, pairs ...any) (string, error) {
+	if len(pairs)%2 != 0 {
+		return "", fmt.Errorf("t %q: params must be name/value pairs", key)
+	}
+	params := Params{}
+	for i := 0; i < len(pairs); i += 2 {
+		name, ok := pairs[i].(string)
+		if !ok {
+			return "", fmt.Errorf("t %q: param name %v is not a string", key, pairs[i])
+		}
+		params[name] = pairs[i+1]
+	}
+	return T(lang, key, params), nil
+}
+
 // PluralForms returns the forms of the plural message key in lang, or in Default when lang has
 // none, with {count} left in: for a script that picks the form itself (Intl.PluralRules).
 // nil for an unknown key or a plain message.

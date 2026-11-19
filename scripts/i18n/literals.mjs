@@ -18,7 +18,7 @@ import ts from "typescript";
 import { LANGS, ROOT } from "./catalog.mjs";
 import { isClientSource, lineAt, relToRoot, slash, walk } from "./sources.mjs";
 
-export const DEFAULT_FOLDERS = ["ui/static/js", "ui/html", "internal/mailer/templates"];
+export const DEFAULT_FOLDERS = ["ui/static/js", "ui/html", "internal/mailer/templates", "internal/forum/templates"];
 export const EXCEPTIONS_FILE = path.join(ROOT, "scripts", "i18n-literal-exceptions.txt");
 
 const LABEL_NAMES = new Set(["title", "placeholder", "aria-label", "ariaLabel", "label", "alt"]);

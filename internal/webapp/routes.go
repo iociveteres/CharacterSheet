@@ -106,6 +106,11 @@ func (app *Application) Routes() http.Handler {
 		app.WSServer.BestiaryWs(app.userID(r), w, r)
 	}))
 
+	// The forum routes inside its own ServeMux; its route names stay out of reverse.
+	forumHandler := dynamic.Then(app.Forum.Handler())
+	router.Handler(http.MethodGet, "/forum/*path", forumHandler)
+	router.Handler(http.MethodPost, "/forum/*path", forumHandler)
+
 	router.Handler(http.MethodGet, routeAdd("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 
 	router.Handler(http.MethodGet, "/room/ws/:id", protected.ThenFunc(

@@ -50,17 +50,6 @@ func TestTemplateCacheContentWithoutEnglish(t *testing.T) {
 	}
 }
 
-// The t of the templates takes params as name/value pairs.
-func TestTranslateFunc(t *testing.T) {
-	got, err := translate("ru", "site.home.online.count", "count", 21)
-	assert.NilError(t, err)
-	assert.StringContains(t, got, "21")
-	_, err = translate("ru", "common.close", "count")
-	assert.NotNilError(t, err)
-	_, err = translate("ru", "common.close", 1, 2)
-	assert.NotNilError(t, err)
-}
-
 // Every page of ui/html renders in every language with the least data its handler gives it.
 func TestPagesRenderInEveryLanguage(t *testing.T) {
 	cache, err := NewTemplateCache()
