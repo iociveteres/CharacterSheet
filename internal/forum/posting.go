@@ -234,10 +234,11 @@ func (f *Forum) replyPost(w http.ResponseWriter, r *http.Request, v view) {
 }
 
 // preview is the address the script of block 7 renders the Preview tab with: the body of the form
-// as the topic would show it, the HTML alone. A guest gets 403, a body over the length 422; the
-// app's middleware refuses a request without csrf_token.
+// as the topic would show it, the HTML alone. A guest and a banned user, who have no form to
+// preview, get 403, a body over the length 422; the app's middleware refuses a request without
+// csrf_token.
 func (f *Forum) preview(w http.ResponseWriter, r *http.Request, v view) {
-	if !v.Viewer.SignedIn() {
+	if !v.Viewer.writes() {
 		forbidden(w)
 		return
 	}

@@ -1,0 +1,52 @@
+<div id="forum">
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.log"}}</h2></div></div>
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+
+    {{- /* The moderators' actions, the newest first (mod_log.go): who and when above, as a
+         notification (design/decisions.md, 21), then what, to what, and the reason. A deleted topic
+         or post still links: moderators read it. */}}
+    {{- if .Lines}}
+    <ul class="forum-list forum-mod-log">
+        {{- range .Lines}}
+        <li class="forum-row" id="log-{{.ID}}">
+            <div class="forum-row-main">
+                <span class="meta"><span class="forum-author-name">{{.ModeratorName}}</span> · {{$.Time .At}}</span>
+                <span class="forum-log-what"><strong>{{.ActionText $.Lang}}</strong>
+                    {{- if .UserID}}: <span class="forum-author-name">{{.UserName}}</span>
+                    {{- with .PostID}} · <a href="/forum/post/{{.}}">{{t $.Lang "forum.moderation.logPost"}}</a>{{end}}
+                    {{- else if .PostID}}: <a href="/forum/post/{{.PostID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .TopicID}}: <a href="/forum/topic/{{.TopicID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .SectionID}}: <a href="/forum/section/{{.SectionID}}">{{.SectionName}}</a>
+                    {{- end}}</span>
+                {{- with .Was}}
+                <span class="meta">{{t $.Lang "forum.moderation.logWas"}}: {{.}}</span>
+                {{- end}}
+                {{- if .FromSection}}
+                <span class="meta">{{.FromSection}} → {{.SectionName}}</span>
+                {{- end}}
+                {{- if .From}}
+                <span class="meta">{{t $.Lang "forum.moderation.logPlace"}}: {{.From}} → {{.To}}</span>
+                {{- end}}
+                {{- if .Banned}}
+                <span class="meta">{{t $.Lang "forum.moderation.banTerm"}}: {{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</span>
+                {{- end}}
+                {{- with .Reason}}
+                <span class="forum-log-reason">{{t $.Lang "forum.moderation.reason"}}: {{.}}</span>
+                {{- end}}
+            </div>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.moderation.logEmpty"}}</p></div>
+    {{- end}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+</div>

@@ -1,0 +1,40 @@
+<div id="forum">
+    {{- with .Post.Topic}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    {{- end}}
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.banTitle" "name" .Post.AuthorName}}</h2></div></div>
+
+    {{template "forum-post" .Card}}
+
+    {{- /* The ban of the post's author (bans.go): a term of decision 10 and a reason they will
+         read. A standing ban gives way to the new one. */}}
+    <form class="forum-form forum-confirm" action="{{.Post.URL}}/ban" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <p class="meta">{{t .Lang "forum.moderation.banNote"}}</p>
+        {{- with .Standing}}
+        <div class="forum-notice forum-ban-notice">
+            {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.alreadyBannedUntil" "date" ($.Date .)}}
+            {{- else}}{{t $.Lang "forum.moderation.alreadyBannedForever"}}{{end}}
+            <span class="meta">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+        </div>
+        {{- end}}
+
+        <fieldset class="forum-ban-terms"
+            {{- with .Form.Errors.duration}} aria-invalid="true" aria-describedby="forum-ban-term-error"{{end}}>
+            <legend class="field-label">{{t .Lang "forum.moderation.banTerm"}}</legend>
+            {{- range .Days}}
+            <label class="forum-check"><input type="radio" name="duration" value="{{.}}"{{if eq (print .) $.Form.Duration}} checked{{end}}>
+                {{- if .}}{{t $.Lang "forum.moderation.banDays" "count" .}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</label>
+            {{- end}}
+        </fieldset>
+        {{with .Form.Errors.duration}}<span class="error field-error" id="forum-ban-term-error">{{.}}</span>{{end}}
+
+        {{- template "forum-mod-reason" ($.RequiredReason .Form)}}
+
+        <div class="forum-form-buttons">
+            <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
+            <button type="submit" class="f-btn f-secondary danger">{{t .Lang "forum.moderation.ban"}}</button>
+        </div>
+    </form>
+</div>

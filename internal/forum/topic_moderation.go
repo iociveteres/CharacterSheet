@@ -94,6 +94,8 @@ type modForm struct {
 	Title     string
 	SectionID int
 	Reason    string
+	// Duration is the term of a ban, a banTerm.
+	Duration string
 	validator.Validator
 }
 
@@ -107,6 +109,7 @@ func readModForm(r *http.Request) (modForm, error) {
 		Title:     strings.TrimSpace(r.PostForm.Get("title")),
 		SectionID: section,
 		Reason:    strings.TrimSpace(r.PostForm.Get("reason")),
+		Duration:  r.PostForm.Get("duration"),
 	}, nil
 }
 
@@ -114,11 +117,18 @@ func readModForm(r *http.Request) (modForm, error) {
 type reasonField struct {
 	Lang string
 	Form modForm
+	// Required is the reason of a ban, which its user reads (decision 10 of the plan).
+	Required bool
 }
 
 // ReasonField is the reason of a moderator's form: {{template "forum-mod-reason" ($.ReasonField .Form)}}.
 func (v view) ReasonField(form modForm) reasonField {
 	return reasonField{Lang: v.Lang, Form: form}
+}
+
+// RequiredReason is the reason field of the ban's form.
+func (v view) RequiredReason(form modForm) reasonField {
+	return reasonField{Lang: v.Lang, Form: form, Required: true}
 }
 
 func (m *modForm) checkReason(lang string) {

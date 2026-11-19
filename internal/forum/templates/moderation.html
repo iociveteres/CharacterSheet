@@ -34,8 +34,21 @@
      error. Dot is reasonField (view.ReasonField). */}}
 {{define "forum-mod-reason"}}
         <label class="field-label" for="forum-mod-reason">{{t .Lang "forum.moderation.reason"}}</label>
-        <textarea class="forum-reason" id="forum-mod-reason" name="reason" rows="3"
+        <textarea class="forum-reason" id="forum-mod-reason" name="reason" rows="3"{{if .Required}} required{{end}}
             {{- if .Form.Errors.reason}} aria-invalid="true" aria-describedby="forum-mod-reason-error"{{else}} aria-describedby="forum-mod-reason-hint"{{end}}>{{.Form.Reason}}</textarea>
         {{with .Form.Errors.reason}}<span class="error field-error" id="forum-mod-reason-error">{{.}}</span>
-        {{- else}}<span class="meta" id="forum-mod-reason-hint">{{t .Lang "forum.moderation.reasonOptional"}}</span>{{end}}
+        {{- else}}<span class="meta" id="forum-mod-reason-hint">
+            {{- if .Required}}{{t .Lang "forum.moderation.banReasonHint"}}{{else}}{{t .Lang "forum.moderation.reasonOptional"}}{{end}}</span>{{end}}
+{{- end}}
+
+{{- /* The ban of the viewer at the top of every forum page they read (design/decisions.md, 20): why
+     and until when. Dot is the page's data, which embeds view. */}}
+{{define "forum-ban-notice"}}
+{{- if .Viewer.Banned}}{{with .Viewer.Ban}}
+    <div class="forum-notice forum-ban-notice">
+        {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.bannedUntil" "date" ($.Date .)}}
+        {{- else}}{{t $.Lang "forum.moderation.bannedForever"}}{{end}}
+        <span class="meta">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+    </div>
+{{- end}}{{end}}
 {{- end}}

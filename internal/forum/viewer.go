@@ -48,7 +48,7 @@ func (f *Forum) loadViewer(ctx context.Context, userID int, now time.Time) (View
 		LEFT JOIN LATERAL (
 			-- Of overlapping bans the one that ends last; one until lifted ends never.
 			SELECT id, reason, created_at, expires_at FROM forum_bans
-			WHERE user_id = u.id AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > $2)
+			WHERE user_id = u.id AND `+standingBanSQL("$2")+`
 			ORDER BY expires_at DESC NULLS FIRST, id DESC
 			LIMIT 1
 		) b ON true

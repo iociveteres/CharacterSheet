@@ -1,0 +1,30 @@
+<div id="forum">
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.bans"}}</h2></div></div>
+
+    {{- /* The bans that bind now (bans.go): whom, until when, by whom and for what, and the way to
+         lift one. An expired ban leaves the list by itself. */}}
+    {{- if .Bans}}
+    <ul class="forum-list forum-mod-bans">
+        {{- range .Bans}}
+        <li class="forum-row" id="ban-{{.ID}}">
+            <div class="forum-row-main">
+                <span class="forum-row-title">{{.UserName}}</span>
+                <span class="meta">
+                    {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}
+                    · {{t $.Lang "forum.posts.moderator"}}: <span class="forum-author-name">{{.ModeratorName}}</span>, {{$.Time .CreatedAt}}
+                    {{- with .PostID}} · <a href="/forum/post/{{.}}">{{t $.Lang "forum.moderation.logPost"}}</a>{{end}}</span>
+                <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+            </div>
+            <form class="forum-mod-list-actions" method="POST" action="/forum/mod/bans/{{.ID}}/lift">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-lift-ban">{{t $.Lang "forum.moderation.lift"}}</button>
+            </form>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.moderation.noBans"}}</p></div>
+    {{- end}}
+</div>

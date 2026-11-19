@@ -1,4 +1,5 @@
 <div id="forum">
+    {{- template "forum-ban-notice" .}}
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a></nav>
 
     <div class="forum-head">

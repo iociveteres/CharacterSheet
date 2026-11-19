@@ -82,9 +82,11 @@ main.forum-wide {
     color: var(--text-secondary);
 }
 
+/* Wrapped, the buttons stay on the right: the menu's panel opens leftwards from there. */
 .forum-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
     flex-wrap: wrap;
     margin-left: auto;
@@ -515,7 +517,7 @@ main.forum-wide {
     color: var(--text-secondary);
 }
 
-/* ===== Notices: closed topic, sign in (and a ban, block 5) ===== */
+/* ===== Notices: closed topic, sign in, a ban ===== */
 
 .forum-notice {
     padding: 10px 14px;
@@ -538,6 +540,16 @@ main.forum-wide {
 /* A deleted topic, as its moderator reads it: the stripe of what is gone. */
 .forum-notice.forum-deleted-notice {
     border-left-color: var(--accent-attention);
+}
+
+/* A ban: until when, and the reason on a line of its own (design/decisions.md, 20). */
+.forum-notice.forum-ban-notice {
+    border-left-color: var(--accent-attention);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-ban-notice .meta {
+    display: block;
 }
 
 /* A heading for screen readers only: the home has no visible one (design/decisions.md, 12). */
@@ -956,8 +968,10 @@ main.forum-wide {
     background: var(--button-bg-subtle);
 }
 
-/* The moderators' list of sections: the name and description, the buttons on the right. */
-.forum-mod-sections .forum-row {
+/* The moderators' lists of sections and bans: the name and what is known of it, the buttons on the
+   right. */
+.forum-mod-sections .forum-row,
+.forum-mod-bans .forum-row {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px 16px;
     padding: 10px 14px;
@@ -967,11 +981,39 @@ main.forum-wide {
     margin-right: 6px;
 }
 
-.forum-mod-section-actions {
+.forum-mod-section-actions,
+.forum-mod-list-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 6px;
+}
+
+/* The moderation log: who and when above, what and why under it, one column. */
+.forum-mod-log .forum-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 14px;
+}
+
+.forum-ban-reason,
+.forum-log-what,
+.forum-log-reason {
+    overflow-wrap: anywhere;
+}
+
+/* The terms of a ban, a line of choices under their caption. */
+#forum .forum-ban-terms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.forum-ban-terms legend {
+    margin-bottom: 6px;
+    padding: 0;
 }
 
 /* The page that confirms a deletion: the post, then the question's buttons under it. */
@@ -1185,12 +1227,14 @@ main.forum-wide {
 /* ===== Phone ===== */
 
 @media (max-width: 600px) {
-    /* The buttons of a section go under its name. */
-    .forum-mod-sections .forum-row {
+    /* The buttons of a section or a ban go under its name. */
+    .forum-mod-sections .forum-row,
+    .forum-mod-bans .forum-row {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .forum-mod-section-actions {
+    .forum-mod-section-actions,
+    .forum-mod-list-actions {
         justify-content: flex-start;
     }
 

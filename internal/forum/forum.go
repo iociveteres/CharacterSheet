@@ -51,6 +51,8 @@ type Forum struct {
 	host      Host
 	templates *template.Template
 	mux       *http.ServeMux
+	// patterns are the routes of mux as registered, for the tests that go through every address.
+	patterns []string
 	// now is the time the pages count "5 minutes ago" from; tests set it.
 	now func() time.Time
 }
@@ -72,7 +74,7 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 		return nil, err
 	}
 	f := &Forum{db: db, baseURL: strings.TrimRight(baseURL, "/"), host: host, templates: ts, now: time.Now}
-	f.mux = f.routes()
+	f.mux, f.patterns = f.routes()
 	return f, nil
 }
 
@@ -87,8 +89,20 @@ func (f *Forum) UnreadNotifications(ctx context.Context, userID int) (int, error
 	return 0, nil
 }
 
-func (f *Forum) routes() *http.ServeMux {
-	mux := http.NewServeMux()
+// routeMux is a ServeMux that remembers its patterns: ServeMux does not list them, and the test of
+// bans goes through every address that writes (bans_test.go).
+type routeMux struct {
+	*http.ServeMux
+	patterns []string
+}
+
+func (m *routeMux) HandleFunc(pattern string, h func(http.ResponseWriter, *http.Request)) {
+	m.patterns = append(m.patterns, pattern)
+	m.ServeMux.HandleFunc(pattern, h)
+}
+
+func (f *Forum) routes() (*http.ServeMux, []string) {
+	mux := &routeMux{ServeMux: http.NewServeMux()}
 	mux.HandleFunc("GET /forum/{$}", f.withView(f.home))
 	mux.HandleFunc("GET /forum/section/{id}", f.withView(f.section))
 	mux.HandleFunc("GET /forum/topic/{id}", f.withView(f.topic))
@@ -116,9 +130,14 @@ func (f *Forum) routes() *http.ServeMux {
 	mux.HandleFunc("GET /forum/mod/sections/{id}/edit", f.withView(f.editSection))
 	mux.HandleFunc("POST /forum/mod/sections/{id}/edit", f.withView(f.editSection))
 	mux.HandleFunc("POST /forum/mod/sections/{id}/move", f.withView(f.moveSection))
+	mux.HandleFunc("GET /forum/post/{id}/ban", f.withView(f.banUser))
+	mux.HandleFunc("POST /forum/post/{id}/ban", f.withView(f.banUser))
+	mux.HandleFunc("GET /forum/mod/bans", f.withView(f.bansPage))
+	mux.HandleFunc("POST /forum/mod/bans/{id}/lift", f.withView(f.liftBan))
+	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
-	return mux
+	return mux.ServeMux, mux.patterns
 }
 
 // view is what every handler gets from withView and every page template sees; a page embeds it
@@ -150,6 +169,12 @@ func (v view) Time(t time.Time) template.HTML {
 		t.UTC().Format(time.RFC3339),
 		template.HTMLEscapeString(i18n.FormatDate(v.Lang, t, v.TimeZone)),
 		template.HTMLEscapeString(i18n.FormatAgo(v.Lang, t, v.Now, v.TimeZone))))
+}
+
+// Date is the full date and time, for what is to come rather than past: the end of a ban
+// (design/decisions.md, 4).
+func (v view) Date(t time.Time) string {
+	return i18n.FormatDate(v.Lang, t, v.TimeZone)
 }
 
 // render executes the template of the page file name (templates/<name>) into page.Body and

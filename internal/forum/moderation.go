@@ -26,6 +26,8 @@ const (
 	actionCreateSection modAction = "section.create"
 	actionEditSection   modAction = "section.edit"
 	actionMoveSection   modAction = "section.move"
+	actionBanUser       modAction = "user.ban"
+	actionUnbanUser     modAction = "user.unban"
 )
 
 // modEntry is a row of forum_mod_log: what a moderator did, to what, why. A target is 0 when the
