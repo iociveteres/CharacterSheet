@@ -13,16 +13,19 @@ import (
 type modAction string
 
 const (
-	actionRenameTopic  modAction = "topic.rename"
-	actionPinTopic     modAction = "topic.pin"
-	actionUnpinTopic   modAction = "topic.unpin"
-	actionCloseTopic   modAction = "topic.close"
-	actionOpenTopic    modAction = "topic.open"
-	actionMoveTopic    modAction = "topic.move"
-	actionDeleteTopic  modAction = "topic.delete"
-	actionRestoreTopic modAction = "topic.restore"
-	actionDeletePost   modAction = "post.delete"
-	actionRestorePost  modAction = "post.restore"
+	actionRenameTopic   modAction = "topic.rename"
+	actionPinTopic      modAction = "topic.pin"
+	actionUnpinTopic    modAction = "topic.unpin"
+	actionCloseTopic    modAction = "topic.close"
+	actionOpenTopic     modAction = "topic.open"
+	actionMoveTopic     modAction = "topic.move"
+	actionDeleteTopic   modAction = "topic.delete"
+	actionRestoreTopic  modAction = "topic.restore"
+	actionDeletePost    modAction = "post.delete"
+	actionRestorePost   modAction = "post.restore"
+	actionCreateSection modAction = "section.create"
+	actionEditSection   modAction = "section.edit"
+	actionMoveSection   modAction = "section.move"
 )
 
 // modEntry is a row of forum_mod_log: what a moderator did, to what, why. A target is 0 when the

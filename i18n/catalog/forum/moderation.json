@@ -21,5 +21,14 @@
   "forum.moderation.postDeleted": { "en": "Deleted", "ru": "Удалено", "note": "у удалённого сообщения, которое видит модератор: «Удалено: имя, время — причина»; после слова стоит двоеточие" },
   "forum.moderation.deletePostNote": { "en": "Readers will see a line saying the post was deleted in its place; moderators still read it and can restore it.", "ru": "Читатели увидят на месте сообщения строку «Сообщение удалено»; модераторы по-прежнему видят текст и могут его восстановить.", "note": "на странице, где модератор подтверждает удаление чужого сообщения, над полем причины" },
   "forum.moderation.restorePost": { "en": "Restore the post", "ru": "Восстановить сообщение", "note": "заголовок страницы, где модератор возвращает удалённое сообщение" },
-  "forum.moderation.restorePostNote": { "en": "The post comes back to its place in the topic for everyone.", "ru": "Сообщение вернётся на своё место в теме для всех.", "note": "на странице восстановления сообщения, над полем причины" }
+  "forum.moderation.restorePostNote": { "en": "The post comes back to its place in the topic for everyone.", "ru": "Сообщение вернётся на своё место в теме для всех.", "note": "на странице восстановления сообщения, над полем причины" },
+  "forum.moderation.sections": { "en": "Sections", "ru": "Разделы", "note": "пункт меню «Модерация» на главной форума и заголовок страницы, где модератор создаёт, меняет и переставляет разделы" },
+  "forum.moderation.newSection": { "en": "New section", "ru": "Новый раздел", "note": "кнопка на странице разделов и заголовок страницы создания раздела" },
+  "forum.moderation.editSection": { "en": "Edit the section", "ru": "Изменить раздел", "note": "заголовок страницы, где модератор меняет название, описание и правило раздела" },
+  "forum.moderation.sectionDescription": { "en": "Description", "ru": "Описание", "note": "поле формы раздела: описание под названием на главной форума" },
+  "forum.moderation.sectionNameHint": { "en": "Shown as typed, in every language of the site.", "ru": "Показывается как введено, на всех языках сайта.", "note": "подсказка под полем названия раздела: название не переводится" },
+  "forum.moderation.modsOnlyTopics": { "en": "Only moderators start topics", "ru": "Темы создают только модераторы", "note": "флажок в форме раздела и метка раздела в списке разделов модератора (как «Новости»)" },
+  "forum.moderation.modsOnlyTopicsHint": { "en": "Everyone still replies in its topics.", "ru": "Отвечать в темах могут все.", "note": "подсказка под флажком «Темы создают только модераторы»" },
+  "forum.moderation.moveUp": { "en": "Up", "ru": "Выше", "note": "кнопка в списке разделов: поменять раздел местами с тем, что выше; перед словом стрелка ↑" },
+  "forum.moderation.moveDown": { "en": "Down", "ru": "Ниже", "note": "кнопка в списке разделов: поменять раздел местами с тем, что ниже; перед словом стрелка ↓" }
 }

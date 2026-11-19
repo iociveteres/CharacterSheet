@@ -10,6 +10,16 @@
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>
             </form>
+            {{- /* The moderators' pages (design/decisions.md, 15); the log and the bans of block 5
+                 (session C) join the sections here. */}}
+            {{- if .Viewer.CanModerate}}
+            <details class="forum-menu forum-mod-menu">
+                <summary class="f-btn f-secondary">{{t .Lang "forum.moderation.menu"}} ▾</summary>
+                <div class="forum-menu-panel">
+                    <a href="/forum/mod/sections">{{t .Lang "forum.moderation.sections"}}</a>
+                </div>
+            </details>
+            {{- end}}
         </div>
     </div>
     {{end}}

@@ -935,6 +935,45 @@ main.forum-wide {
     font-size: 15px;
 }
 
+/* A checkbox with its words on the right: main.css styles a bare label as a block. */
+#forum .forum-form .forum-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#forum .forum-check input {
+    margin: 0;
+}
+
+/* The first section has no "Up", the last no "Down". */
+#forum .f-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+#forum .f-secondary:disabled:hover {
+    background: var(--button-bg-subtle);
+}
+
+/* The moderators' list of sections: the name and description, the buttons on the right. */
+.forum-mod-sections .forum-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
+    padding: 10px 14px;
+}
+
+.forum-mod-sections .forum-row-title {
+    margin-right: 6px;
+}
+
+.forum-mod-section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
 /* The page that confirms a deletion: the post, then the question's buttons under it. */
 .forum-confirm {
     margin-top: 12px;
@@ -1146,6 +1185,15 @@ main.forum-wide {
 /* ===== Phone ===== */
 
 @media (max-width: 600px) {
+    /* The buttons of a section go under its name. */
+    .forum-mod-sections .forum-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .forum-mod-section-actions {
+        justify-content: flex-start;
+    }
+
     main.forum-wide {
         padding-left: 8px;
         padding-right: 8px;
