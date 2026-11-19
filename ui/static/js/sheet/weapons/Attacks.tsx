@@ -152,7 +152,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                     <TextField field="clipCur" />/
                     <TextField field="clipMax" />
                 </Row>
-                <Row cls="reload" label={`${t("sheet.termsArms.weaponField.reload")}:`}><ReloadField /></Row>
+                <Row cls="reload" label={`${t("sheet.termsArms.weaponField.reload.short")}:`}><ReloadField /></Row>
             </div>
             <div class="layout-row">
                 <Row cls="special" label={`${t("sheet.termsArms.weaponField.special")}:`}>

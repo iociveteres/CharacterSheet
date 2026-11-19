@@ -53,8 +53,8 @@
   "sheet.magic.profile.sustained": { "en": "Sustained", "ru": "Поддержание", "note": "строка профиля психосилы «Sustained:»" },
 
   "sheet.magic.castPR.uncast": { "en": "No cast yet: PR {pr} counts", "ru": "Без манифестаций: PR {pr}", "note": "полностью «Манифестаций ещё не было: считается PR {pr}»; сокращено при вёрстке: обрезалось в окне урона психосилы" },
-  "sheet.magic.castPR.safe": { "en": "Of the last cast, safe", "ru": "Последней манифестации, безопасной" },
-  "sheet.magic.castPR.kick": { "en": "Of the last cast, +{kick} kick", "ru": "Последней манифестации, усиление +{kick}" },
+  "sheet.magic.castPR.safe": { "en": "Of the last cast, safe", "ru": "Безопасная манифестация" },
+  "sheet.magic.castPR.kick": { "en": "Of the last cast, +{kick} kick", "ru": "Усиление +{kick}" },
   "sheet.magic.castPR.last": { "en": "Of the last cast", "ru": "Последней манифестации" },
   "sheet.magic.castPR.title": { "en": "The PR the damage and penetration count. Lower it for this hit; the next cast sets it again.", "ru": "PR, по которому считаются урон и бронебойность. Можно снизить для этого попадания; следующая манифестация задаст его снова." },
 

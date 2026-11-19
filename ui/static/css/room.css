@@ -2357,10 +2357,10 @@ body {
 
 .encounter-window button.encounter-add-creature {
   grid-column: 3;
+  width: 20px;
   height: 20px;
-  padding: 0 6px;
+  padding: 0;
   line-height: 1;
-  white-space: nowrap;
 }
 
 .encounter-collection:hover {

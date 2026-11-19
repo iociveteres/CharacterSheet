@@ -104,7 +104,7 @@ export function CreaturesColumn() {
                                 e.stopPropagation();
                                 addCreature(c.id, 1);
                             }}
-                            onDblClick={e => e.stopPropagation()}>+ {t("common.add")}</button>
+                            onDblClick={e => e.stopPropagation()}>+</button>
                     </div>
                 ))}
             </div>

@@ -78,6 +78,7 @@
   "sheet.termsArms.weaponField.rof.short": { "en": "RoF", "ru": "RoF", "note": "в таблицах книги латиницей; полностью «Скорострельность»" },
   "sheet.termsArms.weaponField.clip.short": { "en": "Clip", "ru": "Clip", "note": "в таблицах книги латиницей; полностью «Магазин»" },
   "sheet.termsArms.weaponField.reload": { "en": "Reload", "ru": "Перезарядка", "note": "Rld – длительность перезарядки (с. 171)" },
+  "sheet.termsArms.weaponField.reload.short": { "en": "Reload", "ru": "Перезар.", "note": "подпись в строке стрелковой атаки; полностью «Перезарядка», сжимала поля RoF и Clip" },
   "sheet.termsArms.weaponField.special": { "en": "Special", "ru": "Свойства", "note": "особые свойства оружия, колонка «Свойства»" },
   "sheet.termsArms.weaponField.class": { "en": "Class", "ru": "Класс", "note": "класс стрелкового оружия; в книге колонка «Тип» (группа Weapon Training и тип, с. 171)" },
   "sheet.termsArms.weaponField.group": { "en": "Group", "ru": "Группа", "note": "колонка «Группа»: специализация Weapon Training" },

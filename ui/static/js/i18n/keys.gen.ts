@@ -1100,6 +1100,7 @@ export interface I18nParams {
     "sheet.termsArms.weaponField.hit": {};
     "sheet.termsArms.weaponField.pen.short": {};
     "sheet.termsArms.weaponField.reload": {};
+    "sheet.termsArms.weaponField.reload.short": {};
     "sheet.termsArms.weaponField.rng": {};
     "sheet.termsArms.weaponField.rng.short": {};
     "sheet.termsArms.weaponField.rngMax.short": {};
