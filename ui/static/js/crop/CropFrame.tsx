@@ -70,6 +70,7 @@ export function CropFrame(props: CropFrameProps) {
     const [dropping, setDropping] = useState(false);
     const picker = useRef<HTMLInputElement>(null);
     const cell = useRef<HTMLDivElement>(null);
+    const backdropPress = useRef(false);
 
     // Until the new picture comes, the frame would show the old one again.
     useEffect(() => {
@@ -169,7 +170,17 @@ export function CropFrame(props: CropFrameProps) {
             {canEdit && <input ref={picker} type="file" accept={ACCEPT} hidden onChange={onPicked} />}
             {error && !props.onError && <div class={`crop-error ${name}-error`}>{error}</div>}
             {canEdit && editing && (
-                <div class={`crop-popover ${name}-pop`}>
+                // The popover wraps the window exactly, except where a page lays the window over the
+                // screen (the avatar on a phone, account.css): there it is the backdrop, and a tap on it
+                // closes the window. CropEditor leaves presses inside the cell alone; a drag from the
+                // window that ends on the backdrop is no tap.
+                <div class={`crop-popover ${name}-pop`}
+                    onPointerDown={e => {
+                        backdropPress.current = e.target === e.currentTarget;
+                    }}
+                    onClick={e => {
+                        if (backdropPress.current && e.target === e.currentTarget) setEditing(null);
+                    }}>
                     <CropEditor key={editing.key} geometry={props.geometry} title={title} confirmDelete={props.confirmDelete} previews={props.previews}
                         file={editing.file} saved={saved} anchor={cell}
                         onSave={image => {

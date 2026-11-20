@@ -129,6 +129,24 @@ describe("the avatar on the Account page", () => {
         expect([...new Uint8Array(await body.arrayBuffer())]).toEqual([0xFF, 0xD8, ...rest]);
     });
 
+    it("closes on a tap on the backdrop that the phone lays the window on, not on a drag that ends there", () => {
+        renderRow("/avatar/0123456789abcdef");
+        click(frame());
+        const backdrop = container.querySelector<HTMLElement>(".crop-popover.avatar-pop")!;
+        const press = (target: Element) => act(() => {
+            target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+        });
+
+        press(editor()!.querySelector(".crop-zoom input")!);
+        click(backdrop);
+        expect(editor()).not.toBeNull();
+
+        press(backdrop);
+        click(backdrop);
+        expect(editor()).toBeNull();
+        expect(frame().classList.contains("active")).toBe(false);
+    });
+
     it("deletes after the question and shows the empty frame", async () => {
         renderRow("/avatar/0123456789abcdef");
         fetchMock.mockResolvedValueOnce(answer(204));
