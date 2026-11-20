@@ -83,4 +83,5 @@ type AccountAvatar struct {
 	URL     string             // of the saved avatar, "" without one
 	Lock    *models.AvatarLock // a moderator's lock that holds, nil without one
 	Initial string             // the name's first letter, which stands in for a locked avatar
+	Hue     int                // the letter's tint, util.AvatarHue: the same as on the forum
 }

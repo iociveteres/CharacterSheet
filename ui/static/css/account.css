@@ -42,8 +42,6 @@ main:has(#avatar) {
     justify-content: center;
     border: 1px solid var(--border-medium);
     border-radius: 4px;
-    background: var(--bg-item);
-    color: var(--text-secondary);
     font-size: 56px;
     font-weight: bold;
 }

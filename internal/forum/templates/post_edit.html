@@ -10,6 +10,7 @@
     <form class="forum-post reply forum-edit" id="edit" action="{{.Post.URL}}/edit" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="forum-post-author">
+            {{- template "forum-avatar" .EditorAvatar}}
             <span class="name">{{.Viewer.Name}}</span>
             <span>{{t .Lang "forum.posts.yourPost"}} <a href="{{.Post.URL}}">#{{.Post.Number}}</a></span>
         </div>

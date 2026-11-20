@@ -191,6 +191,30 @@ body:has(.account-page) > footer {
     background: var(--bg);
 }
 
+/* The letter that stands for a user without an avatar, on the user's own tint (util.AvatarHue: ten
+   hues 36° apart), the same on the forum and the Account page. Text against background is at least
+   5:1 in both themes. */
+.avatar-hue {
+    background: hsl(var(--avatar-hue) 40% 84%);
+    color: hsl(var(--avatar-hue) 35% 28%);
+}
+
+html[data-theme="dark"] .avatar-hue {
+    background: hsl(var(--avatar-hue) 25% 27%);
+    color: hsl(var(--avatar-hue) 40% 82%);
+}
+
+.avatar-hue-0 { --avatar-hue: 0; }
+.avatar-hue-1 { --avatar-hue: 36; }
+.avatar-hue-2 { --avatar-hue: 72; }
+.avatar-hue-3 { --avatar-hue: 108; }
+.avatar-hue-4 { --avatar-hue: 144; }
+.avatar-hue-5 { --avatar-hue: 180; }
+.avatar-hue-6 { --avatar-hue: 216; }
+.avatar-hue-7 { --avatar-hue: 252; }
+.avatar-hue-8 { --avatar-hue: 288; }
+.avatar-hue-9 { --avatar-hue: 324; }
+
 /* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
 .account-page > table,
 .account-page .avatar-settings,

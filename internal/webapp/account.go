@@ -9,6 +9,7 @@ import (
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
+	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 )
@@ -53,7 +54,7 @@ func (app *Application) accountAvatar(r *http.Request, user *models.User) (*temp
 	if err != nil {
 		return nil, err
 	}
-	a := &templates.AccountAvatar{Lock: lock}
+	a := &templates.AccountAvatar{Lock: lock, Hue: util.AvatarHue(user.ID)}
 	if hash, ok := hashes[user.ID]; ok {
 		a.URL = avatarURL(hash)
 	}

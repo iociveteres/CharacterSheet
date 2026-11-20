@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"charactersheet.iociveteres.net/internal/util"
 )
 
 // The avatar is the site's (extras/decisions.md, 2): the forum reads it through Host and never
@@ -35,16 +37,19 @@ const (
 )
 
 // avatar is what the template "forum-avatar" draws: the image, or the first letter of the name
-// when there is none (extras/decisions.md, 15).
+// when there is none (extras/decisions.md, 15) on the user's own tint (the class avatar-hue-N of
+// main.css, as on the Account page).
 type avatar struct {
 	URL     string
 	Initial string
+	Hue     int
 	Size    int
 }
 
-func newAvatar(url, name string, size int) avatar {
+func newAvatar(url, name string, userID, size int) avatar {
 	a := avatar{URL: url, Size: size}
 	if url == "" {
+		a.Hue = util.AvatarHue(userID)
 		r, _ := utf8.DecodeRuneInString(strings.TrimSpace(name))
 		if r != utf8.RuneError {
 			a.Initial = strings.ToUpper(string(r))

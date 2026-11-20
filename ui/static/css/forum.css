@@ -838,7 +838,6 @@ main.forum-wide {
     height: 96px;
     border-radius: 3px;
     overflow: hidden;
-    background: var(--bg-item);
     align-self: center;
 }
 
@@ -859,12 +858,12 @@ main.forum-wide {
     text-align: center;
 }
 
-/* No avatar: the first letter of the name (decision 15), one level above the post's bg. */
+/* No avatar: the first letter of the name on the user's tint (decision 15; colours in main.css,
+   .avatar-hue). */
 .forum-avatar.letter {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-secondary);
     font-size: 44px;
     font-weight: bold;
     line-height: 1;

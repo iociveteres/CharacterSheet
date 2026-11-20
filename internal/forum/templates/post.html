@@ -61,11 +61,11 @@
 
 {{- /* The avatar of the author column and of the reply form (extras/decisions.md, 1, 9, 14); dot is
      avatar. The name beside it says who it is, so the image has an empty alt. Without an avatar, the
-     first letter of the name (decision 15). */}}
+     first letter of the name on the user's tint (decision 15; main.css, avatar-hue). */}}
 {{define "forum-avatar"}}
 {{- if .URL}}
 <span class="forum-avatar"><img src="{{.URL}}" alt="" width="{{.Size}}" height="{{.Size}}" loading="lazy"></span>
 {{- else}}
-<span class="forum-avatar letter" aria-hidden="true">{{.Initial}}</span>
+<span class="forum-avatar letter avatar-hue avatar-hue-{{.Hue}}" aria-hidden="true">{{.Initial}}</span>
 {{- end}}
 {{- end}}

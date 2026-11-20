@@ -15,7 +15,7 @@
         <div class="crop-cell avatar-cell">
             {{if or .Lock (not .URL)}}
             {{- /* What the forum shows in place of an avatar, not a frame that invites a click. */}}
-            <div class="avatar-letter" aria-hidden="true">{{.Initial}}</div>
+            <div class="avatar-letter avatar-hue avatar-hue-{{.Hue}}" aria-hidden="true">{{.Initial}}</div>
             {{else}}
             <div class="crop-box avatar"><img src="{{.URL}}" alt="{{t $.Lang "account.avatar.title"}}"></div>
             {{end}}

@@ -225,7 +225,7 @@ func (p post) URL() string {
 }
 
 func (p post) Avatar() avatar {
-	return newAvatar(p.AuthorAvatar, p.AuthorName, avatarSize)
+	return newAvatar(p.AuthorAvatar, p.AuthorName, p.AuthorID, avatarSize)
 }
 
 // First is the post that opens the topic.
@@ -311,7 +311,7 @@ type topicData struct {
 }
 
 func (d topicData) ReplyAvatar() avatar {
-	return newAvatar(d.ViewerAvatar, d.Viewer.Name, replyAvatarSize)
+	return newAvatar(d.ViewerAvatar, d.Viewer.Name, d.Viewer.ID, replyAvatarSize)
 }
 
 func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {

@@ -78,6 +78,12 @@ type editPostData struct {
 	view
 	Post postTarget
 	Form postForm
+	// ViewerAvatar is the URL of the editor's own avatar, as in the reply form; empty without one.
+	ViewerAvatar string
+}
+
+func (d editPostData) EditorAvatar() avatar {
+	return newAvatar(d.ViewerAvatar, d.Viewer.Name, d.Viewer.ID, replyAvatarSize)
 }
 
 // editPost is the page of the form that edits a post and the address it posts to. Only the text
@@ -88,7 +94,7 @@ func (f *Forum) editPost(w http.ResponseWriter, r *http.Request, v view) {
 	if !ok {
 		return
 	}
-	data := editPostData{view: v, Post: p, Form: postForm{Body: p.Body}}
+	data := editPostData{view: v, Post: p, Form: postForm{Body: p.Body}, ViewerAvatar: f.avatars(r, v.Viewer.ID)[v.Viewer.ID]}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		form, err := readPostForm(r)

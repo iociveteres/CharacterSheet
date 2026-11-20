@@ -8,12 +8,14 @@ import (
 	"image/png"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
+	"charactersheet.iociveteres.net/internal/util"
 )
 
 // putAvatar uploads `body` as the avatar and returns the status and the URL the server answers with.
@@ -150,6 +152,8 @@ func TestAvatarLockRefusesUpload(t *testing.T) {
 	// The page shows the lock in place of the frame.
 	_, _, body := ts.get(t, "/account/view")
 	assert.StringContains(t, body, `class="avatar-lock"`)
+	// The letter on the user's tint, the one the forum gives them.
+	assert.StringContains(t, body, `class="avatar-letter avatar-hue avatar-hue-`+strconv.Itoa(util.AvatarHue(1))+`"`)
 }
 
 // Anyone sees an avatar, guests too, and its request starts no session; changing one needs a login.
