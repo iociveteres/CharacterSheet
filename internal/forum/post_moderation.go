@@ -91,7 +91,7 @@ func (f *Forum) restorePost(w http.ResponseWriter, r *http.Request, v view) {
 	if !ok {
 		return
 	}
-	data := restorePostData{view: v, Post: p, Card: v.Card(p.Topic.Topic, p.post, false)}
+	data := restorePostData{view: v, Post: p, Card: f.lonePostCard(r, v, p)}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		form, err := readModForm(r)

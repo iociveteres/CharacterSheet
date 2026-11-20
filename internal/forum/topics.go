@@ -212,6 +212,8 @@ type post struct {
 	// AuthorModerator shows the moderator's role, which a name cannot fake (_prd/forum/plan.md,
 	// amendment 6).
 	AuthorModerator bool
+	// AuthorAvatar is the URL of the author's avatar from the host, empty without one.
+	AuthorAvatar string
 }
 
 func (p post) Deleted() bool {
@@ -220,6 +222,10 @@ func (p post) Deleted() bool {
 
 func (p post) URL() string {
 	return postURL(p.ID)
+}
+
+func (p post) Avatar() avatar {
+	return newAvatar(p.AuthorAvatar, p.AuthorName, avatarSize)
 }
 
 // First is the post that opens the topic.
@@ -239,6 +245,13 @@ type postCard struct {
 // Card is a post for the template "forum-post": {{template "forum-post" ($.Card $.Topic.Topic . true)}}.
 func (v view) Card(t Topic, p post, actions bool) postCard {
 	return postCard{view: v, Topic: t, Post: p, Actions: actions}
+}
+
+// lonePostCard is the post a page of its own acts on (delete, restore, ban), without the actions,
+// with its author's avatar fetched for it alone.
+func (f *Forum) lonePostCard(r *http.Request, v view, p postTarget) postCard {
+	p.AuthorAvatar = f.avatars(r, p.AuthorID)[p.AuthorID]
+	return v.Card(p.Topic.Topic, p.post, false)
 }
 
 // topicPosts reads one page of the topic with its authors and their post counts in one query.
@@ -293,6 +306,12 @@ type topicData struct {
 	Pagination pagination
 	// Form is the reply form under the last page, with what was typed when it had an error.
 	Form postForm
+	// ViewerAvatar is the URL of the viewer's avatar for the reply form, empty without one.
+	ViewerAvatar string
+}
+
+func (d topicData) ReplyAvatar() avatar {
+	return newAvatar(d.ViewerAvatar, d.Viewer.Name, replyAvatarSize)
 }
 
 func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
@@ -332,16 +351,26 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 			f.host.LogError(r, err)
 		}
 	}
+	// The authors of the page and the viewer for the reply form, in one call.
+	ids := make([]int, 0, len(posts)+1)
+	for _, p := range posts {
+		ids = append(ids, p.AuthorID)
+	}
+	avatars := f.avatars(r, append(ids, v.Viewer.ID)...)
+	for i := range posts {
+		posts[i].AuthorAvatar = avatars[posts[i].AuthorID]
+	}
 	description := plainText(t.FirstPost, descriptionLength)
 	if description == "" {
 		description = t.Title
 	}
 	data := topicData{
-		view:       v,
-		Topic:      t,
-		Posts:      posts,
-		Pagination: pagination{Lang: v.Lang, Path: t.URL(), Current: page, Total: pageCount(t.PostCount, postsPerPage)},
-		Form:       form,
+		view:         v,
+		Topic:        t,
+		Posts:        posts,
+		Pagination:   pagination{Lang: v.Lang, Path: t.URL(), Current: page, Total: pageCount(t.PostCount, postsPerPage)},
+		Form:         form,
+		ViewerAvatar: avatars[v.Viewer.ID],
 	}
 	f.render(w, r, status, "topic.html", data, Page{
 		Title:       pageTitle(v.Lang, t.Title, page),

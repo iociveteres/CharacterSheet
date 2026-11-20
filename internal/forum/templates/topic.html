@@ -55,6 +55,7 @@
     <form class="forum-post reply" id="reply" action="{{.Topic.URL}}/reply#reply" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="forum-post-author">
+            {{- template "forum-avatar" .ReplyAvatar}}
             <span class="name">{{.Viewer.Name}}</span>
             <span>{{t .Lang "forum.posts.yourReply"}}</span>
         </div>

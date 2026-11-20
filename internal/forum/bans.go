@@ -67,7 +67,7 @@ func (f *Forum) banUser(w http.ResponseWriter, r *http.Request, v view) {
 	data := banData{
 		view:     v,
 		Post:     p,
-		Card:     v.Card(p.Topic.Topic, p.post, false),
+		Card:     f.lonePostCard(r, v, p),
 		Standing: standing,
 		Days:     banDays,
 		Form:     modForm{Duration: strconv.Itoa(banDays[0])},

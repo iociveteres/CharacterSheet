@@ -828,8 +828,55 @@ main.forum-wide {
     color: var(--text);
 }
 
+/* The author's avatar, 96 CSS px from a stored 192×192, sharp on a 2× screen, centred in the
+   column (extras/decisions.md, 1); the name and role centred under it, the facts at the left
+   (decision 9). Compact puts it beside them, a phone at the left of the author line (below). */
+.forum-avatar {
+    display: block;
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--bg-item);
+    align-self: center;
+}
+
+.forum-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 #forum .forum-post-author .forum-avatar {
     margin-bottom: var(--f-av-gap);
+}
+
+.forum-post:not(.reply) .forum-post-author .name,
+.forum-post:not(.reply) .forum-post-author .role {
+    align-self: center;
+    text-align: center;
+}
+
+/* No avatar: the first letter of the name (decision 15), one level above the post's bg. */
+.forum-avatar.letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 44px;
+    font-weight: bold;
+    line-height: 1;
+    user-select: none;
+}
+
+/* The writer's own avatar in the reply form, small and at the top. */
+.forum-post.reply .forum-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    align-self: flex-start;
 }
 
 /* Compact on a wide screen: the avatar at 48px beside the name and role, the facts under all three;
@@ -1598,6 +1645,32 @@ main.forum-wide {
 
     .forum-post-author .facts span:nth-child(2n):not(:last-child) {
         margin-right: 6px;
+    }
+
+    /* The avatar at the left of the author line, over both its lines (name and role, then the
+       facts): 96 would add more than its own height to every post (extras/decisions.md, 14). */
+    #forum .forum-post-author:has(.forum-avatar) {
+        position: relative;
+        /* border-box: room for the avatar and a few pixels above and below it, as in a line of two. */
+        min-height: calc(var(--f-av-phone) + 10px);
+        padding-left: calc(var(--f-av-phone) + 18px);
+    }
+
+    #forum .forum-post-author .forum-avatar {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: var(--f-av-phone);
+        height: var(--f-av-phone);
+        margin: 0;
+        font-size: calc(var(--f-av-phone) / 2);
+    }
+
+    .forum-post:not(.reply) .forum-post-author .name,
+    .forum-post:not(.reply) .forum-post-author .role {
+        align-self: auto;
+        text-align: left;
     }
 
     .forum-post-main {

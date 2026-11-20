@@ -15,6 +15,8 @@
 <article class="forum-post{{if .AuthorModerator}} mod{{end}}{{if .Deleted}} deleted-mod{{end}}" id="post-{{.ID}}"
     {{- with $.QuoteHead}} data-quote-head="{{.}}"{{end}}>
     <div class="forum-post-author">
+        {{- template "forum-avatar" .Avatar}}
+        {{- /* Text until block 6 of extras/plan.md gives users their pages. */}}
         <span class="name">{{.AuthorName}}</span>
         <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
         <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
@@ -56,3 +58,14 @@
 {{- end}}
 {{- end}}
 {{end}}
+
+{{- /* The avatar of the author column and of the reply form (extras/decisions.md, 1, 9, 14); dot is
+     avatar. The name beside it says who it is, so the image has an empty alt. Without an avatar, the
+     first letter of the name (decision 15). */}}
+{{define "forum-avatar"}}
+{{- if .URL}}
+<span class="forum-avatar"><img src="{{.URL}}" alt="" width="{{.Size}}" height="{{.Size}}" loading="lazy"></span>
+{{- else}}
+<span class="forum-avatar letter" aria-hidden="true">{{.Initial}}</span>
+{{- end}}
+{{- end}}

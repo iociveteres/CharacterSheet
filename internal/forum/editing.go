@@ -143,7 +143,7 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 	if !ok {
 		return
 	}
-	data := deletePostData{view: v, Post: p, Card: v.Card(p.Topic.Topic, p.post, false), ByModerator: v.Viewer.DeletesAsModerator(p.post)}
+	data := deletePostData{view: v, Post: p, Card: f.lonePostCard(r, v, p), ByModerator: v.Viewer.DeletesAsModerator(p.post)}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if !data.ByModerator {
