@@ -10,8 +10,8 @@ import { seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import {
-    badge, banAuthor, canReply, closeIncidentNotice, createTopic, follow, forumSeed, idIn, liftBans, moderateTopic,
-    openForum, openLastPage, openNotifications, openSection, openTopic, post, readAllNotifications, reply, sendReply, topicRow, uniqueTitle,
+    badge, canReply, closeIncidentNotice, createTopic, follow, forumSeed, idIn, liftBans, moderateTopic,
+    deleteAndBan, openForum, openLastPage, openNotifications, openSection, openTopic, post, readAllNotifications, reply, sendReply, topicRow, uniqueTitle,
 } from "../../lib/forum";
 
 describe("forum: topic, replies, notifications, moderation", () => {
@@ -133,7 +133,17 @@ describe("forum: topic, replies, notifications, moderation", () => {
     it("keeps a banned user from writing until the ban is lifted", async () => {
         await openSection(moderator, forumSeed().movedTo);
         await openTopic(moderator, topic);
-        await banAuthor(moderator, readerReply, 1, "Testing the ban.");
+        // The ban is a box of the delete window: it opens the terms and renames the button.
+        await follow(moderator.page, post(moderator, readerReply).locator("a.forum-delete-post"));
+        const button = moderator.page.locator("form.forum-delete button[type=submit]");
+        expect(await moderator.page.locator(".forum-delete-ban").isVisible()).toBe(false);
+        expect((await button.innerText()).trim()).toBe("Delete");
+        await moderator.page.locator("#forum-ban-author").check();
+        expect(await moderator.page.locator(".forum-delete-ban").isVisible()).toBe(true);
+        expect((await button.innerText()).trim()).toBe("Delete and ban");
+        await moderator.page.goBack();
+        await deleteAndBan(moderator, readerReply, 1, "Testing the ban.");
+        expect(await post(moderator, readerReply).getAttribute("class")).toContain("deleted-mod");
 
         // The ban and its reason stand at the top of every forum page; no form to write in.
         await openSection(reader, forumSeed().section);

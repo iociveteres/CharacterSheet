@@ -148,12 +148,17 @@ export async function moderateTopic(p: Player, action: "close" | "open" | "move"
     await follow(p.page, p.page.locator("form.forum-mod-form button[type=submit]"));
 }
 
-/** Bans the author of post `id` on the open page for `days` (0: for good) by the post's own link. */
-export async function banAuthor(p: Player, id: number, days: 1 | 7 | 30 | 0, reason: string): Promise<void> {
-    await follow(p.page, post(p, id).locator("a.forum-ban-user"));
-    await p.page.locator(`.forum-ban-terms input[value="${days}"]`).check();
+/**
+ * Deletes post `id` on the open page by its "Delete" and, in the delete window, bans its author
+ * for `days` (0: for good) with the one reason; `recent` also ticks their other posts of 24 hours.
+ */
+export async function deleteAndBan(p: Player, id: number, days: 1 | 7 | 30 | 0, reason: string, { recent = false } = {}): Promise<void> {
+    await follow(p.page, post(p, id).locator("a.forum-delete-post"));
     await p.page.fill("#forum-mod-reason", reason);
-    await follow(p.page, p.page.locator("form.forum-confirm button[type=submit]"));
+    await p.page.locator("#forum-ban-author").check();
+    await p.page.locator(`.forum-ban-terms input[value="${days}"]`).check();
+    if (recent) await p.page.locator('input[name="recent"]').check();
+    await follow(p.page, p.page.locator("form.forum-delete button[type=submit]"));
 }
 
 /** Lifts the bans of `name` on the moderators' list of bans, reached from the forum's home. */
