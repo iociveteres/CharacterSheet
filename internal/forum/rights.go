@@ -122,6 +122,12 @@ func (v Viewer) CanActOnAuthor(p post) bool {
 	return v.Moderator && !p.AuthorModerator && p.AuthorID != v.ID
 }
 
+// CanRestoreRecent: «Restore all» on a line of the log that deleted an author's last day, while
+// some of its posts are still deleted by it (the author's answer 3 of results/7.md).
+func (v Viewer) CanRestoreRecent(l logLine) bool {
+	return v.Moderator && l.Action == actionDeleteRecent && l.Restorable > 0
+}
+
 // The user page (block 6 of extras/plan.md).
 
 // CanModerateUser: the moderators' block of another's page with its history, the ban line

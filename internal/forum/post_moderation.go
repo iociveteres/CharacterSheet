@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
@@ -13,14 +15,15 @@ import (
 
 // deleteReasonSQL is the reason of the moderator who deleted the post of the query's alias (its
 // columns id, author_id and deleted_at), read only while flag (a bool parameter) holds: the last
-// deletion or restoration of the post in the log, if it is a deletion, its own or of the author's
-// last day (recentChange). A post its author deleted after a moderator restored it has none.
+// deletion or restoration of the post in the log, if it is a deletion: its own or of the author's
+// last day (recentChange), restored alone or with that day (restoreRecent). A post its author
+// deleted after a moderator restored it has none.
 func deleteReasonSQL(alias, flag string) string {
-	return `COALESCE((SELECT CASE WHEN l.action <> '` + string(actionRestorePost) + `' THEN l.reason END
+	return `COALESCE((SELECT CASE WHEN l.action IN ('` + string(actionDeletePost) + `', '` + string(actionDeleteRecent) + `') THEN l.reason END
 		FROM forum_mod_log l
 		WHERE ` + flag + ` AND ` + alias + `.deleted_at IS NOT NULL
 		  AND (l.post_id = ` + alias + `.id AND l.action IN ('` + string(actionDeletePost) + `', '` + string(actionRestorePost) + `')
-		       OR l.user_id = ` + alias + `.author_id AND l.action = '` + string(actionDeleteRecent) + `'
+		       OR l.user_id = ` + alias + `.author_id AND l.action IN ('` + string(actionDeleteRecent) + `', '` + string(actionRestoreRecent) + `')
 		          AND l.data->'posts' @> to_jsonb(` + alias + `.id))
 		ORDER BY l.id DESC LIMIT 1), '')`
 }
@@ -37,11 +40,15 @@ const recentPostsSQL = `
 // recentWindow is how far back the delete window reaches for the author's other posts.
 const recentWindow = 24 * time.Hour
 
-// recentPosts counts what recentChange of the post would delete at now, for the window's box.
-func (f *Forum) recentPosts(ctx context.Context, p postTarget, now time.Time) (int, error) {
-	var n int
-	err := f.db.QueryRow(ctx, `SELECT count(*) FROM (`+recentPostsSQL+`) r`, p.AuthorID, p.ID, now.Add(-recentWindow)).Scan(&n)
-	return n, err
+// recentPosts counts what recentChange of the post would delete at now, for the window's box, and
+// the author's topics of the same day that stand, which it leaves: they go with «Moderation» of each
+// topic (the author's answer 1 of results/7.md).
+func (f *Forum) recentPosts(ctx context.Context, p postTarget, now time.Time) (posts, topics int, err error) {
+	err = f.db.QueryRow(ctx, `
+		SELECT (SELECT count(*) FROM (`+recentPostsSQL+`) r),
+		       (SELECT count(*) FROM forum_topics WHERE author_id = $1 AND created_at > $3 AND deleted_at IS NULL)`,
+		p.AuthorID, p.ID, now.Add(-recentWindow)).Scan(&posts, &topics)
+	return posts, topics, err
 }
 
 // recentChange deletes the author's other posts of the last day (recentPostsSQL) with the reason
@@ -57,26 +64,9 @@ func recentChange(p postTarget, reason string, by int, at time.Time) (modEntry, 
 		if err != nil {
 			return err
 		}
-		var ids, topics []int
-		var id, topicID int
-		_, err = pgx.ForEachRow(rows, []any{&id, &topicID}, func() error {
-			ids, topics = append(ids, id), append(topics, topicID)
-			return nil
-		})
+		ids, err := recountTouched(ctx, tx, rows)
 		if err != nil {
 			return err
-		}
-		if len(ids) == 0 {
-			return errNoChange
-		}
-		// In the order of their ids, as every recount locks its topic: two such deletions in the
-		// same topics wait for each other instead of deadlocking.
-		slices.Sort(ids)
-		slices.Sort(topics)
-		for _, t := range slices.Compact(topics) {
-			if err := recountTopic(ctx, tx, t); err != nil {
-				return err
-			}
 		}
 		e.Data["posts"] = ids
 		return nil
@@ -118,6 +108,91 @@ func postChange(restore bool, p postTarget, reason string, by int, at time.Time)
 		}
 		return recountTopic(ctx, tx, p.Topic.ID)
 	}
+}
+
+// restorableSQL is the condition of a post q that the line l of actionDeleteRecent deleted and that
+// is still deleted by it: in its list, deleted at its time by its moderator (a post restored and
+// deleted again since has another time), in a topic that stands, as CanRestorePost asks.
+const restorableSQL = `l.data->'posts' @> to_jsonb(q.id)
+	AND q.deleted_at = l.created_at AND q.deleted_by = l.moderator_id
+	AND EXISTS (SELECT 1 FROM forum_topics t WHERE t.id = q.topic_id AND t.deleted_at IS NULL)`
+
+// restoreRecent is the button «Restore all» of a line «N posts deleted» in the moderation log
+// (POST /forum/mod/log/{id}/restore): the posts that line deleted come back if nothing else has
+// happened to them since, their topics are recounted, and the log and the author get a line of
+// their own. Back to the page of the log in the form's back, at the line.
+func (f *Forum) restoreRecent(w http.ResponseWriter, r *http.Request, v view) {
+	id, ok := idParam(r)
+	if !ok {
+		f.host.NotFound(w, r)
+		return
+	}
+	if !f.modOnly(w, r, v) {
+		return
+	}
+	var userID int
+	err := f.db.QueryRow(r.Context(), `
+		SELECT user_id FROM forum_mod_log WHERE id = $1 AND action = $2`, id, string(actionDeleteRecent)).Scan(&userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		f.host.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	entry := modEntry{Action: actionRestoreRecent, UserID: userID}
+	err = f.moderate(r.Context(), v.Viewer, v.Now, entry, func(ctx context.Context, tx pgx.Tx, e *modEntry) error {
+		rows, err := tx.Query(ctx, `
+			UPDATE forum_posts q SET deleted_at = NULL, deleted_by = NULL
+			FROM forum_mod_log l
+			WHERE l.id = $1 AND `+restorableSQL+`
+			RETURNING q.id, q.topic_id`, id)
+		if err != nil {
+			return err
+		}
+		ids, err := recountTouched(ctx, tx, rows)
+		if err != nil {
+			return err
+		}
+		e.Data["posts"], e.Data["entry"] = ids, id
+		return nil
+	})
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	back := r.PostFormValue("back")
+	if back != modLogURL && !strings.HasPrefix(back, modLogURL+"?") {
+		back = modLogURL
+	}
+	http.Redirect(w, r, back+"#log-"+strconv.Itoa(id), http.StatusSeeOther)
+}
+
+// recountTouched reads the id and topic_id of the posts a statement changed and recounts each topic
+// once, in the order of their ids, as every recount locks its topic: two such changes in the same
+// topics wait for each other instead of deadlocking. The ids come back sorted; errNoChange for none.
+func recountTouched(ctx context.Context, tx pgx.Tx, rows pgx.Rows) ([]int, error) {
+	var ids, topics []int
+	var id, topicID int
+	_, err := pgx.ForEachRow(rows, []any{&id, &topicID}, func() error {
+		ids, topics = append(ids, id), append(topics, topicID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, errNoChange
+	}
+	slices.Sort(ids)
+	slices.Sort(topics)
+	for _, t := range slices.Compact(topics) {
+		if err := recountTopic(ctx, tx, t); err != nil {
+			return nil, err
+		}
+	}
+	return ids, nil
 }
 
 // moderatePost writes the moderator's deletion of another's post or restoration of the post from

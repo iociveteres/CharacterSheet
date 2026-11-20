@@ -140,7 +140,6 @@ func (m *modForm) checkReason(lang string) {
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": reasonMaxChars}))
 }
 
-
 func (m *modForm) checkSection(lang string, sections []Section, current int) {
 	for _, s := range sections {
 		if s.ID == m.SectionID {

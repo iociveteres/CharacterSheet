@@ -151,6 +151,7 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/mod/bans", f.withView(f.bansPage))
 	mux.HandleFunc("POST /forum/mod/bans/{id}/lift", f.withView(f.liftBan))
 	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))
+	mux.HandleFunc("POST /forum/mod/log/{id}/restore", f.withView(f.restoreRecent))
 	mux.HandleFunc("POST /forum/view/density", f.withView(f.setDensity))
 	mux.HandleFunc("GET /forum/user/{id}", f.withView(f.userPage))
 	mux.HandleFunc("POST /forum/user/{id}/about", f.withView(f.saveAbout))

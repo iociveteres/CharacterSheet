@@ -46,8 +46,11 @@ type logLine struct {
 	// LockUntil is its end. Empty for other actions.
 	Lock      string
 	LockUntil *time.Time
-	// Count is how many posts a deletion of the author's last day took.
+	// Count is how many posts a deletion of the author's last day took, or its restoration gave back.
 	Count int
+	// Restorable is how many of the posts of a deletion of the last day are still deleted by it
+	// (restorableSQL): «Restore all» shows while there are some.
+	Restorable int
 }
 
 // ActionText words the code of the line in the reader's language; a code this build does not know
@@ -76,6 +79,8 @@ func (l logLine) ActionText(lang string) string {
 		return i18n.T(lang, "forum.moderation.action.postRestore")
 	case actionDeleteRecent:
 		return i18n.T(lang, "forum.moderation.action.postDeleteRecent", i18n.Params{"count": l.Count})
+	case actionRestoreRecent:
+		return i18n.T(lang, "forum.moderation.action.postRestoreRecent", i18n.Params{"count": l.Count})
 	case actionCreateSection:
 		return i18n.T(lang, "forum.moderation.action.sectionCreate")
 	case actionEditSection:
@@ -102,6 +107,8 @@ type modLogData struct {
 	Pagination pagination
 	// User is the user the log is filtered by (?user=), nil for the whole log.
 	User *logUser
+	// Back is the address of this page, where «Restore all» comes back to.
+	Back string
 }
 
 type logUser struct {
@@ -121,7 +128,7 @@ func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	data := modLogData{view: v}
+	data := modLogData{view: v, Back: r.URL.RequestURI()}
 	path, userID := modLogURL, 0
 	if q := r.URL.Query(); q.Has("user") {
 		id, err := strconv.Atoi(q.Get("user"))
@@ -186,7 +193,8 @@ func (f *Forum) logLines(ctx context.Context, userID, limit, offset int) ([]logL
 		       CASE WHEN l.action = 'user.ban' THEN (l.data->>'expiresAt')::timestamptz END,
 		       COALESCE(CASE WHEN l.action = 'avatar.remove' THEN l.data->>'lock' END, ''),
 		       CASE WHEN l.action = 'avatar.remove' THEN (l.data->>'lockUntil')::timestamptz END,
-		       COALESCE(CASE WHEN l.action = 'post.delete_recent' THEN jsonb_array_length(l.data->'posts') END, 0)
+		       COALESCE(CASE WHEN l.action IN ('post.delete_recent', 'post.restore_recent') THEN jsonb_array_length(l.data->'posts') END, 0),
+		       CASE WHEN l.action = 'post.delete_recent' THEN (SELECT count(*) FROM forum_posts q WHERE `+restorableSQL+`) ELSE 0 END
 		FROM forum_mod_log l
 		JOIN users m ON m.id = l.moderator_id
 		LEFT JOIN forum_topics t ON t.id = l.topic_id

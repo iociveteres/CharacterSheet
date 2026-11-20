@@ -41,14 +41,34 @@ func (m *modForm) checkBan(lang string) {
 }
 
 // oldBanPage is the address of the page that banned the author of a post before the ban went into
-// the post's delete window: it leads there, and that page asks for the rights.
+// the post's delete window: it leads there, and that page asks for the rights. A deleted post has
+// no delete window: its author's page, where the ban is (the author's answer 2 of results/7.md).
+// A post of a deleted topic still goes to the window, which hides it from all but moderators.
 func (f *Forum) oldBanPage(w http.ResponseWriter, r *http.Request) {
 	id, ok := idParam(r)
 	if !ok {
 		f.host.NotFound(w, r)
 		return
 	}
-	http.Redirect(w, r, postURL(id)+"/delete", http.StatusMovedPermanently)
+	var authorID int
+	var deleted bool
+	err := f.db.QueryRow(r.Context(), `
+		SELECT p.author_id, p.deleted_at IS NOT NULL AND t.deleted_at IS NULL
+		FROM forum_posts p JOIN forum_topics t ON t.id = p.topic_id
+		WHERE p.id = $1`, id).Scan(&authorID, &deleted)
+	if errors.Is(err, pgx.ErrNoRows) {
+		f.host.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	target := postURL(id) + "/delete"
+	if deleted {
+		target = userURL(authorID)
+	}
+	http.Redirect(w, r, target, http.StatusMovedPermanently)
 }
 
 // banChange bans the author of the post from the delete window (block 7 of extras/plan.md) for days

@@ -79,6 +79,9 @@ func (n notificationRow) line(v view, accountURL string) notificationLine {
 		} else {
 			key = "forum.notifications.text.user.banForever"
 		}
+	case notificationKind(actionRestoreRecent):
+		// The code has an underscore, the catalog's keys none.
+		key = "forum.notifications.text.post.restoreRecent"
 	case notificationKind(actionRemoveAvatar):
 		// A lock of a term until a date, for good, or none.
 		end, _ := n.Params["lockUntil"].(string)
@@ -107,6 +110,9 @@ func (n notificationRow) line(v view, accountURL string) notificationLine {
 		l.URL = accountURL
 	case notificationKind(actionEraseAbout):
 		l.URL = userURL(v.Viewer.ID) + "#about"
+	case notificationKind(actionRestoreRecent):
+		// Posts of several topics: the tab of the reader's posts lists them.
+		l.URL = userURL(v.Viewer.ID)
 	}
 	if n.TopicID != nil && v.Viewer.CanReadTopic(Topic{DeletedAt: n.TopicDeleted}) {
 		if n.PostID != nil {

@@ -52,6 +52,8 @@ func TestRights(t *testing.T) {
 	restorePost := func(t Topic, p post) func(Viewer) bool {
 		return func(v Viewer) bool { return v.CanRestorePost(t, p) }
 	}
+	restorable := logLine{Action: actionDeleteRecent, Count: 3, Restorable: 2}
+	restoreDay := func(l logLine) func(Viewer) bool { return func(v Viewer) bool { return v.CanRestoreRecent(l) } }
 	author := func(p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanActOnAuthor(p) } }
 	othersDeleted := post{ID: 15, AuthorID: 3, Number: 6, DeletedAt: &deletedAt}
 	othersFirst := post{ID: 16, AuthorID: 3, Number: 1}
@@ -180,6 +182,13 @@ func TestRights(t *testing.T) {
 		{"moderator acts on the author of a deleted post", moderator, author(othersDeleted), true},
 		{"moderator acts on another moderator", moderator, author(byModerator), false},
 		{"moderator acts on themself", moderator, author(modsReply), false},
+
+		{"guest restores a day", guest, restoreDay(restorable), false},
+		{"member restores a day", member, restoreDay(restorable), false},
+		{"banned user restores a day", banned, restoreDay(restorable), false},
+		{"moderator restores a day", moderator, restoreDay(restorable), true},
+		{"moderator restores a day restored", moderator, restoreDay(logLine{Action: actionDeleteRecent}), false},
+		{"moderator restores from another line", moderator, restoreDay(logLine{Action: actionDeletePost, Restorable: 1}), false},
 
 		// The ban line, the moderators' block and its actions (avatar, «About», history): a
 		// moderator on another's page (extras/decisions.md, 20).

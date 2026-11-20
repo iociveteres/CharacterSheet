@@ -24,7 +24,10 @@ const (
 	actionDeletePost   modAction = "post.delete"
 	// actionDeleteRecent is the author's other posts of the last day, deleted from the window of
 	// one of them (block 7 of extras/plan.md): one line for all, their ids in data.posts.
-	actionDeleteRecent  modAction = "post.delete_recent"
+	actionDeleteRecent modAction = "post.delete_recent"
+	// actionRestoreRecent brings back what one line of actionDeleteRecent deleted and is still
+	// deleted by it (restoreRecent): its ids in data.posts, that line in data.entry.
+	actionRestoreRecent modAction = "post.restore_recent"
 	actionRestorePost   modAction = "post.restore"
 	actionCreateSection modAction = "section.create"
 	actionEditSection   modAction = "section.edit"

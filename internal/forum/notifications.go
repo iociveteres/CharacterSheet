@@ -50,6 +50,9 @@ var notifiedActions = map[modAction]bool{
 	actionRemoveAvatar: true,
 	actionUnlockAvatar: true,
 	actionEraseAbout:   true,
+	// Restoring one post notifies, so does restoring the posts of a day (the author's answer 3 of
+	// results/7.md); deleting them did not: the author hears of the post of the window.
+	actionRestoreRecent: true,
 }
 
 // notificationsKeptFor: a user's read notifications older than this go when they get a new one,
@@ -165,7 +168,7 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 	switch e.Action {
 	case actionDeletePost, actionRestorePost:
 		recipient = "p.author_id"
-	case actionBanUser, actionUnbanUser, actionRemoveAvatar, actionUnlockAvatar, actionEraseAbout:
+	case actionBanUser, actionUnbanUser, actionRemoveAvatar, actionUnlockAvatar, actionEraseAbout, actionRestoreRecent:
 		recipient = "u.id"
 	}
 	params := map[string]any{}
@@ -178,6 +181,10 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 		params["expiresAt"] = e.Data["expiresAt"]
 	case actionRenameTopic:
 		params["oldTitle"] = e.Data["title"]
+	case actionRestoreRecent:
+		if posts, ok := e.Data["posts"].([]int); ok {
+			params["count"] = len(posts)
+		}
 	case actionRemoveAvatar:
 		// lock: none, 7, 30 or forever; lockUntil is the end of a term, null otherwise.
 		params["lock"], params["lockUntil"] = e.Data["lock"], e.Data["lockUntil"]

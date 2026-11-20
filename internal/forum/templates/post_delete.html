@@ -46,6 +46,11 @@
             {{- if .Recent}}
             <label class="forum-check"><input type="checkbox" name="recent" value="1"{{if $.Form.Recent}} checked{{end}}> {{t $.Lang "forum.moderation.deleteRecent" "count" .Recent}}</label>
             {{- end}}
+            {{- /* The box leaves the author's topics of that day: a first post goes only with its
+                 topic (the author's answer 1 of results/7.md). */}}
+            {{- with .RecentTopics}}
+            <p class="meta forum-delete-topics">{{t $.Lang "forum.moderation.recentTopics" "count" .}}</p>
+            {{- end}}
         </fieldset>
         {{- end}}
         {{- else}}

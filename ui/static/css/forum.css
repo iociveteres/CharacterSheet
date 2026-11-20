@@ -1308,6 +1308,11 @@ main.forum-wide {
     overflow-wrap: anywhere;
 }
 
+/* «Restore all» under a line of the log, at its left as the line's text. */
+.forum-log-restore {
+    margin-top: 6px;
+}
+
 /* The terms of a ban, a line of choices under their caption. */
 #forum .forum-ban-terms {
     display: flex;

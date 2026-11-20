@@ -212,11 +212,14 @@ func TestDeleteRecent(t *testing.T) {
 	s.h.userID = s.mod
 	p, err := s.f.loadPost(context.Background(), window, Viewer{ID: s.mod, Moderator: true})
 	assert.NilError(t, err)
-	n, err := s.f.recentPosts(context.Background(), p, now)
+	n, topics, err := s.f.recentPosts(context.Background(), p, now)
 	assert.NilError(t, err)
 	assert.Equal(t, n, 2)
+	// Her topic of the day, which the box leaves: the block says how many.
+	assert.Equal(t, topics, 1)
 	s.h.get(t, s.f, deleteURL(window))
 	assert.StringContains(t, string(s.h.page.Body), `name="recent" value="1">`)
+	assert.StringContains(t, string(s.h.page.Body), `class="meta forum-delete-topics"`)
 
 	rec := s.h.post(t, s.f, deleteURL(window), url.Values{"recent": {"1"}, "reason": {"spam"}})
 	assert.Equal(t, redirectedTo(t, rec), postURL(window))

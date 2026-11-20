@@ -233,6 +233,7 @@ func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 		"sections/{id}": fmt.Sprint(s.section),
 		"bans/{id}":     fmt.Sprint(banID),
 		"user/{id}":     fmt.Sprint(s.alice),
+		"log/{id}":      "1",
 	}
 	// Each field any form of the forum reads, valid, so that only the ban stands in the way.
 	form := url.Values{

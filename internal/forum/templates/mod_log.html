@@ -44,6 +44,15 @@
                 {{- with .Reason}}
                 <span class="forum-log-reason">{{t $.Lang "forum.moderation.reason"}}: {{.}}</span>
                 {{- end}}
+                {{- /* The posts of an author's day, deleted from one delete window, come back at
+                     once while some are still deleted by it (post_moderation.go, restoreRecent). */}}
+                {{- if $.Viewer.CanRestoreRecent .}}
+                <form class="forum-log-restore" method="POST" action="/forum/mod/log/{{.ID}}/restore">
+                    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                    <input type="hidden" name="back" value="{{$.Back}}">
+                    <button type="submit" class="f-btn f-secondary forum-restore-recent">↺ {{t $.Lang "forum.moderation.restoreAll"}}</button>
+                </form>
+                {{- end}}
             </div>
         </li>
         {{- end}}

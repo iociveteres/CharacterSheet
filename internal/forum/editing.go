@@ -152,8 +152,9 @@ type deleteAuthor struct {
 	// Ban is their standing ban: the window offers no other then.
 	Ban  *userBan
 	Days []int
-	// Recent is how many of their other posts «of the last 24 hours» would go too.
-	Recent int
+	// Recent is how many of their other posts «of the last 24 hours» would go too; RecentTopics are
+	// their topics of that day, which the box leaves and the block points to.
+	Recent, RecentTopics int
 }
 
 // deletePost is the page that asks to confirm deleting a post, without a script, and the address
@@ -193,7 +194,7 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 		a := deleteAuthor{ID: p.AuthorID, Name: p.AuthorName, Days: banDays}
 		var err error
 		if a.Ban, err = f.standingBan(r.Context(), p.AuthorID, v.Now); err == nil {
-			a.Recent, err = f.recentPosts(r.Context(), p, v.Now)
+			a.Recent, a.RecentTopics, err = f.recentPosts(r.Context(), p, v.Now)
 		}
 		if err != nil {
 			f.host.ServerError(w, r, err)
