@@ -272,6 +272,17 @@ main.forum-wide {
     left: 12px;
 }
 
+/* "Pictures at once": a checkbox item, off by default (extras/decisions.md, 12). */
+.forum-menu-toggle::before {
+    content: "☐";
+    position: absolute;
+    left: 10px;
+}
+
+.forum-menu-toggle[aria-pressed="true"]::before {
+    content: "☑";
+}
+
 /* A topic's head: the buttons level with the title's first line at any width; a long title wraps
    beside them instead of pushing them to a line of their own, and the author's line runs under both
    (extras/decisions.md, 10). */
@@ -1165,6 +1176,152 @@ main.forum-wide {
     outline: 1px solid var(--accent);
 }
 
+/* ===== Pictures in posts (images.go, extras/images.md) ===== */
+
+/* A picture from any https host under a closed spoiler of its own: a <details> whose line names the
+   caption and the host. The <img> inside is lazy, so the browser asks the host for it only once the
+   spoiler opens; "Pictures at once" renders the blocks open. No script needed. */
+.forum-img-spoiler {
+    max-width: 100%;
+    margin: 0;
+}
+
+/* The closed line: the forum's quiet button, as wide as its text. */
+.forum-img-spoiler > summary {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 4px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+    font-size: 15px;
+    line-height: 1.35;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.forum-img-spoiler > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-img-spoiler > summary:hover {
+    background: var(--bg-item2);
+}
+
+.forum-img-spoiler > summary:focus-visible {
+    outline: 1px solid var(--accent);
+}
+
+/* ▸ closed, ▾ open, as the forum's other <details>. */
+.forum-img-spoiler > summary::before {
+    content: "▸";
+    color: var(--text-secondary);
+}
+
+.forum-img-spoiler[open] > summary::before {
+    content: "▾";
+}
+
+.forum-img-spoiler .cap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.forum-img-spoiler .host {
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* In a quote (bg-item): one level up. */
+.forum-post-body blockquote .forum-img-spoiler > summary {
+    background: var(--bg-item2);
+}
+
+.forum-post-body blockquote .forum-img-spoiler > summary:hover {
+    background: var(--bg-item3);
+}
+
+/* Open: the picture under its line; the line stays, to close it again. */
+.forum-img-spoiler[open] > summary {
+    margin-bottom: 6px;
+}
+
+.forum-img-spoiler .forum-img-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+/* The picture: no wider than the post, no taller than 480px (360px on a phone); a click opens the
+   original in a new tab. Its size is unknown until it loads: min-height keeps a loading picture
+   from being a 0px line. */
+.forum-img-link:not([hidden]) {
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
+    vertical-align: top;
+}
+
+.forum-img {
+    max-width: 100%;
+    max-height: 480px;
+    min-height: 40px;
+    min-width: 40px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+    object-fit: contain;
+}
+
+/* A quote's pictures smaller: the reader saw them in the quoted post. */
+.forum-post-body blockquote .forum-img {
+    max-height: 240px;
+}
+
+/* A picture that did not load (removed, host down, blocked for this reader, not a picture at all
+   as a Yandex Disk page): one line with its link, which the forum script shows in its place. */
+.forum-img-broken:not([hidden]) {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px dashed var(--accent-attention);
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-img-broken:hover {
+    color: var(--link);
+}
+
+/* An http:// picture (a https page cannot show it), one inside a link or past the limit of blocks
+   stays a link, marked as a picture. */
+.forum-img-off::before {
+    content: "🖼 ";
+}
+
+@media (max-width: 600px) {
+    .forum-img {
+        max-height: 360px;
+    }
+
+    /* A finger-sized line, as the forum's other buttons on a phone. */
+    .forum-img-spoiler > summary {
+        min-height: 40px;
+        align-items: center;
+        padding: 6px 12px;
+    }
+}
+
 /* ===== Forms ===== */
 
 #forum form div {
@@ -1485,6 +1642,22 @@ main.forum-wide {
 #forum .forum-hint td:first-child {
     color: var(--text-secondary);
     white-space: pre;
+}
+
+/* The picture's row is the long one: its explanation wraps rather than widening the table; on a
+   phone its example breaks after the caption too, so that the table fits the screen. */
+#forum .forum-hint .forum-hint-wide td:last-child {
+    max-width: 320px;
+}
+
+@media (max-width: 600px) {
+    #forum .forum-hint table {
+        max-width: calc(100vw - 24px);
+    }
+
+    #forum .forum-hint .forum-hint-wide td:first-child {
+        white-space: normal;
+    }
 }
 
 .forum-hint code {

@@ -44,10 +44,11 @@ func TestRenderMarkdown(t *testing.T) {
 		{"data link without html", "[x](data:text/html;base64,PGI+)", "<p>x</p>"},
 		{"vbscript link", "[x](vbscript:msgbox(1))", "<p>x</p>"},
 
-		{"image", "![caption](https://example.com/a.png)",
-			`<p><a href="https://example.com/a.png"` + rel + `>caption</a></p>`},
-		{"image without caption", "![](https://example.com/a.png)",
-			`<p><a href="https://example.com/a.png"` + rel + `>https://example.com/a.png</a></p>`},
+		// A https picture is a block under a spoiler: TestImageBlocks.
+		{"http image", "![caption](http://example.com/a.png)",
+			`<p><a class="forum-img-off" href="http://example.com/a.png"` + rel + `>caption</a></p>`},
+		{"http image without caption", "![](http://example.com/a.png)",
+			`<p><a class="forum-img-off" href="http://example.com/a.png"` + rel + `>http://example.com/a.png</a></p>`},
 		{"data image", "![caption](data:image/png;base64,AAAA)", "<p>caption</p>"},
 		{"data image without caption", "![](data:image/png;base64,AAAA)", "<p>data:image/png;base64,AAAA</p>"},
 
@@ -76,7 +77,7 @@ func TestRenderMarkdown(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := renderMarkdown(tt.src)
+			got, err := renderMarkdown(tt.src, renderOptions{})
 			assert.NilError(t, err)
 			assert.Equal(t, strings.TrimSpace(string(got)), tt.want)
 		})
@@ -100,6 +101,9 @@ func TestPlainText(t *testing.T) {
 		{"cut at a word", "one two three four", 12, "one two…"},
 		{"a word longer than the limit", "abcdefghijklmnop", 14, "abcdefghijklmn…"},
 		{"nothing but a spoiler", "||secret||", 100, ""},
+		{"picture as its caption", "see ![the map](https://example.com/m.png) here", 100, "see 🖼 the map here"},
+		{"picture without caption", "![](https://example.com/m.png) text", 100, "🖼 text"},
+		{"http picture", "![map](http://example.com/m.png)", 100, "🖼 map"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

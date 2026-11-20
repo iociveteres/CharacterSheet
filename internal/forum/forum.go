@@ -58,6 +58,9 @@ type Page struct {
 	NoIndex                       bool
 	// Body is the forum page, already rendered by the forum templates.
 	Body template.HTML
+	// ImagesFromAnyHost lets the page show pictures from any https host: posts link them
+	// (extras/images.md). Every forum page sets it, the site's other pages keep 'self'.
+	ImagesFromAnyHost bool
 }
 
 type Forum struct {
@@ -82,7 +85,6 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 			"t":        i18n.TemplateT,
 			"humanDay": i18n.FormatDay,
 			"count":    i18n.FormatCount, // a number without t: {{count .AuthorPosts}}
-			"markdown": renderMarkdown,
 			// The page of a user, which every name the forum writes links to: {{userURL .AuthorID}}.
 			"userURL": userURL,
 		}).
@@ -153,6 +155,7 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))
 	mux.HandleFunc("POST /forum/mod/log/{id}/restore", f.withView(f.restoreRecent))
 	mux.HandleFunc("POST /forum/view/density", f.withView(f.setDensity))
+	mux.HandleFunc("POST /forum/view/images", f.withView(f.setImages))
 	mux.HandleFunc("GET /forum/user/{id}", f.withView(f.userPage))
 	mux.HandleFunc("POST /forum/user/{id}/about", f.withView(f.saveAbout))
 	mux.HandleFunc("POST /forum/user/{id}/about/erase", f.withView(f.eraseAbout))
@@ -175,16 +178,24 @@ type view struct {
 	Now       time.Time
 	// Density is the reader's step of the menu "View ▾" (density.go).
 	Density string
+	// ImagesOpen is the menu's "Pictures at once": the pictures of posts are not under a spoiler.
+	ImagesOpen bool
 }
 
 func (f *Forum) view(r *http.Request) view {
 	return view{
-		Lang:      i18n.FromContext(r.Context()),
-		TimeZone:  util.GetTimeLocation(r),
-		CSRFToken: f.host.CSRFToken(r),
-		Now:       f.now(),
-		Density:   densityFromRequest(r),
+		Lang:       i18n.FromContext(r.Context()),
+		TimeZone:   util.GetTimeLocation(r),
+		CSRFToken:  f.host.CSRFToken(r),
+		Now:        f.now(),
+		Density:    densityFromRequest(r),
+		ImagesOpen: imagesOpenFromRequest(r),
 	}
+}
+
+// Markdown is a post's Markdown as this reader sees it: {{$.Markdown .Body}}.
+func (v view) Markdown(src string) (template.HTML, error) {
+	return renderMarkdown(src, renderOptions{Lang: v.Lang, ImagesOpen: v.ImagesOpen})
 }
 
 // Time is a time of the forum as its pages show it: how long ago, the full date on hover
@@ -214,6 +225,7 @@ func (f *Forum) render(w http.ResponseWriter, r *http.Request, status int, name 
 		return
 	}
 	page.Body = template.HTML(buf.String())
+	page.ImagesFromAnyHost = true
 	if page.Description == "" {
 		page.Description = i18n.T(i18n.FromContext(r.Context()), "forum.sections.description")
 	}

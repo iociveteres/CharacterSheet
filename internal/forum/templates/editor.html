@@ -14,7 +14,7 @@
 </div>
 {{- if .Form.Preview}}
 <input type="hidden" name="body" value="{{.Form.Body}}">
-<div class="tab-preview forum-post-body" id="{{.ID}}-preview">{{markdown .Form.Body}}</div>
+<div class="tab-preview forum-post-body" id="{{.ID}}-preview">{{$.Markdown .Form.Body}}</div>
 {{- else}}
 <textarea id="{{.ID}}" name="body" rows="{{.Rows}}" required{{with .Label}} aria-label="{{.}}"{{end}}
     {{- with .Form.Errors.body}} aria-invalid="true" aria-describedby="{{$.ID}}-error"{{end}}>{{.Form.Body}}</textarea>
@@ -36,6 +36,7 @@
         <tr><td>&gt; {{t . "forum.posts.hintQuote"}}</td><td><span class="forum-hint-quote">{{t . "forum.posts.hintQuote"}}</span></td></tr>
         <tr><td>`{{t . "forum.posts.hintCode"}}`</td><td><code>{{t . "forum.posts.hintCode"}}</code></td></tr>
         <tr><td>||{{t . "forum.posts.hintSpoiler"}}||</td><td><span class="spoiler">{{t . "forum.posts.hintSpoiler"}}</span></td></tr>
+        <tr class="forum-hint-wide"><td>![{{t . "forum.posts.hintImageCaption"}}]<wbr>(https://…/{{t . "forum.posts.hintImageFile"}})</td><td>🖼 {{t . "forum.posts.hintImage"}}</td></tr>
     </table>
 </details>
 {{- end}}

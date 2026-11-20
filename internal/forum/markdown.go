@@ -20,7 +20,8 @@ import (
 )
 
 // The Markdown of posts (_prd/forum/plan.md, «Markdown»): CommonMark with hard wraps, bare
-// addresses as links, images as links, a ||spoiler||, no raw HTML, tables or footnotes.
+// addresses as links, pictures under a spoiler (images.go), a ||spoiler||, no raw HTML, tables or
+// footnotes.
 var markdown = goldmark.New(
 	goldmark.WithParser(parser.NewParser(
 		// Without the HTML parsers typed HTML stays text and is escaped like any other: <b> reads
@@ -34,6 +35,7 @@ var markdown = goldmark.New(
 		spoilerExtension{},
 		linkExtension{},
 		quoteHeadExtension{},
+		imageExtension{},
 	),
 	goldmark.WithRendererOptions(html.WithHardWraps()),
 )
@@ -48,11 +50,13 @@ func without(parsers []util.PrioritizedValue, drop any) []util.PrioritizedValue 
 	return kept
 }
 
-// renderMarkdown is "markdown" in the forum templates: {{markdown .Body}}. Posts store Markdown,
-// not HTML, so a fix of the renderer reaches old posts too.
-func renderMarkdown(src string) (template.HTML, error) {
+// renderMarkdown is a post as its reader sees it; templates call it as {{$.Markdown .Body}}. Posts
+// store Markdown, not HTML, so a fix of the renderer reaches old posts too.
+func renderMarkdown(src string, options renderOptions) (template.HTML, error) {
 	var buf bytes.Buffer
-	if err := markdown.Convert([]byte(src), &buf); err != nil {
+	pc := parser.NewContext()
+	pc.Set(renderOptionsKey, options)
+	if err := markdown.Convert([]byte(src), &buf, parser.WithContext(pc)); err != nil {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
@@ -64,7 +68,7 @@ const linkRel = "nofollow ugc noopener"
 // href is the address as the browser will read it, and whether it may be a link: http, https,
 // mailto or no scheme. It checks the address after goldmark resolves its entities, so
 // &#106;avascript: is caught too. A list of what is allowed, not of what is not: goldmark's own
-// check lets data:image through, and images render as links here.
+// check lets data:image through.
 func href(dest []byte, resolveEntities bool) ([]byte, bool) {
 	escaped := util.URLEscape(dest, resolveEntities)
 	u, err := url.Parse(string(escaped))
@@ -78,8 +82,8 @@ func href(dest []byte, resolveEntities bool) ([]byte, bool) {
 	return nil, false
 }
 
-// linkExtension renders links, bare addresses and images: an image becomes a link with its
-// caption, an unsafe address stays text.
+// linkExtension renders links, bare addresses and the pictures that are no block (images.go): such
+// a picture is a link with its caption marked 🖼, an unsafe address stays text.
 type linkExtension struct{}
 
 func (linkExtension) Extend(m goldmark.Markdown) {
@@ -95,11 +99,21 @@ func (linkRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	})
 	reg.Register(ast.KindImage, func(w util.BufWriter, _ []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 		n := node.(*ast.Image)
+		// Inside a link the caption is a part of its text: a link in a link is no HTML.
+		if inLink(n) {
+			if entering {
+				w.WriteString(`<span class="forum-img-off">`)
+			} else {
+				w.WriteString("</span>")
+			}
+			return ast.WalkContinue, nil
+		}
+		link, ok := href(n.Destination, true)
 		if !n.HasChildren() {
 			// ![](address) has no caption to click on: the address is the text.
 			if entering {
-				if link, ok := href(n.Destination, true); ok {
-					openLink(w, link, n.Title)
+				if ok {
+					openLink(w, link, n.Title, "forum-img-off")
 					w.Write(util.EscapeHTML(n.Destination))
 					w.WriteString("</a>")
 				} else {
@@ -108,7 +122,15 @@ func (linkRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 			}
 			return ast.WalkSkipChildren, nil
 		}
-		return renderLink(w, n.Destination, n.Title, entering)
+		if !ok {
+			return ast.WalkContinue, nil
+		}
+		if entering {
+			openLink(w, link, n.Title, "forum-img-off")
+		} else {
+			w.WriteString("</a>")
+		}
+		return ast.WalkContinue, nil
 	})
 	reg.Register(ast.KindAutoLink, func(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
@@ -125,7 +147,7 @@ func (linkRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 			w.Write(label)
 			return ast.WalkContinue, nil
 		}
-		openLink(w, link, nil)
+		openLink(w, link, nil, "")
 		w.Write(label)
 		w.WriteString("</a>")
 		return ast.WalkContinue, nil
@@ -139,16 +161,30 @@ func renderLink(w util.BufWriter, dest, title []byte, entering bool) (ast.WalkSt
 		return ast.WalkContinue, nil
 	}
 	if entering {
-		openLink(w, link, title)
+		openLink(w, link, title, "")
 	} else {
 		w.WriteString("</a>")
 	}
 	return ast.WalkContinue, nil
 }
 
-// openLink takes the address from href.
-func openLink(w util.BufWriter, link, title []byte) {
-	w.WriteString(`<a href="`)
+func inLink(n ast.Node) bool {
+	for p := n.Parent(); p != nil; p = p.Parent() {
+		if p.Kind() == ast.KindLink {
+			return true
+		}
+	}
+	return false
+}
+
+// openLink takes the address from href; class "forum-img-off" is a picture that stays a link,
+// which forum.css marks 🖼.
+func openLink(w util.BufWriter, link, title []byte, class string) {
+	w.WriteString(`<a `)
+	if class != "" {
+		w.WriteString(`class="` + class + `" `)
+	}
+	w.WriteString(`href="`)
 	w.Write(util.EscapeHTML(link))
 	w.WriteByte('"')
 	if title != nil {
@@ -324,7 +360,7 @@ const descriptionLength = 160
 
 // plainText is the text of a post without its Markdown for a page description, cut to limit
 // characters at a word with an ellipsis. Spoilers and code blocks are left out: the description
-// shows in search results and link previews.
+// shows in search results and link previews. A picture is "🖼 caption".
 func plainText(src string, limit int) string {
 	return plainTextOf(src, limit, false)
 }
@@ -364,6 +400,8 @@ func plainTextOf(src string, limit int, skipQuotes bool) string {
 			b.Write(n.Value)
 		case *ast.AutoLink:
 			b.Write(n.Label(source))
+		case *ast.Image:
+			b.WriteString(" 🖼 ")
 		}
 		return ast.WalkContinue, nil
 	})

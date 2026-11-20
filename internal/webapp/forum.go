@@ -73,6 +73,10 @@ func (h forumHost) Render(w http.ResponseWriter, r *http.Request, status int, pa
 		MainClass: "forum-wide",
 		Body:      page.Body,
 	}
+	// Posts link pictures from any https host (forum's images.go).
+	if page.ImagesFromAnyHost {
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy(imgSrc+" https:"))
+	}
 	h.app.render(w, status, "embedded.html", "base", data)
 }
 

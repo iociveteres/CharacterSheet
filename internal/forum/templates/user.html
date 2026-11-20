@@ -35,7 +35,7 @@
     <section class="forum-panel forum-user-about" id="about">
         <h3>{{t .Lang "forum.users.about"}}</h3>
         {{- if .User.About}}
-        <div class="forum-post-body">{{markdown .User.About}}</div>
+        <div class="forum-post-body">{{$.Markdown .User.About}}</div>
         {{- else if and .Own .User.Erased}}{{with .User.Erased}}
         <p class="meta forum-user-banned">{{t $.Lang "forum.users.aboutErasedOn" "date" (humanDay $.Lang .At $.TimeZone)}} {{t $.Lang "forum.moderation.reason"}}: {{.Reason}}
             {{- if not $edit}} {{t $.Lang "forum.users.aboutAfterBan"}}{{end}}</p>

@@ -238,11 +238,11 @@ func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 	// Each field any form of the forum reads, valid, so that only the ban stands in the way.
 	form := url.Values{
 		"title": {"a new title"}, "body": {"text"}, "reason": {"reason"}, "name": {"name"},
-		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"}, "density": {"compact"},
+		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"}, "density": {"compact"}, "images": {"open"},
 		"ban": {"1"}, "recent": {"1"},
 	}
 	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true, "POST /forum/notifications/read": true,
-		"POST /forum/view/density": true}
+		"POST /forum/view/density": true, "POST /forum/view/images": true}
 
 	s.h.userID = s.alice
 	before := forumState(t, s.db)

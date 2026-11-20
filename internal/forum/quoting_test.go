@@ -179,7 +179,7 @@ func TestQuoteHeadRender(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			html, err := renderMarkdown(tt.src)
+			html, err := renderMarkdown(tt.src, renderOptions{})
 			assert.NilError(t, err)
 			assert.Equal(t, strings.Contains(string(html), `<span class="quote-head">`), tt.head)
 			if tt.head {
@@ -191,7 +191,7 @@ func TestQuoteHeadRender(t *testing.T) {
 		})
 	}
 	// A quote inside a quote gets its own head.
-	html, err := renderMarkdown("> **a** [w](/forum/post/1):\n>\n> > **b** [w](/forum/post/2):\n> >\n> > old\n>\n> new")
+	html, err := renderMarkdown("> **a** [w](/forum/post/1):\n>\n> > **b** [w](/forum/post/2):\n> >\n> > old\n>\n> new", renderOptions{})
 	assert.NilError(t, err)
 	assert.Equal(t, strings.Count(string(html), `<span class="quote-head">`), 2)
 }

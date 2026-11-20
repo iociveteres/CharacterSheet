@@ -15,8 +15,8 @@
                 <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>
             </form>
             {{- end}}
-            {{- /* The density of the forum's pages, kept in a cookie (extras/decisions.md, 24): each
-                 choice a form, so it works without a script. */}}
+            {{- /* The density of the forum's pages and "Pictures at once", kept in cookies
+                 (extras/decisions.md, 24): each choice a form, so it works without a script. */}}
             <details class="forum-menu forum-view-menu">
                 <summary class="f-btn f-secondary">{{t .Lang "forum.view.menu"}} ▾</summary>
                 <div class="forum-menu-panel">
@@ -29,6 +29,15 @@
                             {{- t $.Lang (printf "forum.view.%s" .Value)}}</button>
                     </form>
                     {{- end}}
+                    <hr>
+                    {{- /* "Pictures at once", off by default (extras/decisions.md, 12): a checkbox
+                         item that sends the other value. */}}
+                    <form method="post" action="/forum/view/images">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <input type="hidden" name="redirect" value="/forum/">
+                        <button type="submit" name="images" value="{{if .ImagesOpen}}closed{{else}}open{{end}}" class="forum-menu-toggle forum-images-toggle" aria-pressed="{{.ImagesOpen}}">
+                            {{- t .Lang "forum.view.images"}}</button>
+                    </form>
                 </div>
             </details>
             {{- /* The moderators' pages (design/decisions.md, 15). */}}

@@ -251,7 +251,7 @@ func (f *Forum) preview(w http.ResponseWriter, r *http.Request, v view) {
 		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 		return
 	}
-	html, err := renderMarkdown(body)
+	html, err := v.Markdown(body)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return

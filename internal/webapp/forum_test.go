@@ -39,7 +39,7 @@ func TestForumHomeForGuest(t *testing.T) {
 	for _, lang := range []string{"en", "ru"} {
 		u, _ := url.Parse(ts.URL)
 		ts.Client().Jar.SetCookies(u, []*http.Cookie{{Name: "lang", Value: lang}})
-		code, _, body := ts.get(t, "/forum/")
+		code, header, body := ts.get(t, "/forum/")
 		assert.Equal(t, code, http.StatusOK)
 		assert.StringContains(t, body, "<html lang='"+lang+"'>")
 		// Inside the site layout, with the head of an embedded page.
@@ -49,6 +49,8 @@ func TestForumHomeForGuest(t *testing.T) {
 		assert.StringContains(t, body, `<link rel="canonical" href='https://example.com/forum/'>`)
 		assert.StringContains(t, body, `href='/static/css/forum.css?v=`)
 		assert.StringContains(t, body, `<a href='/forum/' data-live-prefix='/forum/'>`)
+		// Pictures of posts come from any https host; the rest of the site keeps 'self'.
+		assert.StringContains(t, header.Get("Content-Security-Policy"), "img-src 'self' blob: https:;")
 
 		// The sections in order of position, the one added above first.
 		items := strings.Split(body, `<li class="forum-row`)
@@ -56,6 +58,8 @@ func TestForumHomeForGuest(t *testing.T) {
 		assert.StringContains(t, items[1], "Tavern &amp; dice")
 		assert.StringContains(t, items[1], "Anything &lt;off topic&gt;")
 	}
+	_, header, _ := ts.get(t, "/about")
+	assert.StringContains(t, header.Get("Content-Security-Policy"), "img-src 'self' blob:;")
 }
 
 func TestForumWithoutSlash(t *testing.T) {
