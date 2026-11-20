@@ -272,13 +272,6 @@ main.forum-wide {
     left: 12px;
 }
 
-#forum .forum-view-menu .forum-menu-panel .sub {
-    display: block;
-    font-size: 12px;
-    font-weight: normal;
-    color: var(--text-secondary);
-}
-
 /* A topic's head: the buttons level with the title's first line at any width; a long title wraps
    beside them instead of pushing them to a line of their own, and the author's line runs under both
    (extras/decisions.md, 10). */

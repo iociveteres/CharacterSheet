@@ -26,7 +26,7 @@
                         <input type="hidden" name="redirect" value="/forum/">
                         {{- /* i18n-keys: forum.view.* */}}
                         <button type="submit" name="density" value="{{.Value}}" class="forum-density-{{.Value}}"{{if .Current}} aria-current="true"{{end}}>
-                            {{- t $.Lang (printf "forum.view.%s" .Value)}}<span class="sub">{{t $.Lang (printf "forum.view.%sHint" .Value)}}</span></button>
+                            {{- t $.Lang (printf "forum.view.%s" .Value)}}</button>
                     </form>
                     {{- end}}
                 </div>
