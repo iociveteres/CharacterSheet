@@ -30,14 +30,14 @@ func (f *Forum) loadPost(ctx context.Context, id int, v Viewer) (postTarget, err
 		       (SELECT count(*) FROM forum_posts q JOIN forum_topics t ON t.id = q.topic_id
 		        WHERE q.author_id = p.author_id AND q.deleted_at IS NULL AND t.deleted_at IS NULL),
 		       EXISTS (SELECT 1 FROM forum_moderators m WHERE m.user_id = p.author_id),
-		       COALESCE(d.name, ''), `+deleteReasonSQL("p", "$2")+`
+		       COALESCE(d.id, 0), COALESCE(d.name, ''), `+deleteReasonSQL("p", "$2")+`
 		FROM forum_posts p
 		JOIN users u ON u.id = p.author_id
 		LEFT JOIN users d ON $2 AND d.id = p.deleted_by AND p.deleted_at IS NOT NULL
 		WHERE p.id = $1`, id, v.CanReadDeletedPosts()).
 		Scan(&p.ID, &topicID, &p.AuthorID, &p.Body, &p.CreatedAt, &p.EditedAt, &p.DeletedAt, &p.Number,
 			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts, &p.AuthorModerator,
-			&p.DeletedByName, &p.DeleteReason)
+			&p.DeletedByID, &p.DeletedByName, &p.DeleteReason)
 	if err != nil {
 		return postTarget{}, err
 	}

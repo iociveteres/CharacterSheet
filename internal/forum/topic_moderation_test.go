@@ -332,7 +332,7 @@ func TestDeleteAndRestoreTopic(t *testing.T) {
 	h.get(t, f, fmt.Sprintf("/forum/topic/%d", topic))
 	body := string(h.page.Body)
 	assert.StringContains(t, body, `class="forum-notice forum-deleted-notice"`)
-	assert.StringContains(t, body, "mod, ")
+	assert.StringContains(t, body, fmt.Sprintf(`<a class="forum-author-name" href="%s">mod</a>, `, userURL(mod)))
 	assert.StringContains(t, body, "off topic")
 	assert.StringContains(t, body, modURL(topic, topicRestore))
 	assert.Equal(t, strings.Contains(body, modURL(topic, topicDelete)), false)

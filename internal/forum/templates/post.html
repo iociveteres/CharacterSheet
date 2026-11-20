@@ -22,7 +22,7 @@
     </div>
     <div class="forum-post-main">
         {{- if .Deleted}}
-        <span class="deleted-note">{{t $.Lang "forum.moderation.postDeleted"}}: {{.DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</span>
+        <span class="deleted-note">{{t $.Lang "forum.moderation.postDeleted"}}: <a class="forum-author-name" href="{{userURL .DeletedByID}}">{{.DeletedByName}}</a>, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</span>
         {{- end}}
         <div class="forum-post-body">{{markdown .Body}}</div>
         {{- /* The number, the time and "edited" at the left of the bottom line, the actions at its

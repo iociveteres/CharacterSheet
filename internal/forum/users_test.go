@@ -488,6 +488,25 @@ func TestNamesLinkToUserPages(t *testing.T) {
 	body = string(s.h.page.Body)
 	assert.StringContains(t, body, link(s.mod, "mod"))
 	assert.StringContains(t, body, link(s.bob, "bob"))
+
+	// «Deleted: who» of a deleted post, in the topic and on the page that restores it, and of a
+	// deleted topic: the moderator who deleted it (the author's choice, extras/decisions.md, 32).
+	note := func(body, class string) string {
+		at := strings.Index(body, class)
+		if at < 0 {
+			t.Fatalf("no %s", class)
+		}
+		// The line, up to the end of its element.
+		return body[at : at+strings.Index(body[at:], "</div>")]
+	}
+	redirectedTo(t, s.h.post(t, s.f, postURL(s.reply)+"/delete", url.Values{"reason": {"r"}}))
+	s.h.get(t, s.f, Topic{ID: s.topic}.URL())
+	assert.StringContains(t, note(string(s.h.page.Body), `class="deleted-note"`), link(s.mod, "mod"))
+	s.h.get(t, s.f, postURL(s.reply)+"/restore")
+	assert.StringContains(t, note(string(s.h.page.Body), `class="deleted-note"`), link(s.mod, "mod"))
+	redirectedTo(t, s.h.post(t, s.f, Topic{ID: s.topic}.URL()+"/mod/delete", url.Values{"reason": {"r"}}))
+	s.h.get(t, s.f, Topic{ID: s.topic}.URL())
+	assert.StringContains(t, note(string(s.h.page.Body), `forum-deleted-notice`), link(s.mod, "mod"))
 }
 
 // Every form of a user page refuses a moderator acting on another moderator (the author's answer of

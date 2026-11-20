@@ -140,6 +140,7 @@ type topicPage struct {
 	FirstPost string
 	// Who deleted the topic and why, from the log, for the moderator who opens it; empty while it
 	// stands.
+	DeletedByID   int
 	DeletedByName string
 	DeleteReason  string
 	// Subscribed: the viewer gets the replies of the topic (block 6).
@@ -152,12 +153,13 @@ type topicPage struct {
 func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, error) {
 	var t topicPage
 	var first, deletedBy, reason *string
+	var deletedByID *int
 	err := f.db.QueryRow(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
 		       t.reply_count, t.last_post_id, t.last_post_at, a.name,
 		       s.id, s.name, s.description, s.position, s.mods_only_topics,
 		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
-		       fp.body, d.name,
+		       fp.body, d.id, d.name,
 		       (SELECT l.reason FROM forum_mod_log l
 		        WHERE t.deleted_at IS NOT NULL AND l.topic_id = t.id AND l.action = $2
 		        ORDER BY l.id DESC LIMIT 1),
@@ -176,12 +178,12 @@ func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, err
 		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
 			&t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName,
 			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
-			&t.PostCount, &first, &deletedBy, &reason, &t.Subscribed)
+			&t.PostCount, &first, &deletedByID, &deletedBy, &reason, &t.Subscribed)
 	if first != nil {
 		t.FirstPost = *first
 	}
 	if deletedBy != nil {
-		t.DeletedByName = *deletedBy
+		t.DeletedByID, t.DeletedByName = *deletedByID, *deletedBy
 	}
 	if reason != nil {
 		t.DeleteReason = *reason
@@ -200,6 +202,7 @@ type post struct {
 	EditedAt  *time.Time
 	DeletedAt *time.Time
 	// Who deleted the post and the reason of a moderator, for a moderator only; empty otherwise.
+	DeletedByID   int
 	DeletedByName string
 	DeleteReason  string
 	// Number is the place of the post in the topic, from 1.
@@ -277,7 +280,7 @@ func (f *Forum) topicPosts(ctx context.Context, topicID, page int, v Viewer) ([]
 		SELECT page.id, page.author_id, page.body, page.created_at, page.edited_at, page.deleted_at,
 		       u.name, u.created_at, COALESCE(c.n, 0),
 		       EXISTS (SELECT 1 FROM forum_moderators m WHERE m.user_id = page.author_id),
-		       COALESCE(d.name, ''), `+deleteReasonSQL("page", "$4")+`
+		       COALESCE(d.id, 0), COALESCE(d.name, ''), `+deleteReasonSQL("page", "$4")+`
 		FROM page
 		JOIN users u ON u.id = page.author_id
 		LEFT JOIN counts c ON c.author_id = page.author_id
@@ -290,7 +293,7 @@ func (f *Forum) topicPosts(ctx context.Context, topicID, page int, v Viewer) ([]
 		var p post
 		err := row.Scan(&p.ID, &p.AuthorID, &p.Body, &p.CreatedAt, &p.EditedAt, &p.DeletedAt,
 			&p.AuthorName, &p.AuthorRegisteredAt, &p.AuthorPosts, &p.AuthorModerator,
-			&p.DeletedByName, &p.DeleteReason)
+			&p.DeletedByID, &p.DeletedByName, &p.DeleteReason)
 		return p, err
 	})
 	for i := range posts {

@@ -34,7 +34,7 @@
 
     {{- /* Only a moderator reads a deleted topic: who deleted it, when, why (design/decisions.md, 20). */}}
     {{with .Topic}}{{if .Deleted}}
-    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> {{.DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
+    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> <a class="forum-author-name" href="{{userURL .DeletedByID}}">{{.DeletedByName}}</a>, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
     {{end}}{{end}}
 
     {{template "forum-pagination" .Pagination}}
