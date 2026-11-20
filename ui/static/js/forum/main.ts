@@ -1,6 +1,8 @@
 // The forum's script: it only improves what the pages already do with forms and links
 // (_prd/forum/plan.md): the preview tabs without a reload, Quote with a selection, a spoiler that a
-// click opens and closes. It needs no words of its own: the quote head comes from the server.
+// click opens and closes, the line of a picture that did not load. It needs no words of its own:
+// the quote head and that line come from the server.
+import { showBroken } from "./images";
 import { closePreview, openPreview, tabField } from "./preview";
 import { quoteOf } from "./quote";
 
@@ -57,6 +59,12 @@ document.addEventListener("input", event => {
     const counter = document.getElementById(field.dataset.counter);
     if (counter) counter.textContent = String([...field.value].length);
 });
+
+// error does not bubble, and a lazy picture fails only once its spoiler opens, long after the page
+// loaded: the capture phase on document hears every one of them.
+document.addEventListener("error", event => {
+    if (event.target instanceof HTMLImageElement) showBroken(event.target);
+}, true);
 
 // An empty field hidden under its preview cannot show the browser's message: show the field.
 document.addEventListener("invalid", event => {

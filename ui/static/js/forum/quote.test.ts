@@ -137,6 +137,50 @@ describe("toMarkdown", () => {
     });
 });
 
+// A block of pictures as internal/forum/images.go renders it: the line, then for each picture its
+// link and the hidden line of a broken one.
+function pictureBlock(pictures: [alt: string, src: string][], classes = "forum-img-spoiler"): HTMLElement {
+    const items = pictures.flatMap(([alt, src]) => [
+        el("a", { class: "forum-img-link", href: src, rel: "nofollow ugc noopener", target: "_blank" },
+            el("img", { class: "forum-img", src, alt, loading: "lazy" })),
+        el("a", { class: "forum-img-broken", href: src, hidden: "" }, "The picture did not load · host")]);
+    return el("details", { class: classes },
+        el("summary", {}, el("span", { class: "cap" }, "🖼 caption"), el("span", { class: "host" }, "i.example.com")),
+        ...(pictures.length > 1 ? [el("span", { class: "forum-img-row" }, ...items)] : items));
+}
+
+describe("toMarkdown of pictures", () => {
+    it("writes a block back as the picture, without its line", () => {
+        const root = el("div", {}, el("p", {}, "look:"), pictureBlock([["the [map]", "https://i.example.com/a b.png"]]), el("p", {}, "there"));
+        expect(toMarkdown(root)).toBe("look:\n\n![the \\[map\\]](<https://i.example.com/a b.png>)\n\nthere");
+    });
+
+    it("keeps a run of pictures on one line, so that it is one block again", () => {
+        const root = el("div", {}, pictureBlock([["a", "https://x.example/a.png"], ["", "https://y.example/b.png"]]));
+        expect(toMarkdown(root)).toBe("![a](https://x.example/a.png) ![](https://y.example/b.png)");
+    });
+
+    it("hides a picture from a spoiler in a spoiler again", () => {
+        const root = el("div", {}, pictureBlock([["s", "https://x.example/s.png"]], "forum-img-spoiler in-spoiler"));
+        expect(toMarkdown(root)).toBe("||![s](https://x.example/s.png)||");
+    });
+
+    it("writes a picture that stayed a link back as a picture", () => {
+        const root = el("div", {}, el("p", {},
+            el("a", { class: "forum-img-off", href: "http://x.example/a.png" }, "old ", el("em", {}, "map")), " and ",
+            el("a", { class: "forum-img-off", href: "http://x.example/b.png" }, "http://x.example/b.png")));
+        expect(toMarkdown(root)).toBe("![old *map*](http://x.example/a.png) and ![](http://x.example/b.png)");
+    });
+
+    it("quotes a selection that holds a block with its picture", () => {
+        const before = el("p", {}, "before");
+        const after = el("p", {}, "after");
+        const { article } = post(HEAD, before, pictureBlock([["a", "https://x.example/a.png"]]), after);
+        expect(quoteOf(article, select(textOf(before), 2, textOf(after), 3))).toBe(
+            `${HEAD}\n>\n> fore\n>\n> ![a](https://x.example/a.png)\n>\n> aft\n\n`);
+    });
+});
+
 describe("quoteText", () => {
     it("writes the head alone for an empty text", () => {
         expect(quoteText(HEAD, "")).toBe(`${HEAD}\n\n`);

@@ -3,7 +3,7 @@
 // rebuilt from the rendered post, so that it renders as the selection looked; the format of the
 // quote is the server's quoteText.
 
-const BLOCKS = new Set(["P", "DIV", "PRE", "UL", "OL", "LI", "BLOCKQUOTE", "HR", "H1", "H2", "H3", "H4", "H5", "H6"]);
+const BLOCKS = new Set(["P", "DIV", "PRE", "UL", "OL", "LI", "BLOCKQUOTE", "HR", "H1", "H2", "H3", "H4", "H5", "H6", "DETAILS"]);
 
 /** The quote of the post `article` to put into the reply form: the selection when it lies in the
  * text of this post, else the whole text; null when the post offers no Quote. */
@@ -65,7 +65,7 @@ export function selectedFragment(range: Range, body: Element): Node {
 }
 
 /** Markdown that renders as the rendered post `root` (internal/forum/markdown.go): paragraphs,
- * line breaks, emphasis, code, links, lists, headings and ||spoilers||. Quotes inside the post are
+ * line breaks, emphasis, code, links, lists, headings, ||spoilers|| and pictures. Quotes inside the post are
  * left out, as the server leaves them out of a quote: a quote holds one level. */
 export function toMarkdown(root: Node): string {
     return blocks(root).join("\n\n");
@@ -106,6 +106,8 @@ function block(el: Element): string {
             return item("- ", el);
         case "HR":
             return "***";
+        case "DETAILS":
+            return el.classList.contains("forum-img-spoiler") ? pictures(el) : blocks(el).join("\n\n");
         case "H1": case "H2": case "H3": case "H4": case "H5": case "H6": {
             const text = paragraph(Array.from(el.childNodes).map(inline).join("")).replace(/\n/g, " ");
             return text && "#".repeat(Number(el.tagName[1])) + " " + text;
@@ -163,6 +165,11 @@ function inline(node: Node): string {
         case "CODE":
             return codeSpan(node.textContent ?? "");
         case "A":
+            // A picture that stays a link (http, past the limit of blocks): a picture again.
+            if (node.classList.contains("forum-img-off")) {
+                const href = node.getAttribute("href") ?? "";
+                return picture(node.textContent === href ? "" : inner(), href);
+            }
             return link(node, inner());
         case "SPAN":
             if (node.classList.contains("spoiler")) return wrap("||", inner());
@@ -192,13 +199,30 @@ function codeSpan(text: string): string {
     return bar + pad + code + pad + bar;
 }
 
+// A block of pictures (images.go) is the pictures of its run on one line, so that they render as one
+// block again; its line (caption, host) and the line of a broken picture are the server's words.
+function pictures(details: Element): string {
+    const images = Array.from(details.querySelectorAll("img.forum-img"))
+        .map(img => picture(escapeText(img.getAttribute("alt") ?? ""), img.getAttribute("src") ?? ""))
+        .filter(Boolean)
+        .join(" ");
+    return images && details.classList.contains("in-spoiler") ? `||${images}||` : images;
+}
+
+function picture(caption: string, src: string): string {
+    return src ? `![${caption}](${destination(src)})` : caption;
+}
+
+function destination(href: string): string {
+    return /[\s()<>]/.test(href) ? `<${href.replace(/[<>]/g, encodeURIComponent)}>` : href;
+}
+
 function link(a: Element, text: string): string {
     const href = a.getAttribute("href") ?? "";
     if (!href) return text;
     // An address written as it is (the renderer makes it a link): an autolink keeps it whole.
     if (a.textContent === href && /^[a-z][a-z0-9+.-]*:[^\s<>]*$/i.test(href)) return `<${href}>`;
-    const destination = /[\s()<>]/.test(href) ? `<${href.replace(/[<>]/g, encodeURIComponent)}>` : href;
-    return `[${text}](${destination})`;
+    return `[${text}](${destination(href)})`;
 }
 
 // The characters that would make plain text markup inside a line.
