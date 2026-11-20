@@ -26,7 +26,6 @@
   "forum.moderation.newSection": { "en": "New section", "ru": "Новый раздел", "note": "кнопка на странице разделов и заголовок страницы создания раздела" },
   "forum.moderation.editSection": { "en": "Edit the section", "ru": "Изменить раздел", "note": "заголовок страницы, где модератор меняет название, описание и правило раздела" },
   "forum.moderation.sectionDescription": { "en": "Description", "ru": "Описание", "note": "поле формы раздела: описание под названием на главной форума" },
-  "forum.moderation.sectionNameHint": { "en": "Shown as typed, in every language of the site.", "ru": "Показывается как введено, на всех языках сайта.", "note": "подсказка под полем названия раздела: название не переводится" },
   "forum.moderation.modsOnlyTopics": { "en": "Only moderators start topics", "ru": "Темы создают только модераторы", "note": "флажок в форме раздела и метка раздела в списке разделов модератора (как «Новости»)" },
   "forum.moderation.modsOnlyTopicsHint": { "en": "Everyone still replies in its topics.", "ru": "Отвечать в темах могут все.", "note": "подсказка под флажком «Темы создают только модераторы»" },
   "forum.moderation.moveUp": { "en": "Up", "ru": "Выше", "note": "кнопка в списке разделов: поменять раздел местами с тем, что выше; перед словом стрелка ↑" },

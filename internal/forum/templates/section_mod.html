@@ -12,9 +12,8 @@
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <label class="field-label" for="forum-section-name">{{t .Lang "common.name"}}</label>
         <input type="text" id="forum-section-name" name="name" value="{{.Form.Name}}" required
-            {{- if .Form.Errors.name}} aria-invalid="true" aria-describedby="forum-section-name-error"{{else}} aria-describedby="forum-section-name-hint"{{end}}>
-        {{with .Form.Errors.name}}<span class="error field-error" id="forum-section-name-error">{{.}}</span>
-        {{- else}}<span class="meta" id="forum-section-name-hint">{{t .Lang "forum.moderation.sectionNameHint"}}</span>{{end}}
+            {{- if .Form.Errors.name}} aria-invalid="true" aria-describedby="forum-section-name-error"{{end}}>
+        {{with .Form.Errors.name}}<span class="error field-error" id="forum-section-name-error">{{.}}</span>{{end}}
 
         <label class="field-label" for="forum-section-description">{{t .Lang "forum.moderation.sectionDescription"}}</label>
         <textarea class="forum-reason" id="forum-section-description" name="description" rows="3"
