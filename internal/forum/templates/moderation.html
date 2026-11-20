@@ -5,7 +5,8 @@
 {{- $t := .Topic}}
 {{- if or (.Viewer.CanModerateTopic $t.Topic) (.Viewer.CanRestoreTopic $t.Topic)}}
 <details class="forum-menu forum-mod-menu">
-    <summary class="f-btn f-secondary">{{t .Lang "forum.moderation.menu"}} ▾</summary>
+    {{- /* "⋯" on a phone, its words kept for a screen reader (extras/decisions.md, 10). */}}
+    <summary class="f-btn f-secondary" title="{{t .Lang "forum.moderation.menu"}}"><span class="forum-menu-long">{{t .Lang "forum.moderation.menu"}} ▾</span><span class="forum-menu-short" aria-hidden="true">⋯</span></summary>
     <div class="forum-menu-panel">
         {{- if .Viewer.CanModerateTopic $t.Topic}}
         <a href="{{$t.URL}}/mod/rename">✎ {{t .Lang "common.rename"}}</a>

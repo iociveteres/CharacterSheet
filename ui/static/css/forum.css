@@ -142,6 +142,50 @@ main.forum-wide {
     color: var(--accent-attention);
 }
 
+/* A topic's head: the buttons level with the title's first line at any width; a long title wraps
+   beside them instead of pushing them to a line of their own, and the author's line runs under both
+   (extras/decisions.md, 10). */
+.forum-topic-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 2px 12px;
+}
+
+.forum-topic-head .forum-head-text {
+    display: contents;
+}
+
+.forum-topic-head .forum-topic-meta {
+    grid-column: 1 / -1;
+}
+
+.forum-topic-head .forum-actions {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+}
+
+/* The subscription: a bell before its label, filled while on. On a phone the bell alone; its title
+   and pressed state, and the label hidden only from the eye, name it for a screen reader. */
+.forum-bell {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.forum-subscribe.on .forum-bell {
+    fill: currentColor;
+}
+
+.forum-menu-short {
+    display: none;
+}
+
 .forum-menu-panel hr {
     border: none;
     border-top: 1px solid var(--border-light);
@@ -1297,6 +1341,37 @@ main.forum-wide {
 
     #forum .forum-row-title {
         font-size: 18px;
+    }
+
+    /* The topic's buttons as 40px squares beside the title: the bell and "⋯". */
+    .forum-topic-head .forum-actions {
+        gap: 4px;
+    }
+
+    #forum .forum-topic-head .forum-subscribe,
+    #forum .forum-topic-head .forum-menu > summary {
+        width: 40px;
+        padding: 0;
+    }
+
+    #forum .forum-topic-head .forum-subscribe .forum-bell {
+        width: 20px;
+        height: 20px;
+    }
+
+    .forum-topic-head .forum-subscribe-label,
+    .forum-topic-head .forum-menu-long {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .forum-topic-head .forum-menu-short {
+        display: inline;
+        font-size: 20px;
     }
 
     /* The author column folds into a line above the text. */
