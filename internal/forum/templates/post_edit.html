@@ -1,0 +1,26 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- with .Post.Topic}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    {{- end}}
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.posts.editTitle"}}</h2></div></div>
+
+    {{- /* Looks like the reply form, a post with the writer on the left (design/decisions.md, 19);
+         only the text is edited, of the first post too. */}}
+    <form class="forum-post reply forum-edit" id="edit" action="{{.Post.URL}}/edit" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="forum-post-author">
+            {{- template "forum-avatar" .EditorAvatar}}
+            <span class="name">{{.Viewer.Name}}</span>
+            <span>{{t .Lang "forum.posts.yourPost"}} <a href="{{.Post.URL}}">#{{.Post.Number}}</a></span>
+        </div>
+        <div class="forum-post-main forum-form">
+            {{- template "forum-editor" ($.Editor "forum-edit-body" 12 (t .Lang "forum.posts.yourPost") .Form)}}
+            <div class="forum-form-buttons">
+                {{- template "forum-markup-hint" .Lang}}
+                <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
+                <button type="submit" class="f-btn f-primary">{{t .Lang "common.save"}}</button>
+            </div>
+        </div>
+    </form>
+</div>

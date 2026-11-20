@@ -51,6 +51,7 @@ func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	exec("../../migrations/000047_encounter_columns.up.sql")
 	exec("../../migrations/000049_add_result_data_to_room_messages.up.sql")
 	exec("../../migrations/000050_add_label_data_to_room_messages.up.sql")
+	exec("../../migrations/000057_user_avatars.up.sql")
 	t.Cleanup(func() { exec("./testdata/sheet_homes_teardown.sql") })
 
 	return pool

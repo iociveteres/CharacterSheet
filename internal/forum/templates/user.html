@@ -1,0 +1,245 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-ban-notice" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    {{- /* The head (users.md): avatar, name, role and facts; a moderator also reads the ban, which
+         nobody else sees here (extras/decisions.md, 20): its user reads the notice above. */}}
+    {{- with .User}}
+    <div class="forum-user-head">
+        {{- template "forum-avatar" $.Avatar}}
+        <div class="forum-user-info">
+            <h2>{{.Name}}</h2>
+            <span class="role">{{if .Moderator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
+            <dl class="forum-user-facts">
+                <dt>{{t $.Lang "forum.users.registered"}}</dt><dd>{{humanDay $.Lang .RegisteredAt $.TimeZone}}</dd>
+                <dt>{{t $.Lang "forum.users.posts"}}</dt><dd>{{count .Posts}}</dd>
+                <dt>{{t $.Lang "forum.users.topicCount"}}</dt><dd>{{count .Topics}}</dd>
+                {{- with .LastPostID}}
+                <dt>{{t $.Lang "forum.users.lastPost"}}</dt><dd><a href="/forum/post/{{.}}">{{$.Time $.User.LastPostAt}}</a></dd>
+                {{- end}}
+            </dl>
+            {{- if $.Own}}
+            <p class="meta">{{t $.Lang "forum.users.ownPage"}} <a href="{{$.AccountURL}}">{{t $.Lang "forum.users.ownPageAccount"}}</a>.</p>
+            {{- end}}
+            {{- if and ($.Viewer.CanModerateUser $.User) .Banned}}{{with .Ban}}
+            <p class="meta forum-user-banned">{{with .ExpiresAt}}{{t $.Lang "forum.users.bannedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.bannedForever"}}{{end}}</p>
+            {{- end}}{{end}}
+        </div>
+    </div>
+    {{- end}}
+
+    {{- /* «О себе» (extras/decisions.md, 21, 29): the user's own forum Markdown; on their own page
+         a form that opens in place, without a script. An empty one shows to nobody else. */}}
+    {{- $edit := .Viewer.CanEditAbout .User}}
+    {{- if or .User.About (and .Own (or $edit .User.Erased))}}
+    <section class="forum-panel forum-user-about" id="about">
+        <h3>{{t .Lang "forum.users.about"}}</h3>
+        {{- if .User.About}}
+        <div class="forum-post-body">{{$.Markdown .User.About}}</div>
+        {{- else if and .Own .User.Erased}}{{with .User.Erased}}
+        <p class="meta forum-user-banned">{{t $.Lang "forum.users.aboutErasedOn" "date" (humanDay $.Lang .At $.TimeZone)}} {{t $.Lang "forum.moderation.reason"}}: {{.Reason}}
+            {{- if not $edit}} {{t $.Lang "forum.users.aboutAfterBan"}}{{end}}</p>
+        {{- end}}{{end}}
+        {{- if $edit}}
+        <details class="forum-user-form"{{if eq .Forms.Open "about"}} open{{end}}>
+            <summary class="f-icon">{{if .User.About}}✎ {{t .Lang "common.edit"}}{{else}}+ {{t .Lang "forum.users.aboutWrite"}}{{end}}</summary>
+            <form class="forum-form" method="POST" action="{{.User.URL}}/about">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <textarea name="about" rows="4" maxlength="{{.AboutMax}}" aria-label="{{t .Lang "forum.users.about"}}" data-counter="forum-about-count"
+                    {{- if .Forms.About.Errors.about}} aria-invalid="true" aria-describedby="forum-about-error"{{end}}>{{.AboutText}}</textarea>
+                {{with .Forms.About.Errors.about}}<span class="error field-error" id="forum-about-error">{{.}}</span>{{end}}
+                <div class="forum-form-buttons"><span class="meta left"><span id="forum-about-count">{{.AboutCount}}</span> / {{.AboutMax}} · {{t .Lang "forum.users.aboutMarkup"}}</span><button type="submit" class="f-btn f-primary">{{t .Lang "common.save"}}</button></div>
+            </form>
+        </details>
+        {{- end}}
+    </section>
+    {{- end}}
+
+    {{- with .Mod}}{{template "forum-user-mod" $}}{{end}}
+
+    <div class="forum-tabs-bar forum-user-tabs">
+        <a class="tab{{if eq .Tab "posts"}} current{{end}}" href="{{.User.URL}}"{{if eq .Tab "posts"}} aria-current="page"{{end}}>{{t .Lang "forum.users.posts"}} · {{count .User.ListedPosts}}</a>
+        <a class="tab{{if eq .Tab "topics"}} current{{end}}" href="{{.User.URL}}?tab=topics"{{if eq .Tab "topics"}} aria-current="page"{{end}}>{{t .Lang "forum.users.topicCount"}} · {{count .User.ListedTopics}}</a>
+    </div>
+
+    {{- if eq .Tab "posts"}}
+    {{- if .Posts}}
+    <ul class="forum-list forum-user-posts">
+        {{- range .Posts}}
+        <li class="forum-row{{if .Deleted}} deleted{{end}}">
+            <div class="forum-row-main">
+                <span><a class="forum-row-title" href="{{.URL}}">{{.TopicTitle}}</a>{{if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.users.deleted"}}</span>{{end}}</span>
+                {{- with .Excerpt}}
+                <span class="forum-user-excerpt">{{.}}</span>
+                {{- end}}
+                <span class="meta">{{.SectionName}} · <a href="{{.URL}}">{{$.Time .At}}</a></span>
+            </div>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.users.noPosts"}}</p></div>
+    {{- end}}
+    {{- else}}
+    {{- if .Topics}}
+    <ol class="forum-list forum-topics forum-user-topics">
+        {{range .Topics}}{{template "forum-topic-row" ($.TopicLine .)}}{{end}}
+    </ol>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.users.noTopics"}}</p></div>
+    {{- end}}
+    {{- end}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+</div>
+
+{{- /* The moderators' block of another's page (users.md, table): a row per thing they act on, its
+     state and the action, a form that opens in place (<details>) and posts to the page's address.
+     After an error the page comes back with that form open. Dot is userData. */}}
+{{define "forum-user-mod"}}
+{{- $u := .User}}
+{{- $m := .Mod}}
+    <section class="forum-panel forum-user-mod">
+        <h3>{{t .Lang "forum.moderation.menu"}}</h3>
+
+        {{- if .Viewer.CanActOnUser $u}}
+        <div class="forum-user-mod-row forum-user-mod-ban">
+            <span class="what">{{t .Lang "forum.users.ban"}}</span>
+            <div class="state">
+                {{- with $u.Ban}}
+                <span>{{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .At}}
+                    <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
+                {{- else}}
+                <span>{{t $.Lang "forum.users.no"}}</span>
+                {{- end}}
+            </div>
+            {{- if $u.Ban}}
+            <form method="POST" action="{{$u.URL}}/lift-ban">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-lift-ban">{{t .Lang "forum.users.liftBan"}}</button>
+            </form>
+            {{- else}}
+            <details class="forum-user-form"{{if eq .Forms.Open "ban"}} open{{end}}>
+                <summary class="f-btn f-secondary danger">⊘ {{t .Lang "forum.moderation.ban"}}…</summary>
+                <form class="forum-form" method="POST" action="{{$u.URL}}/ban">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <p class="meta">{{t .Lang "forum.users.banNote"}}</p>
+                    <fieldset class="forum-ban-terms"{{with .Forms.Ban.Errors.duration}} aria-invalid="true" aria-describedby="forum-ban-term-error"{{end}}>
+                        <legend class="field-label">{{t .Lang "forum.moderation.banTerm"}}</legend>
+                        {{- /* 1 day first, as everywhere (extras/decisions.md, 30). */}}
+                        {{- $term := or .Forms.Ban.Duration "1"}}
+                        {{- range $m.BanDays}}
+                        <label class="forum-check"><input type="radio" name="duration" value="{{.}}"{{if eq (print .) $term}} checked{{end}}>
+                            {{- if .}}{{t $.Lang "forum.moderation.banDays" "count" .}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</label>
+                        {{- end}}
+                    </fieldset>
+                    {{with .Forms.Ban.Errors.duration}}<span class="error field-error" id="forum-ban-term-error">{{.}}</span>{{end}}
+                    <label class="field-label" for="forum-ban-reason">{{t .Lang "forum.moderation.reason"}}</label>
+                    <textarea class="forum-reason" id="forum-ban-reason" name="reason" rows="2" required
+                        {{- if .Forms.Ban.Errors.reason}} aria-invalid="true" aria-describedby="forum-ban-reason-error"{{end}}>{{.Forms.Ban.Reason}}</textarea>
+                    {{with .Forms.Ban.Errors.reason}}<span class="error field-error" id="forum-ban-reason-error">{{.}}</span>{{end}}
+                    <div class="forum-form-buttons"><button type="submit" class="f-btn f-secondary danger">{{t .Lang "forum.moderation.ban"}}</button></div>
+                </form>
+            </details>
+            {{- end}}
+        </div>
+        {{- end}}
+
+        {{- /* Nothing of another moderator's but their history: no ban, avatar or «О себе». A lock
+             from before the grant is lifted on the page «Bans». */}}
+        {{- if .Viewer.CanActOnUser $u}}
+        <div class="forum-user-mod-row forum-user-mod-avatar">
+            <span class="what">{{t .Lang "forum.users.avatar"}}</span>
+            <div class="state">
+                {{- if $m.Avatar.Lock}}{{with $m.Avatar.Lock}}
+                <span>{{with .Until}}{{t $.Lang "forum.users.avatarLockedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.avatarLockedForever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{$m.LockedBy}}</a>, {{$.Time .CreatedAt}}
+                    <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
+                {{- end}}
+                {{- else if $m.Avatar.URL}}
+                <span>{{t $.Lang "forum.users.yes"}}</span>
+                {{- else}}
+                <span>{{t $.Lang "forum.users.no"}}</span>
+                {{- end}}
+            </div>
+            {{- if $m.Avatar.Lock}}
+            <form method="POST" action="{{$u.URL}}/lift-avatar-lock">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-lift-lock">{{t .Lang "forum.users.liftLock"}}</button>
+            </form>
+            {{- else if $m.Avatar.URL}}
+            <details class="forum-user-form"{{if eq .Forms.Open "avatar"}} open{{end}}>
+                <summary class="f-btn f-secondary danger">⊖ {{t .Lang "forum.users.removeAvatar"}}…</summary>
+                <form class="forum-form" method="POST" action="{{$u.URL}}/avatar">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <p class="meta">{{t .Lang "forum.users.removeAvatarNote"}}</p>
+                    <fieldset class="forum-ban-terms"{{with .Forms.Avatar.Errors.lock}} aria-invalid="true" aria-describedby="forum-lock-term-error"{{end}}>
+                        <legend class="field-label">{{t .Lang "forum.users.lockLegend"}}</legend>
+                        {{- $term := or .Forms.Avatar.Duration "none"}}
+                        {{- range $m.Locks}}
+                        <label class="forum-check"><input type="radio" name="lock" value="{{.Value}}"{{if eq .Value $term}} checked{{end}}>
+                            {{- if .Days}}{{t $.Lang "forum.moderation.banDays" "count" .Days}}{{else if eq .Value "forever"}}{{t $.Lang "forum.users.lockForever"}}{{else}}{{t $.Lang "forum.users.lockNone"}}{{end}}</label>
+                        {{- end}}
+                    </fieldset>
+                    {{with .Forms.Avatar.Errors.lock}}<span class="error field-error" id="forum-lock-term-error">{{.}}</span>{{end}}
+                    <label class="field-label" for="forum-avatar-reason">{{t .Lang "forum.moderation.reason"}}</label>
+                    <textarea class="forum-reason" id="forum-avatar-reason" name="reason" rows="2" required
+                        {{- if .Forms.Avatar.Errors.reason}} aria-invalid="true" aria-describedby="forum-avatar-reason-error"{{end}}>{{.Forms.Avatar.Reason}}</textarea>
+                    {{with .Forms.Avatar.Errors.reason}}<span class="error field-error" id="forum-avatar-reason-error">{{.}}</span>{{end}}
+                    <div class="forum-form-buttons"><button type="submit" class="f-btn f-secondary danger">{{t .Lang "forum.users.removeAvatar"}}</button></div>
+                </form>
+            </details>
+            {{- end}}
+        </div>
+
+        <div class="forum-user-mod-row forum-user-mod-about">
+            <span class="what">{{t .Lang "forum.users.about"}}</span>
+            <div class="state">
+                {{- if $u.About}}
+                <span>{{t $.Lang "forum.users.aboutLength" "count" $u.AboutLength}}</span>
+                {{- else if $u.Erased}}{{with $u.Erased}}
+                <span>{{t $.Lang "forum.users.aboutErasedState"}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .At}}
+                    <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
+                {{- end}}
+                {{- else}}
+                <span>{{t $.Lang "forum.users.no"}}</span>
+                {{- end}}
+            </div>
+            {{- if $u.About}}
+            <details class="forum-user-form"{{if eq .Forms.Open "erase"}} open{{end}}>
+                <summary class="f-btn f-secondary danger">⊖ {{t .Lang "forum.users.erase"}}…</summary>
+                <form class="forum-form" method="POST" action="{{$u.URL}}/about/erase">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <p class="meta">{{t .Lang "forum.users.eraseNote"}}</p>
+                    <label class="field-label" for="forum-erase-reason">{{t .Lang "forum.moderation.reason"}}</label>
+                    <textarea class="forum-reason" id="forum-erase-reason" name="reason" rows="2" required
+                        {{- if .Forms.Erase.Errors.reason}} aria-invalid="true" aria-describedby="forum-erase-reason-error"{{end}}>{{.Forms.Erase.Reason}}</textarea>
+                    {{with .Forms.Erase.Errors.reason}}<span class="error field-error" id="forum-erase-reason-error">{{.}}</span>{{end}}
+                    <div class="forum-form-buttons"><button type="submit" class="f-btn f-secondary danger">{{t .Lang "forum.users.erase"}}</button></div>
+                </form>
+            </details>
+            {{- end}}
+        </div>
+
+        {{- end}}
+
+        <div class="forum-user-mod-row history">
+            <span class="what">{{t .Lang "forum.users.history"}}</span>
+            {{- if $m.History}}
+            <ul class="forum-user-log">
+                {{- range $m.History}}
+                <li>{{$.Time .At}} · <strong>{{.ActionText $.Lang}}</strong>
+                    {{- if .Banned}} {{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}{{end}}
+                    {{- if eq .Lock "forever"}}, {{t $.Lang "forum.users.lockForever"}}{{else if .LockUntil}}, {{t $.Lang "forum.users.lockTerm"}} {{t $.Lang "forum.moderation.banUntil" "date" ($.Date .LockUntil)}}{{end}}
+                    {{- if .PostID}} · <a href="/forum/post/{{.PostID}}">{{.TopicTitle}}</a>{{end}}
+                    · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a></li>
+                {{- end}}
+            </ul>
+            {{- else}}
+            <span class="meta">{{t .Lang "forum.moderation.logEmpty"}}</span>
+            {{- end}}
+            <a class="forum-user-log-all" href="/forum/mod/log?user={{$u.ID}}">{{t .Lang "forum.users.logLink"}} →</a>
+        </div>
+    </section>
+{{- end}}

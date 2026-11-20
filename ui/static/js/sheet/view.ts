@@ -12,21 +12,24 @@ import { announceCharacterName } from "./characterName";
 let stylesheet: Promise<CSSStyleSheet> | null = null;
 let loaded: CSSStyleSheet | null = null;
 
-// The page names the styles on an element: the sheet's container in
-// view_room.html, the bestiary's in bestiary.html.
-const stylesheetHref = () => document.querySelector<HTMLElement>("[data-sheet-css]")?.dataset.sheetCss ?? "";
+// The page names the styles on an element, in the order they apply: the
+// sheet's container in view_room.html, the bestiary's in bestiary.html. A
+// constructed stylesheet ignores @import, so crop.css (the portrait's crop
+// frame, shared with the site) comes as its own URL before sheet.css.
+const stylesheetHrefs = () => (document.querySelector<HTMLElement>("[data-sheet-css]")?.dataset.sheetCss ?? "").split(/\s+/).filter(Boolean);
+
+const fetchCss = (href: string) => fetch(href).then(res => {
+    if (!res.ok) throw new Error(`Sheet styles: ${res.status}`);
+    return res.text();
+});
 
 /**
  * The sheet's styles. One constructed stylesheet serves every view; a failed
  * load is not kept, so the next view tries again.
  */
 export function sheetStylesheet(): Promise<CSSStyleSheet> {
-    stylesheet ??= fetch(stylesheetHref())
-        .then(res => {
-            if (!res.ok) throw new Error(`Sheet styles: ${res.status}`);
-            return res.text();
-        })
-        .then(css => new CSSStyleSheet().replace(css))
+    stylesheet ??= Promise.all(stylesheetHrefs().map(fetchCss))
+        .then(css => new CSSStyleSheet().replace(css.join("\n")))
         .then(css => loaded = css)
         .catch(err => {
             stylesheet = null;

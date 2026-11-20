@@ -22,7 +22,7 @@ import { isClientSource, lineAt, relToRoot, walk } from "./sources.mjs";
 export const DEFAULT_ROOTS = {
     client: ["ui/static/js"],
     go: ["."],
-    templates: ["ui/html", "internal/mailer/templates"],
+    templates: ["ui/html", "internal/mailer/templates", "internal/forum/templates"],
 };
 
 const MARKER = /i18n-keys:([^\n]*)/g;

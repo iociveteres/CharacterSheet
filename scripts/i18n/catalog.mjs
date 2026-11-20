@@ -12,7 +12,7 @@ export const CATALOG_DIR = path.join(ROOT, "i18n", "catalog");
 export const LANGS = ["en", "ru"];
 export const PLURAL_FORMS = { en: ["one", "other"], ru: ["one", "few", "many"] };
 // Sections only the server reads; the client dictionaries leave them out.
-export const SERVER_SECTIONS = ["site", "server", "mail"];
+export const SERVER_SECTIONS = ["site", "server", "mail", "forum"];
 
 const slash = p => p.split(path.sep).join("/");
 

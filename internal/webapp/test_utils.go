@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"bytes"
+	"context"
 	"html"
 	"io"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
@@ -52,10 +54,11 @@ func newTestApplication(t *testing.T) *Application {
 		Encounters:      &mocks.EncounterModel{},
 		Bestiary:        &mocks.BestiaryModel{},
 		Portraits:       &mocks.PortraitModel{},
+		Avatars:         &mocks.AvatarModel{},
 	}
 
 	quiet := log.New(io.Discard, "", 0)
-	return NewApplication(&Dependencies{
+	app := NewApplication(&Dependencies{
 		ErrorLog:       quiet,
 		InfoLog:        quiet,
 		Models:         models,
@@ -65,7 +68,21 @@ func newTestApplication(t *testing.T) *Application {
 		SessionManager: sessionManager,
 		Mailer:         &testMailer{},
 	})
+	// No pool: a test that opens a forum page makes its own forum on forumtest.NewDB, the
+	// schema and migrations cost every test that gets one.
+	f, err := forum.New(nil, "https://example.com", app.ForumHost())
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Forum = noNotifications{f}
+	return app
 }
+
+// noNotifications is the forum without a pool whose nav counter is zero: every page of a signed-in
+// user asks for it.
+type noNotifications struct{ *forum.Forum }
+
+func (noNotifications) UnreadNotifications(context.Context, int) (int, error) { return 0, nil }
 
 type sentMail struct {
 	Recipient string

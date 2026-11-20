@@ -1,0 +1,43 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- with .Topic}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    {{- end}}
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{.Heading}}</h2></div></div>
+
+    {{- /* The page of one moderator's action on a topic (topic_moderation.go): its own field, if
+         any, the reason, the buttons. For delete it is the step that confirms it. */}}
+    <form class="forum-form forum-panel forum-mod-form" action="{{.Topic.URL}}/mod/{{.Action}}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        {{- if eq .Action "rename"}}
+        <label class="field-label" for="forum-mod-title">{{t .Lang "forum.topics.title"}}</label>
+        <input type="text" id="forum-mod-title" name="title" value="{{.Form.Title}}" required
+            {{- with .Form.Errors.title}} aria-invalid="true" aria-describedby="forum-mod-title-error"{{end}}>
+        {{with .Form.Errors.title}}<span class="error field-error" id="forum-mod-title-error">{{.}}</span>{{end}}
+        {{- else if eq .Action "move"}}
+        <label class="field-label" for="forum-mod-section">{{t .Lang "forum.sections.section"}}</label>
+        <select id="forum-mod-section" name="section"
+            {{- with .Form.Errors.section}} aria-invalid="true" aria-describedby="forum-mod-section-error"{{end}}>
+            {{- range .Sections}}
+            <option value="{{.ID}}"{{if eq .ID $.Form.SectionID}} selected{{end}}>{{.Name}}</option>
+            {{- end}}
+        </select>
+        {{with .Form.Errors.section}}<span class="error field-error" id="forum-mod-section-error">{{.}}</span>{{end}}
+        {{- else if eq .Action "delete"}}
+        <p class="meta">{{t .Lang "forum.moderation.deleteNote"}}</p>
+        {{- else if eq .Action "restore"}}
+        <p class="meta">{{t .Lang "forum.moderation.restoreNote"}}</p>
+        {{- end}}
+
+        {{- template "forum-mod-reason" ($.ReasonField .Form)}}
+
+        <div class="forum-form-buttons">
+            <a class="f-btn f-secondary" href="{{.Topic.URL}}">{{t .Lang "common.cancel"}}</a>
+            {{- if eq .Action "delete"}}
+            <button type="submit" class="f-btn f-secondary danger">{{.Submit}}</button>
+            {{- else}}
+            <button type="submit" class="f-btn f-primary">{{.Submit}}</button>
+            {{- end}}
+        </div>
+    </form>
+</div>

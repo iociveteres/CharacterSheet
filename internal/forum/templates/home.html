@@ -1,0 +1,82 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-ban-notice" .}}
+    {{- /* No visible heading: the page is plainly the forum (design/decisions.md, 12); the h2 keeps
+         the page's outline for screen readers. The buttons are a line on the right above the list:
+         notifications, mark all read, the view, the moderators' menu; a guest has only the view. */}}
+    <h2 class="forum-visually-hidden">{{t .Lang "forum.sections.title"}}</h2>
+    <div class="forum-head">
+        <div class="forum-actions">
+            {{- if .Viewer.SignedIn}}
+            {{- /* The same pill as next to the forum link of the nav (design/decisions.md, 14). */}}
+            <a class="f-btn f-secondary forum-notifications" href="/forum/notifications">{{t .Lang "forum.notifications.title"}}
+                {{- with .Badge}} <span class="nav-badge" title="{{t $.Lang "forum.notifications.unread"}}">{{.}}</span>{{end}}</a>
+            <form method="post" action="/forum/read">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>
+            </form>
+            {{- end}}
+            {{- /* The density of the forum's pages and "Pictures at once", kept in cookies
+                 (extras/decisions.md, 24): each choice a form, so it works without a script. */}}
+            <details class="forum-menu forum-view-menu">
+                <summary class="f-btn f-secondary">{{t .Lang "forum.view.menu"}} ▾</summary>
+                <div class="forum-menu-panel">
+                    {{- range .DensityChoices}}
+                    <form method="post" action="/forum/view/density">
+                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                        <input type="hidden" name="redirect" value="/forum/">
+                        {{- /* i18n-keys: forum.view.* */}}
+                        <button type="submit" name="density" value="{{.Value}}" class="forum-density-{{.Value}}"{{if .Current}} aria-current="true"{{end}}>
+                            {{- t $.Lang (printf "forum.view.%s" .Value)}}</button>
+                    </form>
+                    {{- end}}
+                    <hr>
+                    {{- /* "Pictures at once", off by default (extras/decisions.md, 12): a checkbox
+                         item that sends the other value. */}}
+                    <form method="post" action="/forum/view/images">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <input type="hidden" name="redirect" value="/forum/">
+                        <button type="submit" name="images" value="{{if .ImagesOpen}}closed{{else}}open{{end}}" class="forum-menu-toggle forum-images-toggle" aria-pressed="{{.ImagesOpen}}">
+                            {{- t .Lang "forum.view.images"}}</button>
+                    </form>
+                </div>
+            </details>
+            {{- /* The moderators' pages (design/decisions.md, 15). */}}
+            {{- if .Viewer.CanModerate}}
+            <details class="forum-menu forum-mod-menu">
+                <summary class="f-btn f-secondary">{{t .Lang "forum.moderation.menu"}} ▾</summary>
+                <div class="forum-menu-panel">
+                    <a href="/forum/mod/sections">{{t .Lang "forum.moderation.sections"}}</a>
+                    <a href="/forum/mod/log">{{t .Lang "forum.moderation.log"}}</a>
+                    <a href="/forum/mod/bans">{{t .Lang "forum.moderation.bans"}}</a>
+                </div>
+            </details>
+            {{- end}}
+        </div>
+    </div>
+    <div>
+        <div class="forum-list-head forum-sections">
+            <span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>
+        </div>
+        <ul class="forum-list forum-sections">
+            {{range .Sections}}
+            {{- /* The first span is the column of the unread dot. */}}
+            <li class="forum-row{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <div class="forum-row-main">
+                    <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                    {{with .Description}}<span class="meta">{{.}}</span>{{end}}
+                    <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                </div>
+                <div class="forum-row-last">
+                    {{with .LastPost}}
+                    <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
+                    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a><a href="{{.URL}}">{{$.Time .At}}</a></span>
+                    {{else}}
+                    <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
+                    {{end}}
+                </div>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+</div>

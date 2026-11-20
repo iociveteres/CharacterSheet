@@ -1,0 +1,259 @@
+/* A picture cropped in place (crop/CropFrame.tsx) and its crop window (crop/CropEditor.tsx): the
+   sheet's portrait and the site's avatar. The sheet loads this file into its shadow root before
+   sheet.css (data-sheet-css, sheet/view.ts); a page links it before its own styles. The page sets
+   the frame's size and margins by the picture's name (.portrait, .portrait-error) and may move the
+   window (.portrait-pop). Backgrounds and buttons: DESIGN.md. */
+
+.crop-cell {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.crop-box {
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid var(--border-medium);
+    border-radius: 4px;
+    background: var(--bg-input);
+    overflow: hidden;
+
+    img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &.editable {
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--border-darker);
+        }
+
+        &:hover .edit-strip,
+        &:focus-visible .edit-strip {
+            opacity: 1;
+        }
+    }
+
+    &.empty {
+        border-style: dashed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        font-size: 15px;
+        background: transparent;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+    }
+
+    /* The page's colour, nearly opaque: over a photo a faint tint leaves the text unreadable. */
+    .edit-strip {
+        position: absolute;
+        inset: auto 0 0;
+        padding: 3px 0;
+        text-align: center;
+        font-size: 14px;
+        background: color-mix(in srgb, var(--bg-light) 85%, transparent);
+        color: var(--text);
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    &.uploading img {
+        opacity: 0.45;
+    }
+
+    .spinner {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 22px;
+        height: 22px;
+        margin: -11px 0 0 -11px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 2px solid var(--border-medium);
+        border-top-color: var(--accent);
+        animation: crop-spin 0.8s linear infinite;
+    }
+}
+
+@keyframes crop-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.crop-error {
+    color: var(--accent-attention);
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+/* The picture whose window is open, and one an image is dragged over: selected. */
+.crop-box.editable.active,
+.crop-box.editable.drop {
+    border: 1px solid var(--accent);
+    outline: 1px solid var(--accent);
+}
+
+/* The window: a popover beside the picture. */
+.crop-popover {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: 0;
+    z-index: 20;
+    width: max-content;
+}
+
+.crop-pop {
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+    cursor: default;
+
+    .crop-title {
+        font-weight: bold;
+    }
+
+    .crop-body {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    /* Its size and the frame's place come from the geometry (crop/crop.ts). */
+    .crop-stage {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-input);
+        border-radius: 3px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform-origin: 0 0;
+            pointer-events: none;
+            max-width: none;
+        }
+    }
+
+    .crop-frame {
+        position: absolute;
+        box-shadow: 0 0 0 999px rgb(0 0 0 / 0.55);
+        outline: 1px solid var(--text-on-color);
+        pointer-events: none;
+    }
+
+    .crop-zoom {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 6px;
+
+        input {
+            width: 100%;
+            margin: 0;
+        }
+    }
+
+    .crop-side {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 14px;
+
+        /* Its size comes from the previews (CropEditorProps.previews). */
+        canvas {
+            border: 1px solid var(--border-medium);
+            border-radius: 3px;
+            background: var(--bg-input);
+        }
+    }
+
+    .crop-size {
+        color: var(--text-secondary);
+    }
+
+    .crop-message {
+        color: var(--accent-attention);
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .crop-footer {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-height: 30px;
+
+        .spacer {
+            flex: 1;
+        }
+
+        .question {
+            font-size: 14px;
+        }
+    }
+
+    button {
+        font: inherit;
+        font-size: 14px;
+        padding: 4px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        &.danger:hover:not(:disabled) {
+            color: var(--accent-attention);
+            border-color: var(--accent-attention);
+        }
+
+        &.danger.confirm {
+            color: var(--accent-attention);
+        }
+
+        &.primary {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+            border-color: var(--button-border);
+
+            &:hover:not(:disabled) {
+                background: var(--button-bg-hover);
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.topics.new"}}</h2></div></div>
+
+    {{- /* An error goes under its field, the field gets a red frame (design/decisions.md, 17). */}}
+    <form class="forum-form forum-panel" action="{{.Section.URL}}/new" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <label class="field-label" for="forum-topic-title">{{t .Lang "forum.topics.title"}}</label>
+        <input type="text" id="forum-topic-title" name="title" value="{{.Form.Title}}" required
+            {{- with .Form.Errors.title}} aria-invalid="true" aria-describedby="forum-topic-title-error"{{end}}>
+        {{with .Form.Errors.title}}<span class="error field-error" id="forum-topic-title-error">{{.}}</span>{{end}}
+
+        <label class="field-label" for="forum-topic-body">{{t .Lang "forum.posts.body"}}</label>
+        {{- template "forum-editor" ($.Editor "forum-topic-body" 12 "" .Form)}}
+
+        {{- /* What is not about one field: the limit of how often one writes. */}}
+        {{range .Form.NonFieldErrors}}<span class="error forum-form-error">{{.}}</span>{{end}}
+        <div class="forum-form-buttons">
+            {{- template "forum-markup-hint" .Lang}}
+            <a class="f-btn f-secondary" href="{{.Section.URL}}">{{t .Lang "common.cancel"}}</a>
+            <button type="submit" class="f-btn f-primary">{{t .Lang "common.create"}}</button>
+        </div>
+    </form>
+</div>

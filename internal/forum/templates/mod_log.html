@@ -1,0 +1,68 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.log"}}</h2>
+        {{- with .User}}
+        <span class="forum-description">{{t $.Lang "forum.users.logOf"}} <a class="forum-author-name" href="{{userURL .ID}}">{{.Name}}</a> · <a href="/forum/mod/log">{{t $.Lang "forum.users.logAll"}}</a></span>
+        {{- end}}</div></div>
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+
+    {{- /* The moderators' actions, the newest first (mod_log.go): who and when above, as a
+         notification (design/decisions.md, 21), then what, to what, and the reason. A deleted topic
+         or post still links: moderators read it. */}}
+    {{- if .Lines}}
+    <ul class="forum-list forum-mod-log">
+        {{- range .Lines}}
+        <li class="forum-row" id="log-{{.ID}}">
+            <div class="forum-row-main">
+                <span class="meta"><a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a> · {{$.Time .At}}</span>
+                <span class="forum-log-what"><strong>{{.ActionText $.Lang}}</strong>
+                    {{- if .UserID}}: <a class="forum-author-name" href="{{userURL .UserID}}">{{.UserName}}</a>
+                    {{- with .PostID}} · <a href="/forum/post/{{.}}">{{t $.Lang "forum.moderation.logPost"}}</a>{{end}}
+                    {{- else if .PostID}}: <a href="/forum/post/{{.PostID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .TopicID}}: <a href="/forum/topic/{{.TopicID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .SectionID}}: <a href="/forum/section/{{.SectionID}}">{{.SectionName}}</a>
+                    {{- end}}</span>
+                {{- with .Was}}
+                <span class="meta">{{t $.Lang "forum.moderation.logWas"}}: {{.}}</span>
+                {{- end}}
+                {{- if .FromSection}}
+                <span class="meta">{{.FromSection}} → {{.SectionName}}</span>
+                {{- end}}
+                {{- if .From}}
+                <span class="meta">{{t $.Lang "forum.moderation.logPlace"}}: {{.From}} → {{.To}}</span>
+                {{- end}}
+                {{- if .Banned}}
+                <span class="meta">{{t $.Lang "forum.moderation.banTerm"}}: {{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</span>
+                {{- end}}
+                {{- if .Lock}}
+                <span class="meta">{{t $.Lang "forum.users.lockTerm"}}: {{if eq .Lock "forever"}}{{t $.Lang "forum.users.lockForever"}}{{else if .LockUntil}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .LockUntil)}}{{else}}{{t $.Lang "forum.users.lockNone"}}{{end}}</span>
+                {{- end}}
+                {{- with .Reason}}
+                <span class="forum-log-reason">{{t $.Lang "forum.moderation.reason"}}: {{.}}</span>
+                {{- end}}
+                {{- /* The posts of an author's day, deleted from one delete window, come back at
+                     once while some are still deleted by it (post_moderation.go, restoreRecent). */}}
+                {{- if $.Viewer.CanRestoreRecent .}}
+                <form class="forum-log-restore" method="POST" action="/forum/mod/log/{{.ID}}/restore">
+                    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                    <input type="hidden" name="back" value="{{$.Back}}">
+                    <button type="submit" class="f-btn f-secondary forum-restore-recent">↺ {{t $.Lang "forum.moderation.restoreAll"}}</button>
+                </form>
+                {{- end}}
+            </div>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.moderation.logEmpty"}}</p></div>
+    {{- end}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+</div>
+

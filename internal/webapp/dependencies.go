@@ -25,6 +25,7 @@ type Dependencies struct {
 	BaseURL        string
 	Gamedata       gamedata.Catalogs
 	Mailer         MailSender
+	Forum          ForumService
 }
 
 // MailSender is mailer.Mailer; tests put a fake in its place.

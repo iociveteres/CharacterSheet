@@ -1,0 +1,68 @@
+{{- /* A post of a topic; dot is postCard (view.Card). */}}
+{{define "forum-post"}}
+{{- with .Post}}
+{{- if and .Deleted (not $.Viewer.CanReadDeletedPosts)}}
+{{- /* One line in the post's place, with its author, time, anchor and number (design/decisions.md,
+     20); its text never reaches the template. */}}
+<article class="forum-post deleted-stub" id="post-{{.ID}}">
+    <span>{{t $.Lang "forum.posts.deleted"}}</span>
+    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a> · {{$.Time .CreatedAt}}</span>
+    <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
+</article>
+{{- else}}
+{{- /* A moderator sees the whole card of a deleted post: a dashed red frame, faint text, who
+     deleted it, when and why, and the way back (design/decisions.md, 20). */}}
+<article class="forum-post{{if .AuthorModerator}} mod{{end}}{{if .Deleted}} deleted-mod{{end}}" id="post-{{.ID}}"
+    {{- with $.QuoteHead}} data-quote-head="{{.}}"{{end}}>
+    <div class="forum-post-author">
+        {{- template "forum-avatar" .Avatar}}
+        <a class="name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a>
+        <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
+        <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
+    </div>
+    <div class="forum-post-main">
+        {{- if .Deleted}}
+        <span class="deleted-note">{{t $.Lang "forum.moderation.postDeleted"}}: <a class="forum-author-name" href="{{userURL .DeletedByID}}">{{.DeletedByName}}</a>, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</span>
+        {{- end}}
+        <div class="forum-post-body">{{$.Markdown .Body}}</div>
+        {{- /* The number, the time and "edited" at the left of the bottom line, the actions at its
+             right; wrapped, the actions keep the right (extras/decisions.md, 7 and 9). */}}
+        <div class="forum-post-foot">
+            <div class="forum-post-meta"><a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a><span>{{$.Time .CreatedAt}}</span>
+                {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
+            </div>
+        {{- if $.Actions}}
+        {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
+        {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
+        {{- $quote := $.Viewer.CanQuote $.Topic $.Post}}
+        {{- $restore := $.Viewer.CanRestorePost $.Topic $.Post}}
+        {{- /* Only the actions the viewer may take (design/decisions.md, 8). Quote opens the reply
+             form on the last page of the topic with the quote in it. A moderator deletes any reply
+             and restores a deleted post; the author's ban is in the delete window and on their page
+             (extras/decisions.md, 11). */}}
+        {{- if or $quote $edit $delete $restore}}
+        <div class="forum-post-actions">
+            {{- if $quote}}<a class="f-icon forum-quote-post" href="{{.URL}}/quote#reply" rel="nofollow">❝ {{t $.Lang "forum.posts.quote"}}</a>{{end}}
+            {{- if $edit}}<a class="f-icon forum-edit-post" href="{{.URL}}/edit">✎ {{t $.Lang "common.edit"}}</a>{{end}}
+            {{- if $delete}}<a class="f-icon danger forum-delete-post" href="{{.URL}}/delete">× {{t $.Lang "common.delete"}}</a>{{end}}
+            {{- if $restore}}<a class="f-icon forum-restore-post" href="{{.URL}}/restore">↺ {{t $.Lang "forum.moderation.restore"}}</a>{{end}}
+        </div>
+        {{- end}}
+        {{- end}}
+        </div>
+    </div>
+</article>
+{{- end}}
+{{- end}}
+{{end}}
+
+{{- /* The avatar of the author column and of the reply form (extras/decisions.md, 1, 9, 14); dot is
+     avatar. The name beside it says who it is, so the image has an empty alt. Without an avatar, the
+     first letter of the name on the user's tint (decision 15; main.css, avatar-hue). */}}
+{{define "forum-avatar"}}
+{{- if .URL}}
+<span class="forum-avatar"><img src="{{.URL}}" alt="" width="{{.Size}}" height="{{.Size}}" loading="lazy"></span>
+{{- else}}
+<span class="forum-avatar letter avatar-hue avatar-hue-{{.Hue}}" aria-hidden="true">{{.Initial}}</span>
+{{- end}}
+{{- end}}

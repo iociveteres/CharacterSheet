@@ -5,7 +5,8 @@
 // folders and sheets made by tests are deleted, the seeded sheets get their
 // name and visibility back, the stress sheets (stress.go), the gm's stress
 // encounter (encounter.go) and the gm's sheets of the other kinds are made
-// anew.
+// anew. The seeded moderator is a moderator of the forum too (forum.go); the
+// gm and the player have an avatar, the outsider a lock on one (avatars.go).
 // The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
@@ -69,6 +70,8 @@ type output struct {
 	KindSheets map[models.SheetKind]int `json:"kindSheets"`
 	// The gm's encounter of many creatures that scripts/perf/stress.mjs types into.
 	StressEncounter int `json:"stressEncounter"`
+	// What the forum scenarios write in.
+	Forum forumSeed `json:"forum"`
 }
 
 func main() {
@@ -171,6 +174,12 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 	if err := ensureChat(ctx, db, m, roomID); err != nil {
 		return out, fmt.Errorf("chat: %w", err)
 	}
+	if out.Forum, err = ensureForum(ctx, db); err != nil {
+		return out, fmt.Errorf("forum: %w", err)
+	}
+	if err := ensureAvatars(ctx, m); err != nil {
+		return out, fmt.Errorf("avatars: %w", err)
+	}
 	return out, nil
 }
 
@@ -215,7 +224,8 @@ func ensureUser(ctx context.Context, db *pgxpool.Pool, m models.Models, u *seedU
 	if err != nil {
 		return 0, err
 	}
-	_, err = db.Exec(ctx, `UPDATE users SET status = 'email_verified' WHERE id = $1`, id)
+	// No saved language: the scenarios pick theirs with the lang cookie, which a saved one outranks.
+	_, err = db.Exec(ctx, `UPDATE users SET status = 'email_verified', locale = NULL WHERE id = $1`, id)
 	return id, err
 }
 
