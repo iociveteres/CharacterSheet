@@ -20,13 +20,16 @@
         <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
     </div>
     <div class="forum-post-main">
-        <div class="forum-post-meta"><span>{{$.Time .CreatedAt}}</span>
-            {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
-            <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a></div>
         {{- if .Deleted}}
         <span class="deleted-note">{{t $.Lang "forum.moderation.postDeleted"}}: {{.DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</span>
         {{- end}}
         <div class="forum-post-body">{{markdown .Body}}</div>
+        {{- /* The number, the time and "edited" at the left of the bottom line, the actions at its
+             right; wrapped, the actions keep the right (extras/decisions.md, 7 and 9). */}}
+        <div class="forum-post-foot">
+            <div class="forum-post-meta"><a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a><span>{{$.Time .CreatedAt}}</span>
+                {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
+            </div>
         {{- if $.Actions}}
         {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
         {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
@@ -47,6 +50,7 @@
         </div>
         {{- end}}
         {{- end}}
+        </div>
     </div>
 </article>
 {{- end}}

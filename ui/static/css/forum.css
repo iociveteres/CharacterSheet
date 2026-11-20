@@ -654,7 +654,7 @@ main.forum-wide {
     color: var(--text);
 }
 
-/* A column, so that the actions of block 3 sit at the bottom (margin-top: auto). */
+/* A column, so that the bottom line sits at the bottom of the card (margin-top: auto). */
 .forum-post-main {
     min-width: 0;
     padding: 10px 16px 8px;
@@ -677,7 +677,6 @@ main.forum-wide {
 }
 
 #forum .forum-post .num {
-    margin-left: auto;
     color: var(--text-secondary);
 }
 
@@ -685,13 +684,27 @@ main.forum-wide {
     color: var(--link);
 }
 
-/* Under the text on the right (design/decisions.md, 8); the column pushes them to the bottom. */
+/* The bottom line: the number, the time and "edited" at the left, the actions at the right
+   (extras/decisions.md, 7 and 9); a long meta line pushes the actions to a line of their own, still
+   at the right. */
+.forum-post-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 16px;
+    margin-top: auto;
+}
+
+.forum-post-foot .forum-post-meta {
+    margin-right: auto;
+}
+
 .forum-post-actions {
     display: flex;
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: 4px 16px;
-    margin-top: auto;
+    margin-left: auto;
 }
 
 /* A deleted post keeps its place, author, time and number as one line (design/decisions.md, 20). */
@@ -715,6 +728,7 @@ main.forum-wide {
 }
 
 #forum .forum-post.deleted-stub .num {
+    margin-left: auto;
     font-style: normal;
 }
 
@@ -1365,14 +1379,13 @@ main.forum-wide {
         margin: -8px -4px;
     }
 
-    /* Still pushed to the right of the post's line. */
-    #forum .forum-post .num {
+    /* Still pushed to the right of the deleted post's line. */
+    #forum .forum-post.deleted-stub .num {
         margin-left: auto;
     }
 
     .forum-post-actions {
         gap: 4px 20px;
-        padding-top: 8px;
     }
 
     .forum-minipages a,

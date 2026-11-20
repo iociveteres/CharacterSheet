@@ -20,9 +20,10 @@ function post(head: string | null, ...body: Child[]): { article: HTMLElement; bo
     const article = el("article", attrs,
         el("div", { class: "forum-post-author" }, el("span", { class: "name" }, "alice")),
         el("div", { class: "forum-post-main" },
-            el("div", { class: "forum-post-meta" }, el("a", { class: "num", href: "/forum/post/7" }, "#2")),
             text,
-            el("div", { class: "forum-post-actions" }, el("a", { class: "forum-quote-post", href: "/forum/post/7/quote#reply" }, "Quote"))));
+            el("div", { class: "forum-post-foot" },
+                el("div", { class: "forum-post-meta" }, el("a", { class: "num", href: "/forum/post/7" }, "#2")),
+                el("div", { class: "forum-post-actions" }, el("a", { class: "forum-quote-post", href: "/forum/post/7/quote#reply" }, "Quote")))));
     document.body.append(article);
     return { article, body: text };
 }

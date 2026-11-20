@@ -33,8 +33,8 @@ export function quoteText(head: string, markdown: string): string {
 }
 
 /** The part of `range` within the text of the post, or null when the selection reaches another
- * post or lies outside the text. A selection that starts in the post's meta or ends under its
- * actions (a triple click does) is cut to the text. */
+ * post or lies outside the text. A selection that runs on into the post's bottom line (a triple
+ * click does) is cut to the text. */
 export function rangeInPost(range: Range, article: Element, body: Element): Range | null {
     if (!article.contains(range.startContainer) || !article.contains(range.endContainer)) return null;
     const whole = body.ownerDocument.createRange();
