@@ -124,7 +124,12 @@ func TestReadTopicFailureServesPage(t *testing.T) {
 	author := forumtest.User(t, db, "author", at(0))
 	reader := forumtest.User(t, db, "reader", at(0))
 	topic, _ := mustCreateTopic(t, f, newSection(t, db, "section"), author, "topic", at(1))
-	_, err := db.Exec(context.Background(), `REVOKE INSERT, UPDATE ON forum_topic_reads FROM CURRENT_USER`)
+	// A trigger, not REVOKE: CI connects as the container's superuser, whom privileges don't stop.
+	_, err := db.Exec(context.Background(), `
+		CREATE FUNCTION refuse_read_mark() RETURNS trigger LANGUAGE plpgsql AS $$
+		BEGIN RAISE EXCEPTION 'read marks refused'; END $$;
+		CREATE TRIGGER refuse_read_mark BEFORE INSERT OR UPDATE ON forum_topic_reads
+			FOR EACH ROW EXECUTE FUNCTION refuse_read_mark();`)
 	assert.NilError(t, err)
 
 	host.userID = reader
