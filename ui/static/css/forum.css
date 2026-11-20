@@ -48,6 +48,7 @@ main.forum-wide {
 .forum-breadcrumbs {
     font-size: 15px;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 #forum .forum-breadcrumbs a {
@@ -1319,5 +1320,63 @@ main.forum-wide {
 
     .forum-panel {
         padding: 10px 12px;
+    }
+
+    /* Finger-sized controls: buttons, fields, pages and tabs at least 40px tall. 16px text keeps a
+       phone browser from zooming in on the field it focuses. */
+    #forum .f-btn,
+    #forum .forum-page,
+    #forum .forum-tabs-bar .tab {
+        min-height: 40px;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    #forum .forum-form input[type="text"],
+    #forum .forum-form select,
+    #forum .forum-form textarea {
+        min-height: 40px;
+        font-size: 16px;
+    }
+
+    #forum .forum-form .forum-check {
+        min-height: 40px;
+    }
+
+    #forum .forum-check input {
+        width: 20px;
+        height: 20px;
+    }
+
+    #forum .forum-menu-panel a {
+        padding: 9px 14px;
+    }
+
+    .forum-hint>summary {
+        padding: 9px 0;
+    }
+
+    /* Links among text keep their line; their padding widens what a finger hits around them. */
+    #forum .forum-post-actions a,
+    #forum .forum-post .num,
+    #forum .forum-breadcrumbs a {
+        display: inline-block;
+        padding: 8px 4px;
+        margin: -8px -4px;
+    }
+
+    /* Still pushed to the right of the post's line. */
+    #forum .forum-post .num {
+        margin-left: auto;
+    }
+
+    .forum-post-actions {
+        gap: 4px 20px;
+        padding-top: 8px;
+    }
+
+    .forum-minipages a,
+    .forum-minipages span {
+        padding: 4px 8px;
     }
 }

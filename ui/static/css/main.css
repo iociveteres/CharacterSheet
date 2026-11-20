@@ -136,6 +136,11 @@ nav a.live:hover {
     text-decoration: none;
 }
 
+/* Current on every page under its path (main.js), where it still leads to the section's start. */
+nav a.live[data-live-prefix] {
+    cursor: pointer;
+}
+
 nav a.live:after {
     content: '';
     width: 14px;
@@ -203,6 +208,25 @@ nav a.live:after {
     /* The marker under the current link points at the nav's bottom edge from its own row. */
     nav a.live:after {
         display: none;
+    }
+
+    /* Finger-sized links of the header, nav and footer: the padding widens what a finger hits
+       without moving the rows apart. */
+    nav.site-wide a,
+    nav.site-wide .button-linklike,
+    footer.site-wide a {
+        padding: 8px 0;
+        margin: -4px 0;
+    }
+
+    #language-form select {
+        min-height: 36px;
+        font-size: 16px;
+    }
+
+    .incident-notice .close {
+        min-width: 40px;
+        min-height: 40px;
     }
 
     main {

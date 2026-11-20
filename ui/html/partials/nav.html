@@ -8,7 +8,7 @@
             <a href='{{reverseRev "AccountSheets"}}'>{{t .Lang "site.nav.characterSheets"}}</a>
             <a href='{{reverseRev "Bestiary"}}'>{{t .Lang "site.nav.bestiary"}}</a>
             {{end}}
-            <a href='/forum/'>{{t .Lang "forum.sections.title"}}
+            <a href='/forum/' data-live-prefix='/forum/'>{{t .Lang "forum.sections.title"}}
                 {{- with .NavForumBadge}}<span class="nav-badge" title="{{t $.Lang "forum.notifications.unread"}}">{{.}}</span>{{end}}</a>
         </div>
         <div>
