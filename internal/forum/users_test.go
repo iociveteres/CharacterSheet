@@ -168,11 +168,13 @@ func TestUserPageBanLineAndModBlock(t *testing.T) {
 			t.Errorf("%s: ban notice %v", c.name, got)
 		}
 	}
-	// A moderator's page has no row of the ban: a moderator is never banned.
+	// Another moderator's page has the history only: no ban, avatar or «About» rows.
 	other := newModerator(t, s.db, "other mod")
 	body := s.page(t, s.mod, other, "")
-	assert.StringContains(t, body, `forum-user-mod-avatar`)
-	assert.Equal(t, strings.Contains(body, `forum-user-mod-ban`), false)
+	assert.StringContains(t, body, `forum-user-mod-row history`)
+	for _, row := range []string{"forum-user-mod-ban", "forum-user-mod-avatar", "forum-user-mod-about"} {
+		assert.Equal(t, strings.Contains(body, row), false)
+	}
 	// Her own page links the Account page, where the avatar changes.
 	body = s.page(t, s.bob, s.bob, "")
 	assert.StringContains(t, body, `href="`+s.h.AccountURL()+`"`)
@@ -267,6 +269,12 @@ func TestEraseAbout(t *testing.T) {
 	}
 	s.h.userID = s.mod
 	assert.Equal(t, s.h.post(t, s.f, userURL(s.mod)+"/about/erase", url.Values{"reason": {"x"}}).Code, http.StatusForbidden)
+	// Nor another moderator's.
+	other := newModerator(t, s.db, "other mod")
+	_, err = s.db.Exec(context.Background(), `INSERT INTO forum_profiles (user_id, about) VALUES ($1, 'mine')`, other)
+	assert.NilError(t, err)
+	assert.Equal(t, s.h.post(t, s.f, userURL(other)+"/about/erase", url.Values{"reason": {"x"}}).Code, http.StatusForbidden)
+	assert.Equal(t, about(t, s, other), "mine")
 }
 
 // A moderator removes the avatar through the host, with a lock of a term, for good or none; then
@@ -335,6 +343,11 @@ func TestRemoveAvatar(t *testing.T) {
 	}
 	s.h.userID = s.mod
 	assert.Equal(t, s.h.post(t, s.f, userURL(s.mod)+"/avatar", url.Values{"lock": {"none"}, "reason": {"x"}}).Code, http.StatusForbidden)
+	// Nor another moderator's.
+	other := newModerator(t, s.db, "other mod")
+	s.h.avatarURLs[other] = "/avatar/o"
+	assert.Equal(t, s.h.post(t, s.f, userURL(other)+"/avatar", url.Values{"lock": {"none"}, "reason": {"x"}}).Code, http.StatusForbidden)
+	assert.Equal(t, s.h.avatarURLs[other], "/avatar/o")
 }
 
 // Lifting the lock, from the page or from the list of bans: the host lifts, the log and the user
@@ -375,7 +388,7 @@ func TestBanFromUserPage(t *testing.T) {
 
 	body := s.page(t, s.mod, s.bob, "")
 	assert.Equal(t, strings.Count(body, `type="radio" name="duration"`), len(banDays))
-	assert.StringContains(t, body, `value="7" checked`)
+	assert.StringContains(t, body, `value="1" checked`)
 
 	s.h.userID = s.mod
 	s.h.post(t, s.f, target, url.Values{"duration": {"7"}})
@@ -475,4 +488,41 @@ func TestNamesLinkToUserPages(t *testing.T) {
 	body = string(s.h.page.Body)
 	assert.StringContains(t, body, link(s.mod, "mod"))
 	assert.StringContains(t, body, link(s.bob, "bob"))
+}
+
+// Every form of a user page refuses a moderator acting on another moderator (the author's answer of
+// 2026-11-20): no ban, no avatar removed, no «About» erased or written. The test goes through the
+// registered routes, so an action added without the check fails it. Lifting a lock on the avatar
+// only gives back and stays allowed.
+func TestUserActionsRefuseModeratorOnModerator(t *testing.T) {
+	s := newUserScene(t)
+	other := newModerator(t, s.db, "other mod")
+	_, err := s.db.Exec(context.Background(), `INSERT INTO forum_profiles (user_id, about) VALUES ($1, 'mine')`, other)
+	assert.NilError(t, err)
+	s.h.avatarURLs = map[int]string{other: "/avatar/o"}
+	form := url.Values{"reason": {"r"}, "duration": {"1"}, "lock": {"forever"}, "about": {"theirs"}}
+	allowed := map[string]bool{"POST /forum/user/{id}/lift-avatar-lock": true}
+
+	s.h.userID = s.mod
+	before := forumState(t, s.db)
+	checked := 0
+	for _, pattern := range s.f.patterns {
+		if !strings.HasPrefix(pattern, "POST /forum/user/{id}/") {
+			continue
+		}
+		_, path := fillPattern(t, pattern, map[string]string{"user/{id}": fmt.Sprint(other)})
+		rec := s.h.post(t, s.f, path, form)
+		if allowed[pattern] {
+			redirectedTo(t, rec)
+			continue
+		}
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("POST %s: status %d, want 403", path, rec.Code)
+		}
+		checked++
+	}
+	assert.Equal(t, forumState(t, s.db), before)
+	assert.Equal(t, about(t, s, other), "mine")
+	assert.Equal(t, s.h.avatarURLs[other], "/avatar/o")
+	assert.Equal(t, checked, 5)
 }

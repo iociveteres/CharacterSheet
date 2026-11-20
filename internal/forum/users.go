@@ -443,7 +443,7 @@ func requireReason(r *http.Request, lang string) modForm {
 // eraseAbout is POST /forum/user/{id}/about/erase: the text goes, not kept, the log keeps the
 // reason, and the user is told.
 func (f *Forum) eraseAbout(w http.ResponseWriter, r *http.Request, v view) {
-	u, ok := f.userToActOn(w, r, v, Viewer.CanModerateUser)
+	u, ok := f.userToActOn(w, r, v, Viewer.CanActOnUser)
 	if !ok {
 		return
 	}
@@ -468,7 +468,7 @@ func (f *Forum) eraseAbout(w http.ResponseWriter, r *http.Request, v view) {
 // banFromPage is POST /forum/user/{id}/ban: the ban of the moderators' block, as the ban from a
 // post but for no post.
 func (f *Forum) banFromPage(w http.ResponseWriter, r *http.Request, v view) {
-	u, ok := f.userToActOn(w, r, v, Viewer.CanBanUser)
+	u, ok := f.userToActOn(w, r, v, Viewer.CanActOnUser)
 	if !ok {
 		return
 	}
@@ -491,7 +491,7 @@ func (f *Forum) banFromPage(w http.ResponseWriter, r *http.Request, v view) {
 
 // liftUserBan is POST /forum/user/{id}/lift-ban: every standing ban of the user goes.
 func (f *Forum) liftUserBan(w http.ResponseWriter, r *http.Request, v view) {
-	u, ok := f.userToActOn(w, r, v, Viewer.CanBanUser)
+	u, ok := f.userToActOn(w, r, v, Viewer.CanActOnUser)
 	if !ok {
 		return
 	}
@@ -544,7 +544,7 @@ func lockUntil(term string, at time.Time) (*AvatarLock, bool) {
 // «Граница с форумом»). Should the second fail, the avatar is gone without a line: the moderator
 // sees the error and repeats, which is safe.
 func (f *Forum) removeAvatar(w http.ResponseWriter, r *http.Request, v view) {
-	u, ok := f.userToActOn(w, r, v, Viewer.CanModerateUser)
+	u, ok := f.userToActOn(w, r, v, Viewer.CanActOnUser)
 	if !ok {
 		return
 	}

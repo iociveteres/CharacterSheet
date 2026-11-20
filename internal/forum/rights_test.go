@@ -64,7 +64,7 @@ func TestRights(t *testing.T) {
 	modsPage := forumUser{ID: 4, Moderator: true}
 	moderatorsOwn := forumUser{ID: moderator.ID, Moderator: true}
 	modUser := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanModerateUser(u) } }
-	banUser := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanBanUser(u) } }
+	actOn := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanActOnUser(u) } }
 	editAbout := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanEditAbout(u) } }
 
 	tests := []struct {
@@ -189,10 +189,14 @@ func TestRights(t *testing.T) {
 		{"moderator moderates another moderator", moderator, modUser(modsPage), true},
 		{"moderator moderates themself", moderator, modUser(moderatorsOwn), false},
 		{"banned moderator moderates a user", bannedModerator, modUser(othersPage), true},
-		{"member bans from a page", member, banUser(othersPage), false},
-		{"moderator bans from a page", moderator, banUser(othersPage), true},
-		{"moderator bans a moderator from a page", moderator, banUser(modsPage), false},
-		{"moderator bans themself from a page", moderator, banUser(moderatorsOwn), false},
+		// Ban, remove the avatar, erase «About»: never a moderator's (the author, 2026-11-20).
+		{"guest acts on a user", guest, actOn(othersPage), false},
+		{"member acts on a user", member, actOn(othersPage), false},
+		{"banned user acts on a user", banned, actOn(othersPage), false},
+		{"moderator acts on a user", moderator, actOn(othersPage), true},
+		{"moderator acts on another moderator", moderator, actOn(modsPage), false},
+		{"moderator acts on themself", moderator, actOn(moderatorsOwn), false},
+		{"banned moderator acts on a user", bannedModerator, actOn(othersPage), true},
 
 		{"guest writes «About»", guest, editAbout(ownPage), false},
 		{"member writes their «About»", member, editAbout(ownPage), true},

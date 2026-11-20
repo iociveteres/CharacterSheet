@@ -122,15 +122,17 @@ func (v Viewer) CanBan(p post) bool {
 
 // The user page (block 6 of extras/plan.md).
 
-// CanModerateUser: the moderators' block of another's page, its ban line (extras/decisions.md,
-// 20), removing and unlocking the avatar, erasing «О себе». A moderator's own page has none: they
-// see themselves as a member does.
+// CanModerateUser: the moderators' block of another's page with its history, the ban line
+// (extras/decisions.md, 20) and lifting a lock on the avatar, which only gives back. A moderator's
+// own page has none: they see themselves as a member does.
 func (v Viewer) CanModerateUser(u forumUser) bool {
 	return v.Moderator && u.ID != v.ID
 }
 
-// CanBanUser from their page: never a moderator, as CanBan.
-func (v Viewer) CanBanUser(u forumUser) bool {
+// CanActOnUser: ban and lift a ban, remove the avatar, erase «О себе» from their page. Never on a
+// moderator: no ban, as CanBan, and neither their avatar nor their words (the author's answer of
+// 2026-11-20, results/6.md).
+func (v Viewer) CanActOnUser(u forumUser) bool {
 	return v.CanModerateUser(u) && !u.Moderator
 }
 

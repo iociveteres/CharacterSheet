@@ -104,7 +104,7 @@
     <section class="forum-panel forum-user-mod">
         <h3>{{t .Lang "forum.moderation.menu"}}</h3>
 
-        {{- if .Viewer.CanBanUser $u}}
+        {{- if .Viewer.CanActOnUser $u}}
         <div class="forum-user-mod-row forum-user-mod-ban">
             <span class="what">{{t .Lang "forum.users.ban"}}</span>
             <div class="state">
@@ -128,7 +128,8 @@
                     <p class="meta">{{t .Lang "forum.users.banNote"}}</p>
                     <fieldset class="forum-ban-terms"{{with .Forms.Ban.Errors.duration}} aria-invalid="true" aria-describedby="forum-ban-term-error"{{end}}>
                         <legend class="field-label">{{t .Lang "forum.moderation.banTerm"}}</legend>
-                        {{- $term := or .Forms.Ban.Duration "7"}}
+                        {{- /* 1 day first, as everywhere (extras/decisions.md, 30). */}}
+                        {{- $term := or .Forms.Ban.Duration "1"}}
                         {{- range $m.BanDays}}
                         <label class="forum-check"><input type="radio" name="duration" value="{{.}}"{{if eq (print .) $term}} checked{{end}}>
                             {{- if .}}{{t $.Lang "forum.moderation.banDays" "count" .}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</label>
@@ -146,6 +147,9 @@
         </div>
         {{- end}}
 
+        {{- /* Nothing of another moderator's but their history: no ban, avatar or «О себе». A lock
+             from before the grant is lifted on the page «Bans». */}}
+        {{- if .Viewer.CanActOnUser $u}}
         <div class="forum-user-mod-row forum-user-mod-avatar">
             <span class="what">{{t .Lang "forum.users.avatar"}}</span>
             <div class="state">
@@ -217,6 +221,8 @@
             </details>
             {{- end}}
         </div>
+
+        {{- end}}
 
         <div class="forum-user-mod-row history">
             <span class="what">{{t .Lang "forum.users.history"}}</span>
