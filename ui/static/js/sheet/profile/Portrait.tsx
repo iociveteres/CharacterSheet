@@ -1,22 +1,18 @@
 // The portrait beside the character's name, only in the full sheet
-// (CharacterInfo); a click on it opens the portrait window (PortraitEditor).
-// The image is served by its hash, GET /portrait/:hash; the hash changes only
-// with portraitChanged (core/remote.ts), also after this tab's own upload,
-// so every tab shows the same.
-import { render, type JSX } from "preact";
+// (CharacterInfo): the shared crop frame (crop/CropFrame.tsx) at 3:4, with
+// ⤢ for the full size. The image is served by its hash, GET /portrait/:hash;
+// the hash changes only with portraitChanged (core/remote.ts), also after this
+// tab's own upload, so every tab shows the same.
+import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useSheet } from "../components/context";
-import { isImageFile, NOT_AN_IMAGE, PortraitEditor } from "./PortraitEditor";
+import { CropFrame } from "../../crop/CropFrame";
+import type { CropGeometry } from "../../crop/crop";
 import { t } from "../../i18n";
 
-/** An image on its way to the server, shown in the frame meanwhile. */
-interface Upload {
-    /** An object URL of the image. */
-    url: string;
-    /** The portrait before the upload: the preview stays until portraitChanged replaces it. */
-    from: string | null;
-    sending: boolean;
-}
+// The size the server takes (internal/webapp/portraits.go).
+const PORTRAIT: CropGeometry = { stage: 300, frame: { w: 180, h: 240 }, output: { w: 360, h: 480 } };
+const PREVIEWS = [90];
 
 /** Whether CharacterInfo shows the portrait's cell: a viewer sees none on a sheet without one. */
 export const showsPortrait = (portrait: string | null, canEdit: boolean) => portrait !== null || canEdit;
@@ -24,136 +20,33 @@ export const showsPortrait = (portrait: string | null, canEdit: boolean) => port
 export function Portrait() {
     const { portrait, canEdit, actions } = useSheet();
     const hash = portrait.value;
-    const [upload, setUpload] = useState<Upload | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [full, setFull] = useState(false);
-    /** The portrait window, open on a file or on the saved portrait; a new key opens it anew. */
-    const [editing, setEditing] = useState<{ file: File | null; key: number } | null>(null);
-    const [dropping, setDropping] = useState(false);
-    const picker = useRef<HTMLInputElement>(null);
-    const cell = useRef<HTMLDivElement>(null);
-
-    // Until the hash comes, the frame would show the old portrait again.
-    useEffect(() => {
-        if (upload && !upload.sending && hash !== upload.from) setUpload(null);
-    }, [hash, upload]);
-    useEffect(() => {
-        if (!upload) return;
-        const { url } = upload;
-        return () => URL.revokeObjectURL(url);
-    }, [upload?.url]);
-
-    const send = (image: Blob) => {
-        const url = URL.createObjectURL(image);
-        const current = (u: Upload | null) => u?.url === url;
-        setError(null);
-        setUpload({ url, from: hash, sending: true });
-        actions.uploadPortrait(image).then(
-            () => setUpload(u => current(u) ? { ...u!, sending: false } : u),
-            (err: unknown) => {
-                setUpload(u => current(u) ? null : u);
-                setError(err instanceof Error ? err.message : String(err));
-            },
-        );
-    };
-
-    /** Opens the portrait window on `file`, a picked or dropped image, or on the saved portrait when null. */
-    const edit = (file: File | null) => {
-        if (file && !isImageFile(file)) {
-            setError(NOT_AN_IMAGE);
-            return;
-        }
-        setError(null);
-        setEditing(e => ({ file, key: (e?.key ?? 0) + 1 }));
-    };
-
-    const remove = () => {
-        setEditing(null);
-        setError(null);
-        actions.deletePortrait().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
-    };
-
-    const onPicked = (e: JSX.TargetedEvent<HTMLInputElement>) => {
-        const input = e.currentTarget;
-        const file = input.files?.[0] ?? null;
-        // The same file picked again must fire change again.
-        input.value = "";
-        if (file) edit(file);
-    };
-
-    const src = upload?.url ?? (hash ? `/portrait/${hash}` : null);
-    useFullView(cell, full ? src : null, () => setFull(false));
-
     if (!showsPortrait(hash, canEdit)) return null;
-
-    const editable = canEdit && !upload?.sending;
-    // An empty frame asks for a file at once: the window opens with the image in it.
-    const open = () => {
-        if (!src) picker.current?.click();
-        else if (!editing) edit(null);
-    };
-    const frameProps: JSX.HTMLAttributes<HTMLDivElement> = editable
-        ? {
-            role: "button",
-            tabIndex: 0,
-            onClick: open,
-            onKeyDown: e => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                open();
-            },
-            onDragOver: e => {
-                if (!e.dataTransfer?.types.includes("Files")) return;
-                e.preventDefault();
-                setDropping(true);
-            },
-            onDragLeave: () => setDropping(false),
-            onDrop: e => {
-                e.preventDefault();
-                setDropping(false);
-                const file = e.dataTransfer?.files[0];
-                if (file) edit(file);
-            },
-        }
-        : {};
-    const state = `${canEdit ? " editable" : ""}${upload?.sending ? " uploading" : ""}${editing ? " active" : ""}${dropping ? " drop" : ""}`;
-
+    const title = t("sheet.profile.portrait.title");
     return (
-        <div ref={cell} class="portrait-cell" data-id="portrait">
-            {src
-                ? (
-                    <div class={`portrait${state}`} title={editable ? t("sheet.profile.portrait.edit") : undefined} {...frameProps}>
-                        <img src={src} alt={t("sheet.profile.portrait.title")} />
-                        {upload?.sending && <div class="spinner" />}
-                        {editable && <div class="edit-strip">{`✎ ${t("common.edit")}`}</div>}
-                        <div class="corner">
-                            <button type="button" class="portrait-full-open" title={t("sheet.profile.portrait.fullSize")} aria-label={t("sheet.profile.portrait.fullSize")}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    setFull(true);
-                                }}
-                                onKeyDown={e => e.stopPropagation()}>
-                                ⤢
-                            </button>
-                        </div>
-                    </div>
-                )
-                : (
-                    <div class={`portrait empty${state}`} title={t("sheet.profile.portrait.upload")} {...frameProps}>{`+ ${t("sheet.profile.portrait.title")}`}</div>
-                )}
-            {canEdit && <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPicked} />}
-            {error && <div class="portrait-error">{error}</div>}
-            {canEdit && editing && (
-                <div class="portrait-pop">
-                    <PortraitEditor key={editing.key} file={editing.file} saved={hash ? `/portrait/${hash}` : null} anchor={cell}
-                        onSave={image => {
-                            setEditing(null);
-                            send(image);
-                        }}
-                        onDelete={remove}
-                        onClose={() => setEditing(null)} />
-                </div>
-            )}
+        <CropFrame name="portrait" geometry={PORTRAIT} title={title} editHint={t("sheet.profile.portrait.edit")}
+            uploadHint={t("sheet.profile.portrait.upload")} confirmDelete={t("sheet.profile.portrait.confirmDelete")} previews={PREVIEWS}
+            saved={hash ? `/portrait/${hash}` : null} canEdit={canEdit}
+            upload={image => actions.uploadPortrait(image)} remove={() => actions.deletePortrait()}>
+            {src => <FullSizeButton src={src} />}
+        </CropFrame>
+    );
+}
+
+/** ⤢ in the frame's corner: opens the full size and not the crop window. */
+function FullSizeButton({ src }: { src: string }) {
+    const [full, setFull] = useState(false);
+    const button = useRef<HTMLButtonElement>(null);
+    useFullView(button, full ? src : null, () => setFull(false));
+    return (
+        <div class="corner">
+            <button ref={button} type="button" class="portrait-full-open" title={t("sheet.profile.portrait.fullSize")} aria-label={t("sheet.profile.portrait.fullSize")}
+                onClick={e => {
+                    e.stopPropagation();
+                    setFull(true);
+                }}
+                onKeyDown={e => e.stopPropagation()}>
+                ⤢
+            </button>
         </div>
     );
 }
@@ -163,10 +56,10 @@ export function Portrait() {
  * the sheet's shadow root: inside the tab panel, which is a stacking context
  * of its own, the sheet's controls would cover it.
  */
-function useFullView(cell: { current: HTMLElement | null }, src: string | null, close: () => void): void {
+function useFullView(inside: { current: HTMLElement | null }, src: string | null, close: () => void): void {
     useEffect(() => {
-        if (!src || !cell.current) return;
-        const root = cell.current.getRootNode();
+        if (!src || !inside.current) return;
+        const root = inside.current.getRootNode();
         const host = document.createElement("div");
         (root instanceof ShadowRoot ? root : document.body).append(host);
         render(<PortraitFull src={src} close={close} />, host);

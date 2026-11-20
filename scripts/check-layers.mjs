@@ -6,6 +6,8 @@
 // it: _prd/sheet_modules/plan.md. Imports listed in layer-exceptions.txt pass;
 // one that no longer exists fails, so the list only shrinks. The forum's script
 // imports only its own folder and no package, and nothing else imports it.
+// The crop code (crop/) is the site's, shared by the sheet's portrait and the
+// account page's avatar: it imports neither the sheet nor the room.
 import ts from "typescript";
 import fs from "node:fs";
 import path from "node:path";
@@ -38,7 +40,9 @@ const SIDEWAYS = {
 };
 // What the code outside the sheet may import of it, and the sheet of the code outside.
 const PUBLIC = ["api.ts", "main.ts", "kinds/kinds.gen.ts"];
-const OUTSIDE_ALLOWED = ["room/messages.ts", "i18n/index.ts"];
+// A folder, ending in "/", allows every file in it.
+const OUTSIDE_ALLOWED = ["room/messages.ts", "i18n/index.ts", "crop/"];
+const outsideAllowed = to => OUTSIDE_ALLOWED.some(a => a.endsWith("/") ? to.startsWith(a) : to === a);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const js = path.join(root, "ui", "static", "js");
@@ -57,6 +61,10 @@ const problems = [];
 const slash = p => p.split(path.sep).join("/");
 const inSheet = file => !path.relative(sheet, file).startsWith("..");
 const inForum = file => !path.relative(forum, file).startsWith("..");
+const crop = path.join(js, "crop");
+const inCrop = file => !path.relative(crop, file).startsWith("..");
+const room = path.join(js, "room");
+const inRoom = file => !path.relative(room, file).startsWith("..");
 const ignored = name => /\.test\.[jt]sx?$/.test(name) || /(^|[\\/])testUtils\.tsx?$/.test(name) || name.endsWith(".d.ts");
 
 // The layer unit of a sheet file: its folder, or <base> / <app> at the root.
@@ -122,6 +130,10 @@ for (const file of files(js)) {
             report(edge, inForum(file) ? "the forum script imports only ui/static/js/forum" : "nothing outside ui/static/js/forum imports the forum script");
             continue;
         }
+        if (inCrop(file) && (inSheet(target) || inRoom(target))) {
+            report(edge, "the crop code imports neither the sheet nor the room");
+            continue;
+        }
         if (!inSheet(file)) {
             if (inSheet(target) && !PUBLIC.includes(slash(path.relative(sheet, target)))) {
                 report(edge, "outside the sheet, import sheet/api.ts");
@@ -129,7 +141,7 @@ for (const file of files(js)) {
             continue;
         }
         if (!inSheet(target)) {
-            if (!OUTSIDE_ALLOWED.includes(to)) report(edge, `the sheet imports only ${OUTSIDE_ALLOWED.join(", ")} from outside it`);
+            if (!outsideAllowed(to)) report(edge, `the sheet imports only ${OUTSIDE_ALLOWED.join(", ")} from outside it`);
             continue;
         }
         const a = unitOf(file), b = unitOf(target);
@@ -151,4 +163,4 @@ if (problems.length) {
     for (const p of problems) console.error(p);
     process.exit(1);
 }
-console.log(`The sheet imports only lower layers, the rest of the code only sheet/api.ts, the forum script only itself (${exceptions.size} exceptions left).`);
+console.log(`The sheet imports only lower layers, the rest of the code only sheet/api.ts, the forum script only itself, the crop code neither the sheet nor the room (${exceptions.size} exceptions left).`);

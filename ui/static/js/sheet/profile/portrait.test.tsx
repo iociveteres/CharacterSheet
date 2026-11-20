@@ -7,12 +7,12 @@ import { createSheetInstance, type SheetInstance } from "../instance";
 import { mountSheet, mountStatBlock } from "../Sheet";
 import type { SheetPayload } from "../payload";
 import { applyRemoteToState } from "../core/remote";
-import { encodePortrait } from "./portraitCrop";
+import { encodeCrop } from "../../crop/crop";
 
 // The canvas of happy-dom draws and encodes nothing.
-vi.mock("./portraitCrop", async importOriginal => ({
-    ...await importOriginal<typeof import("./portraitCrop")>(),
-    encodePortrait: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
+vi.mock("../../crop/crop", async importOriginal => ({
+    ...await importOriginal<typeof import("../../crop/crop")>(),
+    encodeCrop: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
 }));
 
 // happy-dom has no ondragover and the like, and Preact then listens to "DragOver" instead of "dragover".
@@ -26,7 +26,7 @@ beforeEach(() => {
     let urls = 0;
     vi.spyOn(URL, "createObjectURL").mockImplementation(() => `blob:${++urls}`);
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
-    vi.mocked(encodePortrait).mockClear();
+    vi.mocked(encodeCrop).mockClear();
 });
 
 afterEach(() => {
@@ -212,7 +212,7 @@ describe("saving a portrait", () => {
         await saveFile(container, new File(["png"], "kharn.png", { type: "image/png" }));
 
         expect(editor(container)).toBeNull();
-        expect(encodePortrait).toHaveBeenCalledTimes(1);
+        expect(encodeCrop).toHaveBeenCalledTimes(1);
         expect(sent).toHaveLength(1);
         expect(await sent[0].text()).toBe("cropped");
         expect(src(container)).toBe("blob:2");
@@ -263,7 +263,7 @@ describe("saving a portrait", () => {
         await save(container);
         expect(editor(container)).toBeNull();
         expect(sent).toEqual([]);
-        expect(encodePortrait).not.toHaveBeenCalled();
+        expect(encodeCrop).not.toHaveBeenCalled();
     });
 });
 

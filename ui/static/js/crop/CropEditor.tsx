@@ -1,33 +1,38 @@
-// The portrait window: a popover beside the portrait where the image is moved
-// and zoomed under a 3:4 frame, replaced by another file or deleted. The crop
-// itself is profile/portraitCrop.ts. The original file is not kept: a saved portrait
-// opens as its 360×480 image, which can be zoomed into but not widened.
+// The crop window: a popover beside a picture (the sheet's portrait, the site's
+// avatar) where the image is moved and zoomed under a frame, replaced by
+// another file or deleted. The crop itself is crop/crop.ts, the styles
+// ui/static/css/crop.css. The original file is not kept: a saved picture opens
+// as its output-sized image, which can be zoomed into but not widened.
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { JSX, RefObject } from "preact";
 import {
-    drawCrop, encodePortrait, FRAME, initialCrop, MAX_ZOOM, moveCrop, OUTPUT, sameCrop, scaleOf, STAGE, zoomCrop,
-    type Crop, type Size,
-} from "./portraitCrop";
-import { t } from "../../i18n";
+    ACCEPT, drawCrop, encodeCrop, frameRect, initialCrop, isImageFile, MAX_ZOOM, moveCrop, sameCrop, scaleOf, zoomCrop,
+    type Crop, type CropGeometry, type Size,
+} from "./crop";
+import { t } from "../i18n";
 
-export const NOT_AN_IMAGE = t("sheet.profile.portrait.notAnImage");
+export const NOT_AN_IMAGE = t("common.crop.notAnImage");
 
-/** Whether `file` may be an image the browser can open; the window says so when it cannot. */
-export const isImageFile = (file: File) => file.type.startsWith("image/");
-
-export interface PortraitEditorProps {
-    /** A file the user picked or dropped; null opens the saved portrait. */
+export interface CropEditorProps {
+    geometry: CropGeometry;
+    /** The window's heading, also its name for a screen reader. */
+    title: string;
+    /** The question Delete asks, naming what goes. */
+    confirmDelete: string;
+    /** The widths of the previews beside the stage, in CSS pixels; their heights follow the output's proportions. */
+    previews: number[];
+    /** A file the user picked or dropped; null opens the saved picture. */
     file: File | null;
-    /** The URL of the saved portrait, null without one: then there is nothing to delete. */
+    /** The URL of the saved picture, null without one: then there is nothing to delete. */
     saved: string | null;
-    /** The portrait's cell: a press inside it does not close the window. */
+    /** The picture's cell: a press inside it does not close the window. */
     anchor: RefObject<HTMLElement>;
     onSave(image: Blob): void;
     onDelete(): void;
     onClose(): void;
 }
 
-/** What the window crops: its URL, and whether it is a new file rather than the saved portrait. */
+/** What the window crops: its URL, and whether it is a new file rather than the saved picture. */
 interface Source {
     url: string;
     file: boolean;
@@ -41,7 +46,7 @@ interface Loaded {
 
 const WHEEL_STEP = 1.08;
 
-export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose }: PortraitEditorProps) {
+export function CropEditor({ geometry, title, confirmDelete, previews, file, saved, anchor, onSave, onDelete, onClose }: CropEditorProps) {
     const [source, setSource] = useState<Source | null>(() =>
         file ? { url: URL.createObjectURL(file), file: true } : saved ? { url: saved, file: false } : null);
     const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -51,9 +56,11 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
     const [saving, setSaving] = useState(false);
     const pop = useRef<HTMLDivElement>(null);
     const image = useRef<HTMLImageElement>(null);
-    const preview = useRef<HTMLCanvasElement>(null);
+    const canvases = useRef<(HTMLCanvasElement | null)[]>([]);
     const picker = useRef<HTMLInputElement>(null);
     const drag = useRef<{ x: number; y: number; crop: Crop } | null>(null);
+    const { stage, output } = geometry;
+    const frame = frameRect(geometry);
 
     // An object URL of a file lives as long as the window shows it.
     useEffect(() => {
@@ -84,16 +91,17 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
     }, []);
 
     useLayoutEffect(() => {
-        if (loaded && crop && image.current && preview.current) drawCrop(preview.current, image.current, loaded.size, crop);
+        if (!loaded || !crop || !image.current) return;
+        for (const canvas of canvases.current) if (canvas) drawCrop(canvas, geometry, image.current, loaded.size, crop);
     }, [loaded, crop]);
 
-    // The size the portrait will have, once the crop rests a moment: encoding on every move would stall the drag.
+    // The size the picture will have, once the crop rests a moment: encoding on every move would stall the drag.
     const [weight, setWeight] = useState<string | null>(null);
     useEffect(() => {
-        const canvas = preview.current;
+        const canvas = canvases.current[0];
         if (!loaded || !crop || !canvas?.toBlob) return;
         const timer = setTimeout(() => canvas.toBlob(blob => {
-            setWeight(blob && t("sheet.profile.portrait.weight", { format: blob.type.replace("image/", "").toUpperCase(), size: (blob.size / 1024).toFixed(1) }));
+            setWeight(blob && t("common.crop.weight", { format: blob.type.replace("image/", "").toUpperCase(), size: (blob.size / 1024).toFixed(1) }));
         }, "image/webp", 0.8), 150);
         return () => clearTimeout(timer);
     }, [loaded, crop]);
@@ -101,7 +109,7 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
     const onLoad = () => {
         const img = image.current!;
         const size = { width: img.naturalWidth, height: img.naturalHeight };
-        const initial = initialCrop(size);
+        const initial = initialCrop(geometry, size);
         setLoaded({ size, initial });
         setCrop(initial);
         setMessage(null);
@@ -131,13 +139,13 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
 
     const save = () => {
         if (!loaded || !crop || !image.current) return;
-        // Every save encodes the WebP again: an untouched saved portrait stays as it is.
+        // Every save encodes the WebP again: an untouched saved picture stays as it is.
         if (!source?.file && sameCrop(crop, loaded.initial)) {
             onClose();
             return;
         }
         setSaving(true);
-        encodePortrait(image.current, loaded.size, crop).then(onSave, (err: unknown) => {
+        encodeCrop(geometry, image.current, loaded.size, crop).then(onSave, (err: unknown) => {
             setSaving(false);
             setMessage(err instanceof Error ? err.message : String(err));
         });
@@ -151,7 +159,7 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
     const onPointerMove = (e: JSX.TargetedPointerEvent<HTMLDivElement>) => {
         const from = drag.current;
         if (!from || !loaded) return;
-        setCrop(moveCrop(loaded.size, from.crop, e.clientX - from.x, e.clientY - from.y));
+        setCrop(moveCrop(geometry, loaded.size, from.crop, e.clientX - from.x, e.clientY - from.y));
     };
     const endDrag = () => {
         drag.current = null;
@@ -161,35 +169,39 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
         e.preventDefault();
         const box = e.currentTarget.getBoundingClientRect();
         const zoom = crop.zoom * (e.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP);
-        setCrop(zoomCrop(loaded.size, crop, zoom, e.clientX - box.left, e.clientY - box.top));
+        setCrop(zoomCrop(geometry, loaded.size, crop, zoom, e.clientX - box.left, e.clientY - box.top));
     };
 
     const imageStyle = loaded && crop
-        ? { transform: `translate(${crop.x}px, ${crop.y}px) scale(${scaleOf(loaded.size, crop.zoom)})` }
+        ? { transform: `translate(${crop.x}px, ${crop.y}px) scale(${scaleOf(geometry, loaded.size, crop.zoom)})` }
         : { visibility: "hidden" };
 
     return (
-        <div ref={pop} class="crop-pop" role="dialog" aria-label={t("sheet.profile.portrait.title")}>
-            <div class="crop-title">{t("sheet.profile.portrait.title")}</div>
+        <div ref={pop} class="crop-pop" role="dialog" aria-label={title}>
+            <div class="crop-title">{title}</div>
             <div class="crop-body">
                 <div>
-                    <div class="crop-stage" style={{ width: STAGE, height: STAGE }} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+                    <div class="crop-stage" style={{ width: stage, height: stage }} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
                         onPointerUp={endDrag} onPointerCancel={endDrag} onWheel={onWheel}>
                         {source && <img ref={image} key={source.url} src={source.url} alt="" style={imageStyle} onLoad={onLoad} onError={onError} />}
-                        <div class="crop-frame" style={{ left: FRAME.x, top: FRAME.y, width: FRAME.w, height: FRAME.h }} />
+                        <div class="crop-frame" style={{ left: frame.x, top: frame.y, width: frame.w, height: frame.h }} />
                     </div>
                     <label class="crop-zoom">
                         <span>−</span>
-                        <input type="range" min={1} max={MAX_ZOOM} step={0.01} value={crop?.zoom ?? 1} disabled={!loaded} aria-label={t("sheet.profile.portrait.zoom")}
-                            onInput={e => loaded && crop && setCrop(zoomCrop(loaded.size, crop, Number(e.currentTarget.value)))} />
+                        <input type="range" min={1} max={MAX_ZOOM} step={0.01} value={crop?.zoom ?? 1} disabled={!loaded} aria-label={t("common.crop.zoom")}
+                            onInput={e => loaded && crop && setCrop(zoomCrop(geometry, loaded.size, crop, Number(e.currentTarget.value)))} />
                         <span>+</span>
                     </label>
                 </div>
                 <div class="crop-side">
-                    <canvas ref={preview} width={OUTPUT.w} height={OUTPUT.h} />
-                    <div class="crop-size">{`${OUTPUT.w}×${OUTPUT.h}`}{weight && ` · ${weight}`}</div>
-                    <button type="button" class="crop-choose" onClick={() => picker.current?.click()}>{t("sheet.profile.portrait.chooseFile")}</button>
-                    <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={choose} />
+                    {previews.map((width, i) => (
+                        <canvas key={i} ref={el => {
+                            canvases.current[i] = el;
+                        }} width={output.w} height={output.h} style={{ width, height: width * output.h / output.w }} />
+                    ))}
+                    <div class="crop-size">{`${output.w}×${output.h}`}{weight && ` · ${weight}`}</div>
+                    <button type="button" class="crop-choose" onClick={() => picker.current?.click()}>{t("common.crop.chooseFile")}</button>
+                    <input ref={picker} type="file" accept={ACCEPT} hidden onChange={choose} />
                     {message && <div class="crop-message">{message}</div>}
                 </div>
             </div>
@@ -197,9 +209,9 @@ export function PortraitEditor({ file, saved, anchor, onSave, onDelete, onClose 
                 {confirming
                     ? (
                         <>
-                            <span class="question">{t("sheet.profile.portrait.confirmDelete")}</span>
+                            <span class="question">{confirmDelete}</span>
                             <span class="spacer" />
-                            <button type="button" class="crop-keep" onClick={() => setConfirming(false)}>{t("sheet.profile.portrait.keep")}</button>
+                            <button type="button" class="crop-keep" onClick={() => setConfirming(false)}>{t("common.crop.keep")}</button>
                             <button type="button" class="danger confirm crop-delete-yes" onClick={onDelete}>{t("common.delete")}</button>
                         </>
                     )
