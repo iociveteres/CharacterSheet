@@ -138,9 +138,9 @@ func TestTopicPage(t *testing.T) {
 	}
 
 	assert.Equal(t, found(path), true)
-	// The title of the topic, then the forum's words (not compared).
+	// The title of the topic alone; the next pages add their number.
 	firstTitle := host.page.Title
-	assert.Equal(t, strings.HasPrefix(firstTitle, "topic "), true)
+	assert.Equal(t, firstTitle, "topic")
 	assert.Equal(t, host.page.Canonical, "https://example.com"+path)
 	if d := host.page.Description; !strings.HasPrefix(d, "Bold start with a inside word word") ||
 		!strings.HasSuffix(d, "…") || len([]rune(d)) > descriptionLength+1 {

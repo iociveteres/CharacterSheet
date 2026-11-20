@@ -45,7 +45,7 @@ func TestForumHomeForGuest(t *testing.T) {
 		assert.StringContains(t, body, `<meta name="viewport"`)
 		assert.StringContains(t, body, `<link rel="canonical" href='https://example.com/forum/'>`)
 		assert.StringContains(t, body, `href='/static/css/forum.css?v=`)
-		assert.StringContains(t, body, `<a href='/forum/'>`)
+		assert.StringContains(t, body, `<a href='/forum/' data-live-prefix='/forum/'>`)
 
 		// The sections in order of position, the one added above first.
 		items := strings.Split(body, `<li class="forum-row`)
@@ -190,7 +190,7 @@ func TestForumCounterFailureServesPage(t *testing.T) {
 	for _, path := range []string{"/about", "/account/view"} {
 		code, _, body := ts.get(t, path)
 		assert.Equal(t, code, http.StatusOK)
-		assert.StringContains(t, body, `<a href='/forum/'>`)
+		assert.StringContains(t, body, `<a href='/forum/' data-live-prefix='/forum/'>`)
 		assert.Equal(t, len(badges(body)), 0)
 	}
 	assert.Equal(t, strings.Count(log.String(), "no forum today"), 2)
