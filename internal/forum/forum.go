@@ -133,6 +133,7 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/mod/bans", f.withView(f.bansPage))
 	mux.HandleFunc("POST /forum/mod/bans/{id}/lift", f.withView(f.liftBan))
 	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))
+	mux.HandleFunc("POST /forum/view/density", f.withView(f.setDensity))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux.ServeMux, mux.patterns
@@ -146,6 +147,8 @@ type view struct {
 	CSRFToken string
 	Viewer    Viewer
 	Now       time.Time
+	// Density is the reader's step of the menu "View ▾" (density.go).
+	Density string
 }
 
 func (f *Forum) view(r *http.Request) view {
@@ -154,6 +157,7 @@ func (f *Forum) view(r *http.Request) view {
 		TimeZone:  util.GetTimeLocation(r),
 		CSRFToken: f.host.CSRFToken(r),
 		Now:       f.now(),
+		Density:   densityFromRequest(r),
 	}
 }
 

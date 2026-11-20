@@ -1,4 +1,4 @@
-<div id="forum">
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- with .Topic}}
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
     {{- end}}

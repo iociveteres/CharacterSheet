@@ -335,7 +335,7 @@ func forumState(t *testing.T, db *pgxpool.Pool) string {
 // The moderators' addresses are in the list too: a banned user is no moderator, and a ban does not
 // bind a moderator, so they refuse by the check of a moderator. The only exceptions are the user's
 // own marks of reading, which a banned user keeps (the plan: a banned user is a guest plus their
-// own state); the test checks that they still work.
+// own state), and the view's density, which a guest sets too; the test checks that they still work.
 func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 	s := newBanScene(t)
 	other := newSection(t, s.db, "other")
@@ -351,9 +351,10 @@ func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 	// Each field any form of the forum reads, valid, so that only the ban stands in the way.
 	form := url.Values{
 		"title": {"a new title"}, "body": {"text"}, "reason": {"reason"}, "name": {"name"},
-		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"},
+		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"}, "density": {"compact"},
 	}
-	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true, "POST /forum/notifications/read": true}
+	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true, "POST /forum/notifications/read": true,
+		"POST /forum/view/density": true}
 
 	s.h.userID = s.alice
 	before := forumState(t, s.db)

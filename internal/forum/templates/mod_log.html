@@ -1,4 +1,4 @@
-<div id="forum">
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.log"}}</h2></div></div>

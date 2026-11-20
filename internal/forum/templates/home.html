@@ -1,12 +1,12 @@
-<div id="forum">
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- template "forum-ban-notice" .}}
     {{- /* No visible heading: the page is plainly the forum (design/decisions.md, 12); the h2 keeps
-         the page's outline for screen readers. The buttons are a line on the right above the list,
-         none for a guest: notifications, mark all read, the moderators' menu. */}}
+         the page's outline for screen readers. The buttons are a line on the right above the list:
+         notifications, mark all read, the view, the moderators' menu; a guest has only the view. */}}
     <h2 class="forum-visually-hidden">{{t .Lang "forum.sections.title"}}</h2>
-    {{if .Viewer.SignedIn}}
     <div class="forum-head">
         <div class="forum-actions">
+            {{- if .Viewer.SignedIn}}
             {{- /* The same pill as next to the forum link of the nav (design/decisions.md, 14). */}}
             <a class="f-btn f-secondary forum-notifications" href="/forum/notifications">{{t .Lang "forum.notifications.title"}}
                 {{- with .Badge}} <span class="nav-badge" title="{{t $.Lang "forum.notifications.unread"}}">{{.}}</span>{{end}}</a>
@@ -14,6 +14,23 @@
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.sections.markAllRead"}}</button>
             </form>
+            {{- end}}
+            {{- /* The density of the forum's pages, kept in a cookie (extras/decisions.md, 24): each
+                 choice a form, so it works without a script. */}}
+            <details class="forum-menu forum-view-menu">
+                <summary class="f-btn f-secondary">{{t .Lang "forum.view.menu"}} ▾</summary>
+                <div class="forum-menu-panel">
+                    {{- range .DensityChoices}}
+                    <form method="post" action="/forum/view/density">
+                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                        <input type="hidden" name="redirect" value="/forum/">
+                        {{- /* i18n-keys: forum.view.* */}}
+                        <button type="submit" name="density" value="{{.Value}}" class="forum-density-{{.Value}}"{{if .Current}} aria-current="true"{{end}}>
+                            {{- t $.Lang (printf "forum.view.%s" .Value)}}<span class="sub">{{t $.Lang (printf "forum.view.%sHint" .Value)}}</span></button>
+                    </form>
+                    {{- end}}
+                </div>
+            </details>
             {{- /* The moderators' pages (design/decisions.md, 15). */}}
             {{- if .Viewer.CanModerate}}
             <details class="forum-menu forum-mod-menu">
@@ -27,7 +44,6 @@
             {{- end}}
         </div>
     </div>
-    {{end}}
     <div>
         <div class="forum-list-head forum-sections">
             <span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>

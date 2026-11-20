@@ -13,15 +13,109 @@ main.forum-wide {
     padding-right: 20px;
 }
 
+/* Density (extras/decisions.md, 6 and 8; extras/density.md): what a step changes is a variable here,
+   and the rules below read it. These values are "Normal", the default; the class forum-large or
+   forum-compact on #forum (the cookie forum_density, density.go) swaps them. No step changes the
+   width of the author column or of the text column. */
 #forum {
+    --f-gap: 10px;              /* between the page's blocks: crumbs, head, pages, list */
+    --f-h2: 22px;
+    --f-text: 16px;             /* a post's text */
+    --f-text-lh: 1.45;
+    --f-par: 8px;               /* between a post's paragraphs */
+    --f-title: 17px;            /* a list row's title */
+    --f-title-lh: 1.3;
+    --f-row-pad: 6px;           /* a list row's top and bottom */
+    --f-counts-top: 0px;        /* the home's line of counts under a section's description */
+    --f-last: 14px;             /* the last post's topic in a row */
+    --f-last-lh: 1.25;
+    --f-posts-gap: 6px;
+    --f-author-pad: 8px 12px;
+    --f-author-gap: 1px;
+    --f-name: 16px;
+    --f-facts: 13px;
+    --f-facts-top: 4px;
+    --f-av-gap: 4px;            /* under the avatar (block 5 of extras/plan.md) */
+    --f-main-pad: 8px 14px 6px;
+    --f-main-gap: 6px;
+    --f-meta: 13px;             /* the number and time under a post */
+    --f-h2-phone: 20px;
+    --f-title-phone: 16px;
+    --f-row-pad-phone: 5px;
+    --f-author-pad-phone: 6px 10px 4px;
+    --f-av-phone: 36px;
+    --f-main-pad-phone: 6px 10px;
+
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--f-gap);
+}
+
+/* Larger: the forum as it was before the steps. */
+#forum.forum-large {
+    --f-gap: 14px;
+    --f-h2: 24px;
+    --f-text: 18px;
+    --f-text-lh: 1.5;
+    --f-par: 10px;
+    --f-title: 19px;
+    --f-title-lh: 1.3;
+    --f-row-pad: 10px;
+    --f-counts-top: 2px;
+    --f-last: 15px;
+    --f-last-lh: 1.3;
+    --f-posts-gap: 8px;
+    --f-author-pad: 12px 14px;
+    --f-author-gap: 3px;
+    --f-name: 17px;
+    --f-facts: 13px;
+    --f-facts-top: 8px;
+    --f-av-gap: 6px;
+    --f-main-pad: 10px 16px 8px;
+    --f-main-gap: 8px;
+    --f-meta: 14px;
+    --f-h2-phone: 21px;
+    --f-title-phone: 18px;
+    --f-row-pad-phone: 8px;
+    --f-author-pad-phone: 8px 12px 6px;
+    --f-av-phone: 36px;
+    --f-main-pad-phone: 8px 12px;
+}
+
+/* Compact: and the avatar beside the name (the author column's grid, under "Topic"). */
+#forum.forum-compact {
+    --f-gap: 8px;
+    --f-h2: 20px;
+    --f-text: 15px;
+    --f-text-lh: 1.35;
+    --f-par: 6px;
+    --f-title: 16px;
+    --f-title-lh: 1.25;
+    --f-row-pad: 3px;
+    --f-counts-top: 0px;
+    --f-last: 14px;
+    --f-last-lh: 1.2;
+    --f-posts-gap: 4px;
+    --f-author-pad: 6px 10px;
+    --f-author-gap: 0px;
+    --f-name: 15px;
+    --f-facts: 12px;
+    --f-facts-top: 3px;
+    --f-av-gap: 0px;
+    --f-main-pad: 6px 12px 4px;
+    --f-main-gap: 4px;
+    --f-meta: 13px;
+    --f-h2-phone: 19px;
+    --f-title-phone: 15px;
+    --f-row-pad-phone: 3px;
+    --f-author-pad-phone: 4px 10px 3px;
+    --f-av-phone: 28px;
+    --f-main-pad-phone: 4px 10px;
 }
 
 #forum .forum-head h2 {
     margin: 0;
-    font-size: 24px;
+    font-size: var(--f-h2);
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
@@ -140,6 +234,49 @@ main.forum-wide {
 
 #forum .forum-menu-panel a.danger {
     color: var(--accent-attention);
+}
+
+/* "View ▾" on the forum home (extras/decisions.md, 24): each choice a form of one button; the
+   current one is a selection, bold accent with a ✓ (DESIGN.md). */
+.forum-view-menu .forum-menu-panel {
+    min-width: 200px;
+}
+
+#forum .forum-view-menu .forum-menu-panel button {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 4px 14px 4px 30px;
+    position: relative;
+    background: none;
+    border: none;
+    border-radius: 0;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+}
+
+#forum .forum-view-menu .forum-menu-panel button:hover {
+    background: var(--bg-item2);
+}
+
+#forum .forum-view-menu .forum-menu-panel button[aria-current="true"] {
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.forum-view-menu button[aria-current="true"]::before {
+    content: "✓";
+    position: absolute;
+    left: 12px;
+}
+
+#forum .forum-view-menu .forum-menu-panel .sub {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--text-secondary);
 }
 
 /* A topic's head: the buttons level with the title's first line at any width; a long title wraps
@@ -430,7 +567,7 @@ main.forum-wide {
     grid-template-columns: 8px minmax(0, 1fr) 80px min(300px, 30%);
     gap: 4px 12px;
     align-items: center;
-    padding: 10px 14px 10px 10px;
+    padding: var(--f-row-pad) 14px var(--f-row-pad) 10px;
 }
 
 .forum-row {
@@ -462,7 +599,7 @@ main.forum-wide {
 }
 
 .forum-counts {
-    margin-top: 2px;
+    margin-top: var(--f-counts-top);
 }
 
 .forum-list-head {
@@ -488,8 +625,8 @@ main.forum-wide {
 }
 
 #forum .forum-row-title {
-    font-size: 19px;
-    line-height: 1.3;
+    font-size: var(--f-title);
+    line-height: var(--f-title-lh);
     color: var(--text);
     overflow-wrap: anywhere;
 }
@@ -513,8 +650,8 @@ main.forum-wide {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    line-height: 1.3;
-    font-size: 15px;
+    line-height: var(--f-last-lh);
+    font-size: var(--f-last);
 }
 
 #forum .forum-row-last .topic {
@@ -643,7 +780,7 @@ main.forum-wide {
 .forum-posts {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--f-posts-gap);
 }
 
 /* A post: the author's column on the left (design/decisions.md, 2 and 7). */
@@ -661,19 +798,19 @@ main.forum-wide {
 }
 
 .forum-post-author {
-    padding: 12px 14px;
+    padding: var(--f-author-pad);
     border-right: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 3px;
+    gap: var(--f-author-gap);
     font-size: 14px;
     line-height: 1.35;
     color: var(--text-secondary);
 }
 
 .forum-post-author .name {
-    font-size: 17px;
+    font-size: var(--f-name);
     font-weight: bold;
     color: var(--text);
     overflow-wrap: anywhere;
@@ -690,21 +827,58 @@ main.forum-wide {
     display: grid;
     grid-template-columns: auto auto;
     gap: 0 6px;
-    margin-top: 8px;
-    font-size: 13px;
+    margin-top: var(--f-facts-top);
+    font-size: var(--f-facts);
 }
 
 .forum-post-author .facts span:nth-child(2n) {
     color: var(--text);
 }
 
+#forum .forum-post-author .forum-avatar {
+    margin-bottom: var(--f-av-gap);
+}
+
+/* Compact on a wide screen: the avatar at 48px beside the name and role, the facts under all three;
+   the column keeps its 180px, and a post of a line or two is as tall as its text. Without an avatar
+   the column stays as on the other steps. */
+@media (min-width: 601px) {
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        grid-auto-rows: auto;
+        align-content: start;
+        column-gap: 8px;
+    }
+
+    #forum.forum-compact .forum-post-author .forum-avatar {
+        grid-row: 1 / span 2;
+        width: 48px;
+        height: 48px;
+        margin: 0;
+        align-self: start;
+        font-size: 24px;
+    }
+
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) > :not(.forum-avatar) {
+        grid-column: 2;
+        align-self: center;
+        justify-self: start;
+        text-align: left;
+    }
+
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) .facts {
+        grid-column: 1 / -1;
+    }
+}
+
 /* A column, so that the bottom line sits at the bottom of the card (margin-top: auto). */
 .forum-post-main {
     min-width: 0;
-    padding: 10px 16px 8px;
+    padding: var(--f-main-pad);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--f-main-gap);
 }
 
 .forum-post-meta {
@@ -712,7 +886,7 @@ main.forum-wide {
     align-items: baseline;
     gap: 4px 12px;
     flex-wrap: wrap;
-    font-size: 14px;
+    font-size: var(--f-meta);
     color: var(--text-secondary);
 }
 
@@ -801,7 +975,9 @@ main.forum-wide {
     overflow-wrap: anywhere;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--f-par);
+    font-size: var(--f-text);
+    line-height: var(--f-text-lh);
 }
 
 .forum-post-body li > * + * {
@@ -1052,7 +1228,7 @@ main.forum-wide {
 .forum-mod-bans .forum-row {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px 16px;
-    padding: 10px 14px;
+    padding: var(--f-row-pad) 14px;
 }
 
 .forum-mod-sections .forum-row-title {
@@ -1084,7 +1260,7 @@ main.forum-wide {
 /* The moderation log: who and when above, what and why under it, one column. */
 .forum-mod-log .forum-row {
     grid-template-columns: minmax(0, 1fr);
-    padding: 10px 14px;
+    padding: var(--f-row-pad) 14px;
 }
 
 .forum-ban-reason,
@@ -1270,7 +1446,7 @@ main.forum-wide {
     .forum-row,
     .forum-sections .forum-row {
         grid-template-columns: 8px minmax(0, 1fr);
-        padding: 8px 10px 8px 8px;
+        padding: var(--f-row-pad-phone) 10px var(--f-row-pad-phone) 8px;
     }
 
     .forum-row > .forum-row-count,
@@ -1336,11 +1512,11 @@ main.forum-wide {
     }
 
     #forum .forum-head h2 {
-        font-size: 21px;
+        font-size: var(--f-h2-phone);
     }
 
     #forum .forum-row-title {
-        font-size: 18px;
+        font-size: var(--f-title-phone);
     }
 
     /* The topic's buttons as 40px squares beside the title: the bell and "⋯". They lie over a float
@@ -1416,7 +1592,7 @@ main.forum-wide {
         flex-wrap: wrap;
         align-items: baseline;
         gap: 2px 8px;
-        padding: 8px 12px 6px;
+        padding: var(--f-author-pad-phone);
         border-right: none;
         border-bottom: 1px solid var(--border-light);
     }
@@ -1432,7 +1608,7 @@ main.forum-wide {
     }
 
     .forum-post-main {
-        padding: 8px 12px;
+        padding: var(--f-main-pad-phone);
     }
 
     .forum-post-body pre {
@@ -1471,6 +1647,10 @@ main.forum-wide {
 
     #forum .forum-menu-panel a {
         padding: 9px 14px;
+    }
+
+    #forum .forum-view-menu .forum-menu-panel button {
+        padding: 9px 14px 9px 30px;
     }
 
     .forum-hint>summary {
