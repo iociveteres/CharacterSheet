@@ -4,6 +4,7 @@
 // goes read-only by itself (sheet/connection.ts); the bar says why to the
 // whole page.
 import { signal } from "@preact/signals";
+import { t } from "./i18n";
 
 const reconnecting = signal(false);
 const outdated = signal(false);
@@ -32,11 +33,11 @@ export function ConnectionBar() {
     if (outdated.value) {
         return (
             <div class="connection-bar">
-                A new version is out: reload the page to go on editing.
-                <button type="button" onClick={() => window.location.reload()}>Reload</button>
+                {t("common.connection.newVersion")}
+                <button type="button" onClick={() => window.location.reload()}>{t("common.connection.reload")}</button>
             </div>
         );
     }
-    if (reconnecting.value) return <div class="connection-bar">No connection. Reconnecting…</div>;
+    if (reconnecting.value) return <div class="connection-bar">{t("common.connection.reconnecting")}</div>;
     return null;
 }

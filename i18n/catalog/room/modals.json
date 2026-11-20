@@ -26,5 +26,9 @@
   "room.modals.addVariant.name": { "en": "Name of the variant", "ru": "Название варианта" },
   "room.modals.addVariant.note": { "en": "\"{creature}\" stays as it is; this NPC goes on from the variant", "ru": "«{creature}» останется как есть, а этот НПС дальше будет связан с вариантом" },
   "room.modals.signedOut": { "en": "You have been signed out", "ru": "Вы вышли из аккаунта" },
-  "room.modals.refreshToSignIn": { "en": "Refresh the page to sign in again", "ru": "Обновите страницу, чтобы войти снова" }
+  "room.modals.refreshToSignIn": { "en": "Refresh the page to sign in again", "ru": "Обновите страницу, чтобы войти снова" },
+  "room.modals.noAccess": { "en": "You are no longer in this room.", "ru": "Вас больше нет в этой комнате." },
+  "room.modals.backToRooms": { "en": "Back to rooms", "ru": "К списку комнат", "note": "подсказка кнопки ОК" },
+  "room.modals.import.tooLarge": { "en": "The character sheet is too large to import.", "ru": "Лист персонажа слишком велик для импорта." },
+  "room.modals.import.rateLimited": { "en": "Too many imports: try again in a minute.", "ru": "Слишком много импортов: повторите через минуту." }
 }

@@ -98,19 +98,16 @@ func refuseForm[F any, P interface {
 		var form F
 		// A form that does not decode is shown empty: only the error matters.
 		_ = app.decodePostForm(r, &form)
-		P(&form).AddNonFieldError(tooManyAttempts(wait))
+		P(&form).AddNonFieldError(tooManyAttempts(i18n.FromContext(r.Context()), wait))
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusTooManyRequests, page, "base", data)
 	}
 }
 
-func tooManyAttempts(wait time.Duration) string {
+func tooManyAttempts(lang string, wait time.Duration) string {
 	minutes := int(math.Ceil(wait.Minutes()))
-	if minutes <= 1 {
-		return "Too many attempts. Try again in a minute."
-	}
-	return fmt.Sprintf("Too many attempts. Try again in %d minutes.", minutes)
+	return i18n.T(lang, "server.errors.tooManyAttempts", i18n.Params{"count": max(minutes, 1)})
 }
 
 func (app *Application) recoverPanic(next http.Handler) http.Handler {

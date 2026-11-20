@@ -57,7 +57,6 @@ export interface I18nParams {
     "bestiary.dialogs.makePublic": { "name": string | number };
     "bestiary.dialogs.moveTitle": { "name": string | number };
     "bestiary.dialogs.noOtherCollection": {};
-    "bestiary.messages.connectionLost": {};
     "bestiary.messages.copied": { "collection": string | number; "name": string | number };
     "bestiary.messages.creatureUnread": { "message": string | number };
     "bestiary.messages.moved": { "collection": string | number; "name": string | number };
@@ -88,6 +87,9 @@ export interface I18nParams {
     "common.cancel": {};
     "common.close": {};
     "common.confirm": {};
+    "common.connection.newVersion": {};
+    "common.connection.reconnecting": {};
+    "common.connection.reload": {};
     "common.copy": {};
     "common.create": {};
     "common.delete": {};
@@ -243,11 +245,13 @@ export interface I18nParams {
     "room.modals.addVariant.name": {};
     "room.modals.addVariant.note": { "creature": string | number };
     "room.modals.addVariant.title": {};
-    "room.modals.connectionLost": {};
+    "room.modals.backToRooms": {};
     "room.modals.import.error": {};
     "room.modals.import.failed": {};
     "room.modals.import.file": {};
     "room.modals.import.noFile": {};
+    "room.modals.import.rateLimited": {};
+    "room.modals.import.tooLarge": {};
     "room.modals.invite.active": {};
     "room.modals.invite.copied": {};
     "room.modals.invite.copy": {};
@@ -259,8 +263,8 @@ export interface I18nParams {
     "room.modals.invite.orCreate": {};
     "room.modals.invite.unlimited": {};
     "room.modals.kicked": {};
+    "room.modals.noAccess": {};
     "room.modals.refresh": {};
-    "room.modals.refreshPage": {};
     "room.modals.refreshToSignIn": {};
     "room.modals.saveToCollection.collection": {};
     "room.modals.saveToCollection.heading": { "name": string | number };

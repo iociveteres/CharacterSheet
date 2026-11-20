@@ -75,9 +75,9 @@ export function Modals() {
                 )}
                 {open.connectionLost === "noAccess" && (
                     <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                        <div>You are no longer in this room.</div>
+                        <div>{t("room.modals.noAccess")}</div>
                         <div class="actions">
-                            <button onClick={leaveRoom} class="button-colored" title="Back to rooms">OK</button>
+                            <button onClick={leaveRoom} class="button-colored" title={t("room.modals.backToRooms")}>{t("common.ok")}</button>
                         </div>
                     </div>
                 )}

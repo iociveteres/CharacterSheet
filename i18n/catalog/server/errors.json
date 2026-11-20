@@ -20,5 +20,6 @@
   "server.errors.flash.roomCreated": { "en": "Room successfully created!", "ru": "Комната создана!" },
   "server.errors.flash.roomDeleted": { "en": "Room successfully deleted!", "ru": "Комната удалена!" },
   "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" },
-  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more", "ru": "NPC и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ", "note": "квота бестиария и столкновений; числа в мегабайтах" }
+  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more", "ru": "NPC и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ", "note": "квота бестиария и столкновений; числа в мегабайтах" },
+  "server.errors.tooManyAttempts": { "en": {"one": "Too many attempts. Try again in a minute.", "other": "Too many attempts. Try again in {count} minutes." }, "ru": {"one": "Слишком много попыток. Повторите через {count} минуту.", "few": "Слишком много попыток. Повторите через {count} минуты.", "many": "Слишком много попыток. Повторите через {count} минут." }, "note": "count — минуты до следующей попытки, не меньше 1" }
 }

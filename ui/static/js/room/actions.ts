@@ -92,9 +92,9 @@ export async function importSheet(file: File | undefined): Promise<void> {
         if (response.ok) {
             setModal("import", false);
         } else if (response.status === 413) {
-            await confirm("The character sheet is too large to import.");
+            await confirm(t("room.modals.import.tooLarge"));
         } else if (response.status === 429) {
-            await confirm("Too many imports: try again in a minute.");
+            await confirm(t("room.modals.import.rateLimited"));
         } else {
             await confirm(t("room.modals.import.failed"));
         }
