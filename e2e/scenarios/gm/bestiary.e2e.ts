@@ -207,24 +207,65 @@ describe("the bestiary", () => {
                 mimeType: "application/json",
                 buffer: Buffer.from(JSON.stringify({ ...sheet.content, characterInfo: { ...sheet.content.characterInfo, characterName } })),
             });
-            // Past the 10 MB of NPCs and creatures by itself: random text, which
-            // Postgres stores as large as it is, unlike repeated letters.
-            const huge = file("huge.json", randomBytes(8 << 20).toString("base64"));
-            await page.locator('.bestiary input[type="file"]').setInputFiles([file("first.json", "e2e Uploaded"), huge, file("last.json", "e2e Not uploaded")]);
+            // A sheet over 512 KB is refused before the quota, so the quota is
+            // filled with sheets under it, in a collection of their own, leaving
+            // room for the small files but not for the big one. Random text:
+            // Postgres stores it as large as it is, unlike repeated letters.
+            const SIZE = 400 << 10;
+            const BIG = 470 << 10;
+            const ROOM = 200 << 10;
+            const fillerId = (await bestiary<{ id: number }>(page, "POST", "/bestiary/collections", { name: `${COLLECTION} filler` })).id;
+            const quota = () => bestiary<{ quota: { used: number; limit: number } }>(page, "GET", "/bestiary/collections").then(b => b.quota);
+            const room = async () => { const q = await quota(); return q.limit - q.used; };
+            // One request of fillers up to the quota; it stops at the one that does not fit.
+            const fill = (sizes: number[]) => page.evaluate(async ([id, bodies]) => {
+                const state = JSON.parse(document.getElementById("bestiary-state")!.textContent!) as { csrfToken: string };
+                const form = new FormData();
+                bodies.forEach((body, i) => form.append("files", new File([body], `filler${i}.json`, { type: "application/json" })));
+                const res = await fetch(`/bestiary/collections/${id}/upload`, { method: "POST", headers: { "X-CSRF-Token": state.csrfToken }, body: form });
+                if (!res.ok) throw new Error(`filler: ${res.status}`);
+            }, [fillerId, sizes.map(size => JSON.stringify({
+                ...sheet.content,
+                characterInfo: { ...sheet.content.characterInfo, characterName: randomBytes(Math.floor(size * 3 / 4)).toString("base64") },
+            }))] as const);
+            try {
+                await fill(Array<number>(Math.ceil((await room()) / SIZE)).fill(SIZE));
+                // Less than a filler is left; a sheet takes a little more than its text.
+                if (await room() < 100 << 10) {
+                    const [one] = await bestiary<Creature[]>(page, "GET", `/bestiary/creatures?collection=${fillerId}`);
+                    await bestiary(page, "DELETE", `/bestiary/creatures/${one.id}`);
+                }
+                const left = await room();
+                if (left > ROOM + (60 << 10)) await fill([left - ROOM - (30 << 10)]);
+                const final = await room();
+                expect(final, "room left for the small files").toBeGreaterThan(64 << 10);
+                expect(final, "less than the big file needs").toBeLessThan(BIG);
+            } catch (e) {
+                await bestiary(page, "DELETE", `/bestiary/collections/${fillerId}`);
+                throw e;
+            }
 
-            // A line a file: what it added, the quota it ran into, and the file that was not tried.
-            const lines = (await expectToast(page, "first.json", "huge.json", "last.json")).split("\n");
-            expect(lines).toHaveLength(3);
-            expect(lines[0]).toContain("first.json");
-            expect(lines[0], "creatures added").toMatch(/\b1\b/);
-            expect(lines[1]).toContain("huge.json");
-            // The megabytes used, the 10 MB limit and the megabytes the file needs.
-            const numbers = lines[1].match(/\d+([.,]\d+)?/g)!.map(n => Number(n.replace(",", ".")));
-            expect(numbers, "the numbers of the quota").toEqual([expect.any(Number), 10, expect.any(Number)]);
-            expect(numbers[0], "used").toBeLessThanOrEqual(10);
-            expect(lines[2]).toContain("last.json");
-            await eventually(() => page.locator(".bestiary-creature-name").allTextContents(),
-                names => expect(names.sort()).toEqual([BLANK, NOB, ORC, "e2e Uploaded"].sort()));
+            const huge = file("huge.json", randomBytes(BIG * 3 / 4).toString("base64"));
+            try {
+                await page.locator('.bestiary input[type="file"]').setInputFiles([file("first.json", "e2e Uploaded"), huge, file("last.json", "e2e Not uploaded")]);
+
+                // A line a file: what it added, the quota it ran into, and the file that was not tried.
+                const lines = (await expectToast(page, "first.json", "huge.json", "last.json")).split("\n");
+                expect(lines).toHaveLength(3);
+                expect(lines[0]).toContain("first.json");
+                expect(lines[0], "creatures added").toMatch(/\b1\b/);
+                expect(lines[1]).toContain("huge.json");
+                // The megabytes used, the 10 MB limit and the megabytes the file needs.
+                const numbers = lines[1].match(/\d+([.,]\d+)?/g)!.map(n => Number(n.replace(",", ".")));
+                expect(numbers, "the numbers of the quota").toEqual([expect.any(Number), 10, expect.any(Number)]);
+                expect(numbers[0], "used").toBeLessThanOrEqual(10);
+                expect(lines[2]).toContain("last.json");
+                await eventually(() => page.locator(".bestiary-creature-name").allTextContents(),
+                    names => expect(names.sort()).toEqual([BLANK, NOB, ORC, "e2e Uploaded"].sort()));
+            } finally {
+                // Gives the quota back to the other scenarios.
+                await bestiary(page, "DELETE", `/bestiary/collections/${fillerId}`);
+            }
         } finally {
             await page.close();
         }
