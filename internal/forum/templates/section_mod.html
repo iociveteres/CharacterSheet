@@ -20,9 +20,8 @@
             {{- with .Form.Errors.description}} aria-invalid="true" aria-describedby="forum-section-description-error"{{end}}>{{.Form.Description}}</textarea>
         {{with .Form.Errors.description}}<span class="error field-error" id="forum-section-description-error">{{.}}</span>{{end}}
 
-        <label class="forum-check"><input type="checkbox" name="mods_only_topics" value="1"{{if .Form.ModsOnlyTopics}} checked{{end}} aria-describedby="forum-section-mods-only-hint">
+        <label class="forum-check"><input type="checkbox" name="mods_only_topics" value="1"{{if .Form.ModsOnlyTopics}} checked{{end}}>
             {{t .Lang "forum.moderation.modsOnlyTopics"}}</label>
-        <span class="meta" id="forum-section-mods-only-hint">{{t .Lang "forum.moderation.modsOnlyTopicsHint"}}</span>
 
         <div class="forum-form-buttons">
             <a class="f-btn f-secondary" href="/forum/mod/sections">{{t .Lang "common.cancel"}}</a>
