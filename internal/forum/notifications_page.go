@@ -61,7 +61,7 @@ type notificationLine struct {
 // line words the row in the reader's language. The text takes the parameters the row keeps, so a
 // topic the viewer no longer sees still has its title; it is a link only while the viewer may read
 // the topic (CanReadTopic), and leads to the post of the row — for replies, the first unread one.
-func (n notificationRow) line(v view) notificationLine {
+func (n notificationRow) line(v view, accountURL string) notificationLine {
 	params := i18n.Params{}
 	for k, value := range n.Params {
 		params[k] = value
@@ -79,6 +79,15 @@ func (n notificationRow) line(v view) notificationLine {
 		} else {
 			key = "forum.notifications.text.user.banForever"
 		}
+	case notificationKind(actionRemoveAvatar):
+		// A lock of a term until a date, for good, or none.
+		end, _ := n.Params["lockUntil"].(string)
+		if at, err := time.Parse(time.RFC3339, end); err == nil {
+			params["date"] = v.Date(at)
+			key = "forum.notifications.text.avatar.removeUntil"
+		} else if n.Params["lock"] == "forever" {
+			key = "forum.notifications.text.avatar.removeForever"
+		}
 	}
 	l := notificationLine{Text: i18n.T(v.Lang, key, params), At: n.At, Unread: n.Unread}
 	switch n.Kind {
@@ -91,6 +100,13 @@ func (n notificationRow) line(v view) notificationLine {
 	}
 	if reason, ok := n.Params["reason"].(string); ok {
 		l.Reason = reason
+	}
+	switch n.Kind {
+	case notificationKind(actionRemoveAvatar), notificationKind(actionUnlockAvatar):
+		// The avatar is the site's: the page where it changes.
+		l.URL = accountURL
+	case notificationKind(actionEraseAbout):
+		l.URL = userURL(v.Viewer.ID) + "#about"
 	}
 	if n.TopicID != nil && v.Viewer.CanReadTopic(Topic{DeletedAt: n.TopicDeleted}) {
 		if n.PostID != nil {
@@ -155,7 +171,7 @@ func (f *Forum) notificationsPage(w http.ResponseWriter, r *http.Request, v view
 		if n.Unread && n.moderation() {
 			shown = append(shown, n.ID)
 		}
-		lines = append(lines, n.line(v))
+		lines = append(lines, n.line(v, f.host.AccountURL()))
 	}
 	if len(shown) > 0 {
 		// The page is worth more than the mark: a failed write is logged and the page served.

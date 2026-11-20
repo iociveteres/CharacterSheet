@@ -33,26 +33,7 @@
             <span></span><span>{{t .Lang "forum.topics.topic"}}</span><span class="forum-col-count">{{t .Lang "forum.topics.replies"}}</span><span class="forum-col-last">{{t .Lang "forum.sections.lastPost"}}</span>
         </div>
         <ol class="forum-list forum-topics">
-            {{range .Topics}}
-            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}{{if .Unread}} unread{{end}}">
-                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
-                <div class="forum-row-main">
-                    <div>
-                        {{- /* An unread topic opens at its first unread post. */}}
-                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{.Title}}</a>
-                        {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
-                        {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
-                        {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}
-                    </div>
-                    <span class="meta"><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
-                </div>
-                {{- /* The column head names the number; on a phone, where the head is hidden, the words. */}}
-                <div class="forum-row-count"><span class="forum-count-number">{{count .ReplyCount}}</span><span class="forum-count-words">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span></div>
-                <div class="forum-row-last">
-                    {{if .LastPostID}}<span class="by"><span class="forum-author-name">{{.LastAuthorName}}</span><a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
-                </div>
-            </li>
-            {{end}}
+            {{range .Topics}}{{template "forum-topic-row" ($.TopicLine .)}}{{end}}
         </ol>
     </div>
     {{else}}
@@ -63,3 +44,32 @@
     <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
     {{end}}
 </div>
+
+{{- /* A topic as a row of a list (sections.go, topicLine): its section, or the tab «Topics» of a user
+     page, where the author is the user and the row names the section instead. */}}
+{{define "forum-topic-row"}}
+{{- with .Row}}
+            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <div class="forum-row-main">
+                    <div>
+                        {{- /* An unread topic opens at its first unread post. */}}
+                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{.Title}}</a>
+                        {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
+                        {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                        {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}
+                    </div>
+                    {{- if $.BySection}}
+                    <span class="meta">{{.SectionName}} · {{$.Time .CreatedAt}}</span>
+                    {{- else}}
+                    <span class="meta"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a> · {{$.Time .CreatedAt}}</span>
+                    {{- end}}
+                </div>
+                {{- /* The column head names the number; on a phone, where the head is hidden, the words. */}}
+                <div class="forum-row-count"><span class="forum-count-number">{{count .ReplyCount}}</span><span class="forum-count-words">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span></div>
+                <div class="forum-row-last">
+                    {{if .LastPostID}}<span class="by"><a class="forum-author-name" href="{{userURL .LastAuthorID}}">{{.LastAuthorName}}</a><a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
+                </div>
+            </li>
+{{- end}}
+{{- end}}

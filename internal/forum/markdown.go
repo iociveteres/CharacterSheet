@@ -326,6 +326,19 @@ const descriptionLength = 160
 // characters at a word with an ellipsis. Spoilers and code blocks are left out: the description
 // shows in search results and link previews.
 func plainText(src string, limit int) string {
+	return plainTextOf(src, limit, false)
+}
+
+// excerptLength is the line of a post's text on its author's page; CSS cuts it to the width.
+const excerptLength = 200
+
+// excerpt is the text of a post as a line of its author's page (extras/users.md): plainText without
+// the quotes, which are someone else's words.
+func excerpt(src string) string {
+	return plainTextOf(src, excerptLength, true)
+}
+
+func plainTextOf(src string, limit int, skipQuotes bool) string {
 	source := []byte(src)
 	var b strings.Builder
 	ast.Walk(markdown.Parser().Parse(text.NewReader(source)), func(n ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -338,6 +351,10 @@ func plainText(src string, limit int) string {
 		switch n := n.(type) {
 		case *spoilerNode, *ast.CodeBlock, *ast.FencedCodeBlock:
 			return ast.WalkSkipChildren, nil
+		case *ast.Blockquote:
+			if skipQuotes {
+				return ast.WalkSkipChildren, nil
+			}
 		case *ast.Text:
 			b.Write(n.Segment.Value(source))
 			if n.SoftLineBreak() || n.HardLineBreak() {

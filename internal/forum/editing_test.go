@@ -204,7 +204,7 @@ func TestDeletePost(t *testing.T) {
 	}
 	// The line keeps the author and the time of writing.
 	stub := page[stubAt : stubAt+strings.Index(page[stubAt:], "</article>")]
-	assert.StringContains(t, stub, `<span class="forum-author-name">alice</span>`)
+	assert.StringContains(t, stub, `<a class="forum-author-name" href="/forum/user/`+fmt.Sprint(alice)+`">alice</a>`)
 	assert.StringContains(t, stub, `<time datetime="`+at(2).UTC().Format(time.RFC3339)+`"`)
 }
 

@@ -62,4 +62,14 @@ describe("the forum script", () => {
         click(spoiler);
         expect(spoiler.classList.contains("open")).toBe(false);
     });
+
+    it("counts the characters of a field with a counter as they are typed", () => {
+        const field = document.createElement("textarea");
+        field.dataset.counter = "about-count";
+        const counter = el("span", { id: "about-count" }, "0");
+        document.body.append(el("div", { id: "forum" }, field, counter));
+        field.value = "абв 😀";
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        expect(counter.textContent).toBe("5");
+    });
 });

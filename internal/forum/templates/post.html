@@ -6,7 +6,7 @@
      20); its text never reaches the template. */}}
 <article class="forum-post deleted-stub" id="post-{{.ID}}">
     <span>{{t $.Lang "forum.posts.deleted"}}</span>
-    <span class="by"><span class="forum-author-name">{{.AuthorName}}</span> · {{$.Time .CreatedAt}}</span>
+    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a> · {{$.Time .CreatedAt}}</span>
     <a class="num" href="{{.URL}}" title="{{t $.Lang "forum.posts.link"}}">#{{.Number}}</a>
 </article>
 {{- else}}
@@ -16,8 +16,7 @@
     {{- with $.QuoteHead}} data-quote-head="{{.}}"{{end}}>
     <div class="forum-post-author">
         {{- template "forum-avatar" .Avatar}}
-        {{- /* Text until block 6 of extras/plan.md gives users their pages. */}}
-        <span class="name">{{.AuthorName}}</span>
+        <a class="name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a>
         <span class="role">{{if .AuthorModerator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
         <span class="facts"><span>{{t $.Lang "forum.posts.postsLabel"}}</span><span>{{count .AuthorPosts}}</span><span>{{t $.Lang "forum.posts.registeredLabel"}}</span><span>{{humanDay $.Lang .AuthorRegisteredAt $.TimeZone}}</span></span>
     </div>

@@ -62,6 +62,7 @@ func TestEveryPageHead(t *testing.T) {
 				"post/{id}":     fmt.Sprint(post),
 				"mod/{action}":  string(topicRename),
 				"sections/{id}": fmt.Sprint(s.section),
+				"user/{id}":     fmt.Sprint(s.alice),
 			})
 			canonical, isIndexed := indexed[pattern]
 			// A guest is only shown what search engines see; the rest sends them to sign in.

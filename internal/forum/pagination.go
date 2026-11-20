@@ -3,6 +3,7 @@ package forum
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"charactersheet.iociveteres.net/internal/i18n"
 )
@@ -39,7 +40,12 @@ func pageURL(path string, n int) string {
 	if n <= 1 {
 		return path
 	}
-	return path + "?page=" + strconv.Itoa(n)
+	// A list with a filter of its own (?tab=, ?user=) keeps it.
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	return path + sep + "page=" + strconv.Itoa(n)
 }
 
 // pageTitle tells the pages of a section or topic apart in a tab and a search result: the first

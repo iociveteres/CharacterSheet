@@ -1,7 +1,10 @@
 package forum
 
 import (
+	"context"
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
@@ -19,6 +22,7 @@ type logLine struct {
 	ID            int
 	Action        modAction
 	At            time.Time
+	ModeratorID   int
 	ModeratorName string
 	Reason        string
 	TopicID       int
@@ -38,6 +42,10 @@ type logLine struct {
 	// Banned is whether the line gives a ban; ExpiresAt is its end, nil until lifted.
 	Banned    bool
 	ExpiresAt *time.Time
+	// Lock is the term of the lock on a new avatar a removal gave: none, 7, 30 or forever (lockTerms);
+	// LockUntil is its end. Empty for other actions.
+	Lock      string
+	LockUntil *time.Time
 }
 
 // ActionText words the code of the line in the reader's language; a code this build does not know
@@ -74,6 +82,12 @@ func (l logLine) ActionText(lang string) string {
 		return i18n.T(lang, "forum.moderation.action.userBan")
 	case actionUnbanUser:
 		return i18n.T(lang, "forum.moderation.action.userUnban")
+	case actionRemoveAvatar:
+		return i18n.T(lang, "forum.moderation.action.avatarRemove")
+	case actionUnlockAvatar:
+		return i18n.T(lang, "forum.moderation.action.avatarUnlock")
+	case actionEraseAbout:
+		return i18n.T(lang, "forum.moderation.action.aboutErase")
 	}
 	return string(l.Action)
 }
@@ -82,10 +96,18 @@ type modLogData struct {
 	view
 	Lines      []logLine
 	Pagination pagination
+	// User is the user the log is filtered by (?user=), nil for the whole log.
+	User *logUser
 }
 
-// modLogPage is the moderation log, the newest action first, for moderators only. A target links
-// to where it is, deleted or not: a moderator reads a deleted topic and post.
+type logUser struct {
+	ID   int
+	Name string
+}
+
+// modLogPage is the moderation log, the newest action first, for moderators only; ?user=N keeps the
+// actions on one user (their page links it). A target links to where it is, deleted or not: a
+// moderator reads a deleted topic and post.
 func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 	if !f.modOnly(w, r, v) {
 		return
@@ -95,8 +117,29 @@ func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
+	data := modLogData{view: v}
+	path, userID := modLogURL, 0
+	if q := r.URL.Query(); q.Has("user") {
+		id, err := strconv.Atoi(q.Get("user"))
+		if err != nil || id < 1 {
+			f.host.NotFound(w, r)
+			return
+		}
+		data.User = &logUser{ID: id}
+		err = f.db.QueryRow(r.Context(), `SELECT name FROM users WHERE id = $1`, id).Scan(&data.User.Name)
+		if errors.Is(err, pgx.ErrNoRows) {
+			f.host.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			f.host.ServerError(w, r, err)
+			return
+		}
+		path, userID = modLogURL+"?user="+strconv.Itoa(id), id
+	}
 	var total int
-	if err := f.db.QueryRow(r.Context(), `SELECT count(*) FROM forum_mod_log`).Scan(&total); err != nil {
+	err := f.db.QueryRow(r.Context(), `SELECT count(*) FROM forum_mod_log WHERE $1 = 0 OR user_id = $1`, userID).Scan(&total)
+	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
 	}
@@ -105,10 +148,25 @@ func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
+	data.Lines, err = f.logLines(r.Context(), userID, logEntriesPerPage, (page-1)*logEntriesPerPage)
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	data.Pagination = pagination{Lang: v.Lang, Path: path, Current: page, Total: pages}
+	title := i18n.T(v.Lang, "forum.moderation.log")
+	if data.User != nil {
+		title += ": " + data.User.Name
+	}
+	f.render(w, r, http.StatusOK, "mod_log.html", data, Page{Title: title, NoIndex: true})
+}
+
+// logLines reads lines of the log, the newest first: all of them, or those on the user userID.
+func (f *Forum) logLines(ctx context.Context, userID, limit, offset int) ([]logLine, error) {
 	// The values of data are read under CASE by action: another action may keep the same key as
 	// something else.
-	rows, err := f.db.Query(r.Context(), `
-		SELECT l.id, l.action, l.created_at, m.name, l.reason,
+	rows, err := f.db.Query(ctx, `
+		SELECT l.id, l.action, l.created_at, l.moderator_id, m.name, l.reason,
 		       COALESCE(l.topic_id, 0), COALESCE(t.title, ''), t.deleted_at IS NOT NULL,
 		       COALESCE(l.post_id, 0),
 		       COALESCE(l.section_id, 0), COALESCE(s.name, ''),
@@ -121,31 +179,20 @@ func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 		       COALESCE(CASE WHEN l.action = 'section.move' THEN (l.data->>'from')::int END, 0),
 		       COALESCE(CASE WHEN l.action = 'section.move' THEN (l.data->>'to')::int END, 0),
 		       l.action = 'user.ban',
-		       CASE WHEN l.action = 'user.ban' THEN (l.data->>'expiresAt')::timestamptz END
+		       CASE WHEN l.action = 'user.ban' THEN (l.data->>'expiresAt')::timestamptz END,
+		       COALESCE(CASE WHEN l.action = 'avatar.remove' THEN l.data->>'lock' END, ''),
+		       CASE WHEN l.action = 'avatar.remove' THEN (l.data->>'lockUntil')::timestamptz END
 		FROM forum_mod_log l
 		JOIN users m ON m.id = l.moderator_id
 		LEFT JOIN forum_topics t ON t.id = l.topic_id
 		LEFT JOIN forum_sections s ON s.id = l.section_id
 		LEFT JOIN users u ON u.id = l.user_id
 		LEFT JOIN forum_sections fs ON fs.id = CASE WHEN l.action = 'topic.move' THEN (l.data->>'fromSection')::int END
+		WHERE $3 = 0 OR l.user_id = $3
 		ORDER BY l.id DESC
-		LIMIT $1 OFFSET $2`, logEntriesPerPage, (page-1)*logEntriesPerPage)
+		LIMIT $1 OFFSET $2`, limit, offset, userID)
 	if err != nil {
-		f.host.ServerError(w, r, err)
-		return
+		return nil, err
 	}
-	lines, err := pgx.CollectRows(rows, pgx.RowToStructByPos[logLine])
-	if err != nil {
-		f.host.ServerError(w, r, err)
-		return
-	}
-	data := modLogData{
-		view:       v,
-		Lines:      lines,
-		Pagination: pagination{Lang: v.Lang, Path: modLogURL, Current: page, Total: pages},
-	}
-	f.render(w, r, http.StatusOK, "mod_log.html", data, Page{
-		Title:   i18n.T(v.Lang, "forum.moderation.log"),
-		NoIndex: true,
-	})
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[logLine])
 }

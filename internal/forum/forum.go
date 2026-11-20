@@ -41,6 +41,16 @@ type Host interface {
 	Avatars(ctx context.Context, userIDs []int) (map[int]string, error)
 	// AvatarState is whether the user has an avatar and a lock on uploading one.
 	AvatarState(ctx context.Context, userID int) (AvatarState, error)
+	// RemoveAvatar deletes the user's avatar and, with a lock, forbids a new one until lock.Until
+	// (for good when nil); repeating it is safe. The forum writes its log and notification after it,
+	// in a transaction of its own (extras/avatars.md, «Граница с форумом»).
+	RemoveAvatar(ctx context.Context, userID int, lock *AvatarLock) error
+	// LiftAvatarLock lets the user upload an avatar again; without a lock it does nothing.
+	LiftAvatarLock(ctx context.Context, userID int) error
+	// AvatarLocks are the locks that hold now, the latest first.
+	AvatarLocks(ctx context.Context) ([]AvatarLock, error)
+	// AccountURL is the page where a user changes their avatar: where a notification about it leads.
+	AccountURL() string
 }
 
 type Page struct {
@@ -73,6 +83,8 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 			"humanDay": i18n.FormatDay,
 			"count":    i18n.FormatCount, // a number without t: {{count .AuthorPosts}}
 			"markdown": renderMarkdown,
+			// The page of a user, which every name the forum writes links to: {{userURL .AuthorID}}.
+			"userURL": userURL,
 		}).
 		ParseFS(templateFiles, "templates/*.html")
 	if err != nil {
@@ -140,6 +152,13 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("POST /forum/mod/bans/{id}/lift", f.withView(f.liftBan))
 	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))
 	mux.HandleFunc("POST /forum/view/density", f.withView(f.setDensity))
+	mux.HandleFunc("GET /forum/user/{id}", f.withView(f.userPage))
+	mux.HandleFunc("POST /forum/user/{id}/about", f.withView(f.saveAbout))
+	mux.HandleFunc("POST /forum/user/{id}/about/erase", f.withView(f.eraseAbout))
+	mux.HandleFunc("POST /forum/user/{id}/ban", f.withView(f.banFromPage))
+	mux.HandleFunc("POST /forum/user/{id}/lift-ban", f.withView(f.liftUserBan))
+	mux.HandleFunc("POST /forum/user/{id}/avatar", f.withView(f.removeAvatar))
+	mux.HandleFunc("POST /forum/user/{id}/lift-avatar-lock", f.withView(f.liftAvatarLock))
 	// Without it ServeMux answers an unknown address with its own text instead of the site's 404.
 	mux.HandleFunc("/forum/", f.host.NotFound)
 	return mux.ServeMux, mux.patterns

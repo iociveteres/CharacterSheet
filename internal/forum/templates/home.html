@@ -61,7 +61,7 @@
                 <div class="forum-row-last">
                     {{with .LastPost}}
                     <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
-                    <span class="by"><span class="forum-author-name">{{.AuthorName}}</span><a href="{{.URL}}">{{$.Time .At}}</a></span>
+                    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a><a href="{{.URL}}">{{$.Time .At}}</a></span>
                     {{else}}
                     <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
                     {{end}}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -31,6 +32,8 @@ type testHost struct {
 	avatarErr   error
 	avatarCalls int
 	avatarIDs   [][]int
+	avatarLocks map[int]*AvatarLock
+	removeErr   error
 }
 
 func (h *testHost) UserID(*http.Request) (int, bool) { return h.userID, h.userID != 0 }
@@ -62,8 +65,39 @@ func (h *testHost) Avatars(_ context.Context, userIDs []int) (map[int]string, er
 	return urls, nil
 }
 func (h *testHost) AvatarState(_ context.Context, userID int) (AvatarState, error) {
-	return AvatarState{URL: h.avatarURLs[userID]}, h.avatarErr
+	return AvatarState{URL: h.avatarURLs[userID], Lock: h.avatarLocks[userID]}, h.avatarErr
 }
+
+// RemoveAvatar and LiftAvatarLock change avatarURLs and avatarLocks as the site's model does;
+// removeErr fails RemoveAvatar instead.
+func (h *testHost) RemoveAvatar(_ context.Context, userID int, lock *AvatarLock) error {
+	if h.removeErr != nil {
+		return h.removeErr
+	}
+	delete(h.avatarURLs, userID)
+	if lock != nil {
+		if h.avatarLocks == nil {
+			h.avatarLocks = map[int]*AvatarLock{}
+		}
+		l := *lock
+		l.UserID = userID
+		h.avatarLocks[userID] = &l
+	}
+	return nil
+}
+func (h *testHost) LiftAvatarLock(_ context.Context, userID int) error {
+	delete(h.avatarLocks, userID)
+	return nil
+}
+func (h *testHost) AvatarLocks(context.Context) ([]AvatarLock, error) {
+	var locks []AvatarLock
+	for _, l := range h.avatarLocks {
+		locks = append(locks, *l)
+	}
+	sort.Slice(locks, func(i, j int) bool { return locks[i].UserID < locks[j].UserID })
+	return locks, nil
+}
+func (h *testHost) AccountURL() string { return "/account/view#avatar" }
 
 // get serves target to the viewer of the host; a server error fails the test.
 func (h *testHost) get(t *testing.T, f *Forum, target string) *httptest.ResponseRecorder {

@@ -7,8 +7,10 @@ import (
 	"net/http"
 
 	"charactersheet.iociveteres.net/internal/forum"
+	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
 	"github.com/justinas/nosurf"
+	"github.com/alehano/reverse"
 )
 
 // ForumService is forum.Forum; tests put a fake in its place.
@@ -119,13 +121,41 @@ func (h forumHost) AvatarState(ctx context.Context, userID int) (forum.AvatarSta
 		return state, err
 	}
 	if lock != nil {
-		state.Lock = &forum.AvatarLock{
-			UserID:      lock.UserID,
-			Until:       lock.Until,
-			Reason:      lock.Reason,
-			ModeratorID: lock.ModeratorID,
-			CreatedAt:   lock.CreatedAt,
-		}
+		l := forumAvatarLock(*lock)
+		state.Lock = &l
 	}
 	return state, nil
+}
+
+func forumAvatarLock(l models.AvatarLock) forum.AvatarLock {
+	return forum.AvatarLock{UserID: l.UserID, Until: l.Until, Reason: l.Reason, ModeratorID: l.ModeratorID, CreatedAt: l.CreatedAt}
+}
+
+func (h forumHost) RemoveAvatar(ctx context.Context, userID int, lock *forum.AvatarLock) error {
+	var l *models.AvatarLock
+	if lock != nil {
+		l = &models.AvatarLock{UserID: userID, Until: lock.Until, Reason: lock.Reason, ModeratorID: lock.ModeratorID}
+	}
+	return h.app.Models.Avatars.Remove(ctx, userID, l)
+}
+
+func (h forumHost) LiftAvatarLock(ctx context.Context, userID int) error {
+	return h.app.Models.Avatars.Unlock(ctx, userID)
+}
+
+func (h forumHost) AvatarLocks(ctx context.Context) ([]forum.AvatarLock, error) {
+	locks, err := h.app.Models.Avatars.Locks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]forum.AvatarLock, len(locks))
+	for i, l := range locks {
+		out[i] = forumAvatarLock(l)
+	}
+	return out, nil
+}
+
+// AccountURL is the block «Avatar» of the Account page.
+func (h forumHost) AccountURL() string {
+	return reverse.Rev("AccountView") + "#avatar"
 }

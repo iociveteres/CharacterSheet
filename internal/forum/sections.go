@@ -41,6 +41,7 @@ type lastPost struct {
 	PostID     int
 	TopicID    int
 	TopicTitle string
+	AuthorID   int
 	AuthorName string
 	At         time.Time
 }
@@ -62,7 +63,7 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 		       (SELECT count(*) FROM forum_topics t WHERE t.section_id = s.id AND t.deleted_at IS NULL),
 		       (SELECT count(*) FROM forum_posts p JOIN forum_topics t ON t.id = p.topic_id
 		        WHERE t.section_id = s.id AND t.deleted_at IS NULL AND p.deleted_at IS NULL),
-		       l.post_id, l.topic_id, l.title, l.author_name, l.at,
+		       l.post_id, l.topic_id, l.title, l.author_id, l.author_name, l.at,
 		       $1 > 0 AND EXISTS (
 		           SELECT 1 FROM forum_topics t
 		           LEFT JOIN forum_topic_reads r ON r.user_id = $1 AND r.topic_id = t.id
@@ -72,7 +73,7 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 		LEFT JOIN forum_read_marks sm ON sm.user_id = $1 AND sm.section_id = s.id
 		LEFT JOIN forum_read_marks fm ON fm.user_id = $1 AND fm.section_id IS NULL
 		LEFT JOIN LATERAL (
-			SELECT t.last_post_id AS post_id, t.id AS topic_id, t.title, u.name AS author_name, t.last_post_at AS at
+			SELECT t.last_post_id AS post_id, t.id AS topic_id, t.title, u.id AS author_id, u.name AS author_name, t.last_post_at AS at
 			FROM forum_topics t
 			JOIN forum_posts p ON p.id = t.last_post_id
 			JOIN users u ON u.id = p.author_id
@@ -86,13 +87,13 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 	}
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (sectionSummary, error) {
 		var s sectionSummary
-		var postID, topicID *int
+		var postID, topicID, authorID *int
 		var title, author *string
 		var at *time.Time
 		err := row.Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics,
-			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &author, &at, &s.Unread)
+			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &authorID, &author, &at, &s.Unread)
 		if postID != nil {
-			s.LastPost = &lastPost{PostID: *postID, TopicID: *topicID, TopicTitle: *title, AuthorName: *author, At: *at}
+			s.LastPost = &lastPost{PostID: *postID, TopicID: *topicID, TopicTitle: *title, AuthorID: *authorID, AuthorName: *author, At: *at}
 		}
 		return s, err
 	})
@@ -146,8 +147,10 @@ func (f *Forum) loadSection(ctx context.Context, id int, v Viewer) (Section, int
 type topicRow struct {
 	Topic
 	AuthorName string
-	// LastAuthorName is empty when every post of the topic is deleted.
+	// LastAuthorName is empty and LastAuthorID 0 when every post of the topic is deleted.
+	LastAuthorID   int
 	LastAuthorName string
+	SectionName    string
 	// PostCount counts the deleted posts too, as the pages of the topic do.
 	PostCount int
 	// Unread is never true for a guest (reads.go).
@@ -185,36 +188,53 @@ func (t topicRow) LastPostURL() string {
 // as the index forum_topics_section_activity_idx orders them. Deleted topics only for moderators.
 // The viewer's marks come in the same query: whether a topic is unread (reads.go).
 func (f *Forum) sectionTopics(ctx context.Context, sectionID, page int, v Viewer) ([]topicRow, error) {
+	return f.topicRows(ctx, "t.section_id = $1", "t.pinned DESC, t.last_post_at DESC, t.id DESC", sectionID, page, topicsPerPage, v)
+}
+
+// topicRows reads one page of topics as the rows of a section show them, those of where (on $1, the
+// id the list is of) in order. Deleted topics only for whoever reads them (CanReadTopic).
+func (f *Forum) topicRows(ctx context.Context, where, order string, id, page, perPage int, v Viewer) ([]topicRow, error) {
 	// A guest is user 0: no marks join and $5 > 0 keeps every topic read.
 	rows, err := f.db.Query(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
-		       t.reply_count, t.last_post_id, t.last_post_at, a.name, lu.name,
+		       t.reply_count, t.last_post_id, t.last_post_at, a.name, lu.id, lu.name, s.name,
 		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
 		       COALESCE($5 > 0 AND t.last_post_at > $6
 		                AND t.last_post_id > GREATEST(r.last_read_post_id, sm.post_id, fm.post_id, 0), false)
 		FROM forum_topics t
 		JOIN users a ON a.id = t.author_id
+		JOIN forum_sections s ON s.id = t.section_id
 		LEFT JOIN forum_posts lp ON lp.id = t.last_post_id
 		LEFT JOIN users lu ON lu.id = lp.author_id
 		LEFT JOIN forum_topic_reads r ON r.user_id = $5 AND r.topic_id = t.id
 		LEFT JOIN forum_read_marks sm ON sm.user_id = $5 AND sm.section_id = t.section_id
 		LEFT JOIN forum_read_marks fm ON fm.user_id = $5 AND fm.section_id IS NULL
-		WHERE t.section_id = $1 AND ($2 OR t.deleted_at IS NULL)
-		ORDER BY t.pinned DESC, t.last_post_at DESC, t.id DESC
-		LIMIT $3 OFFSET $4`, sectionID, v.Moderator, topicsPerPage, (page-1)*topicsPerPage, v.ID, v.RegisteredAt)
+		WHERE `+where+` AND ($2 OR t.deleted_at IS NULL)
+		ORDER BY `+order+`
+		LIMIT $3 OFFSET $4`, id, v.CanReadTopic(Topic{DeletedAt: &time.Time{}}), perPage, (page-1)*perPage, v.ID, v.RegisteredAt)
 	if err != nil {
 		return nil, err
 	}
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (topicRow, error) {
 		var t topicRow
+		var lastAuthorID *int
 		var lastAuthor *string
 		err := row.Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt,
-			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthor, &t.PostCount, &t.Unread)
+			&t.DeletedAt, &t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName, &lastAuthorID, &lastAuthor,
+			&t.SectionName, &t.PostCount, &t.Unread)
 		if lastAuthor != nil {
-			t.LastAuthorName = *lastAuthor
+			t.LastAuthorID, t.LastAuthorName = *lastAuthorID, *lastAuthor
 		}
 		return t, err
 	})
+}
+
+// topicLine is the dot of the template "forum-topic-row": a row of a section, or of the tab
+// «Topics» of a user page, which names the section of the topic instead of its author.
+type topicLine struct {
+	view
+	Row       topicRow
+	BySection bool
 }
 
 type sectionData struct {
@@ -222,6 +242,11 @@ type sectionData struct {
 	Section    Section
 	Topics     []topicRow
 	Pagination pagination
+}
+
+// TopicLine is a row of the section: {{template "forum-topic-row" ($.TopicLine .)}}.
+func (d sectionData) TopicLine(t topicRow) topicLine {
+	return topicLine{view: d.view, Row: t}
 }
 
 func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {

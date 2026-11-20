@@ -47,6 +47,9 @@ var notifiedActions = map[modAction]bool{
 	actionRestoreTopic: true,
 	actionBanUser:      true,
 	actionUnbanUser:    true,
+	actionRemoveAvatar: true,
+	actionUnlockAvatar: true,
+	actionEraseAbout:   true,
 }
 
 // notificationsKeptFor: a user's read notifications older than this go when they get a new one,
@@ -162,7 +165,7 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 	switch e.Action {
 	case actionDeletePost, actionRestorePost:
 		recipient = "p.author_id"
-	case actionBanUser, actionUnbanUser:
+	case actionBanUser, actionUnbanUser, actionRemoveAvatar, actionUnlockAvatar, actionEraseAbout:
 		recipient = "u.id"
 	}
 	params := map[string]any{}
@@ -175,6 +178,9 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 		params["expiresAt"] = e.Data["expiresAt"]
 	case actionRenameTopic:
 		params["oldTitle"] = e.Data["title"]
+	case actionRemoveAvatar:
+		// lock: none, 7, 30 or forever; lockUntil is the end of a term, null otherwise.
+		params["lock"], params["lockUntil"] = e.Data["lock"], e.Data["lockUntil"]
 	}
 	_, err := deliver(ctx, tx, e.At, `
 		INSERT INTO forum_notifications (user_id, kind, topic_id, post_id, params, created_at, updated_at)

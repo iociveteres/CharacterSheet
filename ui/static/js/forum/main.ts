@@ -49,6 +49,15 @@ document.addEventListener("keydown", event => {
     target.classList.toggle("open");
 });
 
+// A field with a counter (the user's «About»: "131 / 500") counts as it is typed; the server wrote
+// the count of the page. Characters, not UTF-16 units, as the server counts them.
+document.addEventListener("input", event => {
+    const field = event.target;
+    if (!(field instanceof HTMLTextAreaElement) || !field.dataset.counter) return;
+    const counter = document.getElementById(field.dataset.counter);
+    if (counter) counter.textContent = String([...field.value].length);
+});
+
 // An empty field hidden under its preview cannot show the browser's message: show the field.
 document.addEventListener("invalid", event => {
     const field = event.target;

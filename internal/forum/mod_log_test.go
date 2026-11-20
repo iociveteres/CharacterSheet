@@ -18,6 +18,7 @@ func TestLogActionsWorded(t *testing.T) {
 		actionRenameTopic, actionPinTopic, actionUnpinTopic, actionCloseTopic, actionOpenTopic,
 		actionMoveTopic, actionDeleteTopic, actionRestoreTopic, actionDeletePost, actionRestorePost,
 		actionCreateSection, actionEditSection, actionMoveSection, actionBanUser, actionUnbanUser,
+		actionRemoveAvatar, actionUnlockAvatar, actionEraseAbout,
 	} {
 		for _, lang := range []string{"en", "ru"} {
 			if got := (logLine{Action: a}).ActionText(lang); got == string(a) || got == "" {

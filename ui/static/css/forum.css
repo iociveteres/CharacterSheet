@@ -1745,3 +1745,231 @@ main.forum-wide {
         padding: 4px 8px;
     }
 }
+
+/* A name links to the user's page (block 6 of extras/plan.md): it reads as a name, the link shows
+   on hover. The last column's links are grey (above); its name keeps the text colour. */
+#forum a.forum-author-name,
+#forum .forum-post-author a.name,
+#forum .forum-row-last .by a.forum-author-name {
+    color: var(--text);
+    text-decoration: none;
+}
+
+#forum .forum-post.mod .forum-post-author a.name {
+    color: var(--accent);
+}
+
+#forum a.forum-author-name:hover,
+#forum .forum-post-author a.name:hover {
+    text-decoration: underline;
+}
+
+/* ===== The user page (/forum/user/:id, users.md) ===== */
+
+/* The head: the avatar at its post size, then the name, role and facts. */
+.forum-user-head {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.forum-user-head .forum-avatar {
+    align-self: flex-start;
+    margin: 0;
+}
+
+.forum-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+#forum .forum-user-info h2 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.forum-user-info .role {
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+.forum-user-facts {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 0 10px;
+    margin: 4px 0 0;
+    font-size: 15px;
+}
+
+.forum-user-facts dt {
+    color: var(--text-secondary);
+}
+
+.forum-user-facts dd {
+    margin: 0;
+}
+
+.forum-user-info .meta {
+    margin: 4px 0 0;
+}
+
+.forum-user-banned {
+    color: var(--accent-attention);
+}
+
+/* The moderators' block: a row per thing they act on, its state and the action. */
+.forum-user-mod {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#forum .forum-user-mod h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.forum-user-mod-row {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 6px 12px;
+    align-items: baseline;
+    font-size: 15px;
+}
+
+.forum-user-mod-row .what {
+    color: var(--text-secondary);
+}
+
+.forum-user-mod-row .forum-ban-reason {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* The action under the state: a button, or a form that opens in place (<details>, no script). */
+.forum-user-mod-row > details,
+.forum-user-mod-row > form,
+.forum-user-log-all {
+    grid-column: 2;
+    margin: 0;
+}
+
+.forum-user-form > summary {
+    list-style: none;
+    display: inline-flex;
+}
+
+.forum-user-form > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-user-form[open] > summary {
+    color: var(--text-secondary);
+}
+
+.forum-user-form > form {
+    margin-top: 8px;
+    max-width: 560px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+}
+
+.forum-user-log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.forum-user-log-all {
+    font-size: 14px;
+}
+
+/* The user's posts: the topic, a line of the text, where and when. */
+.forum-user-posts .forum-row {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.forum-user-excerpt {
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.forum-user-posts .forum-row.deleted .forum-user-excerpt {
+    opacity: 0.6;
+}
+
+#forum .forum-user-tabs .tab {
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .forum-user-head {
+        gap: 12px;
+    }
+
+    .forum-user-head .forum-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 30px;
+    }
+
+    .forum-user-facts {
+        font-size: 14px;
+    }
+
+    /* The state under its name, the action under both. */
+    .forum-user-mod-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    .forum-user-mod-row > details,
+    .forum-user-mod-row > form,
+    .forum-user-log-all {
+        grid-column: 1;
+    }
+}
+
+/* The avatar locks on the bans page: as a ban, the letter of the user first, the button on the right. */
+.forum-avatar-locks .forum-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    padding: 10px 14px;
+}
+
+.forum-avatar-locks .forum-avatar {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    font-size: 20px;
+}
+
+/* The user's own text under the head (extras/decisions.md, 21): the post's typography; on their own page
+   "✎ Изменить" opens its form in place. */
+.forum-user-about {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#forum .forum-user-about h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.forum-user-about .forum-user-form > form {
+    max-width: none;
+}
+
+.forum-user-about .forum-user-form > summary {
+    cursor: pointer;
+}

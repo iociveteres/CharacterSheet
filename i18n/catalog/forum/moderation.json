@@ -62,5 +62,8 @@
   "forum.moderation.action.sectionEdit": { "en": "Section edited", "ru": "Раздел изменён", "note": "действие в журнале модерации; после двоеточия — раздел" },
   "forum.moderation.action.sectionMove": { "en": "Section moved", "ru": "Раздел переставлен", "note": "действие в журнале модерации; после двоеточия — раздел, ниже «Место: 3 → 2»" },
   "forum.moderation.action.userBan": { "en": "Banned", "ru": "Бан", "note": "действие в журнале модерации; после двоеточия — имя пользователя и ссылка на сообщение, ниже срок" },
-  "forum.moderation.action.userUnban": { "en": "Ban lifted", "ru": "Бан снят", "note": "действие в журнале модерации; после двоеточия — имя пользователя" }
+  "forum.moderation.action.userUnban": { "en": "Ban lifted", "ru": "Бан снят", "note": "действие в журнале модерации; после двоеточия — имя пользователя" },
+  "forum.moderation.action.avatarRemove": { "en": "Avatar removed", "ru": "Убран аватар", "note": "действие в журнале модерации; после двоеточия — имя пользователя, ниже — запрет загрузки" },
+  "forum.moderation.action.avatarUnlock": { "en": "Avatar upload ban lifted", "ru": "Снят запрет аватара", "note": "действие в журнале модерации; после двоеточия — имя пользователя" },
+  "forum.moderation.action.aboutErase": { "en": "“About” erased", "ru": "Стёрто «О себе»", "note": "действие в журнале модерации: модератор стёр текст «О себе» на странице пользователя; после двоеточия — имя" }
 }

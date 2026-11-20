@@ -101,7 +101,12 @@ func (f *Forum) banUser(w http.ResponseWriter, r *http.Request, v view) {
 // gives way to the new one, so a moderator shortens or lengthens a ban by giving another; the log
 // keeps the ids it replaced.
 func banChange(p postTarget, days int, reason string, by int, at time.Time) (modEntry, modChange) {
-	e := modEntry{Action: actionBanUser, UserID: p.AuthorID, PostID: p.ID, TopicID: p.Topic.ID, Reason: reason}
+	return banUserChange(p.AuthorID, p.ID, p.Topic.ID, days, reason, by, at)
+}
+
+// banUserChange is banChange of a user, from a post (postID and topicID) or from their page (0).
+func banUserChange(userID, postID, topicID, days int, reason string, by int, at time.Time) (modEntry, modChange) {
+	e := modEntry{Action: actionBanUser, UserID: userID, PostID: postID, TopicID: topicID, Reason: reason}
 	var expires *time.Time
 	if days > 0 {
 		end := at.AddDate(0, 0, days)
@@ -111,7 +116,7 @@ func banChange(p postTarget, days int, reason string, by int, at time.Time) (mod
 		rows, err := tx.Query(ctx, `
 			UPDATE forum_bans SET lifted_at = $2, lifted_by = $3
 			WHERE user_id = $1 AND `+standingBanSQL("$2")+`
-			RETURNING id`, p.AuthorID, at, by)
+			RETURNING id`, userID, at, by)
 		if err != nil {
 			return err
 		}
@@ -123,7 +128,7 @@ func banChange(p postTarget, days int, reason string, by int, at time.Time) (mod
 		err = tx.QueryRow(ctx, `
 			INSERT INTO forum_bans (user_id, moderator_id, reason, created_at, expires_at)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id`, p.AuthorID, by, reason, at, expires).Scan(&id)
+			RETURNING id`, userID, by, reason, at, expires).Scan(&id)
 		if err != nil {
 			return err
 		}
@@ -156,7 +161,9 @@ func (f *Forum) standingBan(ctx context.Context, userID int, now time.Time) (*Ba
 // banRow is a standing ban in the moderators' list.
 type banRow struct {
 	ID            int
+	UserID        int
 	UserName      string
+	ModeratorID   int
 	ModeratorName string
 	Reason        string
 	CreatedAt     time.Time
@@ -168,6 +175,55 @@ type banRow struct {
 type bansData struct {
 	view
 	Bans []banRow
+	// Locks are the standing locks on a new avatar (extras/users.md), from the host.
+	Locks []lockRow
+}
+
+// lockRow is a lock on a new avatar in the moderators' list, with the names the forum reads.
+type lockRow struct {
+	AvatarLock
+	UserName      string
+	ModeratorName string
+}
+
+func (l lockRow) Avatar() avatar {
+	return newAvatar("", l.UserName, l.UserID, replyAvatarSize)
+}
+
+// avatarLocks are the host's locks with the names of their users and moderators in one query. The
+// list is worth less than the bans above it: an error of the host is logged and the list left out.
+func (f *Forum) avatarLocks(r *http.Request) ([]lockRow, error) {
+	locks, err := f.host.AvatarLocks(r.Context())
+	if err != nil {
+		f.host.LogError(r, err)
+		return nil, nil
+	}
+	if len(locks) == 0 {
+		return nil, nil
+	}
+	ids := make([]int, 0, 2*len(locks))
+	for _, l := range locks {
+		ids = append(ids, l.UserID, l.ModeratorID)
+	}
+	rows, err := f.db.Query(r.Context(), `SELECT id, name FROM users WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	names := map[int]string{}
+	var id int
+	var name string
+	_, err = pgx.ForEachRow(rows, []any{&id, &name}, func() error {
+		names[id] = name
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	list := make([]lockRow, 0, len(locks))
+	for _, l := range locks {
+		list = append(list, lockRow{AvatarLock: l, UserName: names[l.UserID], ModeratorName: names[l.ModeratorID]})
+	}
+	return list, nil
 }
 
 // bansPage lists the bans that bind now, the newest first, each with its button to lift it.
@@ -176,7 +232,7 @@ func (f *Forum) bansPage(w http.ResponseWriter, r *http.Request, v view) {
 		return
 	}
 	rows, err := f.db.Query(r.Context(), `
-		SELECT b.id, u.name, m.name, b.reason, b.created_at, b.expires_at, l.post_id
+		SELECT b.id, u.id, u.name, m.id, m.name, b.reason, b.created_at, b.expires_at, l.post_id
 		FROM forum_bans b
 		JOIN users u ON u.id = b.user_id
 		JOIN users m ON m.id = b.moderator_id
@@ -192,7 +248,12 @@ func (f *Forum) bansPage(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.ServerError(w, r, err)
 		return
 	}
-	f.render(w, r, http.StatusOK, "bans_mod.html", bansData{view: v, Bans: bans}, Page{
+	locks, err := f.avatarLocks(r)
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	f.render(w, r, http.StatusOK, "bans_mod.html", bansData{view: v, Bans: bans, Locks: locks}, Page{
 		Title:   i18n.T(v.Lang, "forum.moderation.bans"),
 		NoIndex: true,
 	})

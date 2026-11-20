@@ -136,6 +136,12 @@ func TestNotificationsPage(t *testing.T) {
 		{"user.ban", gone, gonePost, `{"title": "gone", "reason": "spam", "expiresAt": "` + week + `"}`},
 		{"user.ban", s.topic, s.first, `{"title": "title", "reason": "again", "expiresAt": null}`},
 		{"user.unban", 0, 0, `{}`},
+		// Block 6: the avatar, which the site keeps, and «About».
+		{"avatar.remove", 0, 0, `{"reason": "advert", "lock": "none", "lockUntil": null}`},
+		{"avatar.remove", 0, 0, `{"reason": "advert", "lock": "7", "lockUntil": "` + week + `"}`},
+		{"avatar.remove", 0, 0, `{"reason": "advert", "lock": "forever", "lockUntil": null}`},
+		{"avatar.unlock", 0, 0, `{}`},
+		{"about.erase", 0, 0, `{"reason": "advert"}`},
 	}
 	for i, r := range rows {
 		_, err := s.db.Exec(ctx, `
@@ -146,7 +152,13 @@ func TestNotificationsPage(t *testing.T) {
 	}
 	topic, post := Topic{ID: s.topic}.URL(), postURL(s.first)
 	// The newest first.
+	account, about := s.h.AccountURL(), userURL(s.carol)+"#about"
 	want := []string{
+		"unread " + about + " reason",
+		"unread " + account,
+		"unread " + account + " reason",
+		"unread " + account + " reason",
+		"unread " + account + " reason",
 		"unread -",
 		"unread " + post + " reason",
 		"unread - reason", // the topic of the post is deleted
@@ -187,8 +199,8 @@ func TestNotificationsPage(t *testing.T) {
 	s.h.userID = s.mod
 	s.h.get(t, s.f, notificationsURL)
 	lines := notificationLines(t, s.h)
-	assert.Equal(t, lines[2], "read "+postURL(gonePost)+" reason")
-	assert.Equal(t, lines[4], "read "+Topic{ID: gone}.URL()+" reason")
+	assert.Equal(t, lines[7], "read "+postURL(gonePost)+" reason")
+	assert.Equal(t, lines[9], "read "+Topic{ID: gone}.URL()+" reason")
 }
 
 // getIn serves target to the viewer of the host in the language.

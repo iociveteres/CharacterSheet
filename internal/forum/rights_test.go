@@ -57,6 +57,16 @@ func TestRights(t *testing.T) {
 	othersFirst := post{ID: 16, AuthorID: 3, Number: 1}
 	byModerator := post{ID: 17, AuthorID: 4, Number: 7, AuthorModerator: true}
 
+	// The user page (block 6 of extras/plan.md): the member's own (id 1), another's (id 3), a
+	// moderator's other than the viewer (id 4) and the moderator's own (id 2).
+	ownPage := forumUser{ID: member.ID}
+	othersPage := forumUser{ID: 3}
+	modsPage := forumUser{ID: 4, Moderator: true}
+	moderatorsOwn := forumUser{ID: moderator.ID, Moderator: true}
+	modUser := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanModerateUser(u) } }
+	banUser := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanBanUser(u) } }
+	editAbout := func(u forumUser) func(Viewer) bool { return func(v Viewer) bool { return v.CanEditAbout(u) } }
+
 	tests := []struct {
 		name   string
 		viewer Viewer
@@ -169,6 +179,29 @@ func TestRights(t *testing.T) {
 		{"moderator bans the author of a deleted post", moderator, ban(othersDeleted), true},
 		{"moderator bans a moderator", moderator, ban(byModerator), false},
 		{"moderator bans themself", moderator, ban(modsReply), false},
+
+		// The ban line, the moderators' block and its actions (avatar, «About», history): a
+		// moderator on another's page (extras/decisions.md, 20).
+		{"guest moderates a user", guest, modUser(othersPage), false},
+		{"member moderates a user", member, modUser(othersPage), false},
+		{"banned user moderates a user", banned, modUser(othersPage), false},
+		{"moderator moderates a user", moderator, modUser(othersPage), true},
+		{"moderator moderates another moderator", moderator, modUser(modsPage), true},
+		{"moderator moderates themself", moderator, modUser(moderatorsOwn), false},
+		{"banned moderator moderates a user", bannedModerator, modUser(othersPage), true},
+		{"member bans from a page", member, banUser(othersPage), false},
+		{"moderator bans from a page", moderator, banUser(othersPage), true},
+		{"moderator bans a moderator from a page", moderator, banUser(modsPage), false},
+		{"moderator bans themself from a page", moderator, banUser(moderatorsOwn), false},
+
+		{"guest writes «About»", guest, editAbout(ownPage), false},
+		{"member writes their «About»", member, editAbout(ownPage), true},
+		{"member writes another's «About»", member, editAbout(othersPage), false},
+		{"banned user writes their «About»", banned, editAbout(ownPage), false},
+		{"moderator writes another's «About»", moderator, editAbout(othersPage), false},
+		{"moderator writes their «About»", moderator, editAbout(moderatorsOwn), true},
+		{"banned moderator writes their «About»", bannedModerator, editAbout(moderatorsOwn), true},
+		{"guest reads deleted posts on a page", guest, readsDeleted, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

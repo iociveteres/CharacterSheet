@@ -28,6 +28,11 @@ const (
 	actionMoveSection   modAction = "section.move"
 	actionBanUser       modAction = "user.ban"
 	actionUnbanUser     modAction = "user.unban"
+	// Block 6 of extras/plan.md: the site removes and unlocks the avatar through Host, the forum
+	// writes these lines after it.
+	actionRemoveAvatar modAction = "avatar.remove"
+	actionUnlockAvatar modAction = "avatar.unlock"
+	actionEraseAbout   modAction = "about.erase"
 )
 
 // modEntry is a row of forum_mod_log: what a moderator did, to what, why. A target is 0 when the
