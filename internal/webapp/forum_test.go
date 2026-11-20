@@ -244,3 +244,40 @@ func TestForumHostAvatars(t *testing.T) {
 	assert.Equal(t, state.Lock.Reason, "advert")
 	assert.Equal(t, state.Lock.ModeratorID, 1)
 }
+
+// The forum removes and unlocks the site's avatar through its host (extras/plan.md, block 6): the
+// model does it, the lock keeps who and why, and the notification leads to the Account page.
+func TestForumHostRemovesAvatar(t *testing.T) {
+	app := newTestApplication(t)
+	avatars := app.Models.Avatars.(*mocks.AvatarModel)
+	ctx := context.Background()
+	_, err := avatars.Put(ctx, 1, "image/webp", []byte("image"))
+	assert.NilError(t, err)
+	_, err = avatars.Put(ctx, 2, "image/webp", []byte("other"))
+	assert.NilError(t, err)
+	host := app.ForumHost()
+
+	until := time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	assert.NilError(t, host.RemoveAvatar(ctx, 1, &forum.AvatarLock{Until: &until, Reason: "advert", ModeratorID: 3}))
+	assert.NilError(t, host.RemoveAvatar(ctx, 2, nil))
+	urls, err := host.Avatars(ctx, []int{1, 2})
+	assert.NilError(t, err)
+	assert.Equal(t, len(urls), 0)
+
+	locks, err := host.AvatarLocks(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(locks), 1)
+	assert.Equal(t, locks[0].UserID, 1)
+	assert.Equal(t, locks[0].Until.Equal(until), true)
+	assert.Equal(t, locks[0].Reason, "advert")
+	assert.Equal(t, locks[0].ModeratorID, 3)
+
+	assert.NilError(t, host.LiftAvatarLock(ctx, 1))
+	locks, err = host.AvatarLocks(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(locks), 0)
+
+	// The address comes from the site's routes, registered when the app starts.
+	app.Routes()
+	assert.Equal(t, host.AccountURL(), "/account/view#avatar")
+}
