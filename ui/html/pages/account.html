@@ -1,5 +1,7 @@
 {{define "title"}}{{t .Lang "site.account.title"}}{{end}}
 {{define "main"}}
+{{- /* .account-page: main.css lays the page out by levels, as the forum. */}}
+<div class="account-page">
 <h2>{{t .Lang "site.account.title"}}</h2>
 {{with .User}}
 <table>
@@ -24,4 +26,5 @@
 
 {{template "theme_changer" $}}
 {{end }}
+</div>
 {{end}}
