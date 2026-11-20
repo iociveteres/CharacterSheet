@@ -19,6 +19,9 @@ const (
 // not on the page with the reply form.
 const longTopicPosts = 23
 
+// seedAbout is the player's «About» on their forum page: forum Markdown with a link.
+const seedAbout = "Seed: plays **Black Crusade** on Fridays and keeps the dice in a tin. Rules notes at [example.com](https://example.com)."
+
 type forumSeed struct {
 	Section int `json:"section"`
 	MovedTo int `json:"movedTo"`
@@ -55,7 +58,8 @@ WHERE id = ANY($1) AND created_at > now() - interval '2 days'`, ids); err != nil
 		if out.MovedTo, err = ensureForumSection(ctx, tx, forumMovedSection); err != nil {
 			return err
 		}
-		args := pgx.NamedArgs{"sections": []int{out.Section, out.MovedTo}, "users": ids, "moderator": moderator.ID}
+		args := pgx.NamedArgs{"sections": []int{out.Section, out.MovedTo}, "users": ids, "moderator": moderator.ID,
+			"player": player.ID, "about": seedAbout}
 		for _, q := range []string{
 			`DELETE FROM forum_notifications WHERE user_id = ANY(@users)
 			    OR topic_id IN (SELECT id FROM forum_topics WHERE section_id = ANY(@sections))
@@ -69,6 +73,9 @@ WHERE id = ANY($1) AND created_at > now() - interval '2 days'`, ids); err != nil
 			`DELETE FROM forum_posts WHERE topic_id IN (SELECT id FROM forum_topics WHERE section_id = ANY(@sections))`,
 			`DELETE FROM forum_topics WHERE section_id = ANY(@sections)`,
 			`UPDATE forum_bans SET lifted_at = now(), lifted_by = @moderator WHERE user_id = ANY(@users) AND lifted_at IS NULL`,
+			// The player's page has an «About» to read, edit and erase; the others write their own.
+			`DELETE FROM forum_profiles WHERE user_id = ANY(@users)`,
+			`INSERT INTO forum_profiles (user_id, about) VALUES (@player, @about)`,
 		} {
 			if _, err := tx.Exec(ctx, q, args); err != nil {
 				return err
