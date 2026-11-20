@@ -1343,8 +1343,40 @@ main.forum-wide {
         font-size: 18px;
     }
 
-    /* The topic's buttons as 40px squares beside the title: the bell and "⋯". */
+    /* The topic's buttons as 40px squares beside the title: the bell and "⋯". They lie over a float
+       that keeps their place, so they don't make the title's first line taller: the author's line
+       comes right under the title and wraps around their place, never under them. The float's width
+       counts the buttons the head can hold. */
+    .forum-topic-head {
+        display: block;
+        position: relative;
+    }
+
+    .forum-topic-head .forum-head-text,
+    .forum-topic-head .forum-topic-meta {
+        display: block;
+    }
+
+    .forum-topic-head .forum-topic-meta {
+        margin-top: 2px;
+    }
+
+    .forum-topic-head:has(.forum-subscribe, .forum-menu) .forum-head-text::before {
+        content: "";
+        float: right;
+        width: 40px;
+        height: 40px;
+        margin-left: 12px;
+    }
+
+    .forum-topic-head:has(.forum-subscribe):has(.forum-menu) .forum-head-text::before {
+        width: 84px;
+    }
+
     .forum-topic-head .forum-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
         gap: 4px;
     }
 
