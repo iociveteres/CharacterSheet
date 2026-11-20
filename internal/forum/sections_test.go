@@ -25,6 +25,12 @@ type testHost struct {
 	notFound bool
 	// logged is what the forum wrote to the error log and served the page after.
 	logged []error
+	// avatarURLs are the avatars Avatars answers with; avatarErr fails it instead. avatarCalls
+	// counts its calls and avatarIDs keeps the users each asked for.
+	avatarURLs  map[int]string
+	avatarErr   error
+	avatarCalls int
+	avatarIDs   [][]int
 }
 
 func (h *testHost) UserID(*http.Request) (int, bool) { return h.userID, h.userID != 0 }
@@ -40,6 +46,23 @@ func (h *testHost) RedirectToLogin(w http.ResponseWriter, r *http.Request) {
 func (h *testHost) LogError(_ *http.Request, err error) { h.logged = append(h.logged, err) }
 func (h *testHost) ServerError(_ http.ResponseWriter, _ *http.Request, err error) {
 	h.err = err
+}
+func (h *testHost) Avatars(_ context.Context, userIDs []int) (map[int]string, error) {
+	h.avatarCalls++
+	h.avatarIDs = append(h.avatarIDs, userIDs)
+	if h.avatarErr != nil {
+		return nil, h.avatarErr
+	}
+	urls := map[int]string{}
+	for _, id := range userIDs {
+		if url, ok := h.avatarURLs[id]; ok {
+			urls[id] = url
+		}
+	}
+	return urls, nil
+}
+func (h *testHost) AvatarState(_ context.Context, userID int) (AvatarState, error) {
+	return AvatarState{URL: h.avatarURLs[userID]}, h.avatarErr
 }
 
 // get serves target to the viewer of the host; a server error fails the test.

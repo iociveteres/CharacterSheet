@@ -92,3 +92,40 @@ func (h forumHost) NotFound(w http.ResponseWriter, r *http.Request) {
 func (h forumHost) RedirectToLogin(w http.ResponseWriter, r *http.Request) {
 	h.app.redirectToLogin(w, r)
 }
+
+func (h forumHost) Avatars(ctx context.Context, userIDs []int) (map[int]string, error) {
+	hashes, err := h.app.Models.Avatars.Hashes(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	urls := make(map[int]string, len(hashes))
+	for id, hash := range hashes {
+		urls[id] = avatarURL(hash)
+	}
+	return urls, nil
+}
+
+func (h forumHost) AvatarState(ctx context.Context, userID int) (forum.AvatarState, error) {
+	var state forum.AvatarState
+	hashes, err := h.app.Models.Avatars.Hashes(ctx, []int{userID})
+	if err != nil {
+		return state, err
+	}
+	if hash, ok := hashes[userID]; ok {
+		state.URL = avatarURL(hash)
+	}
+	lock, err := h.app.Models.Avatars.LockOf(ctx, userID)
+	if err != nil {
+		return state, err
+	}
+	if lock != nil {
+		state.Lock = &forum.AvatarLock{
+			UserID:      lock.UserID,
+			Until:       lock.Until,
+			Reason:      lock.Reason,
+			ModeratorID: lock.ModeratorID,
+			CreatedAt:   lock.CreatedAt,
+		}
+	}
+	return state, nil
+}

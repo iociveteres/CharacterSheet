@@ -4,6 +4,7 @@ package forum
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -35,6 +36,11 @@ type Host interface {
 	// RedirectToLogin sends a guest to the login page, which brings them back to r.URL.Path once
 	// signed in.
 	RedirectToLogin(w http.ResponseWriter, r *http.Request)
+	// Avatars are the image URLs of these users' avatars in one query; a user without one is not
+	// in the map.
+	Avatars(ctx context.Context, userIDs []int) (map[int]string, error)
+	// AvatarState is whether the user has an avatar and a lock on uploading one.
+	AvatarState(ctx context.Context, userID int) (AvatarState, error)
 }
 
 type Page struct {

@@ -9,10 +9,13 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/assert"
 	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/forum/forumtest"
+	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/models/mocks"
 )
 
 func TestForumHomeForGuest(t *testing.T) {
@@ -210,4 +213,34 @@ func TestForumCounter(t *testing.T) {
 		_, _, body := ts.get(t, "/about")
 		assert.Equal(t, strings.Join(badges(body), ","), want)
 	}
+}
+
+func TestForumHostAvatars(t *testing.T) {
+	app := newTestApplication(t)
+	avatars := app.Models.Avatars.(*mocks.AvatarModel)
+	ctx := context.Background()
+	hash, err := avatars.Put(ctx, 1, "image/webp", []byte("image"))
+	assert.NilError(t, err)
+	until := time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	assert.NilError(t, avatars.Remove(ctx, 2, &models.AvatarLock{Until: &until, Reason: "advert", ModeratorID: 1}))
+	host := app.ForumHost()
+
+	// The URL GET /avatar/:hash serves; a user without an avatar is not in the map.
+	urls, err := host.Avatars(ctx, []int{1, 2})
+	assert.NilError(t, err)
+	assert.Equal(t, len(urls), 1)
+	assert.Equal(t, urls[1], "/avatar/"+hash)
+
+	state, err := host.AvatarState(ctx, 1)
+	assert.NilError(t, err)
+	assert.Equal(t, state.URL, "/avatar/"+hash)
+	assert.Equal(t, state.Lock == nil, true)
+
+	state, err = host.AvatarState(ctx, 2)
+	assert.NilError(t, err)
+	assert.Equal(t, state.URL, "")
+	assert.Equal(t, state.Lock.UserID, 2)
+	assert.Equal(t, state.Lock.Until.Equal(until), true)
+	assert.Equal(t, state.Lock.Reason, "advert")
+	assert.Equal(t, state.Lock.ModeratorID, 1)
 }
