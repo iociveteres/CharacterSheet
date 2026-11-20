@@ -14,6 +14,7 @@
     {{with .Canonical}}<link rel="canonical" href='{{.}}'>{{end}}
     {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
     {{else}}
+    {{if and .Head .Head.Viewport}}<meta name="viewport" content="width=device-width, initial-scale=1">{{end}}
     <meta name="description" content='{{t .Lang "site.layout.description"}}'>
     {{end}}
 
@@ -70,6 +71,9 @@
     {{with .Embedded}}{{range .Styles}}
     <link rel='stylesheet' href='/static/{{.}}?v={{version .}}'>
     {{end}}{{end}}
+    {{with .Head}}{{range .Styles}}
+    <link rel='stylesheet' href='/static/{{.}}?v={{version .}}'>
+    {{end}}{{end}}
     <link rel='shortcut icon' href='/static/img/favicon.png?v={{version "img/favicon.png"}}' type='image/x-icon'>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,6 +126,9 @@
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>
     <script defer src='/static/js/theme-init.js?v={{version "js/theme-init.js"}}' type="module"></script>
     {{with .Embedded}}{{range .Scripts}}
+    <script defer src='/static/{{.}}?v={{version .}}' type="module"></script>
+    {{end}}{{end}}
+    {{with .Head}}{{range .Scripts}}
     <script defer src='/static/{{.}}?v={{version .}}' type="module"></script>
     {{end}}{{end}}
 </body>

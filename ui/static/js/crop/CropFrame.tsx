@@ -39,6 +39,11 @@ export interface CropFrameProps {
     upload(image: Blob): Promise<void>;
     /** Deletes the saved picture; a rejection's message shows under the frame. */
     remove(): Promise<void>;
+    /**
+     * Takes the frame's errors, null when one is gone, for the page to show
+     * where it likes; without it they show under the frame.
+     */
+    onError?: (message: string | null) => void;
     /** What the page adds over a frame with a picture, given the image it shows. */
     children?: (src: string) => ComponentChildren;
 }
@@ -55,7 +60,11 @@ interface Upload {
 export function CropFrame(props: CropFrameProps) {
     const { name, title, saved, canEdit, children } = props;
     const [upload, setUpload] = useState<Upload | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setErrorState] = useState<string | null>(null);
+    const setError = (message: string | null) => {
+        setErrorState(message);
+        props.onError?.(message);
+    };
     /** The crop window, open on a file or on the saved picture; a new key opens it anew. */
     const [editing, setEditing] = useState<{ file: File | null; key: number } | null>(null);
     const [dropping, setDropping] = useState(false);
@@ -158,7 +167,7 @@ export function CropFrame(props: CropFrameProps) {
                     <div class={`crop-box ${name} empty${state}`} title={props.uploadHint} {...frameProps}>{`+ ${title}`}</div>
                 )}
             {canEdit && <input ref={picker} type="file" accept={ACCEPT} hidden onChange={onPicked} />}
-            {error && <div class={`crop-error ${name}-error`}>{error}</div>}
+            {error && !props.onError && <div class={`crop-error ${name}-error`}>{error}</div>}
             {canEdit && editing && (
                 <div class={`crop-popover ${name}-pop`}>
                     <CropEditor key={editing.key} geometry={props.geometry} title={title} confirmDelete={props.confirmDelete} previews={props.previews}

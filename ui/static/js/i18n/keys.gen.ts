@@ -2,6 +2,22 @@
 // Regenerate with `npm run gen:i18n`.
 
 export interface I18nParams {
+    "account.avatar.confirmDelete": {};
+    "account.avatar.edit": {};
+    "account.avatar.errors.badImage": {};
+    "account.avatar.errors.locked": {};
+    "account.avatar.errors.offline": {};
+    "account.avatar.errors.refused": { "status": string | number };
+    "account.avatar.errors.tooLarge": {};
+    "account.avatar.formats": {};
+    "account.avatar.needsScript": {};
+    "account.avatar.none": {};
+    "account.avatar.noneNoClick": {};
+    "account.avatar.public": {};
+    "account.avatar.publicNoScript": {};
+    "account.avatar.saving": {};
+    "account.avatar.title": {};
+    "account.avatar.upload": {};
     "bestiary.catalog.entries": {};
     "bestiary.catalog.newest": {};
     "bestiary.catalog.noMatch": {};

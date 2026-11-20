@@ -3,9 +3,12 @@ package webapp
 import (
 	"errors"
 	"net/http"
+	"strings"
+	"unicode/utf8"
 
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 )
@@ -22,10 +25,42 @@ func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	avatar, err := app.accountAvatar(r, user)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.User = user
+	data.Avatar = avatar
+	// Laid out for phones, as the forum; crop.css goes before account.css, which sizes the frame.
+	data.Head = &templates.PageHead{
+		Viewport: true,
+		Styles:   []string{"css/crop.css", "css/account.css"},
+		Scripts:  []string{"dist/account.js"},
+	}
 
 	app.render(w, http.StatusOK, "account.html", "base", data)
+}
+
+func (app *Application) accountAvatar(r *http.Request, user *models.User) (*templates.AccountAvatar, error) {
+	hashes, err := app.Models.Avatars.Hashes(r.Context(), []int{user.ID})
+	if err != nil {
+		return nil, err
+	}
+	lock, err := app.Models.Avatars.LockOf(r.Context(), user.ID)
+	if err != nil {
+		return nil, err
+	}
+	a := &templates.AccountAvatar{Lock: lock}
+	if hash, ok := hashes[user.ID]; ok {
+		a.URL = avatarURL(hash)
+	}
+	if first, _ := utf8.DecodeRuneInString(user.Name); first != utf8.RuneError {
+		a.Initial = strings.ToUpper(string(first))
+	}
+	return a, nil
 }
 
 type accountPasswordUpdateForm struct {

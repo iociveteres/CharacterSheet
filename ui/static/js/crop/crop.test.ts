@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-    clampCrop, frameRect, initialCrop, MAX_ZOOM, moveCrop, sameCrop, scaleOf, sourceRect, zoomCrop, type CropGeometry, type SourceRect,
+    clampCrop, encodeCrop, frameRect, initialCrop, MAX_ZOOM, moveCrop, sameCrop, scaleOf, sourceRect, zoomCrop, type CropGeometry, type SourceRect,
 } from "./crop";
 
 // The two windows that crop: the sheet's portrait and the site's avatar.
@@ -128,3 +128,43 @@ for (const [name, g] of [["portrait", portrait], ["avatar", avatar]] as const) {
         });
     });
 }
+
+describe("encoding the crop", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    /** A canvas whose files weigh `bytes(type, quality)`; `webp` false for a browser that cannot make WebP. */
+    function canvasOf(bytes: (type: string, quality: number) => number, webp = true) {
+        const calls: [string, number][] = [];
+        vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((done, type = "image/png", quality = 1) => {
+            calls.push([type, quality]);
+            const made = type === "image/webp" && !webp ? "image/png" : type;
+            done(new Blob([new Uint8Array(bytes(made, quality))], { type: made }));
+        });
+        return calls;
+    }
+    const encode = (g: CropGeometry) => encodeCrop(g, document.createElement("canvas"), photo, initialCrop(g, photo));
+
+    it("encodes a light crop once", async () => {
+        const calls = canvasOf(() => 1000);
+        const blob = await encode({ ...avatar, maxBytes: 2000 });
+        expect(blob.type).toBe("image/webp");
+        expect(calls).toEqual([["image/webp", 0.8]]);
+    });
+
+    it("encodes a crop over the limit again at a lower quality, in the same format", async () => {
+        const calls = canvasOf((_, quality) => quality > 0.6 ? 3000 : 1500);
+        const blob = await encode({ ...avatar, maxBytes: 2000 });
+        expect(blob.size).toBe(1500);
+        expect(calls).toEqual([["image/webp", 0.8], ["image/webp", 0.6]]);
+
+        const jpegCalls = canvasOf((_, quality) => quality > 0.6 ? 3000 : 1500, false);
+        expect((await encode({ ...avatar, maxBytes: 2000 })).type).toBe("image/jpeg");
+        expect(jpegCalls).toEqual([["image/webp", 0.8], ["image/jpeg", 0.85], ["image/jpeg", 0.6]]);
+    });
+
+    it("leaves a geometry without a limit, the portrait's, as it is", async () => {
+        const calls = canvasOf(() => 1 << 20);
+        await encode(portrait);
+        expect(calls).toEqual([["image/webp", 0.8]]);
+    });
+});

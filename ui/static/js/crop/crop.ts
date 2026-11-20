@@ -12,6 +12,8 @@ export interface CropGeometry {
     frame: { w: number; h: number };
     /** The size of the image that comes out, with the frame's proportions. */
     output: { w: number; h: number };
+    /** The largest file the server takes: a crop above it is encoded again at a lower quality. */
+    maxBytes?: number;
 }
 
 export const MAX_ZOOM = 4;
@@ -106,17 +108,21 @@ export function drawCrop(canvas: HTMLCanvasElement, g: CropGeometry, image: Canv
 const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
     new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
 
-/** The crop as the server takes it: WebP 0.8, or JPEG 0.85 where the canvas cannot make WebP (Safari). */
+/**
+ * The crop as the server takes it: WebP 0.8, or JPEG 0.85 where the canvas
+ * cannot make WebP (Safari); at 0.6 when that is over the geometry's maxBytes.
+ * One still over it goes as it is, for the server to refuse.
+ */
 export async function encodeCrop(g: CropGeometry, image: CanvasImageSource, size: Size, crop: Crop): Promise<Blob> {
     const canvas = document.createElement("canvas");
     canvas.width = g.output.w;
     canvas.height = g.output.h;
     drawCrop(canvas, g, image, size, crop);
     const webp = await toBlob(canvas, "image/webp", 0.8);
-    if (webp?.type === "image/webp") return webp;
-    const jpeg = await toBlob(canvas, "image/jpeg", 0.85);
-    if (!jpeg) throw new Error(t("common.crop.encodeFailed"));
-    return jpeg;
+    const blob = webp?.type === "image/webp" ? webp : await toBlob(canvas, "image/jpeg", 0.85);
+    if (!blob) throw new Error(t("common.crop.encodeFailed"));
+    if (g.maxBytes === undefined || blob.size <= g.maxBytes) return blob;
+    return (await toBlob(canvas, blob.type, 0.6)) ?? blob;
 }
 
 /** The files the file pickers offer. */

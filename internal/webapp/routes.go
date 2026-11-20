@@ -52,6 +52,11 @@ func (app *Application) Routes() http.Handler {
 
 	protected := dynamic.Append(app.requireAuthentication)
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
+	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
+	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))
+	// Public: no session, no CSRF; anyone may see an avatar (internal/webapp/avatars.go).
+	router.HandlerFunc(http.MethodGet, "/avatar/:hash", app.avatarGet)
 
 	router.Handler(http.MethodGet, routeAdd("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
 	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), dynamic.ThenFunc(app.accountPasswordResetPost))

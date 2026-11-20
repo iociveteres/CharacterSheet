@@ -191,14 +191,16 @@ body:has(.account-page) > footer {
     background: var(--bg);
 }
 
-/* The Account page: its table and the theme's block are panels on the page. */
+/* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
 .account-page > table,
+.account-page .avatar-settings,
 .account-page .theme-settings {
     background: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
 }
 
+.account-page .avatar-settings,
 .account-page .theme-settings {
     padding: 10px 14px 14px;
 }

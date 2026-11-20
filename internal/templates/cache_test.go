@@ -105,8 +105,9 @@ func TestHomeSlidesByLanguage(t *testing.T) {
 	assert.StringContains(t, slideURL("de", "2-character-info", "light", "webp"), "/static/img/slides/2-character-info-en-light.webp?v=")
 }
 
-// Only an embedded page asks for a viewport and names its canonical address: the site pages
-// are laid out for desktops.
+// Only an embedded page, or a site page that asks with PageHead (the Account page), gets a
+// viewport; only an embedded page names its canonical address. The other site pages are laid out
+// for desktops.
 func TestEmbeddedPageHead(t *testing.T) {
 	cache, err := NewTemplateCache()
 	assert.NilError(t, err)
@@ -137,6 +138,17 @@ func TestEmbeddedPageHead(t *testing.T) {
 	assert.StringContains(t, head, `<meta name="description" content='About the forum'>`)
 	assert.StringContains(t, head, `<title>Forum - Character Sheet</title>`)
 	assert.StringContains(t, head, `href='/static/css/forum.css?v=`)
+
+	head = render("about.html", &Data{Lang: "en", Head: &PageHead{Viewport: true, Styles: []string{"css/crop.css", "css/account.css"}}})
+	assert.StringContains(t, head, `<meta name="viewport"`)
+	assert.StringContains(t, head, `<meta name="description" content='`)
+	crop, account := strings.Index(head, "/static/css/crop.css?v="), strings.Index(head, "/static/css/account.css?v=")
+	if crop < 0 || account < crop || account < strings.Index(head, "/static/css/main.css?v=") {
+		t.Errorf("the page's styles are not after main.css in their order: %d, %d", crop, account)
+	}
+	if strings.Contains(head, `rel="canonical"`) {
+		t.Error("a site page names its canonical address")
+	}
 }
 
 // An embedded page may widen <main>; the site pages keep the plain class.

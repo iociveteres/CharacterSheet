@@ -1,6 +1,7 @@
 // Bundles the pages into ui/static/dist: the room, with the sheet in it, into
-// room.js, the bestiary into bestiary.js and the forum's script into forum.js,
-// and writes the client dictionaries i18n.<lang>.js from i18n/catalog.
+// room.js, the bestiary into bestiary.js, the forum's script into forum.js and
+// the Account page's avatar block into account.js, and writes the client
+// dictionaries i18n.<lang>.js from i18n/catalog.
 // `--watch` rebuilds on change without minifying; run the server with -dev so
 // it serves the fresh bundles.
 import * as esbuild from "esbuild";
@@ -16,6 +17,7 @@ const options = {
         room: "ui/static/js/room/main.ts",
         bestiary: "ui/static/js/bestiary/main.tsx",
         forum: "ui/static/js/forum/main.ts",
+        account: "ui/static/js/account/main.ts",
     },
     outdir,
     bundle: true,

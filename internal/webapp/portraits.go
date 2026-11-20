@@ -13,14 +13,15 @@ import (
 // The size the client crops a portrait to (PORTRAIT in sheet/profile/Portrait.tsx).
 const portraitWidth, portraitHeight = 360, 480
 
-var portraitHash = regexp.MustCompile(`^[0-9a-f]{16}$`)
+// imageHash is the address of a portrait or an avatar: the first 16 hex of the sha256 of its data.
+var imageHash = regexp.MustCompile(`^[0-9a-f]{16}$`)
 
 // portraitGet serves GET /portrait/:hash. The URL changes with the image, so
 // the browser keeps it for good; private, as only the viewers of a sheet may
 // see it. secureHeaders sets nosniff.
 func (app *Application) portraitGet(w http.ResponseWriter, r *http.Request) {
 	hash := httprouter.ParamsFromContext(r.Context()).ByName("hash")
-	if !portraitHash.MatchString(hash) {
+	if !imageHash.MatchString(hash) {
 		app.notFound(w)
 		return
 	}
