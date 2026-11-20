@@ -184,13 +184,8 @@ func (f *Forum) render(w http.ResponseWriter, r *http.Request, status int, name 
 		return
 	}
 	page.Body = template.HTML(buf.String())
-	lang := i18n.FromContext(r.Context())
-	// A tab or a search result names the forum beside the page; the home page is the forum itself.
-	if forum := i18n.T(lang, "forum.sections.title"); page.Title != forum {
-		page.Title += " · " + forum
-	}
 	if page.Description == "" {
-		page.Description = i18n.T(lang, "forum.sections.description")
+		page.Description = i18n.T(i18n.FromContext(r.Context()), "forum.sections.description")
 	}
 	f.host.Render(w, r, status, page)
 }

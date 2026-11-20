@@ -98,7 +98,16 @@ func TestEveryPageHead(t *testing.T) {
 		}
 	}
 
+	// A section and a topic are titled by what their authors typed, with nothing of the forum's
+	// own beside it (the site adds its name in base.html).
+	s.h.userID = 0
+	s.h.get(t, s.f, section)
+	assert.Equal(t, s.h.page.Title, "section")
+	s.h.get(t, s.f, topic)
+	assert.Equal(t, s.h.page.Title, "title")
+
 	// The quote is a topic page that names the topic page as its address.
+	s.h.userID = s.mod
 	s.h.get(t, s.f, postURL(s.reply)+"/quote")
 	assert.Equal(t, s.h.page.NoIndex, true)
 	assert.Equal(t, s.h.page.Canonical, "https://example.com"+topic)
