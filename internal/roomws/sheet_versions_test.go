@@ -3,6 +3,7 @@ package roomws
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -144,6 +145,36 @@ func TestEditInsideADeletedItemIsGone(t *testing.T) {
 	}
 	if resp := owner.expect("response", "e6"); resp["OK"] != false || resp["code"] != "destinationGone" {
 		t.Fatalf("got %v, want destinationGone", resp)
+	}
+	room.mark()
+	gm.expect("marker", "")
+}
+
+// tooLargeSheets refuses every write as the content_size check does; a move
+// wraps the error, as MoveItemBetweenGrids does.
+type tooLargeSheets struct {
+	*audienceSheets
+}
+
+func (tooLargeSheets) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
+	return 0, models.ErrSheetTooLarge
+}
+func (tooLargeSheets) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, json.RawMessage, error) {
+	return 0, nil, fmt.Errorf("create in destination: %w", models.ErrSheetTooLarge)
+}
+
+// An edit that would make the sheet too large is answered "tooLarge" and goes to no one.
+func TestEditOverTheSizeLimitIsTooLarge(t *testing.T) {
+	room := newAudienceRoom(t)
+	room.server.Models.CharacterSheets = tooLargeSheets{room.sheets}
+	owner, gm := room.dial(ownerID), room.dial(gmID)
+
+	owner.send(`{"type":"change","eventID":"e1","sheetID":"10","path":"notes.text","change":"Blood for the Blood God"}`)
+	owner.send(`{"type":"moveItemBetweenGrids","eventID":"e2","sheetID":"10","fromPath":"talents.list.items","toPath":"traits.list.items","itemId":"t1","toPosition":{"colIndex":0,"rowIndex":0}}`)
+	for _, eventID := range []string{"e1", "e2"} {
+		if resp := owner.expect("response", eventID); resp["OK"] != false || resp["code"] != "tooLarge" {
+			t.Fatalf("got %v, want tooLarge", resp)
+		}
 	}
 	room.mark()
 	gm.expect("marker", "")

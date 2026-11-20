@@ -1,8 +1,11 @@
 package webapp
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
@@ -70,6 +73,50 @@ func TestSheetView(t *testing.T) {
 			if tt.wantBody != "" {
 				assert.StringContains(t, body, tt.wantBody)
 			}
+		})
+	}
+}
+
+// The import of a sheet larger than the server takes answers 413, whether the
+// body says its length or not, and so does content the database refuses.
+func TestSheetImportSize(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+	token := ts.login(t)
+
+	sheet := func(padding int) string {
+		return `{"characterInfo":{"characterName":"Kharn"},"characteristics":{},"skillsLeft":{},"skillsRight":{},` +
+			`"padding":"` + strings.Repeat("x", padding) + `"}`
+	}
+	// Not a sheet: read whole, it would answer 400.
+	junk := strings.Repeat("x", maxSheetBody)
+	for name, tt := range map[string]struct {
+		file string
+		// The token goes in the form, as the room page sends it, unless the
+		// body is sent with no length: then in the header.
+		chunked bool
+		want    int
+	}{
+		"small":                         {sheet(0), false, http.StatusOK},
+		"over the body limit":           {junk, false, http.StatusRequestEntityTooLarge},
+		"over the body limit, chunked":  {junk, true, http.StatusRequestEntityTooLarge},
+		"content over the stored limit": {sheet(600 << 10), false, http.StatusRequestEntityTooLarge},
+	} {
+		t.Run(name, func(t *testing.T) {
+			fields := map[string]string{"room_id": "1"}
+			if !tt.chunked {
+				fields["csrf_token"] = token
+			}
+			contentType, body := multipartFiles(t, fields, "sheet_file", [][2]string{{"kharn.json", tt.file}})
+			var reader io.Reader = body
+			header := ""
+			if tt.chunked {
+				// Hiding the buffer's length makes the client send it chunked.
+				reader, header = io.MultiReader(bytes.NewReader(body.Bytes())), token
+			}
+			code, _, _ := ts.send(t, http.MethodPost, "/sheet/import", contentType, reader, header)
+			assert.Equal(t, code, tt.want)
 		})
 	}
 }

@@ -28,23 +28,37 @@ jobs:
       - name: Provide production env file
         run: cp /srv/charactersheet/.env.production .env.production
 
-      - name: Fetch gamedata (best-effort)
-        id: gamedata_clone
-        continue-on-error: true
+      # The last good clone stays in GAMEDATA_CACHE, so a broken clone does not ship
+      # an empty autocomplete; with neither the deploy stops. rsync is not installed
+      # on the server (setup.sh of the server repo): the cache is copied anew and
+      # renamed into place, so a copy that breaks off leaves the old one whole.
+      - name: Fetch gamedata
         env:
           GAMEDATA_REPO_URL: ${{ secrets.GAMEDATA_REPO_URL }}
+          GAMEDATA_CACHE: /srv/charactersheet/gamedata-cache
         run: |
-          rm -rf internal/gamedata/assets
-          git clone "$GAMEDATA_REPO_URL" internal/gamedata/assets
+          assets=internal/gamedata/assets
+          # Black Crusade keeps its catalogs at the top of the folder.
+          has_data() { [ -n "$(find "$1" -maxdepth 1 -type f -name '*.json' 2>/dev/null)" ]; }
 
-      - name: Ensure gamedata fallback
-        run: |
-          if [ ! -d internal/gamedata/assets ] || \
-             [ -z "$(find internal/gamedata/assets -maxdepth 1 -type f ! -name '.*' 2>/dev/null)" ]; then
-            echo "::warning::gamedata assets missing or empty — building with degraded autocomplete"
-            rm -rf internal/gamedata/assets
-            mkdir -p internal/gamedata/assets
-            echo '[]' > internal/gamedata/assets/placeholder.json
+          rm -rf "$assets"
+          if git clone --quiet "$GAMEDATA_REPO_URL" "$assets" && has_data "$assets"; then
+            rm -rf "$GAMEDATA_CACHE.new" "$GAMEDATA_CACHE.old"
+            cp -a "$assets" "$GAMEDATA_CACHE.new"
+            rm -rf "$GAMEDATA_CACHE.new/.git"
+            if [ -d "$GAMEDATA_CACHE" ]; then
+              mv "$GAMEDATA_CACHE" "$GAMEDATA_CACHE.old"
+            fi
+            mv "$GAMEDATA_CACHE.new" "$GAMEDATA_CACHE"
+            rm -rf "$GAMEDATA_CACHE.old"
+            echo "Cloned gamedata, kept a copy in $GAMEDATA_CACHE"
+          elif has_data "$GAMEDATA_CACHE"; then
+            echo "::warning::Could not clone gamedata: building with the last good copy from $GAMEDATA_CACHE"
+            rm -rf "$assets"
+            cp -a "$GAMEDATA_CACHE" "$assets"
+          else
+            echo "::error::No gamedata: the clone failed and $GAMEDATA_CACHE has no copy. Push the data to the server's gamedata repository (server README, section 3) and deploy again."
+            exit 1
           fi
 
       - name: Save current image for rollback
@@ -62,11 +76,86 @@ jobs:
         run: |
           docker compose -f docker-compose.prod.yml build
 
+      # migrate prints the version to stderr and fails with "no migration" on a
+      # database it never ran on. Rollback migrates back to this version.
+      - name: Read the database version
+        id: db_version
+        env:
+          DB_DSN: ${{ secrets.PROD_DB_DSN }}
+        run: |
+          if out="$(migrate -database "$DB_DSN" -path ./migrations version 2>&1)"; then
+            version="$out"
+          elif [ "$out" = "error: no migration" ]; then
+            version=0
+          else
+            echo "::error::migrate version failed: $out"
+            exit 1
+          fi
+          if ! [[ "$version" =~ ^[0-9]+$ ]]; then
+            # "47 (dirty)": a migration broke off, and up would refuse to run.
+            echo "::error::Database version is '$version'. Fix the schema by hand, then mark the version it matches with migrate force <version>"
+            exit 1
+          fi
+
+          latest=0
+          for f in migrations/*.up.sql; do
+            n="${f##*/}"
+            n=$((10#${n%%_*}))
+            if [ "$n" -gt "$latest" ]; then latest=$n; fi
+          done
+
+          echo "Database at $version, migrations up to $latest"
+          if [ "$version" -gt "$latest" ]; then
+            echo "::warning::The database ($version) is ahead of this commit's migrations ($latest)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "pending=$([ "$latest" -gt "$version" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # Some down migrations lose data of the new shape, so a dump comes first.
+      # The nightly dumps of cs-backup.timer are the long-term copies: three of
+      # these are enough to undo a recent deploy.
+      - name: Dump the database before migrations
+        if: steps.db_version.outputs.pending == 'true'
+        env:
+          VERSION: ${{ steps.db_version.outputs.version }}
+        run: |
+          dir=/srv/backups
+          file="$dir/predeploy-$VERSION.dump"
+          if [ ! -w "$dir" ]; then
+            echo "::error::$dir is not writable by $(id -un), so the database cannot be dumped before migrations. On the server: sudo chmod 770 $dir"
+            exit 1
+          fi
+
+          # Readable by the cs group, like the nightly dumps, for pull-backups.ps1.
+          umask 027
+          if ! docker exec postgres pg_dump -U charactersheet -d charactersheet --format=custom > "$file.part"; then
+            rm -f "$file.part"
+            echo "::error::pg_dump failed, migrations not run"
+            exit 1
+          fi
+          mv "$file.part" "$file"
+          echo "Dumped the database at version $VERSION to $file ($(du -h "$file" | cut -f1))"
+
+          ls -1t "$dir"/predeploy-*.dump | tail -n +4 | xargs -r rm -f --
+
       - name: Run database migrations
+        id: migrate
         env:
           DB_DSN: ${{ secrets.PROD_DB_DSN }}
         run: |
           migrate -database "$DB_DSN" -path ./migrations up
+          echo "version=$(migrate -database "$DB_DSN" -path ./migrations version 2>&1)" >> "$GITHUB_OUTPUT"
+
+      # The old image still runs, so a half-done up leaves it on a schema it may
+      # not know; migrate refuses to move a dirty database, so this is by hand.
+      - name: Migrations failed
+        if: failure() && steps.migrate.outcome == 'failure'
+        env:
+          DB_DSN: ${{ secrets.PROD_DB_DSN }}
+          VERSION: ${{ steps.db_version.outputs.version }}
+        run: |
+          now="$(migrate -database "$DB_DSN" -path ./migrations version 2>&1 || true)"
+          echo "::error::migrate up failed: the database is at '$now', it was at $VERSION; the old image still runs. Restore on the server: docker exec -i postgres pg_restore -U charactersheet -d charactersheet --clean --if-exists --no-owner < /srv/backups/predeploy-$VERSION.dump"
 
       - name: Switch to new version
         id: switch
@@ -89,12 +178,34 @@ jobs:
           echo "::error::New version failed readiness check"
           exit 1
 
+      # A failed switch can leave either image running, so it rolls back too.
+      # Migrating back has to run here: goto down needs the new migration files,
+      # which only this working copy has.
       - name: Rollback
-        if: steps.health_check.outcome == 'failure'
+        if: steps.switch.outcome == 'failure' || steps.health_check.outcome == 'failure'
+        env:
+          DB_DSN: ${{ secrets.PROD_DB_DSN }}
+          OLD_VERSION: ${{ steps.db_version.outputs.version }}
+          NEW_VERSION: ${{ steps.migrate.outputs.version }}
         run: |
           if ! docker image inspect "$ROLLBACK_IMAGE" > /dev/null 2>&1; then
             echo "::error::Rollback image $ROLLBACK_IMAGE does not exist"
             exit 1
+          fi
+
+          if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
+            # The new code must not write while its tables change under it.
+            docker compose -f docker-compose.prod.yml stop app
+            echo "Migrating the database back from $NEW_VERSION to $OLD_VERSION"
+            if [ "$OLD_VERSION" = 0 ]; then
+              back=(down -all)
+            else
+              back=(goto "$OLD_VERSION")
+            fi
+            if ! migrate -database "$DB_DSN" -path ./migrations "${back[@]}"; then
+              now="$(migrate -database "$DB_DSN" -path ./migrations version 2>&1 || true)"
+              echo "::error::CRITICAL: could not migrate the database back to $OLD_VERSION, it is at '$now'. Restore on the server: docker exec -i postgres pg_restore -U charactersheet -d charactersheet --clean --if-exists --no-owner < /srv/backups/predeploy-$OLD_VERSION.dump"
+            fi
           fi
 
           echo "Rolling back to previous version"
@@ -103,7 +214,7 @@ jobs:
           docker compose -f docker-compose.prod.yml up -d --no-build --pull never
 
       - name: Rollback health check
-        if: steps.health_check.outcome == 'failure'
+        if: steps.switch.outcome == 'failure' || steps.health_check.outcome == 'failure'
         run: |
           for i in $(seq 1 15); do
             if curl -fs http://127.0.0.1:4000/readiness > /dev/null; then

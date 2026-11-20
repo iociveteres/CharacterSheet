@@ -83,14 +83,16 @@ func StaticHash(path string) (string, bool) {
 	return hash, ok
 }
 
+// Version is the hash of the static file at path (as "dist/room.js"), read
+// again from disk in dev mode; "1" for a file there is not.
+func Version(path string) string {
+	if hash, ok := StaticHash(path); ok {
+		return hash
+	}
+	return "1"
+}
+
 // VersionFunc returns a template function for cache busting
 func VersionFunc() template.FuncMap {
-	return template.FuncMap{
-		"version": func(path string) string {
-			if hash, ok := StaticHash(path); ok {
-				return hash
-			}
-			return "1"
-		},
-	}
+	return template.FuncMap{"version": Version}
 }

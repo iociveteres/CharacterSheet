@@ -4,7 +4,7 @@ import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./core/remo
 import type { Transport } from "./core/actions";
 import { movedTo, touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
-import { online } from "./connection";
+import { online, outdated } from "./connection";
 import { t } from "../i18n";
 
 /**
@@ -53,8 +53,8 @@ const pending = new Map<string, { sheetID: string; versions?: SheetVersions }>()
 
 /**
  * The edit is applied locally but the server does not have it: main.ts
- * reloads the sheet it shows, if it is that one. `reason` is the code of the server's answer, "tooLarge"
- * or "offline".
+ * reloads the sheet it shows, if it is that one. `reason` is the code of the server's answer, or
+ * "messageTooLarge" or "offline" when the edit did not go.
  */
 function editFailed(sheetID: string, reason: string): void {
     document.dispatchEvent(new CustomEvent("sheet:editFailed", { detail: { sheetID, reason } }));
@@ -64,6 +64,8 @@ const EDIT_FAILED: { [reason: string]: string } = {
     permission: t("sheet.view.editFailed.permission"),
     destinationGone: t("sheet.view.editFailed.destinationGone"),
     tooLarge: t("sheet.view.editFailed.tooLarge"),
+    messageTooLarge: t("sheet.view.editFailed.messageTooLarge"),
+    rateLimited: t("sheet.view.editFailed.rateLimited"),
     offline: t("sheet.view.editFailed.offline"),
 };
 
@@ -75,7 +77,7 @@ export function editFailedNotice(reason: string): string {
 function sendEdit(msg: object & Edit, versions?: SheetVersions): void {
     const json = JSON.stringify(msg);
     if (new TextEncoder().encode(json).length > MAX_MESSAGE_BYTES) {
-        editFailed(msg.sheetID, "tooLarge");
+        editFailed(msg.sheetID, "messageTooLarge");
         return;
     }
     // Before the first connection the sheet is not read-only yet.
@@ -209,4 +211,12 @@ on("disconnected", () => {
 });
 on("reconnected", () => {
     online.value = true;
+});
+
+// The first message of a socket names the bundle of the server's pages; the
+// page has its own in data-build (view_room.html, bestiary.html). The page's
+// bar (connectionBar.tsx) offers the reload.
+on<{ build: string }>("hello", msg => {
+    const page = document.querySelector<HTMLElement>("[data-build]")?.dataset.build;
+    outdated.value = page !== undefined && msg.build !== page;
 });

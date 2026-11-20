@@ -37,14 +37,16 @@ type Application struct {
 	*Dependencies
 	wg          sync.WaitGroup
 	onlineUsers atomic.Int64
+	limits      *limiters
 }
 
 func NewApplication(deps *Dependencies) *Application {
-	return &Application{Dependencies: deps}
+	return &Application{Dependencies: deps, limits: newLimiters()}
 }
 
-// Wait blocks until background tasks started via app.background and the
-// online-users updater have finished. cmd/web calls this during shutdown.
+// Wait blocks until background tasks started via app.background, the
+// online-users updater and the limit sweeper have finished. cmd/web calls
+// this during shutdown.
 func (app *Application) Wait() {
 	app.wg.Wait()
 }

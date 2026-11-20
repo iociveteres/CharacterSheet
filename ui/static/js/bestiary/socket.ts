@@ -2,4 +2,4 @@
 // the rolls of any sheet on it (internal/roomws/bestiary.go).
 import { connectSocket } from "../socket";
 
-connectSocket("/bestiary/ws");
+connectSocket("/bestiary/ws", "/bestiary/collections");

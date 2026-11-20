@@ -4,13 +4,15 @@
 <script id="room-state" type="application/json">{{roomState .}}</script>
 
 {{/* Hidden until the bundle has rendered the islands (ui/static/js/room/main.ts). */}}
-<div class='room' id="room" data-room-id="{{.Room.ID}}" hidden>
+{{/* data-build: the bundle the server's hello compares with (ui/static/js/connectionBar.tsx). */}}
+<div class='room' id="room" data-room-id="{{.Room.ID}}" data-build='{{version "dist/room.js"}}' hidden>
     <div class="links-block"> <a href='{{reverseRev "AccountRooms"}}' title='{{t .Lang "site.room.back"}}'>&lt;</a></div>
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>
     {{end}}
     {{/* Preact islands (ui/static/js/room/islands.tsx) render into the empty elements. */}}
     <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+    <div id="connection-bar" role="status" aria-live="polite"></div>
 
     {{/* The sheet bundle renders the sheet here (ui/static/js/sheet/main.ts): the
          one in #sheet-state and the ones picked in the room list. */}}

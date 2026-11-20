@@ -5,12 +5,12 @@ import {
     openInviteModal, renameFolder, reorderFolders, rollPreset, rollStandardDice, sendChat, setDiceAmount, setDiceModifier,
     setDicePreset, setRollAgainst, toggleRollAgainst,
 } from "./actions";
-import { confirmMessage, dicePresets, diceSettings, folders, initRoomState, modals, players, sheets } from "./state";
+import { confirmMessage, dicePresets, diceSettings, folders, initRoomState, modals, players, sheets, type Modals } from "./state";
 import { readInputHistory } from "./chat";
 import { readDiceSettings } from "./dice";
 import type { RoomPayload } from "./payload.gen";
 
-const closed = { invite: false, import: false, kicked: false, connectionLost: false };
+const closed: Modals = { invite: false, import: false, kicked: false, connectionLost: false };
 
 beforeEach(() => {
     modals.value = closed;
@@ -77,11 +77,11 @@ describe("closing a modal", () => {
     it("closes invite and import, not kicked or connection lost", () => {
         openInviteModal();
         openImportModal();
-        modals.value = { ...modals.value, kicked: true, connectionLost: true };
+        modals.value = { ...modals.value, kicked: true, connectionLost: "signedOut" };
 
         closeModal();
 
-        expect(modals.value).toEqual({ invite: false, import: false, kicked: true, connectionLost: true });
+        expect(modals.value).toEqual({ invite: false, import: false, kicked: true, connectionLost: "signedOut" });
     });
 });
 
@@ -129,6 +129,18 @@ describe("importing a sheet", () => {
 
         const done = importSheet(new File(["{}"], "bad.json"));
         await vi.waitFor(() => expect(confirmMessage.value).not.toBe(""));
+        answerConfirm(true);
+        await done;
+
+        expect(modals.value.import).toBe(true);
+    });
+
+    it("says the file is too large when the server answers 413", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 413 })));
+        openImportModal();
+
+        const done = importSheet(new File(["{}"], "huge.json"));
+        await vi.waitFor(() => expect(confirmMessage.value).toMatch(/too large/));
         answerConfirm(true);
         await done;
 

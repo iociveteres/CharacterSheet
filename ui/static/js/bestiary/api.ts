@@ -23,6 +23,9 @@ function statusText(status: number): string {
         case 400: return t("bestiary.messages.status400");
         case 403: return t("bestiary.messages.status403");
         case 404: return t("bestiary.messages.status404");
+        case 413: return t("bestiary.messages.status413");
+        // Uploads only: 20 a minute (webapp/routes.go).
+        case 429: return t("bestiary.messages.status429");
         default: return t("bestiary.messages.requestFailed", { status });
     }
 }

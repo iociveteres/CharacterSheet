@@ -2,6 +2,7 @@
 // item with the entry laid over a new item, for both players and the stored
 // sheet. The queries need the collections of internal/gamedata/assets.
 import { beforeAll, describe, expect, it } from "vitest";
+import { config } from "../../lib/config";
 import type { Player } from "../../lib/player";
 import { addItem, grid, openTab, showGrid, tabIds } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
@@ -49,7 +50,7 @@ const byLayout = (grid: { items: object; layouts?: { [id: string]: { rowIndex: n
     return Object.keys(grid.items).sort((p, q) => row(p) - row(q) || (p < q ? -1 : p > q ? 1 : 0));
 };
 
-describe("autocomplete", () => {
+describe.skipIf(!config.gamedata)("autocomplete", () => {
     const t = useTable("autocomplete");
     let rollDefaults: any;
 

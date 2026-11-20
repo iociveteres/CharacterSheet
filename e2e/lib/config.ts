@@ -21,6 +21,11 @@ export const config = {
     fullSheets: env("E2E_FULL_SHEETS", "59,51").split(",").map(Number),
     /** Shows the browser; drags need it only if the headless run misbehaves. */
     headed: !!process.env.E2E_HEADED,
+    /**
+     * Whether the server was built with the rulebook data (internal/gamedata/assets). CI builds it with
+     * a placeholder and sets E2E_NO_GAMEDATA: scenarios that pick from its suggestions skip.
+     */
+    gamedata: !process.env.E2E_NO_GAMEDATA,
 };
 
 /** A role of the seeded room: its users by key (cmd/seedtest). */

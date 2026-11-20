@@ -23,6 +23,7 @@ import type {
     SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
 import type { ChatMessage, RoomChat, RoomPayload } from "./payload.gen";
+import type { ConnectionLost } from "../socket";
 
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
@@ -161,9 +162,9 @@ export function listenRemote(): void {
     document.addEventListener("ws:newInviteLink", e => {
         inviteLink.value = (e as CustomEvent<InviteLinkMessage>).detail.link;
     });
-    // socket.js gives up after three reconnects.
-    window.addEventListener("ws:connectionLost", () => {
-        modals.value = { ...modals.value, connectionLost: true };
+    // socket.ts stops reconnecting once the user is signed out or out of the room.
+    window.addEventListener("ws:connectionLost", e => {
+        modals.value = { ...modals.value, connectionLost: (e as CustomEvent<ConnectionLost>).detail.reason };
     });
 
     document.addEventListener("ws:chatMessage", e => {

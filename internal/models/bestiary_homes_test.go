@@ -19,6 +19,21 @@ func incompressible(n int) string {
 	return base64.StdEncoding.EncodeToString(b)[:n]
 }
 
+// fill stores `size` bytes of incompressible text as sheets of user owner in
+// the home column = id, each under the content_size check (migration 000051),
+// and returns their ids.
+func (r *encounterRoom) fill(owner int, column string, id, size int) []int {
+	const most = 400 << 10
+	var ids []int
+	for text := incompressible(size); text != ""; {
+		piece := text[:min(most, len(text))]
+		text = text[len(piece):]
+		ids = append(ids, r.insert(`INSERT INTO character_sheets (owner_id, `+column+`, content)
+            VALUES ($1, $2, jsonb_build_object('filler', $3::text))`, owner, id, piece))
+	}
+	return ids
+}
+
 // into is a copy's target: the user's collection id.
 func into(collectionID int) CollectionTarget {
 	return CollectionTarget{CollectionID: collectionID}
@@ -120,9 +135,7 @@ func TestDeletingCollectionTakesItsCreatures(t *testing.T) {
 func TestQuotaCountsCreatures(t *testing.T) {
 	r := newEncounterRoom(t)
 	c := r.collection(r.gm, "Orks")
-	big := r.insert(`INSERT INTO character_sheets (owner_id, collection_id, content)
-        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
-		r.gm, c, incompressible(QuotaBytes-100))
+	big := r.fill(r.gm, "collection_id", c, QuotaBytes-100)[0]
 
 	used, err := r.sheets.QuotaUsed(r.ctx, r.gm)
 	if err != nil || used < QuotaBytes-100 {

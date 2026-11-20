@@ -148,7 +148,7 @@ func serveRoom(t *testing.T, m models.Models) (*Server, func(userID int) *peer) 
 	return serveHubs(t, m, func(server *Server, userID int, w http.ResponseWriter, r *http.Request) {
 		server.SheetWs(1, userID, w, r)
 	}, func(server *Server, userID int) *Hub {
-		return server.GetOrInitHub(1)
+		return server.RoomHub(1)
 	})
 }
 
@@ -174,15 +174,21 @@ func serveHubs(t *testing.T, m models.Models,
 
 	dial := func(userID int) *peer {
 		t.Helper()
-		hub := hubOf(server, userID)
-		online := hub.OnlineCount()
+		// hubOf is nil until the user's first tab connects.
+		online := func() int {
+			if hub := hubOf(server, userID); hub != nil {
+				return hub.OnlineCount()
+			}
+			return 0
+		}
+		before := online()
 		url := fmt.Sprintf("ws%s/?user=%d", strings.TrimPrefix(srv.URL, "http"), userID)
 		conn, _, err := websocket.DefaultDialer.Dial(url, http.Header{"Origin": {srv.URL}})
 		if err != nil {
 			t.Fatalf("dial: %v", err)
 		}
 		t.Cleanup(func() { conn.Close() })
-		for deadline := time.Now().Add(5 * time.Second); hub.OnlineCount() <= online; time.Sleep(5 * time.Millisecond) {
+		for deadline := time.Now().Add(5 * time.Second); online() <= before; time.Sleep(5 * time.Millisecond) {
 			if time.Now().After(deadline) {
 				t.Fatalf("user %d did not register", userID)
 			}
@@ -196,7 +202,7 @@ func serveHubs(t *testing.T, m models.Models,
 // A hub channel keeps order, so an edit queued before the marker arrives
 // before it: whoever gets the marker first did not get the edit.
 func (r *audienceRoom) mark() {
-	r.server.GetOrInitHub(1).BroadcastToUsers(nil, []int{gmID, moderatorID, ownerID, playerID}, []byte(`{"type":"marker"}`))
+	r.server.RoomHub(1).BroadcastToUsers(nil, []int{gmID, moderatorID, ownerID, playerID}, []byte(`{"type":"marker"}`))
 }
 
 func change(eventID string, sheetID int, path string) string {

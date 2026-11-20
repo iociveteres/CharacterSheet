@@ -6,6 +6,7 @@
 // This-item entries, and Broken reach the linked attacks; a deleted item
 // gives them nothing.
 import { beforeAll, describe, expect, it } from "vitest";
+import { config } from "../../lib/config";
 import {
     addEnchantment, addGear, addOwnGear, breakdown, expectText, pickMaterial, pickSuggestion, suggestions, textOf, typeInto,
 } from "../../lib/gear";
@@ -18,7 +19,7 @@ import { eventually } from "../../lib/wait";
 const MELEE = "meleeAttacks.list.items";
 const RANGED = "rangedAttacks.list.items";
 
-describe("attack ↔ gear link", () => {
+describe.skipIf(!config.gamedata)("attack ↔ gear link", () => {
     const t = useTable("item-link", { kind: "pathfinder_crusade" });
     let sword = "";
     let swordId = "";

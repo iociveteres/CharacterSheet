@@ -69,7 +69,7 @@ const editableFields = (page: Page) => page.locator("#popup-sheet").evaluate(hos
     [...host.shadowRoot!.querySelectorAll<HTMLInputElement>("input[data-id], textarea[data-id], select[data-id]")]
         .filter(f => !f.readOnly && !f.disabled).length);
 
-describe("the bestiary editor", () => {
+describe.skipIf(!config.gamedata)("the bestiary editor", () => {
     let browser: Browser;
     let gm: Player;
     let player: Player;

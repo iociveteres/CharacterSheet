@@ -65,9 +65,12 @@ export interface I18nParams {
     "bestiary.messages.notShared": {};
     "bestiary.messages.overQuota": {};
     "bestiary.messages.requestFailed": { "status": string | number };
+    "bestiary.messages.signedOut": {};
     "bestiary.messages.status400": {};
     "bestiary.messages.status403": {};
     "bestiary.messages.status404": {};
+    "bestiary.messages.status413": {};
+    "bestiary.messages.status429": {};
     "bestiary.messages.uploadAdded": { "count": number; "file": string | number };
     "bestiary.messages.uploadInvalid": { "file": string | number };
     "bestiary.messages.uploadSkipped": { "file": string | number };
@@ -258,12 +261,14 @@ export interface I18nParams {
     "room.modals.kicked": {};
     "room.modals.refresh": {};
     "room.modals.refreshPage": {};
+    "room.modals.refreshToSignIn": {};
     "room.modals.saveToCollection.collection": {};
     "room.modals.saveToCollection.heading": { "name": string | number };
     "room.modals.saveToCollection.new": {};
     "room.modals.saveToCollection.newName": {};
     "room.modals.saveToCollection.title": {};
     "room.modals.sheet": {};
+    "room.modals.signedOut": {};
     "room.players.createInvite": {};
     "room.players.joinedAt": { "date": string | number };
     "room.players.kick": {};
@@ -1279,8 +1284,10 @@ export interface I18nParams {
     "sheet.view.deleteMode": {};
     "sheet.view.deleteModeTitle": {};
     "sheet.view.editFailed.destinationGone": {};
+    "sheet.view.editFailed.messageTooLarge": {};
     "sheet.view.editFailed.offline": {};
     "sheet.view.editFailed.permission": {};
+    "sheet.view.editFailed.rateLimited": {};
     "sheet.view.editFailed.rejected": {};
     "sheet.view.editFailed.tooLarge": {};
     "sheet.view.loadFailed": { "message": string | number };

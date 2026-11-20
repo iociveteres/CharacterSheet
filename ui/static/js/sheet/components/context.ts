@@ -15,7 +15,7 @@ import type { SheetUiState } from "../core/ui";
 import type { DragFreeze } from "../core/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
 import type { CastCost, GearItemParts, Preparation } from "./kindParts";
-import { online } from "../connection";
+import { writable } from "../connection";
 
 export type { AutocompleteResult };
 
@@ -74,7 +74,7 @@ export function useSheet(): LiveSheetEnv {
     if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
     // Read in render, so every component that asked re-renders when the rights
     // change or the connection drops or returns: a memoized grid card too.
-    if (env.editable.value && online.value && !env.preview) {
+    if (env.editable.value && writable.value && !env.preview) {
         let live = editing.get(env);
         if (!live) editing.set(env, live = { ...env, canEdit: true });
         return live;

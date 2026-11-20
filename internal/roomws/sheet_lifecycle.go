@@ -32,7 +32,7 @@ type newCharacterSheetCreatedMsg struct {
 func (app *Server) newCharacterSheetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg newCharacterSheetMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal newCharacter message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -110,13 +110,13 @@ type deleteCharacterSheetMsg struct {
 func (app *Server) deleteCharacterSheetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg deleteCharacterSheetMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal deleteCharacter message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
 	sheetID, err := strconv.Atoi(msg.SheetID)
 	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -145,19 +145,19 @@ type changeSheetVisibilityMsg struct {
 func (app *Server) changeSheetVisibilityHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg changeSheetVisibilityMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changeSheetVisibility message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
 	sheetID, err := strconv.Atoi(msg.SheetID)
 	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
 	visibility := models.SheetVisibility(msg.Visibility)
 	if !visibility.IsValid() {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid visibility value %q", msg.Visibility), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 

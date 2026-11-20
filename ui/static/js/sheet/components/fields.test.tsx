@@ -3,7 +3,7 @@ import { signal, type Signal } from "@preact/signals-core";
 import type { Option } from "../schema/constants";
 import { act } from "preact/test-utils";
 import { resolvePath } from "../core/sync";
-import { online } from "../connection";
+import { online, outdated } from "../connection";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";
@@ -80,6 +80,17 @@ describe("TextField", () => {
             act(() => { online.value = true; });
         }
         expect(input.readOnly).toBe(false);
+    });
+
+    it("is read-only once the server runs a newer bundle", () => {
+        const { container } = show(<TextField field="characterName" />, { path: "characterInfo" });
+        const input = container.querySelector("input")!;
+        try {
+            act(() => { outdated.value = true; });
+            expect(input.readOnly).toBe(true);
+        } finally {
+            act(() => { outdated.value = false; });
+        }
     });
 });
 

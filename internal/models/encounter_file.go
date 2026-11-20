@@ -268,7 +268,7 @@ func insertNpcs(ctx context.Context, tx pgx.Tx, userID, encounterID int, f *Enco
             LEFT JOIN character_sheets src ON src.id = $6
             RETURNING id`, userID, n.Author, encounterID, n.SheetKind, n.Content, source, n.SourceLabel).Scan(&sheetID)
 		if err != nil {
-			return err
+			return sheetTooLarge(err)
 		}
 		_, err = tx.Exec(ctx, `
             INSERT INTO encounter_participants (encounter_id, group_id, sheet_id, display_name, side)

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { online } from "./connection";
-import { sheetTransport } from "./network";
+import { online, outdated, writable } from "./connection";
+import { editFailedNotice, sheetTransport } from "./network";
 import { createSheetActions, type SheetActions } from "./core/actions";
 import { loadState } from "./components/testUtils";
 import { createSheetInstance } from "./instance";
@@ -58,7 +58,16 @@ describe("edits of the sheet", () => {
         vi.advanceTimersByTime(200);
 
         expect(sent).toEqual([]);
+        expect(failures).toEqual([{ sheetID: "7", reason: "messageTooLarge" }]);
+        expect(editFailedNotice("messageTooLarge")).toMatch(/32 KB/);
+    });
+
+    it("that would make the sheet too large are told apart from a message too large to send", () => {
+        sheetActions.deleteItem("talents.list.items.t1");
+        receive({ type: "response", eventID: sent[0].eventID, OK: false, code: "tooLarge" });
+
         expect(failures).toEqual([{ sheetID: "7", reason: "tooLarge" }]);
+        expect(editFailedNotice("tooLarge")).toMatch(/sheet has grown too large/);
     });
 
     it("are reported when the room could not send them", () => {
@@ -113,6 +122,31 @@ describe("a dropped connection", () => {
 
         receive({ type: "reconnected" });
         expect(online.value).toBe(true);
+    });
+});
+
+describe("the server's hello", () => {
+    // The room page names the hash of its bundle (view_room.html).
+    const page = document.createElement("div");
+    page.dataset.build = "abc12345";
+    beforeEach(() => document.body.append(page));
+    afterEach(() => {
+        page.remove();
+        outdated.value = false;
+    });
+
+    it("makes the sheet read-only for good when it names another build than the page's", () => {
+        receive({ type: "hello", build: "def67890" });
+        expect(writable.value).toBe(false);
+
+        receive({ type: "reconnected" });
+        expect(writable.value, "until the page is reloaded").toBe(false);
+    });
+
+    it("changes nothing when it names the page's build", () => {
+        receive({ type: "hello", build: "abc12345" });
+        expect(outdated.value).toBe(false);
+        expect(writable.value).toBe(true);
     });
 });
 

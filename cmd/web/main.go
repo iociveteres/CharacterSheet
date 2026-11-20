@@ -162,13 +162,29 @@ func main() {
 
 	m := models.NewModels(pool)
 
+	// A field edit goes at most every 200 ms per path (sheet/network.ts); a
+	// drag or a batch makes short bursts. Under -dev the stress run and e2e
+	// send faster than that.
+	var messageLimit roomws.MessageLimit
+	if !cfg.dev {
+		messageLimit = roomws.MessageLimit{PerSecond: 20, Burst: 60}
+	}
+
+	var builds roomws.Builds
+	if !cfg.dev {
+		builds = roomws.Builds{Room: ui.Version("dist/room.js"), Bestiary: ui.Version("dist/bestiary.js")}
+	}
+
 	wsServer := roomws.NewServer(&roomws.Dependencies{
-		Models:   m,
-		Gamedata: catalog,
-		InfoLog:  infoLog,
-		DebugLog: debugLog,
-		ErrorLog: errorLog,
-		BaseURL:  os.Getenv("BASE_URL"),
+		Debug:        cfg.debug,
+		Models:       m,
+		Gamedata:     catalog,
+		InfoLog:      infoLog,
+		DebugLog:     debugLog,
+		ErrorLog:     errorLog,
+		BaseURL:      os.Getenv("BASE_URL"),
+		MessageLimit: messageLimit,
+		Builds:       builds,
 	})
 
 	app := webapp.NewApplication(&webapp.Dependencies{

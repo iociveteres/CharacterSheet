@@ -13,9 +13,11 @@ import { Players } from "./components/Players";
 import { EncounterWindow } from "./encounter/components/EncounterWindow";
 import { InitiativeWindow } from "./encounter/components/InitiativeWindow";
 import { encounterList, gmMode } from "./encounter/state";
+import { ConnectionBar } from "../connectionBar";
 
 export function mountIslands(): void {
     render(<Toasts />, document.getElementById("toasts")!);
+    render(<ConnectionBar />, document.getElementById("connection-bar")!);
     render(<Modals />, document.getElementById("modals")!);
     render(<Chat />, document.getElementById("chat")!);
     render(<RoomControls />, document.getElementById("room-controls")!);

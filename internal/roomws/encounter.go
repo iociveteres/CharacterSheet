@@ -166,7 +166,7 @@ func (app *Server) sendRenamed(ctx context.Context, hub *Hub, renamed *models.Sh
 		return
 	}
 	name, _ := json.Marshal(renamed.Name)
-	b, err := json.Marshal(changeMsg{Type: "change", SheetID: strconv.Itoa(renamed.SheetID), Path: characterNamePath, Change: name})
+	b, err := json.Marshal(changeMsg{sheetEdit: sheetEdit{Type: "change", SheetID: strconv.Itoa(renamed.SheetID)}, Path: characterNamePath, Change: name})
 	if err != nil {
 		app.ErrorLog.Printf("marshal change: %v", err)
 		return
@@ -595,19 +595,26 @@ func (app *Server) encountersLeft(ctx context.Context, hub *Hub, encounterIDs []
 // EncountersLoaded sends the gamemasters the list of the room's encounters,
 // with the ones gamemaster userID loaded from files.
 func (app *Server) EncountersLoaded(ctx context.Context, roomID, userID int) {
-	app.sendEncounterList(ctx, userID, app.GetOrInitHub(roomID), "")
+	if hub := app.RoomHub(roomID); hub != nil {
+		app.sendEncounterList(ctx, userID, hub, "")
+	}
 }
 
 // EncounterChanged sends the gamemasters the encounter's new state.
 func (app *Server) EncounterChanged(ctx context.Context, state *models.EncounterState) {
-	app.sendEncounterState(ctx, app.GetOrInitHub(state.RoomID), "", state)
+	if hub := app.RoomHub(state.RoomID); hub != nil {
+		app.sendEncounterState(ctx, hub, "", state)
+	}
 }
 
 // EncounterNpcsReplaced sends the gamemasters the encounter whose NPCs a file
 // replaced, and the players its view when it is the shown one: the
 // replacement cleared it.
 func (app *Server) EncounterNpcsReplaced(ctx context.Context, state *models.EncounterState) {
-	hub := app.GetOrInitHub(state.RoomID)
+	hub := app.RoomHub(state.RoomID)
+	if hub == nil {
+		return
+	}
 	app.sendEncounterState(ctx, hub, "", state)
 	if state.Shown {
 		app.sendInitiativeView(hub, state.InitiativeView)

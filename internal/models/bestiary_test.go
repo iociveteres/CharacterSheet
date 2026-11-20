@@ -287,9 +287,7 @@ func TestSaveToCollection(t *testing.T) {
 	}
 
 	var quota *QuotaError
-	r.exec(`INSERT INTO character_sheets (owner_id, collection_id, content)
-        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
-		r.gm, orks.ID, incompressible(QuotaBytes))
+	r.fill(r.gm, "collection_id", orks.ID, QuotaBytes)
 	if _, err := b.Save(r.ctx, r.gm, npc, into(orks.ID)); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
@@ -374,9 +372,7 @@ func TestAddVariant(t *testing.T) {
 	}
 
 	var quota *QuotaError
-	// The variant is named anew: the filler is elsewhere in the sheet.
-	r.exec(`UPDATE character_sheets SET content = content || jsonb_build_object('filler', $2::text) WHERE id = $1`,
-		other.SheetID, incompressible(QuotaBytes*2/3))
+	r.fill(r.gm, "collection_id", r.collection(r.gm, "Filler"), QuotaBytes)
 	if _, _, err := b.AddVariant(r.ctx, r.gm, other.SheetID, "Big"); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
@@ -446,8 +442,7 @@ func TestAddCreature(t *testing.T) {
 	}
 
 	var quota *QuotaError
-	r.exec(`UPDATE character_sheets SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($2::text)) WHERE id = $1`,
-		boy, incompressible(QuotaBytes/2))
+	r.fill(r.gm, "collection_id", r.collection(r.gm, "Filler"), QuotaBytes)
 	if _, err := r.encounters.AddCreature(r.ctx, r.ref(s), boy, 2); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
@@ -491,9 +486,13 @@ func TestUploadAndExport(t *testing.T) {
 		t.Errorf("%d creatures, want 2", n)
 	}
 
-	big := json.RawMessage(`{"characterInfo": {"characterName": "` + incompressible(QuotaBytes) + `"}}`)
+	// Each creature fits a sheet; together they do not fit the quota.
+	var big []CreatureInFile
+	for range QuotaBytes/(400<<10) + 1 {
+		big = append(big, CreatureInFile{SheetKind: KindBlackCrusade, Content: json.RawMessage(`{"filler": "` + incompressible(400<<10) + `"}`)})
+	}
 	var quota *QuotaError
-	if _, err := b.Upload(r.ctx, r.gm, orks.ID, []CreatureInFile{{SheetKind: KindBlackCrusade, Content: big}}); !errors.As(err, &quota) {
+	if _, err := b.Upload(r.ctx, r.gm, orks.ID, big); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
 
@@ -589,14 +588,12 @@ func TestNewCreature(t *testing.T) {
 		t.Errorf("a creature in another user's public collection: %v", err)
 	}
 
-	r.exec(`INSERT INTO character_sheets (owner_id, collection_id, content)
-        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
-		r.gm, orks.ID, incompressible(QuotaBytes-100))
+	r.fill(r.gm, "collection_id", orks.ID, QuotaBytes-100)
 	var quota *QuotaError
 	if _, err := b.NewCreature(r.ctx, r.gm, orks.ID, KindBlackCrusade, "en"); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
-	if n := r.count(`SELECT count(*) FROM character_sheets WHERE collection_id = $1`, orks.ID); n != 2 {
-		t.Errorf("%d creatures, want the first and the filler", n)
+	if n := r.count(`SELECT count(*) FROM character_sheets WHERE collection_id = $1 AND NOT content ? 'filler'`, orks.ID); n != 1 {
+		t.Errorf("%d creatures, want only the first", n)
 	}
 }
