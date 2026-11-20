@@ -52,7 +52,7 @@ func TestRights(t *testing.T) {
 	restorePost := func(t Topic, p post) func(Viewer) bool {
 		return func(v Viewer) bool { return v.CanRestorePost(t, p) }
 	}
-	ban := func(p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanBan(p) } }
+	author := func(p post) func(Viewer) bool { return func(v Viewer) bool { return v.CanActOnAuthor(p) } }
 	othersDeleted := post{ID: 15, AuthorID: 3, Number: 6, DeletedAt: &deletedAt}
 	othersFirst := post{ID: 16, AuthorID: 3, Number: 1}
 	byModerator := post{ID: 17, AuthorID: 4, Number: 7, AuthorModerator: true}
@@ -172,13 +172,14 @@ func TestRights(t *testing.T) {
 		{"moderator restores a post in a deleted topic", moderator, restorePost(deleted, othersDeleted), false},
 		{"moderator restores a post that stands", moderator, restorePost(open, othersReply), false},
 
-		{"guest bans an author", guest, ban(othersReply), false},
-		{"member bans an author", member, ban(othersReply), false},
-		{"moderator bans the author of a reply", moderator, ban(othersReply), true},
-		{"moderator bans the author of a first post", moderator, ban(othersFirst), true},
-		{"moderator bans the author of a deleted post", moderator, ban(othersDeleted), true},
-		{"moderator bans a moderator", moderator, ban(byModerator), false},
-		{"moderator bans themself", moderator, ban(modsReply), false},
+		{"guest acts on an author", guest, author(othersReply), false},
+		{"member acts on an author", member, author(othersReply), false},
+		{"banned user acts on an author", banned, author(othersReply), false},
+		{"moderator acts on the author of a reply", moderator, author(othersReply), true},
+		{"moderator acts on the author of a first post", moderator, author(othersFirst), true},
+		{"moderator acts on the author of a deleted post", moderator, author(othersDeleted), true},
+		{"moderator acts on another moderator", moderator, author(byModerator), false},
+		{"moderator acts on themself", moderator, author(modsReply), false},
 
 		// The ban line, the moderators' block and its actions (avatar, «About», history): a
 		// moderator on another's page (extras/decisions.md, 20).
@@ -248,7 +249,7 @@ func TestRightsMatrix(t *testing.T) {
 		"subscribe": func(v Viewer, _ Section, t Topic) bool { return v.CanSubscribe(t) },
 		"moderate":  func(v Viewer, _ Section, t Topic) bool { return v.CanModerateTopic(t) },
 		"restore":   func(v Viewer, _ Section, t Topic) bool { return v.CanRestoreTopic(t) },
-		"ban":       func(v Viewer, _ Section, t Topic) bool { return v.CanBan(reply) },
+		"author":    func(v Viewer, _ Section, t Topic) bool { return v.CanActOnAuthor(reply) },
 	}
 
 	tests := []struct {
@@ -283,12 +284,12 @@ func TestRightsMatrix(t *testing.T) {
 		{"banned", "mods-only", "closed", "read"},
 		{"banned", "mods-only", "deleted", ""},
 
-		{"moderator", "open", "open", "read start reply delete quote subscribe moderate ban"},
-		{"moderator", "open", "closed", "read start reply delete quote subscribe moderate ban"},
-		{"moderator", "open", "deleted", "read start restore ban"},
-		{"moderator", "mods-only", "open", "read start reply delete quote subscribe moderate ban"},
-		{"moderator", "mods-only", "closed", "read start reply delete quote subscribe moderate ban"},
-		{"moderator", "mods-only", "deleted", "read start restore ban"},
+		{"moderator", "open", "open", "read start reply delete quote subscribe moderate author"},
+		{"moderator", "open", "closed", "read start reply delete quote subscribe moderate author"},
+		{"moderator", "open", "deleted", "read start restore author"},
+		{"moderator", "mods-only", "open", "read start reply delete quote subscribe moderate author"},
+		{"moderator", "mods-only", "closed", "read start reply delete quote subscribe moderate author"},
+		{"moderator", "mods-only", "deleted", "read start restore author"},
 	}
 	names := make([]string, 0, len(rights))
 	for name := range rights {

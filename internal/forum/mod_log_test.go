@@ -46,22 +46,23 @@ func TestModLogPage(t *testing.T) {
 		{deleteURL(bobReply), url.Values{"reason": {"rude"}}},
 		{sectionEditURL(s.section), url.Values{"name": {"section 2"}}},
 		{sectionMoveURL(other), url.Values{"direction": {"up"}}},
-		{banURL(s.reply), url.Values{"duration": {"30"}, "reason": {"spam"}}},
+		{deleteURL(s.reply), url.Values{"ban": {"1"}, "duration": {"30"}, "reason": {"spam"}}},
 		{liftURL(1), url.Values{}},
 		{modURL(s.topic, topicDelete), url.Values{}},
 	} {
 		redirectedTo(t, s.h.post(t, s.f, step.target, step.form))
 	}
 	log := modLog(t, s.db)
-	assert.Equal(t, len(log), 8)
+	// The delete window with a ban writes two lines.
+	assert.Equal(t, len(log), 9)
 
 	s.h.get(t, s.f, modLogURL)
 	assert.Equal(t, s.h.status, http.StatusOK)
 	assert.Equal(t, s.h.page.NoIndex, true)
 	body := string(s.h.page.Body)
-	assert.Equal(t, strings.Count(body, `<li class="forum-row" id="log-`), 8)
+	assert.Equal(t, strings.Count(body, `<li class="forum-row" id="log-`), 9)
 	// The newest first.
-	assert.Equal(t, strings.Index(body, `id="log-8"`) < strings.Index(body, `id="log-1"`), true)
+	assert.Equal(t, strings.Index(body, `id="log-9"`) < strings.Index(body, `id="log-1"`), true)
 	for _, link := range []string{
 		fmt.Sprintf(`href="/forum/topic/%d">renamed</a> <span class="forum-label deleted">`, s.topic),
 		fmt.Sprintf(`href="/forum/post/%d"`, bobReply),

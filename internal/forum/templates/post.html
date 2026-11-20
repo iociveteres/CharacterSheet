@@ -36,18 +36,16 @@
         {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
         {{- $quote := $.Viewer.CanQuote $.Topic $.Post}}
         {{- $restore := $.Viewer.CanRestorePost $.Topic $.Post}}
-        {{- $ban := $.Viewer.CanBan $.Post}}
         {{- /* Only the actions the viewer may take (design/decisions.md, 8). Quote opens the reply
-             form on the last page of the topic with the quote in it. A moderator deletes any reply,
-             restores a deleted post and bans its author, from a deleted post too: spam is deleted
-             and banned. */}}
-        {{- if or $quote $edit $delete $restore $ban}}
+             form on the last page of the topic with the quote in it. A moderator deletes any reply
+             and restores a deleted post; the author's ban is in the delete window and on their page
+             (extras/decisions.md, 11). */}}
+        {{- if or $quote $edit $delete $restore}}
         <div class="forum-post-actions">
             {{- if $quote}}<a class="f-icon forum-quote-post" href="{{.URL}}/quote#reply" rel="nofollow">❝ {{t $.Lang "forum.posts.quote"}}</a>{{end}}
             {{- if $edit}}<a class="f-icon forum-edit-post" href="{{.URL}}/edit">✎ {{t $.Lang "common.edit"}}</a>{{end}}
             {{- if $delete}}<a class="f-icon danger forum-delete-post" href="{{.URL}}/delete">× {{t $.Lang "common.delete"}}</a>{{end}}
             {{- if $restore}}<a class="f-icon forum-restore-post" href="{{.URL}}/restore">↺ {{t $.Lang "forum.moderation.restore"}}</a>{{end}}
-            {{- if $ban}}<a class="f-icon danger forum-ban-user" href="{{.URL}}/ban" rel="nofollow">⊘ {{t $.Lang "forum.moderation.ban"}}</a>{{end}}
         </div>
         {{- end}}
         {{- end}}

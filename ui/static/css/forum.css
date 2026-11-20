@@ -1328,6 +1328,52 @@ main.forum-wide {
     margin-top: 12px;
 }
 
+/* The moderator's deletion of another's post (post_delete.html): what to do with its author, a
+   box under the reason (extras/decisions.md, 11). The ban's terms open under its box by :has(), no
+   script; the button says what it will do. */
+#forum .forum-delete-author {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0 0;
+    padding: 8px 12px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.forum-delete-author > legend {
+    padding: 0 4px;
+}
+
+/* A label of two lines would squeeze its box: flex shrinks the input. */
+.forum-delete-author .forum-check input {
+    flex-shrink: 0;
+}
+
+.forum-delete-banned {
+    overflow-wrap: anywhere;
+}
+
+.forum-delete-ban {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px 0 0 26px;
+}
+
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-ban {
+    display: flex;
+}
+
+.forum-delete-and-ban,
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-plain {
+    display: none;
+}
+
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-and-ban {
+    display: inline;
+}
+
 .forum-form-buttons {
     display: flex;
     justify-content: flex-end;

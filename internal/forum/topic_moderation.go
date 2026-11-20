@@ -96,6 +96,8 @@ type modForm struct {
 	Reason    string
 	// Duration is the term of a ban, a banTerm.
 	Duration string
+	// Ban and Recent are the boxes of the delete window: ban the author, delete their last day.
+	Ban, Recent bool
 	validator.Validator
 }
 
@@ -110,6 +112,8 @@ func readModForm(r *http.Request) (modForm, error) {
 		SectionID: section,
 		Reason:    strings.TrimSpace(r.PostForm.Get("reason")),
 		Duration:  r.PostForm.Get("duration"),
+		Ban:       r.PostForm.Get("ban") != "",
+		Recent:    r.PostForm.Get("recent") != "",
 	}, nil
 }
 

@@ -46,6 +46,8 @@ type logLine struct {
 	// LockUntil is its end. Empty for other actions.
 	Lock      string
 	LockUntil *time.Time
+	// Count is how many posts a deletion of the author's last day took.
+	Count int
 }
 
 // ActionText words the code of the line in the reader's language; a code this build does not know
@@ -72,6 +74,8 @@ func (l logLine) ActionText(lang string) string {
 		return i18n.T(lang, "forum.moderation.action.postDelete")
 	case actionRestorePost:
 		return i18n.T(lang, "forum.moderation.action.postRestore")
+	case actionDeleteRecent:
+		return i18n.T(lang, "forum.moderation.action.postDeleteRecent", i18n.Params{"count": l.Count})
 	case actionCreateSection:
 		return i18n.T(lang, "forum.moderation.action.sectionCreate")
 	case actionEditSection:
@@ -181,7 +185,8 @@ func (f *Forum) logLines(ctx context.Context, userID, limit, offset int) ([]logL
 		       l.action = 'user.ban',
 		       CASE WHEN l.action = 'user.ban' THEN (l.data->>'expiresAt')::timestamptz END,
 		       COALESCE(CASE WHEN l.action = 'avatar.remove' THEN l.data->>'lock' END, ''),
-		       CASE WHEN l.action = 'avatar.remove' THEN (l.data->>'lockUntil')::timestamptz END
+		       CASE WHEN l.action = 'avatar.remove' THEN (l.data->>'lockUntil')::timestamptz END,
+		       COALESCE(CASE WHEN l.action = 'post.delete_recent' THEN jsonb_array_length(l.data->'posts') END, 0)
 		FROM forum_mod_log l
 		JOIN users m ON m.id = l.moderator_id
 		LEFT JOIN forum_topics t ON t.id = l.topic_id

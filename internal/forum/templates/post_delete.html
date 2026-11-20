@@ -8,18 +8,55 @@
     {{template "forum-post" .Card}}
 
     {{- /* The step of confirmation without a script (DESIGN.md, «Buttons by role»: Delete asks to
-         confirm). A moderator deleting another's post adds a reason for the log. */}}
-    <form class="forum-form forum-confirm" action="{{.Post.URL}}/delete" method="POST">
+         confirm). A moderator deleting another's post adds a reason for the log, and for a member's
+         post the block «Author» (editing.go, deleteAuthor): one reason goes to the deletion and the
+         ban (extras/decisions.md, 11, 22). */}}
+    <form class="forum-form forum-confirm forum-delete" action="{{.Post.URL}}/delete" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         {{- if .ByModerator}}
         <p class="meta">{{t .Lang "forum.moderation.deletePostNote"}}</p>
         {{- template "forum-mod-reason" ($.ReasonField .Form)}}
+        {{- with .Author}}
+        <fieldset class="forum-delete-author">
+            <legend class="field-label">{{t $.Lang "forum.moderation.authorLabel"}} <a class="forum-author-name" href="{{userURL .ID}}">{{.Name}}</a></legend>
+            {{- with .Ban}}
+            <p class="meta forum-delete-banned">
+                {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.alreadyBannedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.alreadyBannedForever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a> · <span class="forum-ban-reason">{{.Reason}}</span><br>
+                <a href="{{userURL $.Author.ID}}">{{t $.Lang "forum.moderation.banChangeOnPage"}}</a></p>
+            {{- else}}
+            {{- /* The box opens the terms and turns the button into «Delete and ban» by :has()
+                 (forum.css), without a script. */}}
+            <div>
+                <label class="forum-check"><input type="checkbox" id="forum-ban-author" name="ban" value="1"{{if $.Form.Ban}} checked{{end}}> {{t $.Lang "forum.moderation.banAuthor"}}</label>
+                <div class="forum-delete-ban">
+                    <fieldset class="forum-ban-terms"{{with $.Form.Errors.duration}} aria-invalid="true" aria-describedby="forum-ban-term-error"{{end}}>
+                        <legend class="meta">{{t $.Lang "forum.moderation.banTerm"}}</legend>
+                        {{- /* 1 day first, as everywhere (extras/decisions.md, 30). */}}
+                        {{- $term := or $.Form.Duration "1"}}
+                        {{- range .Days}}
+                        <label class="forum-check"><input type="radio" name="duration" value="{{.}}"{{if eq (print .) $term}} checked{{end}}>
+                            {{- if .}}{{t $.Lang "forum.moderation.banDays" "count" .}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}</label>
+                        {{- end}}
+                    </fieldset>
+                    {{with $.Form.Errors.duration}}<span class="error field-error" id="forum-ban-term-error">{{.}}</span>{{end}}
+                    <p class="meta">{{t $.Lang "forum.moderation.banAuthorNote"}}</p>
+                </div>
+            </div>
+            {{- end}}
+            {{- if .Recent}}
+            <label class="forum-check"><input type="checkbox" name="recent" value="1"{{if $.Form.Recent}} checked{{end}}> {{t $.Lang "forum.moderation.deleteRecent" "count" .Recent}}</label>
+            {{- end}}
+        </fieldset>
+        {{- end}}
         {{- else}}
         <p class="meta">{{t .Lang "forum.posts.deleteNote"}}</p>
         {{- end}}
         <div class="forum-form-buttons">
             <a class="f-btn f-secondary" href="{{.Post.URL}}">{{t .Lang "common.cancel"}}</a>
-            <button type="submit" class="f-btn f-secondary danger">{{t .Lang "common.delete"}}</button>
+            <button type="submit" class="f-btn f-secondary danger">
+                {{- if and .Author (not .Author.Ban)}}<span class="forum-delete-plain">{{t .Lang "common.delete"}}</span><span class="forum-delete-and-ban">{{t .Lang "forum.moderation.deleteAndBan"}}</span>
+                {{- else}}{{t .Lang "common.delete"}}{{end -}}
+            </button>
         </div>
     </form>
 </div>

@@ -13,15 +13,18 @@ import (
 type modAction string
 
 const (
-	actionRenameTopic   modAction = "topic.rename"
-	actionPinTopic      modAction = "topic.pin"
-	actionUnpinTopic    modAction = "topic.unpin"
-	actionCloseTopic    modAction = "topic.close"
-	actionOpenTopic     modAction = "topic.open"
-	actionMoveTopic     modAction = "topic.move"
-	actionDeleteTopic   modAction = "topic.delete"
-	actionRestoreTopic  modAction = "topic.restore"
-	actionDeletePost    modAction = "post.delete"
+	actionRenameTopic  modAction = "topic.rename"
+	actionPinTopic     modAction = "topic.pin"
+	actionUnpinTopic   modAction = "topic.unpin"
+	actionCloseTopic   modAction = "topic.close"
+	actionOpenTopic    modAction = "topic.open"
+	actionMoveTopic    modAction = "topic.move"
+	actionDeleteTopic  modAction = "topic.delete"
+	actionRestoreTopic modAction = "topic.restore"
+	actionDeletePost   modAction = "post.delete"
+	// actionDeleteRecent is the author's other posts of the last day, deleted from the window of
+	// one of them (block 7 of extras/plan.md): one line for all, their ids in data.posts.
+	actionDeleteRecent  modAction = "post.delete_recent"
 	actionRestorePost   modAction = "post.restore"
 	actionCreateSection modAction = "section.create"
 	actionEditSection   modAction = "section.edit"
@@ -65,35 +68,54 @@ var errNoChange = errors.New("forum: nothing to change")
 
 var errNotModerator = errors.New("forum: not a moderator")
 
+// modStep is one action of moderateAll: its line of the log and its change.
+type modStep struct {
+	entry  modEntry
+	change modChange
+}
+
 // moderate is the one way of every moderator action: the change, its line in the log and the
 // notification of whom it concerns (notifyOfModeration), in one transaction. A new action is a
 // modAction and a modChange; this function stays as it is. The handler has asked rights.go already; moderate only
 // refuses a viewer who is not a moderator at all.
 func (f *Forum) moderate(ctx context.Context, by Viewer, at time.Time, e modEntry, change modChange) error {
+	return f.moderateAll(ctx, by, at, modStep{e, change})
+}
+
+// moderateAll is moderate of several actions in one transaction, each with its own line, in order:
+// the delete window deletes, deletes the author's last day and bans at once. A step that finds
+// nothing to change (errNoChange) writes no line; the others still go.
+func (f *Forum) moderateAll(ctx context.Context, by Viewer, at time.Time, steps ...modStep) error {
 	if !by.Moderator {
 		return errNotModerator
 	}
-	e.ModeratorID, e.At = by.ID, at
-	if e.Data == nil {
-		e.Data = map[string]any{}
-	}
-	err := pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
-		if err := change(ctx, tx, &e); err != nil {
-			return err
+	return pgx.BeginFunc(ctx, f.db, func(tx pgx.Tx) error {
+		for _, s := range steps {
+			e := s.entry
+			e.ModeratorID, e.At = by.ID, at
+			if e.Data == nil {
+				e.Data = map[string]any{}
+			}
+			err := s.change(ctx, tx, &e)
+			if errors.Is(err, errNoChange) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			err = tx.QueryRow(ctx, `
+				INSERT INTO forum_mod_log (moderator_id, action, topic_id, post_id, section_id, user_id, reason, data, created_at)
+				VALUES ($1, $2, NULLIF($3, 0), NULLIF($4, 0), NULLIF($5, 0), NULLIF($6, 0), $7, $8, $9)
+				RETURNING id`,
+				e.ModeratorID, string(e.Action), e.TopicID, e.PostID, e.SectionID, e.UserID, e.Reason, e.Data, e.At).
+				Scan(&e.ID)
+			if err != nil {
+				return err
+			}
+			if err := notifyOfModeration(ctx, tx, e); err != nil {
+				return err
+			}
 		}
-		err := tx.QueryRow(ctx, `
-			INSERT INTO forum_mod_log (moderator_id, action, topic_id, post_id, section_id, user_id, reason, data, created_at)
-			VALUES ($1, $2, NULLIF($3, 0), NULLIF($4, 0), NULLIF($5, 0), NULLIF($6, 0), $7, $8, $9)
-			RETURNING id`,
-			e.ModeratorID, string(e.Action), e.TopicID, e.PostID, e.SectionID, e.UserID, e.Reason, e.Data, e.At).
-			Scan(&e.ID)
-		if err != nil {
-			return err
-		}
-		return notifyOfModeration(ctx, tx, e)
-	})
-	if errors.Is(err, errNoChange) {
 		return nil
-	}
-	return err
+	})
 }

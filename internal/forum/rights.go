@@ -115,8 +115,10 @@ func (v Viewer) CanRestorePost(t Topic, p post) bool {
 	return v.Moderator && p.Deleted() && !t.Deleted()
 }
 
-// CanBan the author of a post (session C): never a moderator, so never oneself.
-func (v Viewer) CanBan(p post) bool {
+// CanActOnAuthor of a post: the block «Author» of the moderator's delete window, which bans them
+// and deletes their other posts of the last day (block 7 of extras/plan.md). Never on a moderator
+// (extras/decisions.md, 31), so never on oneself.
+func (v Viewer) CanActOnAuthor(p post) bool {
 	return v.Moderator && !p.AuthorModerator && p.AuthorID != v.ID
 }
 
@@ -130,7 +132,7 @@ func (v Viewer) CanModerateUser(u forumUser) bool {
 }
 
 // CanActOnUser: ban and lift a ban, remove the avatar, erase «О себе» from their page. Never on a
-// moderator: no ban, as CanBan, and neither their avatar nor their words (the author's answer of
+// moderator: no ban, as CanActOnAuthor, and neither their avatar nor their words (the author's answer of
 // 2026-11-20, results/6.md).
 func (v Viewer) CanActOnUser(u forumUser) bool {
 	return v.CanModerateUser(u) && !u.Moderator

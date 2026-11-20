@@ -138,20 +138,48 @@ type deletePostData struct {
 	Card postCard
 	// ByModerator: a moderator deletes another's post, with a reason that goes to the log.
 	ByModerator bool
-	Form        modForm
+	// Author is the block «Author: name» of the moderator's window, nil when they may not act on
+	// the author (CanActOnAuthor).
+	Author *deleteAuthor
+	Form   modForm
+}
+
+// deleteAuthor is what the delete window offers to do with the author of the post (block 7 of
+// extras/plan.md).
+type deleteAuthor struct {
+	ID   int
+	Name string
+	// Ban is their standing ban: the window offers no other then.
+	Ban  *userBan
+	Days []int
+	// Recent is how many of their other posts «of the last 24 hours» would go too.
+	Recent int
 }
 
 // deletePost is the page that asks to confirm deleting a post, without a script, and the address
 // its form posts to. The post keeps its place in the topic; the browser goes back to it, to the
-// line that says it is deleted. Another's post deleted by a moderator goes through moderate.
+// line that says it is deleted. Another's post deleted by a moderator goes through moderate, with
+// the author's ban and their other posts of the last day if the moderator ticked them, all in one
+// transaction.
 func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 	p, ok := f.postToActOn(w, r, v, Viewer.CanDeletePost)
 	if !ok {
 		return
 	}
-	data := deletePostData{view: v, Post: p, Card: f.lonePostCard(r, v, p), ByModerator: v.Viewer.DeletesAsModerator(p.post)}
-	status := http.StatusOK
+	data := deletePostData{view: v, Post: p, ByModerator: v.Viewer.DeletesAsModerator(p.post)}
+	var form modForm
 	if r.Method == http.MethodPost {
+		var err error
+		if form, err = readModForm(r); err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		// Only the window of a moderator over a member's post has the boxes (an own post, another
+		// moderator's have none): a form that sends them anyway is refused before anything changes.
+		if (form.Ban || form.Recent) && !v.Viewer.CanActOnAuthor(p.post) {
+			forbidden(w)
+			return
+		}
 		if !data.ByModerator {
 			if err := f.softDeletePost(r.Context(), p.ID, v.Viewer.ID, v.Now); err != nil {
 				f.host.ServerError(w, r, err)
@@ -160,16 +188,38 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 			http.Redirect(w, r, p.URL(), http.StatusSeeOther)
 			return
 		}
-		form, err := readModForm(r)
+	}
+	if v.Viewer.CanActOnAuthor(p.post) {
+		a := deleteAuthor{ID: p.AuthorID, Name: p.AuthorName, Days: banDays}
+		var err error
+		if a.Ban, err = f.standingBan(r.Context(), p.AuthorID, v.Now); err == nil {
+			a.Recent, err = f.recentPosts(r.Context(), p, v.Now)
+		}
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			f.host.ServerError(w, r, err)
 			return
 		}
-		if f.moderatePost(w, r, v, p, false, &form) {
+		data.Author = &a
+	}
+	status := http.StatusOK
+	if r.Method == http.MethodPost {
+		var more []modStep
+		if form.Recent {
+			e, change := recentChange(p, form.Reason, v.Viewer.ID, v.Now)
+			more = append(more, modStep{e, change})
+		}
+		if form.Ban {
+			form.checkBan(v.Lang)
+			days, _ := parseBanDays(form.Duration)
+			e, change := banChange(p, days, form.Reason, v.Viewer.ID, v.Now)
+			more = append(more, modStep{e, change})
+		}
+		if f.moderatePost(w, r, v, p, false, &form, more...) {
 			return
 		}
 		data.Form, status = form, http.StatusUnprocessableEntity
 	}
+	data.Card = f.lonePostCard(r, v, p)
 	f.render(w, r, status, "post_delete.html", data, Page{
 		Title:   i18n.T(v.Lang, "forum.posts.deleteTitle"),
 		NoIndex: true,

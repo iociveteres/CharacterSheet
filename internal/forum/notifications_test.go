@@ -247,6 +247,9 @@ func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 	other := newSection(t, s.db, "other")
 	fixedNow(s.f, at(10))
 	reply := mustReply(t, s.f, s.topic, s.bob, "bob's reply", at(2))
+	// The delete window bans: each ban deletes a post of its own first, which notifies too.
+	spam := mustReply(t, s.f, s.topic, s.bob, "spam", at(3))
+	more := mustReply(t, s.f, s.topic, s.bob, "more spam", at(4))
 	readNotices(t, s.db, s.alice)
 	s.h.userID = s.mod
 	post := func(target string, form url.Values) {
@@ -271,32 +274,34 @@ func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 		want     string
 		params   map[string]any
 		notifies bool
+		// earlier is how many notifications the step gives before the one it checks.
+		earlier int
 	}{
 		{"delete post", func() string { return postURL(reply) + "/delete" }, url.Values{"reason": {"rude"}}, s.bob,
-			fmt.Sprintf("post.delete topic=%d post=%d", s.topic, reply), map[string]any{"title": "title", "reason": "rude"}, true},
+			fmt.Sprintf("post.delete topic=%d post=%d", s.topic, reply), map[string]any{"title": "title", "reason": "rude"}, true, 0},
 		{"restore post", func() string { return postURL(reply) + "/restore" }, url.Values{}, s.bob,
-			fmt.Sprintf("post.restore topic=%d post=%d", s.topic, reply), map[string]any{"title": "title"}, true},
+			fmt.Sprintf("post.restore topic=%d post=%d", s.topic, reply), map[string]any{"title": "title"}, true, 0},
 		{"rename", func() string { return modURL(s.topic, topicRename) }, url.Values{"title": {"renamed"}}, s.alice,
-			fmt.Sprintf("topic.rename topic=%d post=0", s.topic), map[string]any{"title": "renamed", "oldTitle": "title"}, true},
-		{"pin", func() string { return modURL(s.topic, topicPin) }, url.Values{}, s.alice, "", nil, false},
+			fmt.Sprintf("topic.rename topic=%d post=0", s.topic), map[string]any{"title": "renamed", "oldTitle": "title"}, true, 0},
+		{"pin", func() string { return modURL(s.topic, topicPin) }, url.Values{}, s.alice, "", nil, false, 0},
 		{"close", func() string { return modURL(s.topic, topicClose) }, url.Values{"reason": {"done"}}, s.alice,
-			fmt.Sprintf("topic.close topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "done"}, true},
+			fmt.Sprintf("topic.close topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "done"}, true, 0},
 		{"open", func() string { return modURL(s.topic, topicOpen) }, url.Values{}, s.alice,
-			fmt.Sprintf("topic.open topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true},
+			fmt.Sprintf("topic.open topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true, 0},
 		{"move", func() string { return modURL(s.topic, topicMove) }, url.Values{"section": {fmt.Sprint(other)}}, s.alice,
-			fmt.Sprintf("topic.move topic=%d post=0", s.topic), map[string]any{"title": "renamed", "section": "other"}, true},
+			fmt.Sprintf("topic.move topic=%d post=0", s.topic), map[string]any{"title": "renamed", "section": "other"}, true, 0},
 		{"delete topic", func() string { return modURL(s.topic, topicDelete) }, url.Values{"reason": {"gone"}}, s.alice,
-			fmt.Sprintf("topic.delete topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "gone"}, true},
+			fmt.Sprintf("topic.delete topic=%d post=0", s.topic), map[string]any{"title": "renamed", "reason": "gone"}, true, 0},
 		{"restore topic", func() string { return modURL(s.topic, topicRestore) }, url.Values{}, s.alice,
-			fmt.Sprintf("topic.restore topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true},
-		{"ban for a week", func() string { return banURL(reply) }, url.Values{"duration": {"7"}, "reason": {"spam"}}, s.bob,
-			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, reply),
-			map[string]any{"title": "renamed", "reason": "spam", "expiresAt": weekLater}, true},
-		{"ban until lifted", func() string { return banURL(reply) }, url.Values{"duration": {"0"}, "reason": {"again"}}, s.bob,
-			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, reply),
-			map[string]any{"title": "renamed", "reason": "again", "expiresAt": nil}, true},
+			fmt.Sprintf("topic.restore topic=%d post=0", s.topic), map[string]any{"title": "renamed"}, true, 0},
+		{"ban for a week", func() string { return deleteURL(spam) }, url.Values{"ban": {"1"}, "duration": {"7"}, "reason": {"spam"}}, s.bob,
+			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, spam),
+			map[string]any{"title": "renamed", "reason": "spam", "expiresAt": weekLater}, true, 1},
 		{"lift the ban", func() string { return liftURL(lastBan()) }, url.Values{}, s.bob,
-			"user.unban topic=0 post=0", map[string]any{}, true},
+			"user.unban topic=0 post=0", map[string]any{}, true, 0},
+		{"ban until lifted", func() string { return deleteURL(more) }, url.Values{"ban": {"1"}, "duration": {"0"}, "reason": {"again"}}, s.bob,
+			fmt.Sprintf("user.ban topic=%d post=%d", s.topic, more),
+			map[string]any{"title": "renamed", "reason": "again", "expiresAt": nil}, true, 1},
 	}
 	for _, step := range steps {
 		before := len(notices(t, s.db, step.user))
@@ -308,8 +313,8 @@ func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 			}
 			continue
 		}
-		if len(list) != before+1 {
-			t.Fatalf("%s: %d notifications, want %d", step.name, len(list), before+1)
+		if len(list) != before+1+step.earlier {
+			t.Fatalf("%s: %d notifications, want %d", step.name, len(list), before+1+step.earlier)
 		}
 		n := list[len(list)-1]
 		assert.Equal(t, n.String(), step.want+" count=1 read=false")

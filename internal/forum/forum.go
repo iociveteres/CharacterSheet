@@ -146,8 +146,8 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("GET /forum/mod/sections/{id}/edit", f.withView(f.editSection))
 	mux.HandleFunc("POST /forum/mod/sections/{id}/edit", f.withView(f.editSection))
 	mux.HandleFunc("POST /forum/mod/sections/{id}/move", f.withView(f.moveSection))
-	mux.HandleFunc("GET /forum/post/{id}/ban", f.withView(f.banUser))
-	mux.HandleFunc("POST /forum/post/{id}/ban", f.withView(f.banUser))
+	// The ban from a post went into its delete window (block 7 of extras/plan.md); old links land there.
+	mux.HandleFunc("GET /forum/post/{id}/ban", f.oldBanPage)
 	mux.HandleFunc("GET /forum/mod/bans", f.withView(f.bansPage))
 	mux.HandleFunc("POST /forum/mod/bans/{id}/lift", f.withView(f.liftBan))
 	mux.HandleFunc("GET /forum/mod/log", f.withView(f.modLogPage))

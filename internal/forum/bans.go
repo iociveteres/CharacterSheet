@@ -35,76 +35,44 @@ func (m *modForm) checkBan(lang string) {
 	if !validator.NotBlank(m.Reason) {
 		m.AddError("reason", i18n.T(lang, "server.errors.form.blank"))
 	}
-	m.checkReason(lang)
 	if _, ok := parseBanDays(m.Duration); !ok {
 		m.AddError("duration", i18n.T(lang, "forum.moderation.noBanTerm"))
 	}
 }
 
-type banData struct {
-	view
-	Post postTarget
-	// Card is the post the ban is given for, as the moderator sees it in the topic.
-	Card postCard
-	// Standing is the user's ban that the new one replaces, nil without one.
-	Standing *Ban
-	Days     []int
-	Form     modForm
-}
-
-// banUser is the page of the ban given to the author of a post and the address its form posts to.
-// A moderator is never banned (CanBan). Done, the browser goes back to the post.
-func (f *Forum) banUser(w http.ResponseWriter, r *http.Request, v view) {
-	p, ok := f.postToActOn(w, r, v, func(v Viewer, _ Topic, p post) bool { return v.CanBan(p) })
+// oldBanPage is the address of the page that banned the author of a post before the ban went into
+// the post's delete window: it leads there, and that page asks for the rights.
+func (f *Forum) oldBanPage(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
 	if !ok {
+		f.host.NotFound(w, r)
 		return
 	}
-	standing, err := f.standingBan(r.Context(), p.AuthorID, v.Now)
-	if err != nil {
-		f.host.ServerError(w, r, err)
-		return
-	}
-	data := banData{
-		view:     v,
-		Post:     p,
-		Card:     f.lonePostCard(r, v, p),
-		Standing: standing,
-		Days:     banDays,
-		Form:     modForm{Duration: strconv.Itoa(banDays[0])},
-	}
-	status := http.StatusOK
-	if r.Method == http.MethodPost {
-		form, err := readModForm(r)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		if form.checkBan(v.Lang); form.Valid() {
-			days, _ := parseBanDays(form.Duration)
-			entry, change := banChange(p, days, form.Reason, v.Viewer.ID, v.Now)
-			if err := f.moderate(r.Context(), v.Viewer, v.Now, entry, change); err != nil {
-				f.host.ServerError(w, r, err)
-				return
-			}
-			http.Redirect(w, r, p.URL(), http.StatusSeeOther)
-			return
-		}
-		data.Form, status = form, http.StatusUnprocessableEntity
-	}
-	f.render(w, r, status, "ban.html", data, Page{
-		Title:   i18n.T(v.Lang, "forum.moderation.banTitle", i18n.Params{"name": p.AuthorName}),
-		NoIndex: true,
-	})
+	http.Redirect(w, r, postURL(id)+"/delete", http.StatusMovedPermanently)
 }
 
-// banChange gives the author of the post a ban of days (0: until lifted) from at. A standing ban
-// gives way to the new one, so a moderator shortens or lengthens a ban by giving another; the log
-// keeps the ids it replaced.
+// banChange bans the author of the post from the delete window (block 7 of extras/plan.md) for days
+// (0: until lifted) from at. Unlike the ban from their page, a standing ban stays as it is: the
+// window offers no ban then, and a form sent twice or after another moderator's ban gives no second.
 func banChange(p postTarget, days int, reason string, by int, at time.Time) (modEntry, modChange) {
-	return banUserChange(p.AuthorID, p.ID, p.Topic.ID, days, reason, by, at)
+	e, change := banUserChange(p.AuthorID, p.ID, p.Topic.ID, days, reason, by, at)
+	return e, func(ctx context.Context, tx pgx.Tx, e *modEntry) error {
+		var banned bool
+		err := tx.QueryRow(ctx, `
+			SELECT EXISTS (SELECT 1 FROM forum_bans WHERE user_id = $1 AND `+standingBanSQL("$2")+`)`,
+			p.AuthorID, at).Scan(&banned)
+		if err != nil {
+			return err
+		}
+		if banned {
+			return errNoChange
+		}
+		return change(ctx, tx, e)
+	}
 }
 
-// banUserChange is banChange of a user, from a post (postID and topicID) or from their page (0).
+// banUserChange bans the user, from a post (postID and topicID) or from their page (0). A standing
+// ban gives way to the new one; the log keeps the ids it replaced.
 func banUserChange(userID, postID, topicID, days int, reason string, by int, at time.Time) (modEntry, modChange) {
 	e := modEntry{Action: actionBanUser, UserID: userID, PostID: postID, TopicID: topicID, Reason: reason}
 	var expires *time.Time
@@ -140,15 +108,16 @@ func banUserChange(userID, postID, topicID, days int, reason string, by int, at 
 	}
 }
 
-// standingBan is the ban of the user that binds at now, nil without one; of overlapping bans the
-// one that ends last, as the viewer gets it.
-func (f *Forum) standingBan(ctx context.Context, userID int, now time.Time) (*Ban, error) {
-	var b Ban
+// standingBan is the ban of the user that binds at now with who gave it, nil without one; of
+// overlapping bans the one that ends last, as the viewer gets it.
+func (f *Forum) standingBan(ctx context.Context, userID int, now time.Time) (*userBan, error) {
+	var b userBan
 	err := f.db.QueryRow(ctx, `
-		SELECT id, reason, created_at, expires_at FROM forum_bans
-		WHERE user_id = $1 AND `+standingBanSQL("$2")+`
-		ORDER BY expires_at DESC NULLS FIRST, id DESC
-		LIMIT 1`, userID, now).Scan(&b.ID, &b.Reason, &b.CreatedAt, &b.ExpiresAt)
+		SELECT b.created_at, b.reason, b.moderator_id, m.name, b.expires_at
+		FROM forum_bans b JOIN users m ON m.id = b.moderator_id
+		WHERE b.user_id = $1 AND `+standingBanSQL("$2")+`
+		ORDER BY b.expires_at DESC NULLS FIRST, b.id DESC
+		LIMIT 1`, userID, now).Scan(&b.At, &b.Reason, &b.ModeratorID, &b.ModeratorName, &b.ExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

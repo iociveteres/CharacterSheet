@@ -14,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func banURL(postID int) string { return postURL(postID) + "/ban" }
 func liftURL(banID int) string { return fmt.Sprintf("%s/%d/lift", bansURL, banID) }
 
 // banRecord is a row of forum_bans.
@@ -81,128 +80,13 @@ func newBanScene(t *testing.T) banScene {
 	return s
 }
 
-// A moderator bans the author of a post for a term with a reason: a row of forum_bans, a line of
-// the log with the post it was given for, and the author is banned. A second ban replaces the first.
-func TestBanFromPost(t *testing.T) {
-	s := newBanScene(t)
-	fixedNow(s.f, at(10))
-	s.h.userID = s.mod
-
-	s.h.get(t, s.f, banURL(s.reply))
-	assert.Equal(t, s.h.status, http.StatusOK)
-	assert.Equal(t, s.h.page.NoIndex, true)
-	// One choice per term of decision 10, the first chosen.
-	body := string(s.h.page.Body)
-	assert.Equal(t, strings.Count(body, `type="radio" name="duration"`), len(banDays))
-	assert.StringContains(t, body, `value="1" checked`)
-
-	rec := s.h.post(t, s.f, banURL(s.reply), url.Values{"duration": {"7"}, "reason": {" spam "}})
-	assert.Equal(t, redirectedTo(t, rec), postURL(s.reply))
-	list := bans(t, s.db)
-	assert.Equal(t, len(list), 1)
-	b := list[0]
-	assert.Equal(t, b.UserID, s.alice)
-	assert.Equal(t, b.ModeratorID, s.mod)
-	assert.Equal(t, b.Reason, "spam")
-	assert.Equal(t, b.CreatedAt.Equal(at(10)), true)
-	assert.Equal(t, b.ExpiresAt.Equal(at(10).AddDate(0, 0, 7)), true)
-	assert.Equal(t, b.LiftedAt == nil, true)
-
-	log := modLog(t, s.db)
-	assert.Equal(t, len(log), 1)
-	assert.Equal(t, log[0].Action, string(actionBanUser))
-	assert.Equal(t, log[0].ModeratorID, s.mod)
-	assert.Equal(t, log[0].UserID, s.alice)
-	assert.Equal(t, log[0].PostID, s.reply)
-	assert.Equal(t, log[0].TopicID, s.topic)
-	assert.Equal(t, log[0].Reason, "spam")
-	assert.Equal[any](t, log[0].Data["banId"], float64(b.ID))
-	assert.Equal(t, log[0].Data["expiresAt"] != nil, true)
-
-	s.h.userID = s.alice
-	v, _ := viewerOf(t, s.f)
-	assert.Equal(t, v.Banned(), true)
-	assert.Equal(t, v.Ban.ID, b.ID)
-
-	// The page of a second ban tells of the first; the new ban, until lifted, lifts it.
-	s.h.userID = s.mod
-	fixedNow(s.f, at(20))
-	s.h.get(t, s.f, banURL(s.reply))
-	assert.StringContains(t, string(s.h.page.Body), "forum-ban-notice")
-	redirectedTo(t, s.h.post(t, s.f, banURL(s.reply), url.Values{"duration": {"0"}, "reason": {"again"}}))
-	list = bans(t, s.db)
-	assert.Equal(t, len(list), 2)
-	assert.Equal(t, list[0].LiftedAt.Equal(at(20)), true)
-	assert.Equal(t, *list[0].LiftedBy, s.mod)
-	assert.Equal(t, list[1].ExpiresAt == nil, true)
-	assert.Equal(t, list[1].LiftedAt == nil, true)
-	log = modLog(t, s.db)
-	assert.Equal(t, len(log), 2)
-	assert.Equal[any](t, log[1].Data["expiresAt"], nil)
-	assert.Equal(t, fmt.Sprint(log[1].Data["replaced"]), fmt.Sprintf("[%d]", list[0].ID))
-
-	s.h.userID = s.alice
-	v, _ = viewerOf(t, s.f)
-	assert.Equal(t, v.Ban.ID, list[1].ID)
-}
-
-// A ban without a reason, with a reason too long or a term the form does not offer gives the form
-// back with 422 and the input; nothing is written.
-func TestBanFormErrors(t *testing.T) {
-	s := newBanScene(t)
-	s.h.userID = s.mod
-	for _, form := range []url.Values{
-		{"duration": {"7"}, "reason": {"  "}},
-		{"duration": {"7"}, "reason": {strings.Repeat("я", reasonMaxChars+1)}},
-		{"duration": {"3"}, "reason": {"spam"}},
-		{"reason": {"spam"}},
-	} {
-		rec := s.h.post(t, s.f, banURL(s.reply), form)
-		assert.Equal(t, rec.Code, http.StatusOK)
-		assert.Equal(t, s.h.status, http.StatusUnprocessableEntity)
-		assert.StringContains(t, string(s.h.page.Body), `aria-invalid="true"`)
-	}
-	assert.Equal(t, len(bans(t, s.db)), 0)
-	assert.Equal(t, len(modLog(t, s.db)), 0)
-}
-
-// Only a moderator bans, and never a moderator: a member and a moderator's post get 403, a guest
-// goes to sign in, a post that does not exist is not found.
-func TestBanRefused(t *testing.T) {
-	s := newBanScene(t)
-	bob := forumtest.User(t, s.db, "bob", at(0))
-	other := newModerator(t, s.db, "other mod")
-	modPost := mustReply(t, s.f, s.topic, other, "a moderator's reply", at(3))
-	ownPost := mustReply(t, s.f, s.topic, s.mod, "own reply", at(4))
-	form := url.Values{"duration": {"1"}, "reason": {"spam"}}
-
-	s.h.userID = 0
-	assert.Equal(t, redirectedTo(t, s.h.post(t, s.f, banURL(s.reply), form)), "/user/login")
-	s.h.userID = bob
-	assert.Equal(t, s.h.post(t, s.f, banURL(s.reply), form).Code, http.StatusForbidden)
-	s.h.userID = s.mod
-	for _, p := range []int{modPost, ownPost} {
-		assert.Equal(t, s.h.post(t, s.f, banURL(p), form).Code, http.StatusForbidden)
-		s.h.get(t, s.f, fmt.Sprintf("/forum/topic/%d", s.topic))
-		assert.Equal(t, strings.Contains(string(s.h.page.Body), `href="`+banURL(p)+`"`), false)
-	}
-	s.h.post(t, s.f, banURL(9999), form)
-	assert.Equal(t, s.h.notFound, true)
-	assert.Equal(t, len(bans(t, s.db)), 0)
-
-	// A member's post has the moderator's link, a deleted one too: spam is deleted and banned.
-	deletePost(t, s.db, s.reply)
-	s.h.get(t, s.f, fmt.Sprintf("/forum/topic/%d", s.topic))
-	assert.StringContains(t, string(s.h.page.Body), `href="`+banURL(s.reply)+`"`)
-}
-
 // A ban ends by itself at its expires_at, with nothing written: the user writes again, the notice
 // and the line of the list are gone, and lifting it changes nothing.
 func TestBanExpires(t *testing.T) {
 	s := newBanScene(t)
 	fixedNow(s.f, at(10))
 	s.h.userID = s.mod
-	redirectedTo(t, s.h.post(t, s.f, banURL(s.reply), url.Values{"duration": {"1"}, "reason": {"spam"}}))
+	redirectedTo(t, s.h.post(t, s.f, deleteURL(s.reply), banForm("1", "spam")))
 	banID := bans(t, s.db)[0].ID
 	topicURL := fmt.Sprintf("/forum/topic/%d", s.topic)
 
@@ -226,7 +110,8 @@ func TestBanExpires(t *testing.T) {
 	assert.Equal(t, strings.Contains(string(s.h.page.Body), `id="ban-`), false)
 	assert.Equal(t, redirectedTo(t, s.h.post(t, s.f, liftURL(banID), url.Values{})), bansURL)
 	assert.Equal(t, bans(t, s.db)[0].LiftedAt == nil, true)
-	assert.Equal(t, len(modLog(t, s.db)), 1)
+	// The deletion and the ban; lifting the expired ban wrote nothing.
+	assert.Equal(t, len(modLog(t, s.db)), 2)
 }
 
 // "Lift" ends a ban at once and writes the log; a second press changes nothing. Only moderators
@@ -353,6 +238,7 @@ func TestEveryWritingAddressRefusesBanned(t *testing.T) {
 	form := url.Values{
 		"title": {"a new title"}, "body": {"text"}, "reason": {"reason"}, "name": {"name"},
 		"direction": {"down"}, "section": {fmt.Sprint(other)}, "duration": {"7"}, "density": {"compact"},
+		"ban": {"1"}, "recent": {"1"},
 	}
 	ownMarks := map[string]bool{"POST /forum/read": true, "POST /forum/section/{id}/read": true, "POST /forum/notifications/read": true,
 		"POST /forum/view/density": true}

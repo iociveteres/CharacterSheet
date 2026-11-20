@@ -34,9 +34,10 @@ func TestEveryPageHead(t *testing.T) {
 		"GET /forum/post/{id}":         true, // to the post's page of the topic
 		"GET /forum/topic/{id}/unread": true, // to the first unread post
 		"GET /forum/topic/{id}/reply":  true, // to the reply form on the last page
+		"GET /forum/post/{id}/ban":     true, // the page of the ban before block 7: to the delete window
 	}
 	// The post each address acts on; the rest take the reply of alice, which the moderator may
-	// delete, quote and ban for.
+	// delete, quote and ban from the delete window.
 	posts := map[string]int{
 		"GET /forum/post/{id}/edit":    mine,
 		"GET /forum/post/{id}/restore": deleted,
