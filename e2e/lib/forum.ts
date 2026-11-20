@@ -98,6 +98,24 @@ export async function reply(p: Player, text: string): Promise<number> {
 /** The card of post `id` on the open page. */
 export const post = (p: Player, id: number) => p.page.locator(`article#post-${id}`);
 
+/** Opens the forum page of the author of post `id` by their name at the post on the open page. */
+export async function openAuthorPage(p: Player, id: number): Promise<void> {
+    await follow(p.page, post(p, id).locator(".forum-post-author a.name"));
+    expect(p.page.url()).toMatch(/\/forum\/user\/\d+/);
+}
+
+/** Opens the site's Account page by its link in the nav. */
+export async function openAccount(p: Player): Promise<void> {
+    if (!/^https?:/.test(p.page.url())) await p.page.goto(`${p.base}/`);
+    await follow(p.page, p.page.locator("nav.site-wide a[href='/account/view']"));
+}
+
+/** The message the site shows at the top of a page after a form, "" for none. */
+export async function flash(p: Player): Promise<string> {
+    const box = p.page.locator(".flash");
+    return (await box.count()) ? (await box.innerText()).trim() : "";
+}
+
 /** Whether the open page has a form to reply in. */
 export const canReply = async (p: Player) => (await p.page.locator("form#reply").count()) > 0;
 
@@ -132,7 +150,7 @@ export async function readAllNotifications(p: Player): Promise<void> {
 }
 
 /** Opens the moderation menu of the open page and the page of its item that links to `path`. */
-async function openModItem(p: Player, path: string): Promise<void> {
+export async function openModItem(p: Player, path: string): Promise<void> {
     await p.page.locator("details.forum-mod-menu > summary").click();
     await follow(p.page, p.page.locator(`.forum-menu-panel a[href$="${path}"]`));
 }
@@ -167,6 +185,14 @@ export async function liftBans(p: Player, name: string): Promise<void> {
     await openModItem(p, "/forum/mod/bans");
     const row = () => p.page.locator("ul.forum-mod-bans > li").filter({ has: p.page.getByText(name, { exact: true }) });
     while (await row().count()) await follow(p.page, row().first().locator("button.forum-lift-ban"));
+}
+
+/** Lifts the avatar upload ban of `name` on the moderators' list of bans, if there is one. */
+export async function liftAvatarLock(p: Player, name: string): Promise<void> {
+    await openForum(p);
+    await openModItem(p, "/forum/mod/bans");
+    const row = p.page.locator("ul.forum-avatar-locks > li").filter({ has: p.page.getByText(name, { exact: true }) });
+    if (await row.count()) await follow(p.page, row.locator("button.forum-lift-lock"));
 }
 
 /** Fails if anything on the open page reaches past the window's right edge or a scroll appears. */
