@@ -11,7 +11,7 @@ CREATE TABLE forum_topics (
     -- Only moderators reply in a closed topic.
     closed       boolean NOT NULL DEFAULT false,
     created_at   timestamptz NOT NULL DEFAULT now(),
-    -- Soft delete: only moderators see a deleted topic, and only SQL brings it back.
+    -- Soft delete: only moderators see a deleted topic and restore it.
     deleted_at   timestamptz,
     deleted_by   int REFERENCES users(id),
     -- Visible posts after the first one.
