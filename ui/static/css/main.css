@@ -136,6 +136,11 @@ nav a.live:hover {
     text-decoration: none;
 }
 
+/* Current on every page under its path (main.js), where it still leads to the section's start. */
+nav a.live[data-live-prefix] {
+    cursor: pointer;
+}
+
 nav a.live:after {
     content: '';
     width: 14px;
@@ -150,6 +155,161 @@ nav a.live:after {
     top: 100%;
     margin-top: 9px;
     pointer-events: none;
+}
+
+/* Pages laid out by levels (DESIGN.md, «Backgrounds»): for now the forum and the Account page; the
+   rest of the site still lies on bg with bg-light tables (_prd/forum/extras/layers.md). The page is
+   bg-light; the header with the site's name is a panel, bg, painted out to the page's edges by the
+   border image, as on the bestiary (bestiary.css); the row of links one level deeper, bg-item, with
+   the arrow under the current link; the footer bg. */
+body:has(#forum),
+body:has(.account-page) {
+    background-color: var(--bg-light);
+}
+
+body:has(#forum) > header,
+body:has(.account-page) > header {
+    border-image-source: conic-gradient(var(--bg) 0 0);
+    border-image-slice: 0 fill;
+    border-image-outset: 0 100vmax;
+}
+
+body:has(#forum) > nav,
+body:has(.account-page) > nav,
+body:has(#forum) > nav a.live:after,
+body:has(.account-page) > nav a.live:after {
+    background: var(--bg-item);
+}
+
+body:has(#forum) > nav,
+body:has(.account-page) > nav {
+    border-top: 1px solid var(--border-light);
+}
+
+body:has(#forum) > footer,
+body:has(.account-page) > footer {
+    background: var(--bg);
+}
+
+/* The letter that stands for a user without an avatar, on the user's own tint (util.AvatarHue: ten
+   hues 36° apart), the same on the forum and the Account page. Text against background is at least
+   5:1 in both themes. */
+.avatar-hue {
+    background: hsl(var(--avatar-hue) 40% 84%);
+    color: hsl(var(--avatar-hue) 35% 28%);
+}
+
+html[data-theme="dark"] .avatar-hue {
+    background: hsl(var(--avatar-hue) 25% 27%);
+    color: hsl(var(--avatar-hue) 40% 82%);
+}
+
+.avatar-hue-0 { --avatar-hue: 0; }
+.avatar-hue-1 { --avatar-hue: 36; }
+.avatar-hue-2 { --avatar-hue: 72; }
+.avatar-hue-3 { --avatar-hue: 108; }
+.avatar-hue-4 { --avatar-hue: 144; }
+.avatar-hue-5 { --avatar-hue: 180; }
+.avatar-hue-6 { --avatar-hue: 216; }
+.avatar-hue-7 { --avatar-hue: 252; }
+.avatar-hue-8 { --avatar-hue: 288; }
+.avatar-hue-9 { --avatar-hue: 324; }
+
+/* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
+.account-page > table,
+.account-page .avatar-settings,
+.account-page .theme-settings {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.account-page .avatar-settings,
+.account-page .theme-settings {
+    padding: 10px 14px 14px;
+}
+
+/* tr:nth-child(2n) is bg-light, a level above the panel. */
+.account-page > table tr:nth-child(2n) {
+    background: transparent;
+}
+
+/* The counter of unread forum notifications next to the forum link (and on the button of the forum
+   home): a pill in the user's accent colour that grows with its text, "3", "9+". */
+.nav-badge {
+    display: inline-block;
+    margin-left: 5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: var(--bg-light);
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* Header and nav at phone width. Only pages with a viewport meta (the forum's) get this narrow:
+   without it a phone lays the page out about 980px wide (_prd/forum/plan.md, amendment 5). */
+@media (max-width: 600px) {
+    .site-inner {
+        padding: 2px 8px;
+    }
+
+    header .recolor {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    h1,
+    h1 a {
+        font-size: 20px;
+        line-height: 1.2;
+    }
+
+    nav {
+        height: auto;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .site-wide .site-inner,
+    nav div {
+        flex-wrap: wrap;
+        gap: 4px 1em;
+    }
+
+    /* The marker under the current link points at the nav's bottom edge from its own row. */
+    nav a.live:after {
+        display: none;
+    }
+
+    /* Finger-sized links of the header, nav and footer: the padding widens what a finger hits
+       without moving the rows apart. */
+    nav.site-wide a,
+    nav.site-wide .button-linklike,
+    footer.site-wide a {
+        padding: 8px 0;
+        margin: -4px 0;
+    }
+
+    #language-form select {
+        min-height: 36px;
+        font-size: 16px;
+    }
+
+    .incident-notice .close {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    main {
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
 }
 
 button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):not(.close) {

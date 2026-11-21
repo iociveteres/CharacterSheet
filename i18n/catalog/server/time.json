@@ -1,0 +1,7 @@
+{
+  "server.time.justNow": { "en": "just now", "ru": "только что", "note": "время сообщения или темы на форуме, меньше минуты назад" },
+  "server.time.minutesAgo": { "en": {"one": "{count} minute ago", "other": "{count} minutes ago"}, "ru": {"one": "{count} минуту назад", "few": "{count} минуты назад", "many": "{count} минут назад"}, "note": "время на форуме; полная дата видна при наведении" },
+  "server.time.hoursAgo": { "en": {"one": "{count} hour ago", "other": "{count} hours ago"}, "ru": {"one": "{count} час назад", "few": "{count} часа назад", "many": "{count} часов назад"}, "note": "время на форуме; полная дата видна при наведении" },
+  "server.time.daysAgo": { "en": {"one": "{count} day ago", "other": "{count} days ago"}, "ru": {"one": "{count} день назад", "few": "{count} дня назад", "many": "{count} дней назад"}, "note": "время на форуме; полная дата видна при наведении" },
+  "server.time.monthsAgo": { "en": {"one": "{count} month ago", "other": "{count} months ago"}, "ru": {"one": "{count} месяц назад", "few": "{count} месяца назад", "many": "{count} месяцев назад"}, "note": "время на форуме, до года; старше года пишется полная дата" }
+}

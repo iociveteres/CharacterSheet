@@ -13,5 +13,8 @@
   "site.account.theme.hue": { "en": "Accent hue:", "ru": "Акцентный цвет:", "note": "за подписью идёт число 0–360 или hueDefault" },
   "site.account.theme.preview": { "en": "Preview", "ru": "Образец", "note": "подсказка у квадратика с выбранным цветом" },
   "site.account.theme.reset": { "en": "Default", "ru": "По умолчанию", "note": "кнопка: вернуть цвет темы" },
-  "site.account.theme.hueDefault": { "en": "default", "ru": "по умолчанию", "note": "значение после «Accent hue:», когда свой цвет не выбран (main.js)" }
+  "site.account.theme.hueDefault": { "en": "default", "ru": "по умолчанию", "note": "значение после «Accent hue:», когда свой цвет не выбран (main.js)" },
+  "site.account.avatar.lockedUntil": { "en": "A forum moderator removed your avatar on {removed}. You can upload a new one after {until}.", "ru": "Модератор форума убрал ваш аватар {removed}. Новый можно загрузить после {until}.", "note": "{removed} и {until} — дата со временем: «18 ноября 2026 в 21:00»" },
+  "site.account.avatar.lockedForever": { "en": "A forum moderator removed your avatar and locked uploading a new one.", "ru": "Модератор форума убрал ваш аватар и запретил загружать новый." },
+  "site.account.avatar.reason": { "en": "Reason: {reason}", "ru": "Причина: {reason}" }
 }

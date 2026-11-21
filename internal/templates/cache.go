@@ -27,7 +27,7 @@ var functions = template.FuncMap{
 	"isElevated":        isElevated,
 	"isGamemaster":      isGamemaster,
 	"str":               str,
-	"t":                 translate,
+	"t":                 i18n.TemplateT,
 	"slide":             slideURL,
 }
 

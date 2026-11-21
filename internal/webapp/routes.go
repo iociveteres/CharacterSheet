@@ -138,6 +138,11 @@ func (app *Application) Routes() http.Handler {
 	protected := dynamic.Append(app.requireAuthentication)
 	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.uploader, nil))
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
+	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
+	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))
+	// Public: no session, no CSRF; anyone may see an avatar (internal/webapp/avatars.go).
+	router.HandlerFunc(http.MethodGet, "/avatar/:hash", app.avatarGet)
 
 	router.Handler(http.MethodGet, routeAdd("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
 	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), form.ThenFunc(app.accountPasswordResetPost))
@@ -191,6 +196,11 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, "/bestiary/ws", protected.ThenFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.WSServer.BestiaryWs(app.userID(r), w, r)
 	}))
+
+	// The forum routes inside its own ServeMux; its route names stay out of reverse.
+	forumHandler := dynamic.Then(app.Forum.Handler())
+	router.Handler(http.MethodGet, "/forum/*path", forumHandler)
+	router.Handler(http.MethodPost, "/forum/*path", forumHandler)
 
 	router.Handler(http.MethodGet, routeAdd("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 

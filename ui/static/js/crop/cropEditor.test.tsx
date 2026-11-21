@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { flush } from "../components/testUtils";
-import { PortraitEditor, type PortraitEditorProps } from "./PortraitEditor";
-import { encodePortrait, FRAME } from "./portraitCrop";
+import { CropEditor, type CropEditorProps } from "./CropEditor";
+import { encodeCrop, frameRect, type CropGeometry } from "./crop";
 
 // The canvas of happy-dom draws and encodes nothing.
-vi.mock("./portraitCrop", async importOriginal => ({
-    ...await importOriginal<typeof import("./portraitCrop")>(),
-    encodePortrait: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
+vi.mock("./crop", async importOriginal => ({
+    ...await importOriginal<typeof import("./crop")>(),
+    encodeCrop: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
 }));
 
 let box: HTMLElement;
@@ -19,7 +18,7 @@ beforeEach(() => {
     let urls = 0;
     vi.spyOn(URL, "createObjectURL").mockImplementation(() => `blob:${++urls}`);
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
-    vi.mocked(encodePortrait).mockClear();
+    vi.mocked(encodeCrop).mockClear();
     calls = { save: [], delete: 0, close: 0 };
     anchor = document.createElement("div");
     box = document.createElement("div");
@@ -33,10 +32,15 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function open(props: Partial<PortraitEditorProps> = {}): void {
+const portrait: CropGeometry = { stage: 300, frame: { w: 180, h: 240 }, output: { w: 360, h: 480 } };
+const avatar: CropGeometry = { stage: 300, frame: { w: 240, h: 240 }, output: { w: 192, h: 192 } };
+const FRAME = frameRect(portrait);
+const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+function open(props: Partial<CropEditorProps> = {}): void {
     act(() => {
         render(
-            <PortraitEditor file={null} saved="/portrait/0123456789abcdef" anchor={{ current: anchor }}
+            <CropEditor geometry={portrait} title="Portrait" confirmDelete="Delete the portrait?" previews={[90]} file={null} saved="/portrait/0123456789abcdef" anchor={{ current: anchor }}
                 onSave={image => calls.save.push(image)} onDelete={() => calls.delete++} onClose={() => calls.close++} {...props} />,
             box,
         );
@@ -71,7 +75,7 @@ function choose(file: File): void {
     });
 }
 
-describe("the portrait window", () => {
+describe("the crop window", () => {
     it("opens the saved portrait, and Save before it loads does nothing", () => {
         open();
         expect(image().getAttribute("src")).toBe("/portrait/0123456789abcdef");
@@ -88,8 +92,9 @@ describe("the portrait window", () => {
         });
         expect(Number(zoom().value)).toBe(2);
         await save();
-        expect(encodePortrait).toHaveBeenCalledTimes(1);
-        const [img, size, crop] = vi.mocked(encodePortrait).mock.calls[0];
+        expect(encodeCrop).toHaveBeenCalledTimes(1);
+        const [geometry, img, size, crop] = vi.mocked(encodeCrop).mock.calls[0];
+        expect(geometry).toBe(portrait);
         expect(img).toBe(image());
         expect(size).toEqual({ width: 640, height: 480 });
         expect(crop.zoom).toBe(2);
@@ -168,7 +173,37 @@ describe("the portrait window", () => {
     });
 });
 
-describe("closing the portrait window", () => {
+describe("the crop window's geometry", () => {
+    it("lays out the portrait's 3:4 frame and its preview", () => {
+        open();
+        const frame = $(".crop-frame")!;
+        expect([frame.style.left, frame.style.top, frame.style.width, frame.style.height]).toEqual(["60px", "30px", "180px", "240px"]);
+        const canvases = box.querySelectorAll("canvas");
+        expect(canvases).toHaveLength(1);
+        expect([canvases[0].width, canvases[0].height]).toEqual([360, 480]);
+        expect([canvases[0].style.width, canvases[0].style.height]).toEqual(["90px", "120px"]);
+    });
+
+    it("lays out the avatar's square frame and its two previews, and encodes at its size", async () => {
+        open({ geometry: avatar, previews: [96, 36] });
+        const frame = $(".crop-frame")!;
+        expect([frame.style.left, frame.style.top, frame.style.width, frame.style.height]).toEqual(["30px", "30px", "240px", "240px"]);
+        const canvases = [...box.querySelectorAll("canvas")];
+        expect(canvases.map(c => [c.width, c.height])).toEqual([[192, 192], [192, 192]]);
+        expect(canvases.map(c => [c.style.width, c.style.height])).toEqual([["96px", "96px"], ["36px", "36px"]]);
+
+        load();
+        act(() => {
+            zoom().value = "2";
+            zoom().dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await save();
+        expect(vi.mocked(encodeCrop).mock.calls[0][0]).toBe(avatar);
+        expect(calls.save).toHaveLength(1);
+    });
+});
+
+describe("closing the crop window", () => {
     it("happens on Cancel", () => {
         open();
         click(".crop-cancel");
@@ -187,7 +222,7 @@ describe("closing the portrait window", () => {
         expect(popupEsc).not.toHaveBeenCalled();
     });
 
-    it("happens on a press outside the window and the portrait, not inside them", () => {
+    it("happens on a press outside the window and the picture, not inside them", () => {
         open();
         const press = (el: Element) => act(() => {
             el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));

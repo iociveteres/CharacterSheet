@@ -104,9 +104,59 @@ func translate(c map[string]map[string]message, lang, key string, params ...Para
 		}
 	}
 	for name, v := range p {
-		text = strings.ReplaceAll(text, "{"+name+"}", fmt.Sprint(v))
+		value := fmt.Sprint(v)
+		// Only count is a quantity for sure; a year, an id or "#1024" in another param stays as is.
+		if rv := reflect.ValueOf(v); name == "count" && (rv.CanInt() || rv.CanUint()) {
+			value = groupDigits(value)
+		}
+		text = strings.ReplaceAll(text, "{"+name+"}", value)
 	}
 	return text
+}
+
+// FormatCount writes a quantity as the param count of T does: from 1000 on, its thousands are
+// set apart by a narrow no-break space (U+202F), "1 024", in every language. For a number shown
+// without T, as "Posts: 1 024".
+func FormatCount(n int) string {
+	return groupDigits(strconv.Itoa(n))
+}
+
+// groupDigits sets the thousands of a decimal integer apart; ui/static/js/i18n formatCount does
+// the same on the client.
+func groupDigits(s string) string {
+	sign := ""
+	if strings.HasPrefix(s, "-") {
+		sign, s = "-", s[1:]
+	}
+	if len(s) < 4 {
+		return sign + s
+	}
+	var b strings.Builder
+	b.WriteString(sign)
+	for i, d := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			b.WriteRune('\u202f')
+		}
+		b.WriteRune(d)
+	}
+	return b.String()
+}
+
+// TemplateT is "t" in the html templates of the site and of the forum: {{t .Lang "site.nav.rooms"}},
+// params as name/value pairs: {{t .Lang "x.y" "count" 3}}.
+func TemplateT(lang, key string, pairs ...any) (string, error) {
+	if len(pairs)%2 != 0 {
+		return "", fmt.Errorf("t %q: params must be name/value pairs", key)
+	}
+	params := Params{}
+	for i := 0; i < len(pairs); i += 2 {
+		name, ok := pairs[i].(string)
+		if !ok {
+			return "", fmt.Errorf("t %q: param name %v is not a string", key, pairs[i])
+		}
+		params[name] = pairs[i+1]
+	}
+	return T(lang, key, params), nil
 }
 
 // PluralForms returns the forms of the plural message key in lang, or in Default when lang has

@@ -1,0 +1,45 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
+    {{- template "forum-ban-notice" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    <div class="forum-head">
+        <div class="forum-head-text"><h2>{{t .Lang "forum.notifications.title"}}</h2></div>
+        <div class="forum-actions">
+            <form method="post" action="/forum/notifications/read">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-notifications-read">{{t .Lang "forum.sections.markAllRead"}}</button>
+            </form>
+        </div>
+    </div>
+
+    {{- /* The newest event first (notifications_page.go): the kind and the time small above the
+         text, the moderator's reason on its own line (design/decisions.md, 21); unread ones have
+         the dot and bold text (11). A topic the viewer no longer sees leaves the text without a link. */}}
+    {{- if .Lines}}
+    <ul class="forum-list forum-notes">
+        {{- range .Lines}}
+        <li class="forum-row{{if .Unread}} unread{{end}}">
+            <span class="unread-dot"></span>
+            <div class="forum-row-main">
+                <span class="meta">{{.Label}} · {{$.Time .At}}</span>
+                {{- if .URL}}
+                <a class="note-text" href="{{.URL}}">{{.Text}}</a>
+                {{- else}}
+                <span class="note-text">{{.Text}}</span>
+                {{- end}}
+                {{- with .Reason}}
+                <span class="meta note-reason">{{t $.Lang "forum.moderation.reason"}}: {{.}}</span>
+                {{- end}}
+            </div>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.notifications.empty"}}</p></div>
+    {{- end}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+</div>

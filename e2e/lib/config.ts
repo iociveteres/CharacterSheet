@@ -49,6 +49,8 @@ export interface Seed {
     users: SeedUser[];
     /** The gm's sheets of the kinds other than Black Crusade, made anew by every seed. */
     kindSheets: { pathfinder_crusade: number };
+    /** The forum sections of the forum scenarios, emptied by every seed, and a topic on two pages in the first. */
+    forum: { section: number; movedTo: number; longTopic: number };
 }
 
 const SEED_FILE = env("E2E_SEED", "scripts/perf/.seed.json");

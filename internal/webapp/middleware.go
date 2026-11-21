@@ -19,18 +19,26 @@ import (
 	"github.com/justinas/nosurf"
 )
 
+// imgSrc is where the site's pages take pictures from; blob: shows a portrait on its way to the
+// server (sheet/profile/Portrait.tsx).
+const imgSrc = "'self' blob:"
+
+// contentSecurityPolicy is the site's policy with the pictures from imgSrc; a page that shows
+// pictures from elsewhere replaces the header with a wider imgSrc.
+func contentSecurityPolicy(imgSrc string) string {
+	return "default-src 'self';" +
+		"img-src " + imgSrc + ";" +
+		"style-src 'self' fonts.googleapis.com;" +
+		"font-src fonts.gstatic.com;" +
+		"script-src 'self' cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';" +
+		// The collect host is baked into cloud.umami.is/script.js at umami's build and has
+		// moved before (from api-gateway.umami.dev): check the script if beacons get blocked.
+		"connect-src 'self' https://gateway.umami.is/api/send"
+}
+
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy",
-			"default-src 'self';"+
-				// blob: shows a portrait on its way to the server (sheet/profile/Portrait.tsx).
-				"img-src 'self' blob:;"+
-				"style-src 'self' fonts.googleapis.com;"+
-				"font-src fonts.gstatic.com;"+
-				"script-src 'self' cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+
-				// The collect host is baked into cloud.umami.is/script.js at umami's build and has
-				// moved before (from api-gateway.umami.dev): check the script if beacons get blocked.
-				"connect-src 'self' https://gateway.umami.is/api/send")
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy(imgSrc))
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
@@ -125,8 +133,7 @@ func (app *Application) recoverPanic(next http.Handler) http.Handler {
 func (app *Application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !app.isAuthenticated(r) {
-			app.SessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			app.redirectToLogin(w, r)
 			return
 		}
 		w.Header().Add("Cache-Control", "no-store")
@@ -148,6 +155,12 @@ func (app *Application) limitBody(n int64) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// redirectToLogin sends a guest to the login page, which returns them to r.URL.Path afterwards.
+func (app *Application) redirectToLogin(w http.ResponseWriter, r *http.Request) {
+	app.SessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
 func noSurf(next http.Handler) http.Handler {

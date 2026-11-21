@@ -42,6 +42,10 @@ func TestTranslate(t *testing.T) {
 		{"en plural other", "en", "test.dice", Params{"count": 2}, "2 dice"},
 		{"fallback to en uses the en plural rule", "ru", "test.diceEn", Params{"count": 2}, "2 dice"},
 		{"count of another integer type", "ru", "test.dice", Params{"count": uint8(3)}, "3 кубика"},
+		{"a count from 1000 is grouped", "en", "test.dice", Params{"count": 1024}, "1\u202f024 dice"},
+		{"a count picks its form before grouping", "ru", "test.dice", Params{"count": 4522}, "4\u202f522 кубика"},
+		{"another param is not grouped", "en", "test.greet", Params{"name": 2026}, "Hello, 2026!"},
+		{"a fractional count is not grouped", "en", "test.dice", Params{"count": 1500.5}, "1500.5 dice"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,6 +57,21 @@ func TestTranslate(t *testing.T) {
 			}
 			assert.Equal(t, got, tt.want)
 		})
+	}
+}
+
+func TestFormatCount(t *testing.T) {
+	for n, want := range map[int]string{
+		0:          "0",
+		999:        "999",
+		1000:       "1\u202f000",
+		1024:       "1\u202f024",
+		-4512:      "-4\u202f512",
+		123456:     "123\u202f456",
+		1234567:    "1\u202f234\u202f567",
+		-100000000: "-100\u202f000\u202f000",
+	} {
+		assert.Equal(t, FormatCount(n), want)
 	}
 }
 
@@ -109,4 +128,15 @@ func TestFromAcceptLanguage(t *testing.T) {
 func TestFromContext(t *testing.T) {
 	assert.Equal(t, FromContext(context.Background()), Default)
 	assert.Equal(t, FromContext(WithLang(context.Background(), "ru")), "ru")
+}
+
+// The t of the templates takes params as name/value pairs.
+func TestTemplateT(t *testing.T) {
+	got, err := TemplateT("ru", "site.home.online.count", "count", 21)
+	assert.NilError(t, err)
+	assert.StringContains(t, got, "21")
+	_, err = TemplateT("ru", "common.close", "count")
+	assert.NotNilError(t, err)
+	_, err = TemplateT("ru", "common.close", 1, 2)
+	assert.NotNilError(t, err)
 }

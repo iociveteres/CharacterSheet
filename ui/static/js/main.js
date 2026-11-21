@@ -5,10 +5,12 @@ import {
 } from "./theme-init.js"
 
 
+// A link with data-live-prefix stays current on every page under that path (the forum's).
 var navLinks = document.querySelectorAll("nav a");
 for (var i = 0; i < navLinks.length; i++) {
 	var link = navLinks[i]
-	if (link.getAttribute('href') == window.location.pathname) {
+	var prefix = link.getAttribute('data-live-prefix');
+	if (link.getAttribute('href') == window.location.pathname || (prefix && window.location.pathname.startsWith(prefix))) {
 		link.classList.add("live");
 		break;
 	}
@@ -240,7 +242,8 @@ function clearHue(opts = {}) {
 
     function formatCount(n) {
         const text = n <= 0 ? forms.zero : (forms[plural.select(n)] ?? forms.other);
-        return text?.replace('{count}', String(n));
+        // Thousands apart by a narrow no-break space, as i18n.FormatCount and t() write a count.
+        return text?.replace('{count}', String(n).replace(/\B(?=(\d{3})+$)/g, '\u202f'));
     }
 
     async function updateCount() {

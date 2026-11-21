@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
@@ -200,6 +201,10 @@ func main() {
 		Gamedata:       catalog,
 		Mailer:         mailer,
 	})
+	app.Forum, err = forum.New(pool, os.Getenv("BASE_URL"), app.ForumHost())
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	if err := serve(app, cfg, lifeLog); err != nil {
 		errorLog.Fatal(err)

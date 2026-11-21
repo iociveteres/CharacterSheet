@@ -1,0 +1,58 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.bans"}}</h2></div></div>
+
+    {{- /* The bans that bind now (bans.go): whom, until when, by whom and for what, and the way to
+         lift one. An expired ban leaves the list by itself. */}}
+    {{- if .Bans}}
+    <ul class="forum-list forum-mod-bans">
+        {{- range .Bans}}
+        <li class="forum-row" id="ban-{{.ID}}">
+            <div class="forum-row-main">
+                <a class="forum-row-title" href="{{userURL .UserID}}">{{.UserName}}</a>
+                <span class="meta">
+                    {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}
+                    · {{t $.Lang "forum.posts.moderator"}}: <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .CreatedAt}}
+                    {{- with .PostID}} · <a href="/forum/post/{{.}}">{{t $.Lang "forum.moderation.logPost"}}</a>{{end}}</span>
+                <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+            </div>
+            <form class="forum-mod-list-actions" method="POST" action="/forum/mod/bans/{{.ID}}/lift">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-lift-ban">{{t $.Lang "forum.moderation.lift"}}</button>
+            </form>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.moderation.noBans"}}</p></div>
+    {{- end}}
+
+    {{- /* The locks on a new avatar (extras/users.md): the site keeps them, the host lists them; an
+         expired one leaves the list by itself. «Lift» comes back here. */}}
+    <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.users.avatarLocks"}}</h2></div></div>
+    {{- if .Locks}}
+    <ul class="forum-list forum-mod-bans forum-avatar-locks">
+        {{- range .Locks}}
+        <li class="forum-row" id="lock-{{.UserID}}">
+            {{- template "forum-avatar" .Avatar}}
+            <div class="forum-row-main">
+                <a class="forum-row-title" href="{{userURL .UserID}}">{{.UserName}}</a>
+                <span class="meta">
+                    {{- with .Until}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.lockForever"}}{{end}}
+                    · {{t $.Lang "forum.posts.moderator"}}: <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .CreatedAt}}</span>
+                <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+            </div>
+            <form class="forum-mod-list-actions" method="POST" action="{{userURL .UserID}}/lift-avatar-lock">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <input type="hidden" name="back" value="bans">
+                <button type="submit" class="f-btn f-secondary forum-lift-lock">{{t $.Lang "forum.moderation.lift"}}</button>
+            </form>
+        </li>
+        {{- end}}
+    </ul>
+    {{- else}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.users.noAvatarLocks"}}</p></div>
+    {{- end}}
+</div>

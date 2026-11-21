@@ -1,0 +1,18 @@
+{
+  "account.avatar.title": { "en": "Avatar", "ru": "Аватар", "note": "заголовок блока на странице «Аккаунт», окна кадрирования и надпись «+ Аватар» в пустой рамке" },
+  "account.avatar.edit": { "en": "Change the avatar", "ru": "Изменить аватар", "note": "подсказка на рамке с картинкой" },
+  "account.avatar.upload": { "en": "Upload an avatar (or drop an image here)", "ru": "Загрузить аватар (или перетащите изображение сюда)", "note": "подсказка на пустой рамке" },
+  "account.avatar.confirmDelete": { "en": "Delete the avatar?", "ru": "Удалить аватар?" },
+  "account.avatar.public": { "en": "Everyone sees it beside your posts on the forum, guests too. Click the picture to replace or delete it.", "ru": "Виден всем рядом с вашими сообщениями на форуме, гостям тоже. Нажмите на картинку, чтобы заменить или удалить." },
+  "account.avatar.publicNoScript": { "en": "Everyone sees it beside your posts on the forum, guests too.", "ru": "Виден всем рядом с вашими сообщениями на форуме, гостям тоже.", "note": "без JavaScript и при запрете: картинку нельзя нажать" },
+  "account.avatar.none": { "en": "No avatar: the forum shows the first letter of your name beside your posts. Click the frame or drop an image on it.", "ru": "Аватара нет: на форуме у ваших сообщений стоит первая буква имени. Нажмите на рамку или перетащите на неё картинку." },
+  "account.avatar.noneNoClick": { "en": "No avatar: the forum shows the first letter of your name beside your posts.", "ru": "Аватара нет: на форуме у ваших сообщений стоит первая буква имени.", "note": "без JavaScript и при запрете: рамку нельзя нажать" },
+  "account.avatar.saving": { "en": "Saving…", "ru": "Сохраняю…" },
+  "account.avatar.formats": { "en": "PNG, JPEG or WebP: you crop it to a square in the window.", "ru": "PNG, JPEG или WebP: в окне обрежете до квадрата." },
+  "account.avatar.needsScript": { "en": "Uploading or replacing the avatar needs JavaScript: the picture is cropped in the browser.", "ru": "Загрузить или заменить аватар можно только с включённым JavaScript: картинку обрезают в браузере." },
+  "account.avatar.errors.badImage": { "en": "Not saved: the server takes a 192×192 WebP or JPEG image without metadata", "ru": "Не сохранилось: нужно изображение WebP или JPEG 192×192 без метаданных" },
+  "account.avatar.errors.locked": { "en": "Not saved: a moderator has locked uploading an avatar", "ru": "Не сохранилось: модератор запретил загружать аватар" },
+  "account.avatar.errors.tooLarge": { "en": "Not saved: the image is larger than 64 KB", "ru": "Не сохранилось: изображение больше 64 КБ" },
+  "account.avatar.errors.offline": { "en": "No connection to the server: the avatar has not changed", "ru": "Нет связи с сервером: аватар не изменился" },
+  "account.avatar.errors.refused": { "en": "The server refused: {status}. The avatar has not changed", "ru": "Сервер отказал: {status}. Аватар не изменился", "note": "{status} — код ответа HTTP, число" }
+}

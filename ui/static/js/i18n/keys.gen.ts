@@ -2,6 +2,22 @@
 // Regenerate with `npm run gen:i18n`.
 
 export interface I18nParams {
+    "account.avatar.confirmDelete": {};
+    "account.avatar.edit": {};
+    "account.avatar.errors.badImage": {};
+    "account.avatar.errors.locked": {};
+    "account.avatar.errors.offline": {};
+    "account.avatar.errors.refused": { "status": string | number };
+    "account.avatar.errors.tooLarge": {};
+    "account.avatar.formats": {};
+    "account.avatar.needsScript": {};
+    "account.avatar.none": {};
+    "account.avatar.noneNoClick": {};
+    "account.avatar.public": {};
+    "account.avatar.publicNoScript": {};
+    "account.avatar.saving": {};
+    "account.avatar.title": {};
+    "account.avatar.upload": {};
     "bestiary.catalog.entries": {};
     "bestiary.catalog.newest": {};
     "bestiary.catalog.noMatch": {};
@@ -92,6 +108,12 @@ export interface I18nParams {
     "common.connection.reload": {};
     "common.copy": {};
     "common.create": {};
+    "common.crop.chooseFile": {};
+    "common.crop.encodeFailed": {};
+    "common.crop.keep": {};
+    "common.crop.notAnImage": {};
+    "common.crop.weight": { "format": string | number; "size": string | number };
+    "common.crop.zoom": {};
     "common.delete": {};
     "common.deleteNamed": { "name": string | number };
     "common.difficulty": {};
@@ -681,17 +703,11 @@ export interface I18nParams {
     "sheet.profile.info.homeworld": {};
     "sheet.profile.info.origin": {};
     "sheet.profile.info.warbandName": {};
-    "sheet.profile.portrait.chooseFile": {};
     "sheet.profile.portrait.confirmDelete": {};
     "sheet.profile.portrait.edit": {};
-    "sheet.profile.portrait.encodeFailed": {};
     "sheet.profile.portrait.fullSize": {};
-    "sheet.profile.portrait.keep": {};
-    "sheet.profile.portrait.notAnImage": {};
     "sheet.profile.portrait.title": {};
     "sheet.profile.portrait.upload": {};
-    "sheet.profile.portrait.weight": { "format": string | number; "size": string | number };
-    "sheet.profile.portrait.zoom": {};
     "sheet.rolls.block.sameForAll": {};
     "sheet.rolls.block.sheetCounts": {};
     "sheet.rolls.block.testedOn": { "rolls": string | number };
