@@ -7,7 +7,15 @@
 <table>
     <tr>
         <th>{{t $.Lang "site.account.name"}}</th>
-        <td>{{.Name}}</td>
+        {{- /* account.js (ui/static/js/account/Name.tsx) draws the cell anew from data-*, with ✎ to
+             rename in place; without the script it is the name and the former ones. */}}
+        <td id="account-name" data-name="{{.Name}}" data-former="{{$.FormerNamesJSON}}" data-csrf="{{$.CSRFToken}}">
+            <span class="account-name">{{.Name}}</span>
+            {{- with $.FormerNames}}
+            <p class="account-former-names">{{t $.Lang "account.name.former"}}
+                {{- range $i, $n := .}}{{if $i}},{{end}} {{$n.Name}} <span class="hint">({{$n.Date}})</span>{{end}}</p>
+            {{- end}}
+        </td>
     </tr>
     <tr>
         <th>{{t $.Lang "site.account.email"}}</th>

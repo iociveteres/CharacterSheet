@@ -18,6 +18,11 @@ export interface I18nParams {
     "account.avatar.saving": {};
     "account.avatar.title": {};
     "account.avatar.upload": {};
+    "account.name.errors.offline": {};
+    "account.name.errors.refused": { "status": string | number };
+    "account.name.field": {};
+    "account.name.former": {};
+    "account.name.rename": {};
     "bestiary.catalog.entries": {};
     "bestiary.catalog.newest": {};
     "bestiary.catalog.noMatch": {};

@@ -140,6 +140,26 @@ func TestUserPagePages(t *testing.T) {
 	assert.Equal(t, strings.Count(body, `class="forum-row-title"`), 21)
 }
 
+// The head lists the last 10 former names, the latest first, to everyone; none without a history.
+func TestUserPageFormerNames(t *testing.T) {
+	s := newUserScene(t)
+	assert.Equal(t, strings.Contains(s.page(t, 0, s.bob, ""), `class="forum-user-former"`), false)
+
+	for i := range 12 {
+		_, err := s.db.Exec(context.Background(), `INSERT INTO user_name_history (user_id, name, changed_at) VALUES ($1, $2, $3)`,
+			s.bob, fmt.Sprintf("bob-%02d", i), at(i))
+		assert.NilError(t, err)
+	}
+	body := s.page(t, 0, s.bob, "")
+	assert.StringContains(t, body, `class="forum-user-former"`)
+	newest, tenth := strings.Index(body, "bob-11"), strings.Index(body, "bob-02")
+	if newest < 0 || tenth < newest {
+		t.Errorf("not the latest first: bob-11 at %d, bob-02 at %d", newest, tenth)
+	}
+	assert.Equal(t, strings.Contains(body, "bob-01"), false)
+	assert.StringContains(t, s.page(t, s.alice, s.bob, ""), "bob-11")
+}
+
 // The ban line of the head and the moderators' block: a moderator on another's page only (decision
 // 20). The banned user reads the notice at the top instead; nobody else sees anything.
 func TestUserPageBanLineAndModBlock(t *testing.T) {

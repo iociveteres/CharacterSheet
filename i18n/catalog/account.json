@@ -14,5 +14,10 @@
   "account.avatar.errors.locked": { "en": "Not saved: a moderator has locked uploading an avatar", "ru": "Не сохранилось: модератор запретил загружать аватар" },
   "account.avatar.errors.tooLarge": { "en": "Not saved: the image is larger than 64 KB", "ru": "Не сохранилось: изображение больше 64 КБ" },
   "account.avatar.errors.offline": { "en": "No connection to the server: the avatar has not changed", "ru": "Нет связи с сервером: аватар не изменился" },
-  "account.avatar.errors.refused": { "en": "The server refused: {status}. The avatar has not changed", "ru": "Сервер отказал: {status}. Аватар не изменился", "note": "{status} — код ответа HTTP, число" }
+  "account.avatar.errors.refused": { "en": "The server refused: {status}. The avatar has not changed", "ru": "Сервер отказал: {status}. Аватар не изменился", "note": "{status} — код ответа HTTP, число" },
+  "account.name.rename": { "en": "Change the name", "ru": "Сменить имя", "note": "подсказка для экранного диктора у ✎ после имени на странице «Аккаунт»" },
+  "account.name.field": { "en": "New name", "ru": "Новое имя", "note": "подпись поля имени для экранного диктора" },
+  "account.name.former": { "en": "Previously:", "ru": "Ранее:", "note": "под именем: за подписью — прежние имена через запятую, у каждого дата смены в скобках" },
+  "account.name.errors.offline": { "en": "No connection to the server: the name has not changed", "ru": "Нет связи с сервером: имя не изменилось" },
+  "account.name.errors.refused": { "en": "The server refused: {status}. The name has not changed", "ru": "Сервер отказал: {status}. Имя не изменилось", "note": "{status} — код ответа HTTP, число" }
 }

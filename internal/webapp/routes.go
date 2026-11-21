@@ -30,6 +30,8 @@ type limiters struct {
 	uploadsPerUser *ratelimit.Limiter
 	// The email with the link of the account's deletion page.
 	deleteLinkPerUser *ratelimit.Limiter
+	// Renames of the Account page: the name history is not swollen by a script.
+	renamePerUser *ratelimit.Limiter
 
 	all []*ratelimit.Limiter
 }
@@ -51,6 +53,7 @@ func newLimiters() *limiters {
 	ls.resetPerEmail = add(3, time.Hour, 3)
 	ls.uploadsPerUser = add(20, time.Minute, 20)
 	ls.deleteLinkPerUser = add(1, 10*time.Minute, 1)
+	ls.renamePerUser = add(10, time.Hour, 10)
 	return ls
 }
 
@@ -147,6 +150,9 @@ func (app *Application) Routes() http.Handler {
 	protected := dynamic.Append(app.requireAuthentication)
 	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.signedInUser, nil))
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodPut, "/account/name", protected.Append(
+		app.rateLimit(limits.renamePerUser, app.signedInUser, app.refuseRename),
+	).ThenFunc(app.accountNamePut))
 	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
 	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
 	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))

@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"html/template"
 	"time"
 
@@ -41,6 +42,7 @@ type Data struct {
 	OnlineUsers             int
 	Embedded                *EmbeddedPage           // set only for embedded.html
 	Avatar                  *AccountAvatar          // set only for account.html
+	FormerNames             []FormerName            // set only for account.html, the latest first
 	DeletionSummary         *models.DeletionSummary // set only for delete_account.html
 	DeleteAt                time.Time               // set only for account_deletion.html
 	Export                  *ExportPage             // set only for data_export.html
@@ -95,6 +97,18 @@ type ExportPage struct {
 	Size           string
 	AvailableUntil time.Time
 	NextAt         time.Time
+}
+
+// FormerNamesJSON is FormerNames for account.js, which draws the line anew after a rename.
+func (d Data) FormerNamesJSON() (string, error) {
+	b, err := json.Marshal(d.FormerNames)
+	return string(b), err
+}
+
+// FormerName is a former name of the user as shown, its date already worded.
+type FormerName struct {
+	Name string `json:"name"`
+	Date string `json:"date"`
 }
 
 // AccountAvatar is the avatar block of the Account page.

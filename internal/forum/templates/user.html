@@ -18,6 +18,10 @@
                 {{- with .LastPostID}}
                 <dt>{{t $.Lang "forum.users.lastPost"}}</dt><dd><a href="/forum/post/{{.}}">{{$.Time $.User.LastPostAt}}</a></dd>
                 {{- end}}
+                {{- with $.FormerNames}}
+                <dt>{{t $.Lang "forum.users.formerNames"}}</dt>
+                <dd class="forum-user-former">{{range $i, $n := .}}{{if $i}}, {{end}}{{$n.Name}} <span class="meta">({{humanDay $.Lang $n.ChangedAt $.TimeZone}})</span>{{end}}</dd>
+                {{- end}}
             </dl>
             {{- if $.Own}}
             <p class="meta">{{t $.Lang "forum.users.ownPage"}} <a href="{{$.AccountURL}}">{{t $.Lang "forum.users.ownPageAccount"}}</a>.</p>

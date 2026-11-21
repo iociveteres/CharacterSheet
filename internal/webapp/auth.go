@@ -37,7 +37,7 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "name", i18n.T(lang, "server.errors.form.blank"))
+	form.Name = checkName(&form.Validator, lang, form.Name)
 	form.Check(validator.NotBlank(form.Email), "email", i18n.T(lang, "server.errors.form.blank"))
 	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", i18n.T(lang, "server.errors.form.email"))
 	form.Check(validator.NotBlank(form.Password), "password", i18n.T(lang, "server.errors.form.blank"))
@@ -52,14 +52,18 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := app.Models.Users.Insert(r.Context(), form.Name, form.Email, form.Password, lang)
 	if err != nil {
-		if errors.Is(err, models.ErrDuplicateEmail) {
+		switch {
+		case errors.Is(err, models.ErrDuplicateEmail):
 			form.AddError("email", i18n.T(lang, "server.errors.form.emailInUse"))
-			data := app.newTemplateData(r)
-			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
-		} else {
+		case errors.Is(err, models.ErrDuplicateName):
+			nameTaken(&form.Validator, lang)
+		default:
 			app.serverError(w, err)
+			return
 		}
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
 		return
 	}
 
