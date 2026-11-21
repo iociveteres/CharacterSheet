@@ -9,11 +9,21 @@ import (
 )
 
 // UserModel knows user 1 (Alice); Locale is what SetLocale saved for her, InsertedLocale
-// the locale of the last Insert.
+// the locale of the last Insert. Alice's deletion is scheduled by ScheduleDeletion with
+// DeleteToken and cancelled by CancelDeletion; while it is pending she is in her grace period.
 type UserModel struct {
 	mu             sync.Mutex
 	Locale         string
 	InsertedLocale string
+	// Deletion is Alice's pending deletion, nil for none.
+	Deletion *models.DeletionChoices
+	DeleteAt time.Time
+}
+
+func (m *UserModel) deleting() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Deletion != nil
 }
 
 func (m *UserModel) Insert(ctx context.Context, name, email, password, locale string) (int, error) {
@@ -29,6 +39,9 @@ func (m *UserModel) Insert(ctx context.Context, name, email, password, locale st
 }
 func (m *UserModel) Authenticate(ctx context.Context, email, password string) (int, error) {
 	if email == "alice@example.com" && password == "pa$$word" {
+		if m.deleting() {
+			return 1, models.ErrDeletionScheduled
+		}
 		return 1, nil
 	}
 	return 0, models.ErrInvalidCredentials
@@ -49,7 +62,7 @@ func (m *UserModel) locale() string {
 }
 
 func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
-	if id != 1 {
+	if id != 1 || m.deleting() {
 		return "", models.ErrNoRecord
 	}
 	m.mu.Lock()
@@ -111,9 +124,71 @@ func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope models.Toke
 
 func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error) {
 	if tokenPlaintext == "abcdefghabcdefgh" {
+		if m.deleting() {
+			return 1, models.ErrDeletionScheduled
+		}
 		return 1, nil
 	}
 	return 0, models.ErrNoRecord
+}
+
+// DeletionSummary gives Alice a room of her own with Bob (2) and Carol (3), Carol a gamemaster.
+func (m *UserModel) DeletionSummary(ctx context.Context, userID int) (*models.DeletionSummary, error) {
+	if userID != 1 || m.deleting() {
+		return nil, models.ErrNoRecord
+	}
+	return &models.DeletionSummary{
+		Name:                "Alice",
+		LoneRooms:           []models.NamedRoom{{ID: 2, Name: "Solo"}},
+		FormerMembersSheets: 1,
+		OwnedRooms: []models.OwnedRoom{{
+			NamedRoom:   models.NamedRoom{ID: 1, Name: "Room"},
+			Members:     []models.RoomHeir{{ID: 2, Name: "Bob"}, {ID: 3, Name: "Carol"}},
+			DefaultHeir: 3,
+		}},
+		HandedSheets:       2,
+		DeletedCollections: []string{"My creatures"},
+		KeptCollections:    []models.KeptCollection{{Name: "Shared", Subscribers: 4}},
+		ChatMessages:       5,
+		ForumPosts:         1,
+		Moderator:          true,
+	}, nil
+}
+
+// DeleteToken is the token of Alice's deletion link: what TokenModel.New makes.
+const DeleteToken = "mock-token-plaintext-000000"
+
+// CancelToken is the token of the cancel link ScheduleDeletion returns.
+const CancelToken = "mock-cancel-token-00000000"
+
+func (m *UserModel) ScheduleDeletion(ctx context.Context, userID int, tokenPlaintext string, choices models.DeletionChoices) (*models.ScheduledDeletion, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID != 1 || tokenPlaintext != DeleteToken || m.Deletion != nil {
+		return nil, models.ErrNoRecord
+	}
+	m.Deletion = &choices
+	m.DeleteAt = time.Now().Add(models.DeletionGrace)
+	return &models.ScheduledDeletion{DeleteAt: m.DeleteAt, CancelToken: CancelToken}, nil
+}
+
+func (m *UserModel) PendingDeletion(ctx context.Context, userID int) (time.Time, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID != 1 || m.Deletion == nil {
+		return time.Time{}, models.ErrNoRecord
+	}
+	return m.DeleteAt, nil
+}
+
+func (m *UserModel) CancelDeletion(ctx context.Context, userID int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID != 1 || m.Deletion == nil {
+		return models.ErrNoRecord
+	}
+	m.Deletion = nil
+	return nil
 }
 
 func (m *UserModel) Wipe(ctx context.Context, userID int) (*models.WipedAccount, error) {

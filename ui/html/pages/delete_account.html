@@ -1,0 +1,78 @@
+{{define "title"}}{{t .Lang "site.account.delete.title"}}{{end}}
+{{define "main"}}
+{{- /* The deletion page of the link of an email (internal/webapp/account_deletion.go): what the
+     deletion does with what is the user's, the heirs and boxes, and the phrase that confirms. */}}
+<meta name="referrer" content="no-referrer" />
+<div class="account-page">
+{{with .DeletionSummary}}
+<h2>{{t $.Lang "site.account.delete.pageTitle" "name" .Name}}</h2>
+<form class="account-section account-delete" method="POST" action='{{reverseRev "AccountDeleteConfirm" $.Token}}'>
+    <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+
+    {{with .LoneRooms}}
+    <p>{{t $.Lang "site.account.delete.loneRooms"}}</p>
+    <ul>{{range .}}<li>{{.Name}}</li>{{end}}</ul>
+    {{end}}
+    {{with .FormerMembersSheets}}<p>{{t $.Lang "site.account.delete.formerSheets" "count" .}}</p>{{end}}
+
+    {{with .OwnedRooms}}
+    <p>{{t $.Lang "site.account.delete.ownedRooms"}}</p>
+    {{range .}}
+    {{$picked := index $.Form.Heirs .ID}}
+    <div class="delete-heir">
+        <label for="heir-{{.ID}}">{{t $.Lang "site.account.delete.heir" "room" .Name}}</label>
+        <select id="heir-{{.ID}}" name="heirs[{{.ID}}]">
+            {{range .Members}}<option value="{{.ID}}"{{if eq .ID $picked}} selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+    </div>
+    {{end}}
+    {{end}}
+
+    {{with .HandedSheets}}<p>{{t $.Lang "site.account.delete.handedSheets" "count" .}}</p>{{end}}
+
+    {{with .DeletedCollections}}
+    <p>{{t $.Lang "site.account.delete.deletedCollections"}}</p>
+    <ul>{{range .}}<li>{{.}}</li>{{end}}</ul>
+    {{end}}
+    {{with .KeptCollections}}
+    <p>{{t $.Lang "site.account.delete.keptCollections"}}</p>
+    <ul>{{range .}}<li>{{t $.Lang "site.account.delete.subscribers" "name" .Name "count" .Subscribers}}</li>{{end}}</ul>
+    {{end}}
+
+    {{$deletedUser := t $.Lang "common.deletedUser"}}
+    <label class="delete-box">
+        <input type="checkbox" name="chat" value="true"{{if $.Form.ChatMessages}} checked{{end}}>
+        <span>{{t $.Lang "site.account.delete.chat" "count" .ChatMessages}}
+            <span class="hint">{{t $.Lang "site.account.delete.chatHint" "deletedUser" $deletedUser}}</span></span>
+    </label>
+    <label class="delete-box">
+        <input type="checkbox" name="posts" value="true"{{if $.Form.ForumPosts}} checked{{end}}>
+        <span>{{t $.Lang "site.account.delete.posts" "count" .ForumPosts}}
+            <span class="hint">{{t $.Lang "site.account.delete.postsHint" "deletedUser" $deletedUser}}</span></span>
+    </label>
+    {{if .KeptCollections}}
+    <label class="delete-box">
+        <input type="checkbox" name="collections" value="true"{{if $.Form.PublicCollections}} checked{{end}}>
+        <span>{{t $.Lang "site.account.delete.collections"}}
+            <span class="hint">{{t $.Lang "site.account.delete.collectionsHint"}}</span></span>
+    </label>
+    {{end}}
+
+    {{if .Moderator}}<p class="delete-warning">{{t $.Lang "site.account.delete.moderator"}}</p>{{end}}
+
+    {{- /* 3: models.DeletionGrace. */}}
+    <p class="delete-warning">{{t $.Lang "site.account.delete.grace" "count" 3}}</p>
+
+    <div class="delete-phrase">
+        <label for="delete-phrase">{{t $.Lang "site.account.delete.phraseLabel" "phrase" (t $.Lang "site.account.delete.phrase" "name" .Name)}}</label>
+        {{with $.Form.Errors.phrase}}<label class='error' for="delete-phrase">{{.}}</label>{{end}}
+        <input id="delete-phrase" type="text" name="phrase" value="{{$.Form.Phrase}}" autocomplete="off" required>
+    </div>
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountView"}}'>{{t $.Lang "site.account.delete.back"}}</a>
+        <input type='submit' class="muted" value='{{t $.Lang "site.account.delete.submit"}}'>
+    </div>
+</form>
+{{end}}
+</div>
+{{end}}

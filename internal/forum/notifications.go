@@ -92,6 +92,8 @@ func notifyOfReply(ctx context.Context, tx pgx.Tx, topicID, postID, authorID int
 			-- notifies nobody (decision 12).
 			SELECT p.author_id FROM unnest($1::int[]) WITH ORDINALITY AS q(id, n)
 			JOIN forum_posts p ON p.id = q.id
+			-- A deleted account gets nothing (plan _prd/account_deletion, section 3).
+			JOIN users a ON a.id = p.author_id AND a.status <> 'deleted'
 			WHERE p.topic_id = $2 AND p.author_id <> $4
 			GROUP BY p.author_id
 			ORDER BY min(q.n)
@@ -203,6 +205,8 @@ func notifyOfModeration(ctx context.Context, tx pgx.Tx, e modEntry) error {
 		LEFT JOIN forum_posts p ON p.id = $3
 		LEFT JOIN users u ON u.id = $4
 		WHERE `+recipient+` IS NOT NULL AND `+recipient+` <> $7
+		  -- A deleted account gets nothing (plan _prd/account_deletion, section 3).
+		  AND NOT EXISTS (SELECT 1 FROM users r WHERE r.id = `+recipient+` AND r.status = 'deleted')
 		RETURNING user_id`,
 		string(e.Action), e.TopicID, e.PostID, e.UserID, params, e.At, e.ModeratorID)
 	return err

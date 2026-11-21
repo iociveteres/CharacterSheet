@@ -39,9 +39,11 @@ type Data struct {
 	ShowIncidentNotice      bool
 	Token                   string
 	OnlineUsers             int
-	Embedded                *EmbeddedPage  // set only for embedded.html
-	Avatar                  *AccountAvatar // set only for account.html
-	Head                    *PageHead      // what a site page adds to base.html's head; nil for most
+	Embedded                *EmbeddedPage           // set only for embedded.html
+	Avatar                  *AccountAvatar          // set only for account.html
+	DeletionSummary         *models.DeletionSummary // set only for delete_account.html
+	DeleteAt                time.Time               // set only for account_deletion.html
+	Head                    *PageHead               // what a site page adds to base.html's head; nil for most
 	// ForumBadge counts the unread forum notifications of the signed-in user as the nav shows them
 	// ("3", "9+", empty for none); nil for a guest. It is called only by the nav, so a page drawn
 	// without it (a room) never asks the forum.

@@ -29,3 +29,20 @@ func (m *TokenModel) DeleteAllForUser(ctx context.Context, scope models.TokenSco
 func (m *TokenModel) CheckExists(ctx context.Context, scope models.TokenScope, tokenPlaintext string) (bool, error) {
 	return tokenPlaintext == "abcdefghabcdefgh", nil
 }
+
+// OthersDeleteToken is a deletion link's token of user 2.
+const OthersDeleteToken = "others-delete-token-000000"
+
+// UserID knows the tokens of the deletion and cancel links of Alice and the deletion link of
+// user 2; whether a cancel link still works is up to UserModel.CancelDeletion.
+func (m *TokenModel) UserID(ctx context.Context, scope models.TokenScope, tokenPlaintext string) (int, error) {
+	switch {
+	case scope == models.ScopeDeleteAccount && tokenPlaintext == DeleteToken:
+		return 1, nil
+	case scope == models.ScopeDeleteAccount && tokenPlaintext == OthersDeleteToken:
+		return 2, nil
+	case scope == models.ScopeCancelDeletion && tokenPlaintext == CancelToken:
+		return 1, nil
+	}
+	return 0, models.ErrNoRecord
+}

@@ -1,0 +1,16 @@
+{{define "subject"}}Charactersheet account deletion{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+You asked to delete your account. To choose what becomes of your rooms, messages and posts and to confirm the deletion, open the following link within 1 hour:
+{{.DeleteLink}}
+
+If it wasn't you, do nothing: your account stays as it is.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>You asked to delete your account. To choose what becomes of your rooms, messages and posts and to confirm the deletion, open the following link within 1 hour:</p>
+<p><a href="{{.DeleteLink}}">{{.DeleteLink}}</a></p>
+<p>If it wasn't you, do nothing: your account stays as it is.</p>
+{{end}}

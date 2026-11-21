@@ -28,6 +28,8 @@ type limiters struct {
 	resetPerEmail    *ratelimit.Limiter
 	// Sheet import and the bestiary and encounter uploads share it.
 	uploadsPerUser *ratelimit.Limiter
+	// The email with the link of the account's deletion page.
+	deleteLinkPerUser *ratelimit.Limiter
 
 	all []*ratelimit.Limiter
 }
@@ -48,6 +50,7 @@ func newLimiters() *limiters {
 	ls.resetPerAddress = add(3, time.Hour, 3)
 	ls.resetPerEmail = add(3, time.Hour, 3)
 	ls.uploadsPerUser = add(20, time.Minute, 20)
+	ls.deleteLinkPerUser = add(1, 10*time.Minute, 1)
 	return ls
 }
 
@@ -70,7 +73,8 @@ func (app *Application) resendUser(r *http.Request) string {
 	return ""
 }
 
-func (app *Application) uploader(r *http.Request) string {
+// signedInUser counts by the signed-in user.
+func (app *Application) signedInUser(r *http.Request) string {
 	return strconv.Itoa(app.userID(r))
 }
 
@@ -137,13 +141,25 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodPost, routeAdd("Language", "/language"), dynamic.ThenFunc(app.languagePost))
 
 	protected := dynamic.Append(app.requireAuthentication)
-	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.uploader, nil))
+	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.signedInUser, nil))
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
 	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
 	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
 	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))
 	// Public: no session, no CSRF; anyone may see an avatar (internal/webapp/avatars.go).
 	router.HandlerFunc(http.MethodGet, "/avatar/:hash", app.avatarGet)
+
+	// The deletion of the account (account_deletion.go): the email with the link, the deletion
+	// page of the link, the grace page and the cancel link of the email.
+	router.Handler(http.MethodPost, routeAdd("AccountDelete", "/account/delete"), protected.Append(
+		app.rateLimit(limits.deleteLinkPerUser, app.signedInUser, app.refuseDeleteLink),
+	).ThenFunc(app.accountDeletePost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeleteConfirm", "/account/delete/token/:token", ":token"), protected.ThenFunc(app.accountDeleteConfirm))
+	router.Handler(http.MethodPost, reverse.Get("AccountDeleteConfirm"), alice.New(app.limitBody(maxFormBody)).Extend(protected).ThenFunc(app.accountDeleteConfirmPost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeletion", "/account/deletion"), dynamic.ThenFunc(app.accountDeletion))
+	router.Handler(http.MethodPost, routeAdd("AccountDeletionCancel", "/account/deletion/cancel"), form.ThenFunc(app.accountDeletionCancelPost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeletionCancelLink", "/account/deletion/cancel/token/:token", ":token"), dynamic.ThenFunc(app.accountDeletionCancelLink))
+	router.Handler(http.MethodPost, reverse.Get("AccountDeletionCancelLink"), form.ThenFunc(app.accountDeletionCancelLinkPost))
 
 	router.Handler(http.MethodGet, routeAdd("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
 	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), form.ThenFunc(app.accountPasswordResetPost))

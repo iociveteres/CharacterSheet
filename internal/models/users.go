@@ -26,6 +26,10 @@ type UserModelInterface interface {
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
 	PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error)
 	ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error)
+	DeletionSummary(ctx context.Context, userID int) (*DeletionSummary, error)
+	ScheduleDeletion(ctx context.Context, userID int, tokenPlaintext string, choices DeletionChoices) (*ScheduledDeletion, error)
+	PendingDeletion(ctx context.Context, userID int) (time.Time, error)
+	CancelDeletion(ctx context.Context, userID int) error
 	Wipe(ctx context.Context, userID int) (*WipedAccount, error)
 	DeletePending(ctx context.Context, olderThan time.Duration) (int64, error)
 }
@@ -253,6 +257,10 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 	return err
 }
 
+// PasswordReset sets the password of the user of the token and uses the token up. As
+// Authenticate, it tells an account that may not sign in by the error, with the id:
+// ErrUserNotActivated for one not confirmed, ErrDeletionScheduled for one in its grace period.
+// The password is changed in both cases.
 func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
@@ -284,18 +292,27 @@ func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, ne
 		return 0, err
 	}
 
-	stmt := `
-	UPDATE users 
-	SET hashed_password = $1 
-	WHERE id = $2`
-
-	_, err = tx.Exec(ctx, stmt, string(newHashedPassword), userID)
+	var status userStatus
+	err = tx.QueryRow(ctx, `
+	UPDATE users
+	SET hashed_password = $1
+	WHERE id = $2
+	RETURNING status`, string(newHashedPassword), userID).Scan(&status)
+	if err != nil {
+		return 0, err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
-
-	return userID, err
+	switch status {
+	case statusEmailVerified:
+		return userID, nil
+	case statusDeleting:
+		return userID, ErrDeletionScheduled
+	default:
+		return userID, ErrUserNotActivated
+	}
 }
 
 func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error) {

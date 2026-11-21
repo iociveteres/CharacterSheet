@@ -218,15 +218,67 @@ html[data-theme="dark"] .avatar-hue {
 /* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
 .account-page > table,
 .account-page .avatar-settings,
-.account-page .theme-settings {
+.account-page .theme-settings,
+.account-page .account-section {
     background: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
 }
 
 .account-page .avatar-settings,
-.account-page .theme-settings {
+.account-page .theme-settings,
+.account-page .account-section {
     padding: 10px 14px 14px;
+}
+
+/* The deletion of the account: its block on the Account page and the pages of the deletion
+   (ui/html/pages/delete_account.html, account_deletion.html, cancel_deletion.html). */
+.account-page .theme-settings + .account-section {
+    margin-top: 28px;
+}
+
+.account-delete p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.account-delete ul {
+    margin: 0 0 10px;
+}
+
+.account-delete .delete-heir,
+.account-delete .delete-box {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.account-delete .delete-heir select {
+    min-width: 0;
+}
+
+.account-delete .hint {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.account-delete .delete-warning {
+    font-weight: bold;
+}
+
+.account-delete .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+}
+
+/* form div:last-child draws a dashed rule over the buttons of the site's forms; the panel has its own edge. */
+.account-delete div.delete-actions:last-child {
+    border-top: none;
+    margin-bottom: 0;
 }
 
 /* tr:nth-child(2n) is bg-light, a level above the panel. */
