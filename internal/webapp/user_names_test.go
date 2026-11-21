@@ -121,4 +121,9 @@ func TestAccountViewFormerNames(t *testing.T) {
 	assert.StringContains(t, body, `data-name="Alice"`)
 	assert.StringContains(t, body, `&#34;name&#34;:&#34;Bobby&#34;`)
 	assert.StringContains(t, body, `&#34;name&#34;:&#34;Robert&#34;`)
+	// Without the script: ▾ and its panel, the latest first.
+	assert.StringContains(t, body, `<details class="former-names">`)
+	if bobby, robert := strings.Index(body, `<span class="former-name">Bobby</span>`), strings.Index(body, `<span class="former-name">Robert</span>`); bobby < 0 || robert < bobby {
+		t.Errorf("former names not listed latest first: Bobby at %d, Robert at %d", bobby, robert)
+	}
 }

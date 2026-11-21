@@ -72,4 +72,19 @@ describe("the forum script", () => {
         field.dispatchEvent(new Event("input", { bubbles: true }));
         expect(counter.textContent).toBe("5");
     });
+
+    it("closes the former names of a user page by a click elsewhere or Esc", () => {
+        const summary = el("summary", { class: "former-names-toggle" }, "▾");
+        const name = el("span", { class: "former-name" }, "bob");
+        const details = el("details", { class: "former-names", open: "" }, summary, el("div", { class: "former-names-panel" }, name)) as HTMLDetailsElement;
+        const elsewhere = el("p", {}, "posts");
+        document.body.append(el("div", { id: "forum" }, details, elsewhere));
+        click(name);
+        expect(details.open).toBe(true);
+        click(elsewhere);
+        expect(details.open).toBe(false);
+        details.open = true;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(false);
+    });
 });

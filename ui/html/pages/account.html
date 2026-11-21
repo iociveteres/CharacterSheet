@@ -8,12 +8,22 @@
     <tr>
         <th>{{t $.Lang "site.account.name"}}</th>
         {{- /* account.js (ui/static/js/account/Name.tsx) draws the cell anew from data-*, with ✎ to
-             rename in place; without the script it is the name and the former ones. */}}
+             rename in place; without the script it is the name and its ▾ of former names, a
+             <details> as the forum's user page has (main.css, .former-names). */}}
         <td id="account-name" data-name="{{.Name}}" data-former="{{$.FormerNamesJSON}}" data-csrf="{{$.CSRFToken}}">
             <span class="account-name">{{.Name}}</span>
             {{- with $.FormerNames}}
-            <p class="account-former-names">{{t $.Lang "account.name.former"}}
-                {{- range $i, $n := .}}{{if $i}},{{end}} {{$n.Name}} <span class="hint">({{$n.Date}})</span>{{end}}</p>
+            <details class="former-names">
+                <summary class="former-names-toggle" title="{{t $.Lang "account.name.former"}}" aria-label="{{t $.Lang "account.name.former"}}">▾</summary>
+                <div class="former-names-panel">
+                    <div class="former-names-title">{{t $.Lang "account.name.former"}}</div>
+                    <ol>
+                        {{- range .}}
+                        <li><span class="former-name">{{.Name}}</span><span class="former-date">{{.Date}}</span></li>
+                        {{- end}}
+                    </ol>
+                </div>
+            </details>
             {{- end}}
         </td>
     </tr>

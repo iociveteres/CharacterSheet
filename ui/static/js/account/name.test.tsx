@@ -34,7 +34,9 @@ function renderRow(former: FormerName[] = []) {
 const shownName = () => container.querySelector(".account-name")?.textContent ?? null;
 const field = () => container.querySelector<HTMLInputElement>(".account-name-input");
 const error = () => container.querySelector(".account-name-error");
-const formerLine = () => container.querySelector(".account-former-names");
+const formerNames = () => container.querySelector<HTMLDetailsElement>("details.former-names");
+const formerRows = () => [...container.querySelectorAll(".former-names-panel li")]
+    .map(li => [li.querySelector(".former-name")?.textContent, li.querySelector(".former-date")?.textContent]);
 
 function openField() {
     act(() => container.querySelector<HTMLElement>(".account-rename")!.click());
@@ -54,7 +56,7 @@ async function typeAndPress(value: string, key: string) {
 describe("NameRow", () => {
     it("sends the new name on Enter and shows what the server stored", async () => {
         renderRow();
-        expect(formerLine()).toBeNull();
+        expect(formerNames()).toBeNull();
         fetchMock.mockResolvedValue(answer(200, { name: "Bob", initial: "B", former: [{ name: "Alice", date: "21.11.2026" }] }));
         openField();
         await typeAndPress("  Bob ", "Enter");
@@ -67,8 +69,7 @@ describe("NameRow", () => {
         expect(JSON.parse(init.body)).toEqual({ name: "  Bob " });
         expect(field()).toBeNull();
         expect(shownName()).toBe("Bob");
-        expect(formerLine()?.textContent).toContain("Alice");
-        expect(formerLine()?.textContent).toContain("21.11.2026");
+        expect(formerRows()).toEqual([["Alice", "21.11.2026"]]);
         expect(renamed).toHaveBeenCalledWith("B");
     });
 
@@ -105,7 +106,30 @@ describe("NameRow", () => {
         expect(field()).toBeNull();
         expect(fetchMock).not.toHaveBeenCalled();
         expect(shownName()).toBe("Alice");
-        expect(formerLine()?.textContent).toContain("Al");
+        expect(formerRows()).toEqual([["Al", "01.10.2026"]]);
+    });
+
+    it("lists the former names under ▾, the latest first, closed by a click elsewhere or Esc", () => {
+        renderRow([{ name: "Bob", date: "02.11.2026" }, { name: "Al", date: "01.10.2026" }]);
+        expect(formerRows()).toEqual([["Bob", "02.11.2026"], ["Al", "01.10.2026"]]);
+        const details = formerNames()!;
+        details.open = true;
+        act(() => details.querySelector<HTMLElement>(".former-names-panel li")!.click());
+        expect(details.open).toBe(true);
+        act(() => document.body.click());
+        expect(details.open).toBe(false);
+
+        details.open = true;
+        act(() => {
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        });
+        expect(details.open).toBe(false);
+    });
+
+    it("hides ▾ while the name is edited", () => {
+        renderRow([{ name: "Al", date: "01.10.2026" }]);
+        openField();
+        expect(formerNames()).toBeNull();
     });
 
     it("shows an error when the server cannot be reached", async () => {

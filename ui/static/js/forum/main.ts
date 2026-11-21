@@ -11,9 +11,19 @@ import { quoteOf } from "./quote";
 // forum.css opens a spoiler on focus only without the script; with it a click toggles .open.
 document.documentElement.classList.add("forum-js");
 
+// The ▾ of former names on a user page (user.html) is a <details>: a click elsewhere or Esc closes it.
+function closeFormerNames(except: Element | null): void {
+    for (const details of document.querySelectorAll<HTMLDetailsElement>("details.former-names[open]")) {
+        if (except && details.contains(except)) continue;
+        details.open = false;
+        if (details.contains(document.activeElement)) details.querySelector("summary")?.focus();
+    }
+}
+
 document.addEventListener("click", event => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+    closeFormerNames(target);
 
     const tab = target.closest<HTMLButtonElement>(".forum-tabs-bar button.tab");
     if (tab) {
@@ -46,6 +56,7 @@ document.addEventListener("mousedown", event => {
 });
 
 document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeFormerNames(null);
     const target = event.target;
     if (!(target instanceof Element) || !target.matches(".forum-post-body .spoiler")) return;
     if (event.key !== "Enter" && event.key !== " ") return;

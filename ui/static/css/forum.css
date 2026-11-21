@@ -2024,6 +2024,25 @@ main.forum-wide {
     overflow-wrap: anywhere;
 }
 
+/* The name and its ▾ of former names (main.css, .former-names); the panel hangs from the line of
+   the name, its left edge under the name's, so a long name does not push it off the screen. */
+.forum-user-name {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    min-width: 0;
+}
+
+.forum-user-name .former-names {
+    position: static;
+}
+
+/* The column beside the avatar is narrower than the screen on a phone. */
+.forum-user-name .former-names-panel {
+    max-width: min(22rem, 100%);
+}
+
 .forum-user-info .role {
     color: var(--text-secondary);
     font-size: 15px;

@@ -1,7 +1,7 @@
 // The name of the Account page renamed in place (ui/html/pages/account.html, DESIGN.md, Editing):
 // ✎ after the name opens the field, Enter or leaving it sends PUT /account/name
 // (internal/webapp/user_names.go), Esc keeps the name. A refusal stays in the field with its error
-// under it. The former names follow, as the server answers them.
+// under it. ▾ after the name opens the former names, as the server answers them.
 import { useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../i18n";
 
@@ -118,17 +118,50 @@ export function NameRow(props: NameRowProps) {
             ) : (
                 <>
                     <span class="account-name">{name}</span>
+                    {former.length > 0 && <FormerNames former={former} />}
                     <button type="button" class="account-rename" title={t("common.rename")} aria-label={t("account.name.rename")}
                         onClick={() => setEditing(true)}>✎</button>
                 </>
             )}
             {error && <p class="account-name-error" id="account-name-error">{error}</p>}
-            {former.length > 0 && (
-                <p class="account-former-names">
-                    {t("account.name.former")}
-                    {former.map((f, i) => <>{i > 0 && ","} {f.name} <span class="hint">({f.date})</span></>)}
-                </p>
-            )}
         </>
+    );
+}
+
+/**
+ * ▾ after the name and the panel of the former names under it: a <details>, as the server draws it
+ * without the script (ui/html/pages/account.html, main.css). A click elsewhere or Esc closes it.
+ */
+function FormerNames({ former }: { former: FormerName[] }) {
+    const details = useRef<HTMLDetailsElement>(null);
+    useEffect(() => {
+        const onClick = (e: MouseEvent) => {
+            const el = details.current;
+            if (el?.open && !el.contains(e.target as Node)) el.open = false;
+        };
+        const onKey = (e: KeyboardEvent) => {
+            const el = details.current;
+            if (e.key !== "Escape" || !el?.open) return;
+            el.open = false;
+            el.querySelector("summary")?.focus();
+        };
+        document.addEventListener("click", onClick);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("click", onClick);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, []);
+    const title = t("account.name.former");
+    return (
+        <details class="former-names" ref={details}>
+            <summary class="former-names-toggle" title={title} aria-label={title}>▾</summary>
+            <div class="former-names-panel">
+                <div class="former-names-title">{title}</div>
+                <ol>
+                    {former.map(f => <li><span class="former-name">{f.name}</span><span class="former-date">{f.date}</span></li>)}
+                </ol>
+            </div>
+        </details>
     );
 }

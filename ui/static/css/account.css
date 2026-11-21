@@ -187,15 +187,11 @@ main:has(#avatar) {
 }
 
 /* The name renamed in place (ui/static/js/account/Name.tsx). The cell is right-aligned as the
-   table's last column; the error and the former names go under the name. */
+   table's last column; the error goes under the name. */
 #account-name p {
     margin: 4px 0 0;
     font-size: 14px;
     line-height: 1.4;
-}
-
-.account-former-names .hint {
-    color: var(--text-secondary);
 }
 
 #account-name .account-name-error {
@@ -261,4 +257,20 @@ main:has(#avatar) {
 #account-email .account-email-cancel {
     font-family: inherit;
     font-size: inherit;
+}
+
+/* The panel of former names (main.css, .former-names) hangs from the cell, its right edge under the
+   end of the name: the name is the right column. */
+#account-name {
+    position: relative;
+}
+
+#account-name .former-names {
+    position: static;
+}
+
+#account-name .former-names-panel {
+    right: 18px;
+    left: auto;
+    text-align: left;
 }

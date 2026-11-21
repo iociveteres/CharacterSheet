@@ -5,7 +5,7 @@
   "forum.users.topicCount": { "en": "Topics", "ru": "Темы", "note": "подпись в шапке страницы пользователя (справа — число) и вкладка «Темы · 1» со списком его тем" },
   "forum.users.topics": { "en": "topics", "ru": "темы", "note": "в заголовке вкладки браузера: «Имя — темы», страница пользователя на вкладке его тем" },
   "forum.users.lastPost": { "en": "Last post", "ru": "Последнее сообщение", "note": "подпись в шапке страницы пользователя, справа — когда (ссылка на сообщение)" },
-  "forum.users.formerNames": { "en": "Previously", "ru": "Ранее", "note": "подпись в шапке страницы пользователя, справа — прежние имена через запятую, у каждого дата смены в скобках" },
+  "forum.users.formerNames": { "en": "Former names", "ru": "Прежние имена", "note": "заголовок панели под ▾ после имени в шапке страницы пользователя и подсказка у ▾; в панели прежние имена столбиком, у каждого дата смены" },
   "forum.users.ownPage": { "en": "This is your page. The name and the avatar are changed on the page", "ru": "Это ваша страница. Имя и аватар меняются на странице", "note": "строка на своей странице форума; дальше — ссылка forum.users.ownPageAccount и точка" },
   "forum.users.ownPageAccount": { "en": "“Account”", "ru": "«Аккаунт»", "note": "ссылка на страницу «Аккаунт» сайта в конце строки forum.users.ownPage" },
   "forum.users.bannedUntil": { "en": "Cannot write on the forum until {date}.", "ru": "Не может писать на форуме до {date}.", "note": "строка в шапке чужой страницы пользователя, видна только модераторам; {date} — конец бана" },

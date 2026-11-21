@@ -17,7 +17,7 @@
   "account.avatar.errors.refused": { "en": "The server refused: {status}. The avatar has not changed", "ru": "Сервер отказал: {status}. Аватар не изменился", "note": "{status} — код ответа HTTP, число" },
   "account.name.rename": { "en": "Change the name", "ru": "Сменить имя", "note": "подсказка для экранного диктора у ✎ после имени на странице «Аккаунт»" },
   "account.name.field": { "en": "New name", "ru": "Новое имя", "note": "подпись поля имени для экранного диктора" },
-  "account.name.former": { "en": "Previously:", "ru": "Ранее:", "note": "под именем: за подписью — прежние имена через запятую, у каждого дата смены в скобках" },
+  "account.name.former": { "en": "Former names", "ru": "Прежние имена", "note": "заголовок панели под ▾ после имени на странице «Аккаунт» и подсказка у ▾; в панели прежние имена столбиком, у каждого дата смены" },
   "account.name.errors.offline": { "en": "No connection to the server: the name has not changed", "ru": "Нет связи с сервером: имя не изменилось" },
   "account.name.errors.refused": { "en": "The server refused: {status}. The name has not changed", "ru": "Сервер отказал: {status}. Имя не изменилось", "note": "{status} — код ответа HTTP, число" }
 }

@@ -215,6 +215,87 @@ html[data-theme="dark"] .avatar-hue {
 .avatar-hue-8 { --avatar-hue: 288; }
 .avatar-hue-9 { --avatar-hue: 324; }
 
+/* ▾ after a user's name and the panel of the former names under it (_prd/account_name_email,
+   plan.md §3), on the Account page and the forum's user page: a <details>, so it opens without a
+   script; the scripts close it on a click elsewhere and on Esc. The panel lies over the page, as a
+   menu, one level above it; the pages place it (account.css, forum.css). */
+.former-names {
+    display: inline-block;
+    position: relative;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+/* An icon (DESIGN.md): no border, faint until hovered or open. */
+.former-names-toggle {
+    list-style: none;
+    padding: 0 4px;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    cursor: pointer;
+    user-select: none;
+}
+
+.former-names-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.former-names-toggle:hover,
+.former-names[open] > .former-names-toggle {
+    opacity: 1;
+}
+
+.former-names-panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    box-sizing: border-box;
+    width: max-content;
+    min-width: 200px;
+    max-width: min(22rem, calc(100vw - 32px));
+    padding: 6px 12px 8px;
+    color: var(--text);
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.former-names-title {
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.former-names-panel ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* A name a line, the date of leaving it muted on the right; a long name wraps. */
+.former-names-panel li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 2px 0;
+    line-height: 1.35;
+}
+
+.former-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.former-date {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
 /* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
 .account-page > table,
 .account-page .avatar-settings,
