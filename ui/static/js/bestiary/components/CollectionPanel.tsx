@@ -13,7 +13,7 @@ import { byline, kindInitials, quotaText } from "../format";
 import { Catalog } from "./Catalog";
 import { InlineName, Menu, MenuItem, useEscape } from "./common";
 import { useClickOutside } from "../../room/components/useClickOutside";
-import { t } from "../../i18n";
+import { t, userName } from "../../i18n";
 
 export function CollectionPanel() {
     const collection = selectedCollection.value;
@@ -52,7 +52,7 @@ function Collection({ collection }: { collection: BestiaryCollection }) {
                             ? t("bestiary.collections.visibility.public")
                             : t("bestiary.collections.visibility.private")}
                     </span>
-                    : <span class="bestiary-muted bestiary-owner">{t("bestiary.collection.by", { name: collection.owner })}</span>}
+                    : <span class="bestiary-muted bestiary-owner">{t("bestiary.collection.by", { name: userName(collection.owner) })}</span>}
                 <span class="bestiary-spacer" />
                 {own
                     ? <div class="bestiary-collection-actions">

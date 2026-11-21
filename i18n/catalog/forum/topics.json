@@ -3,6 +3,7 @@
   "forum.topics.pinned": { "en": "Pinned", "ru": "Закреплена", "note": "подсказка к значку булавки у темы, которая стоит в разделе сверху" },
   "forum.topics.closed": { "en": "Closed", "ru": "Закрыта", "note": "подсказка к значку замка у темы, в которой отвечают только модераторы" },
   "forum.topics.deleted": { "en": "Deleted", "ru": "Удалена", "note": "метка удалённой темы; её видят только модераторы" },
+  "forum.topics.erasedTitle": { "en": "Title erased with the account", "ru": "Заголовок стёрт вместе с аккаунтом", "note": "вместо заголовка темы, которую автор стёр целиком, удаляя аккаунт; видят только модераторы и уведомления" },
   "forum.topics.empty": { "en": "No topics in this section yet.", "ru": "В этом разделе пока нет тем." },
   "forum.topics.pages": { "en": "Pages", "ru": "Страницы", "note": "для экранного диктора: номера страниц раздела или темы" },
   "forum.topics.previousPage": { "en": "Previous page", "ru": "Предыдущая страница", "note": "для экранного диктора: стрелка ←" },

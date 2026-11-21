@@ -1,0 +1,16 @@
+{{define "title"}}{{t .Lang "site.account.delete.cancel"}}{{end}}
+{{define "main"}}
+{{- /* The cancel link of an email: a button, since mail scanners open links on their own
+     (internal/webapp/account_deletion.go). */}}
+<meta name="referrer" content="no-referrer" />
+<div class="account-page">
+<h2>{{t .Lang "site.account.delete.cancel"}}</h2>
+<form class="account-section account-delete" method="POST" action='{{reverseRev "AccountDeletionCancelLink" .Token}}'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    <p>{{t .Lang "site.account.delete.cancelLinkIntro"}}</p>
+    <div class="delete-actions">
+        <input type='submit' value='{{t .Lang "site.account.delete.cancel"}}'>
+    </div>
+</form>
+</div>
+{{end}}

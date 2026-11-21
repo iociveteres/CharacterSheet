@@ -1,7 +1,7 @@
 // The Chat tab: messages grouped by day, player and character, and the input.
 import { createRef, type JSX } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
-import { t } from "../../i18n";
+import { t, userName } from "../../i18n";
 import { chat, chatGroups, commands, me, roomId } from "../state";
 import { deleteMessage, loadEarlierMessages, sendChat } from "../actions";
 import { isGamemaster } from "../permissions";
@@ -98,7 +98,7 @@ export function Chat() {
                             return (
                                 <div key={author.key} class="user-message-group">
                                     <div class={own ? "sticky-author own-message-header" : "sticky-author"}>
-                                        <span class="author-name">{author.userName}</span>
+                                        <span class="author-name">{userName(author.userName)}</span>
                                     </div>
                                     {author.characters.map(group => (
                                         <div key={group.key} class={own ? "character-subgroup own-character-subgroup" : "character-subgroup"}>

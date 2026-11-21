@@ -83,7 +83,7 @@
                 <div class="forum-row-main">
                     <div>
                         {{- /* An unread topic opens at its first unread post. */}}
-                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{.Title}}</a>
+                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{$.TitleOf .Title}}</a>
                         {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
                         {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
                         {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}
@@ -91,13 +91,13 @@
                     {{- if $.BySection}}
                     <span class="meta">{{.SectionName}} · {{$.Time .CreatedAt}}</span>
                     {{- else}}
-                    <span class="meta"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a> · {{$.Time .CreatedAt}}</span>
+                    <span class="meta">{{$.UserLink "forum-author-name" .AuthorID .AuthorName}} · {{$.Time .CreatedAt}}</span>
                     {{- end}}
                 </div>
                 {{- /* The column head names the number; on a phone, where the head is hidden, the words. */}}
                 <div class="forum-row-count"><span class="forum-count-number">{{count .ReplyCount}}</span><span class="forum-count-words">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span></div>
                 <div class="forum-row-last">
-                    {{if .LastPostID}}<span class="by"><a class="forum-author-name" href="{{userURL .LastAuthorID}}">{{.LastAuthorName}}</a><a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
+                    {{if .LastPostID}}<span class="by">{{$.UserLink "forum-author-name" .LastAuthorID .LastAuthorName}}<a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
                 </div>
             </li>
 {{- end}}

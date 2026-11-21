@@ -26,6 +26,7 @@
   "common.unknown": { "en": "Unknown", "ru": "Неизвестно" },
   "common.more": { "en": "More", "ru": "Ещё" },
   "common.owner": { "en": "Owner", "ru": "Владелец" },
+  "common.deletedUser": { "en": "Deleted user", "ru": "Удалённый пользователь", "note": "вместо имени пользователя, удалившего аккаунт: автор сообщения в чате, поста на форуме, владелец коллекции бестиария" },
   "common.role.gamemaster": { "en": "Gamemaster", "ru": "Ведущий", "note": "роль в комнате; ключ — сохранённое значение роли" },
   "common.role.moderator": { "en": "Moderator", "ru": "Модератор", "note": "роль в комнате" },
   "common.role.player": { "en": "Player", "ru": "Игрок", "note": "роль в комнате" },

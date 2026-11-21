@@ -3,7 +3,7 @@
 import type { BestiaryCollection } from "../types.gen";
 import { center, collections, ownCollections, selectedCollectionId, subscribedCollections } from "../state";
 import { openCatalog, openDialog, selectCollection } from "../actions";
-import { t } from "../../i18n";
+import { t, userName } from "../../i18n";
 
 export function Collections() {
     const loading = collections.value === null;
@@ -38,12 +38,12 @@ export function Collections() {
 function CollectionItem({ collection: c }: { collection: BestiaryCollection }) {
     const selected = center.value === "collection" && c.id === selectedCollectionId.value;
     return (
-        <button type="button" data-collection-id={c.id} aria-pressed={selected} title={c.own ? c.name : `${c.name} · ${c.owner}`}
+        <button type="button" data-collection-id={c.id} aria-pressed={selected} title={c.own ? c.name : `${c.name} · ${userName(c.owner)}`}
             class={selected ? "button-linklike bestiary-collection selected" : "button-linklike bestiary-collection"}
             onClick={() => void selectCollection(c.id)}>
             <span class="bestiary-collection-name">
                 {c.name}
-                {!c.own && <span class="bestiary-muted"> · {c.owner}</span>}
+                {!c.own && <span class="bestiary-muted"> · {userName(c.owner)}</span>}
             </span>
             <span class="bestiary-collection-meta">
                 {c.default && <span class="bestiary-chip bestiary-default">{t("bestiary.collections.default")}</span>}

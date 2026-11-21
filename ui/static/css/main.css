@@ -218,15 +218,92 @@ html[data-theme="dark"] .avatar-hue {
 /* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
 .account-page > table,
 .account-page .avatar-settings,
-.account-page .theme-settings {
+.account-page .theme-settings,
+.account-page .account-section {
     background: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
 }
 
 .account-page .avatar-settings,
-.account-page .theme-settings {
+.account-page .theme-settings,
+.account-page .account-section {
     padding: 10px 14px 14px;
+}
+
+/* The deletion of the account: its block on the Account page and the pages of the deletion
+   (ui/html/pages/delete_account.html, account_deletion.html, cancel_deletion.html); the export of
+   the user's data shares its paragraphs and buttons (data_export.html). */
+.account-page .theme-settings + .account-section,
+.account-page .account-section + .account-section {
+    margin-top: 28px;
+}
+
+.account-delete p,
+.account-export p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.account-delete ul,
+.account-export ul {
+    margin: 0 0 10px;
+}
+
+.account-delete .delete-heir,
+.account-delete .delete-box {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.account-delete .delete-heir select {
+    min-width: 0;
+}
+
+.account-delete .hint {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.account-delete .delete-warning {
+    font-weight: bold;
+}
+
+.account-delete .delete-actions,
+.account-export .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+}
+
+/* form div:last-child draws a dashed rule over the buttons of the site's forms; the panel has its own edge. */
+.account-delete div.delete-actions:last-child,
+.account-export div.delete-actions:last-child {
+    border-top: none;
+    margin-bottom: 0;
+}
+
+/* The way back from the export page, under its buttons. */
+.account-export .export-back {
+    margin: 14px 0 0;
+}
+
+/* A secondary button beside the primary one of the area (DESIGN.md, «Buttons by role»). */
+.account-page a.button.secondary,
+.account-page input[type="submit"].secondary {
+    background-color: var(--button-bg-subtle);
+    border-color: var(--border-medium);
+    color: var(--text);
+}
+
+.account-page a.button.secondary:hover,
+.account-page input[type="submit"].secondary:hover {
+    background-color: var(--button-bg-subtle-hover);
+    color: var(--text);
 }
 
 /* tr:nth-child(2n) is bg-light, a level above the panel. */

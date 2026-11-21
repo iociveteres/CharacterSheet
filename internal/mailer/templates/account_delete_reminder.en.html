@@ -1,0 +1,16 @@
+{{define "subject"}}Your Charactersheet account will be deleted tomorrow{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+Your account is scheduled for deletion on {{.DeleteAt}}. If you have changed your mind, cancel the deletion by the following link:
+{{.CancelLink}}
+
+If you still want the account deleted, do nothing.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>Your account is scheduled for deletion on {{.DeleteAt}}. If you have changed your mind, cancel the deletion by the following link:</p>
+<p><a href="{{.CancelLink}}">{{.CancelLink}}</a></p>
+<p>If you still want the account deleted, do nothing.</p>
+{{end}}

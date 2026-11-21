@@ -1,7 +1,7 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- template "forum-mod-mode-strip" .}}
     {{- with .Post.Topic}}
-    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{$.TitleOf .Title}}</a></nav>
     {{- end}}
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.posts.deleteTitle"}}</h2></div></div>
@@ -19,10 +19,10 @@
         {{- template "forum-mod-reason" ($.ReasonField .Form)}}
         {{- with .Author}}
         <fieldset class="forum-delete-author">
-            <legend class="field-label">{{t $.Lang "forum.moderation.authorLabel"}} <a class="forum-author-name" href="{{userURL .ID}}">{{.Name}}</a></legend>
+            <legend class="field-label">{{t $.Lang "forum.moderation.authorLabel"}} {{$.UserLink "forum-author-name" .ID .Name}}</legend>
             {{- with .Ban}}
             <p class="meta forum-delete-banned">
-                {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.alreadyBannedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.alreadyBannedForever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a> · <span class="forum-ban-reason">{{.Reason}}</span><br>
+                {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.alreadyBannedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.alreadyBannedForever"}}{{end}} · {{$.UserLink "forum-author-name" .ModeratorID .ModeratorName}} · <span class="forum-ban-reason">{{.Reason}}</span><br>
                 <a href="{{userURL $.Author.ID}}">{{t $.Lang "forum.moderation.banChangeOnPage"}}</a></p>
             {{- else}}
             {{- /* The box opens the terms and turns the button into «Delete and ban» by :has()

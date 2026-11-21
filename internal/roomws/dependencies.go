@@ -161,6 +161,20 @@ func (server *Server) bestiaryHub(userID int) *Hub {
 	return server.BestiaryHubs[userID]
 }
 
+// KickUser closes the sockets of the user in the live hubs of the rooms and of the user's
+// bestiary, when the account is scheduled for deletion: a hub checks the user only when a socket
+// connects (plan _prd/account_deletion, section 5.2). A hub left without clients stops itself.
+func (server *Server) KickUser(userID int, roomIDs []int) {
+	for _, id := range roomIDs {
+		if hub := server.RoomHub(id); hub != nil {
+			hub.KickUser(userID)
+		}
+	}
+	if hub := server.bestiaryHub(userID); hub != nil {
+		hub.KickUser(userID)
+	}
+}
+
 // TotalOnlineUsers counts the open sockets, of the bestiary pages too.
 func (server *Server) TotalOnlineUsers() int {
 	server.mu.Lock()

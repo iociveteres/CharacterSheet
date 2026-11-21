@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
+	"errors"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -16,6 +18,8 @@ type TokenScope string
 const (
 	ScopeVerification   TokenScope = "verification"
 	ScopeChangePassword TokenScope = "change_password"
+	ScopeDeleteAccount  TokenScope = "delete_account"
+	ScopeCancelDeletion TokenScope = "cancel_deletion"
 )
 
 type Token struct {
@@ -55,6 +59,7 @@ type TokenModelInterface interface {
 	Insert(ctx context.Context, token *Token) error
 	DeleteAllForUser(ctx context.Context, scope TokenScope, userID int) error
 	CheckExists(ctx context.Context, scope TokenScope, token string) (bool, error)
+	UserID(ctx context.Context, scope TokenScope, token string) (int, error)
 }
 
 type TokenModel struct {
@@ -99,4 +104,16 @@ SELECT EXISTS(
 	err := m.DB.QueryRow(ctx, query, scope, tokenHash[:], time.Now()).Scan(&exists)
 
 	return exists, err
+}
+
+// UserID is the user of a token of the scope that has not expired, ErrNoRecord for none.
+func (m *TokenModel) UserID(ctx context.Context, scope TokenScope, tokenPlaintext string) (int, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+	var id int
+	err := m.DB.QueryRow(ctx, `SELECT user_id FROM tokens WHERE scope = $1 AND hash = $2 AND expiry > now()`,
+		scope, tokenHash[:]).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, ErrNoRecord
+	}
+	return id, err
 }

@@ -23,9 +23,11 @@ CREATE TABLE character_sheet_folders (
     folder_visibility sheet_visibility NOT NULL DEFAULT 'everyone_can_view'
 );
 
+-- owner_id without ON DELETE CASCADE, as in production (000003): deleting a
+-- user who still owns sheets fails.
 CREATE TABLE character_sheets (
     id               INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    owner_id         INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id         INT NOT NULL REFERENCES users(id),
     room_id          INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     content          JSONB NOT NULL DEFAULT '{"characterInfo": {"characterName": ""}}',
     sheet_visibility sheet_visibility NOT NULL DEFAULT 'everyone_can_view',

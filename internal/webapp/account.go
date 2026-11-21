@@ -15,6 +15,11 @@ import (
 )
 
 func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
+	app.renderAccount(w, r, http.StatusOK, accountDeleteLinkForm{})
+}
+
+// renderAccount draws the Account page; deleteForm carries the error of its deletion block.
+func (app *Application) renderAccount(w http.ResponseWriter, r *http.Request, status int, deleteForm accountDeleteLinkForm) {
 	userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 	user, err := app.Models.Users.Get(r.Context(), userID)
 	if err != nil {
@@ -35,6 +40,7 @@ func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.User = user
 	data.Avatar = avatar
+	data.Form = deleteForm
 	// Laid out for phones, as the forum; crop.css goes before account.css, which sizes the frame.
 	data.Head = &templates.PageHead{
 		Viewport: true,
@@ -42,7 +48,7 @@ func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
 		Scripts:  []string{"dist/account.js"},
 	}
 
-	app.render(w, http.StatusOK, "account.html", "base", data)
+	app.render(w, status, "account.html", "base", data)
 }
 
 func (app *Application) accountAvatar(r *http.Request, user *models.User) (*templates.AccountAvatar, error) {

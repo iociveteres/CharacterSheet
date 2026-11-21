@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"time"
@@ -45,6 +46,10 @@ type config struct {
 		password string
 		sender   string
 	}
+	export struct {
+		dir     string
+		workers int
+	}
 }
 
 // Log levels, each with what the one before it writes: errors; events such as
@@ -83,13 +88,16 @@ func main() {
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
-	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch)")
+	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch) and add the routes of e2e")
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel == "" {
 		logLevel = "error"
 	}
 	flag.StringVar(&cfg.logLevel, "log-level", logLevel, "Log level (error|info|debug)")
 	flag.Int64Var(&cfg.rollSeed, "roll-seed", 0, "Repeat the same rolls from run to run, seeded with this number (0: random rolls)")
+
+	flag.StringVar(&cfg.export.dir, "export-dir", filepath.Join(os.TempDir(), "charactersheet-exports"), "Folder of the archives of the users' data exports")
+	flag.IntVar(&cfg.export.workers, "export-workers", 2, "How many archives of data exports are built at once")
 
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
@@ -190,6 +198,7 @@ func main() {
 
 	app := webapp.NewApplication(&webapp.Dependencies{
 		Debug:          cfg.debug,
+		Dev:            cfg.dev,
 		ErrorLog:       errorLog,
 		InfoLog:        infoLog,
 		Models:         m,
@@ -200,6 +209,8 @@ func main() {
 		BaseURL:        os.Getenv("BASE_URL"),
 		Gamedata:       catalog,
 		Mailer:         mailer,
+		ExportDir:      cfg.export.dir,
+		ExportWorkers:  cfg.export.workers,
 	})
 	app.Forum, err = forum.New(pool, os.Getenv("BASE_URL"), app.ForumHost())
 	if err != nil {

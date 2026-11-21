@@ -11,7 +11,11 @@ CREATE TABLE charactersheets (
 CREATE INDEX idx_charactersheet_created
     ON charactersheets(created);
 
--- 3. Create the users table
+-- 3. Create the users table, its status and token types as in production
+-- (migrations 000006, 000011, 000061)
+CREATE TYPE user_status AS ENUM ('pending', 'email_verified', 'disabled', 'banned', 'deleting', 'deleted');
+CREATE TYPE token_scope AS ENUM ('verification', 'change_password', 'delete_account', 'cancel_deletion');
+
 CREATE TABLE users (
     id              SERIAL      PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,
@@ -20,13 +24,16 @@ CREATE TABLE users (
     created         TIMESTAMPTZ  NOT NULL DEFAULT now(),
     -- The column of the real table, which UserModel.Insert writes.
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    locale          TEXT         NULL
+    locale          TEXT         NULL,
+    status          user_status  NOT NULL DEFAULT 'pending',
+    deleted_at      TIMESTAMPTZ  NULL
 );
 
--- 4. Seed a user record
-INSERT INTO users (name, email, hashed_password, created) VALUES (
+-- 4. Seed a user record: a confirmed account, which GetLocale finds
+INSERT INTO users (name, email, hashed_password, created, status) VALUES (
     'Alice Jones',
     'alice@example.com',
     '$2a$12$NuTjWXm3KKntReFwyBVHyuf/to.HEwTy.eS206TNfkGfr6HzGJSWG',
-    TIMESTAMPTZ '2022-01-01 10:00:00+00'
+    TIMESTAMPTZ '2022-01-01 10:00:00+00',
+    'email_verified'
 );

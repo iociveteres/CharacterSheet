@@ -140,6 +140,17 @@ describe("the chat", () => {
         expect(ids()).toEqual([1, 3]);
     });
 
+    it("drops the messages of a deleted player who chose so, and only theirs", () => {
+        for (const [id, userId] of [[1, 2], [2, 3], [3, 2], [4, 3]]) {
+            receive({ type: "chatMessage", eventID: "e", messageId: id, userId, userName: "U", messageBody: "m", created: "2026-09-27T10:00:00Z" });
+        }
+
+        receive({ type: "playerDeleted", eventID: "e", userID: 2, heirID: 1, messagesDeleted: false });
+        expect(ids()).toEqual([1, 2, 3, 4]);
+        receive({ type: "playerDeleted", eventID: "e", userID: 3, heirID: 1, messagesDeleted: true });
+        expect(ids()).toEqual([1, 3]);
+    });
+
     it("has no more history after an empty page", () => {
         chat.value = { messages: [], hasMore: true };
 
@@ -537,6 +548,14 @@ describe("the character list", () => {
         expect(players.value.map(p => p.id)).toEqual([1]);
         expect(folders.value.map(f => f.id)).toEqual([10]);
         expect(sheetIds()).toEqual([100]);
+    });
+
+    it("hands a deleted player's folders and sheets to the heir rather than drop them", () => {
+        receive({ type: "playerDeleted", eventID: "e", userID: 2, heirID: 1, messagesDeleted: false });
+
+        expect(players.value.map(p => p.id)).toEqual([1]);
+        expect(folders.value.map(f => [f.id, f.ownerId])).toEqual([[10, 1], [20, 1], [21, 1]]);
+        expect(sheets.value.map(s => [s.id, s.ownerId, s.folderId])).toEqual([[100, 1, null], [200, 1, 20], [201, 1, null]]);
     });
 
     it("changes the role of another player", () => {

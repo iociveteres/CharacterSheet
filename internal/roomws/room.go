@@ -160,3 +160,51 @@ func (app *Server) changePlayerRoleHandler(ctx context.Context, client *Client, 
 	hub.BroadcastFrom(client, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 }
+
+type playerDeletedMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	UserID  int    `json:"userID"`
+	// Who got the user's sheets and folders in the room, 0 for nobody.
+	HeirID          int  `json:"heirID"`
+	MessagesDeleted bool `json:"messagesDeleted"`
+}
+
+// PlayerDeleted tells the open pages of the rooms that stay after the wipe of an account (plan
+// _prd/account_deletion, section 5.2): the player goes, their sheets and folders go to the heir,
+// their chat messages go if they chose so, and whoever became a gamemaster is told as by a role
+// change. A room no one has open has no one to tell.
+func (app *Server) PlayerDeleted(userID int, rooms []models.WipedRoom) {
+	for _, room := range rooms {
+		hub := app.RoomHub(room.RoomID)
+		if hub == nil {
+			continue
+		}
+		deleted, err := json.Marshal(&playerDeletedMsg{
+			Type:            "playerDeleted",
+			EventID:         uuid.New().String(),
+			UserID:          userID,
+			HeirID:          room.HeirID,
+			MessagesDeleted: room.MessagesDeleted,
+		})
+		if err != nil {
+			app.ErrorLog.Print(err)
+			return
+		}
+		hub.BroadcastAll(deleted)
+		if room.PromotedID == 0 {
+			continue
+		}
+		promoted, err := json.Marshal(&ChangePlayerRoleMsg{
+			Type:    "changePlayerRole",
+			EventID: uuid.New().String(),
+			UserID:  room.PromotedID,
+			Role:    models.RoleGamemaster,
+		})
+		if err != nil {
+			app.ErrorLog.Print(err)
+			return
+		}
+		hub.BroadcastAll(promoted)
+	}
+}

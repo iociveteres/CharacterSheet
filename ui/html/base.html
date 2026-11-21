@@ -15,6 +15,7 @@
     {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
     {{else}}
     {{if and .Head .Head.Viewport}}<meta name="viewport" content="width=device-width, initial-scale=1">{{end}}
+    {{if and .Head .Head.Refresh}}<meta http-equiv="refresh" content="{{.Head.Refresh}}">{{end}}
     <meta name="description" content='{{t .Lang "site.layout.description"}}'>
     {{end}}
 

@@ -374,7 +374,7 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 	}
 	description := plainText(t.FirstPost, descriptionLength)
 	if description == "" {
-		description = t.Title
+		description = shownTitle(v.Lang, t.Title)
 	}
 	data := topicData{
 		view:         v,
@@ -385,7 +385,7 @@ func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t to
 		ViewerAvatar: avatars[v.Viewer.ID],
 	}
 	f.render(w, r, status, "topic.html", data, Page{
-		Title:       pageTitle(v.Lang, t.Title, page),
+		Title:       pageTitle(v.Lang, shownTitle(v.Lang, t.Title), page),
 		Description: description,
 		Canonical:   f.baseURL + pageURL(t.URL(), page),
 		NoIndex:     noIndex,

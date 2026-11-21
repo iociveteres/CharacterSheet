@@ -69,7 +69,7 @@
         {{- range .Posts}}
         <li class="forum-row{{if .Deleted}} deleted{{end}}">
             <div class="forum-row-main">
-                <span><a class="forum-row-title" href="{{.URL}}">{{.TopicTitle}}</a>{{if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.users.deleted"}}</span>{{end}}</span>
+                <span><a class="forum-row-title" href="{{.URL}}">{{$.TitleOf .TopicTitle}}</a>{{if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.users.deleted"}}</span>{{end}}</span>
                 {{- with .Excerpt}}
                 <span class="forum-user-excerpt">{{.}}</span>
                 {{- end}}
@@ -110,7 +110,7 @@
             <span class="what">{{t .Lang "forum.users.ban"}}</span>
             <div class="state">
                 {{- with $u.Ban}}
-                <span>{{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .At}}
+                <span>{{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}} · {{$.UserLink "forum-author-name" .ModeratorID .ModeratorName}}, {{$.Time .At}}
                     <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
                 {{- else}}
                 <span>{{t $.Lang "forum.users.no"}}</span>
@@ -155,7 +155,7 @@
             <span class="what">{{t .Lang "forum.users.avatar"}}</span>
             <div class="state">
                 {{- if $m.Avatar.Lock}}{{with $m.Avatar.Lock}}
-                <span>{{with .Until}}{{t $.Lang "forum.users.avatarLockedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.avatarLockedForever"}}{{end}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{$m.LockedBy}}</a>, {{$.Time .CreatedAt}}
+                <span>{{with .Until}}{{t $.Lang "forum.users.avatarLockedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.avatarLockedForever"}}{{end}} · {{$.UserLink "forum-author-name" .ModeratorID $m.LockedBy}}, {{$.Time .CreatedAt}}
                     <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
                 {{- end}}
                 {{- else if $m.Avatar.URL}}
@@ -200,7 +200,7 @@
                 {{- if $u.About}}
                 <span>{{t $.Lang "forum.users.aboutLength" "count" $u.AboutLength}}</span>
                 {{- else if $u.Erased}}{{with $u.Erased}}
-                <span>{{t $.Lang "forum.users.aboutErasedState"}} · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a>, {{$.Time .At}}
+                <span>{{t $.Lang "forum.users.aboutErasedState"}} · {{$.UserLink "forum-author-name" .ModeratorID .ModeratorName}}, {{$.Time .At}}
                     <span class="forum-ban-reason">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span></span>
                 {{- end}}
                 {{- else}}
@@ -233,8 +233,8 @@
                 <li>{{$.Time .At}} · <strong>{{.ActionText $.Lang}}</strong>
                     {{- if .Banned}} {{with .ExpiresAt}}{{t $.Lang "forum.moderation.banUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.moderation.forever"}}{{end}}{{end}}
                     {{- if eq .Lock "forever"}}, {{t $.Lang "forum.users.lockForever"}}{{else if .LockUntil}}, {{t $.Lang "forum.users.lockTerm"}} {{t $.Lang "forum.moderation.banUntil" "date" ($.Date .LockUntil)}}{{end}}
-                    {{- if .PostID}} · <a href="/forum/post/{{.PostID}}">{{.TopicTitle}}</a>{{end}}
-                    · <a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a></li>
+                    {{- if .PostID}} · <a href="/forum/post/{{.PostID}}">{{$.TitleOf .TopicTitle}}</a>{{end}}
+                    · {{$.UserLink "forum-author-name" .ModeratorID .ModeratorName}}</li>
                 {{- end}}
             </ul>
             {{- else}}

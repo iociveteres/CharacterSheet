@@ -64,6 +64,14 @@ export function t<K extends I18nKey>(key: K, ...[params]: ParamsArg<K>): string 
 }
 
 /**
+ * A user's name as the reader sees it: a deleted account keeps its id with an
+ * empty name (_prd/account_deletion/plan.md, 3), worded here.
+ */
+export function userName(name: string): string {
+    return name || t("common.deletedUser");
+}
+
+/**
  * A quantity as the server writes it (i18n.FormatCount): from 1000 on, the
  * thousands set apart by a narrow no-break space, "1 024", in every language.
  */

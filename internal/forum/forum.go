@@ -85,7 +85,7 @@ func New(db *pgxpool.Pool, baseURL string, host Host) (*Forum, error) {
 			"t":        i18n.TemplateT,
 			"humanDay": i18n.FormatDay,
 			"count":    i18n.FormatCount, // a number without t: {{count .AuthorPosts}}
-			// The page of a user, which every name the forum writes links to: {{userURL .AuthorID}}.
+			// The page of a user, for a form about them; a name links there by view.UserLink.
 			"userURL": userURL,
 		}).
 		ParseFS(templateFiles, "templates/*.html")
@@ -223,6 +223,23 @@ func (v view) Time(t time.Time) template.HTML {
 		t.UTC().Format(time.RFC3339),
 		template.HTMLEscapeString(i18n.FormatDate(v.Lang, t, v.TimeZone)),
 		template.HTMLEscapeString(i18n.FormatAgo(v.Lang, t, v.Now, v.TimeZone))))
+}
+
+// UserLink is a name the forum writes, linked to the user's page: {{$.UserLink "forum-author-name"
+// .AuthorID .AuthorName}}. A deleted account has neither a name nor a page, so it is the reader's
+// words without a link.
+func (v view) UserLink(class string, id int, name string) template.HTML {
+	if name == "" {
+		return template.HTML(fmt.Sprintf(`<span class="%s deleted-user">%s</span>`,
+			template.HTMLEscapeString(class), template.HTMLEscapeString(shownName(v.Lang, name))))
+	}
+	return template.HTML(fmt.Sprintf(`<a class="%s" href="%s">%s</a>`,
+		template.HTMLEscapeString(class), userURL(id), template.HTMLEscapeString(name)))
+}
+
+// TitleOf is a topic's title as shown: {{$.TitleOf .Title}}.
+func (v view) TitleOf(title string) string {
+	return shownTitle(v.Lang, title)
 }
 
 // Date is the full date and time, for what is to come rather than past: the end of a ban

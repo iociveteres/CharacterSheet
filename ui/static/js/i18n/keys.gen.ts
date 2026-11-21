@@ -116,6 +116,7 @@ export interface I18nParams {
     "common.crop.zoom": {};
     "common.delete": {};
     "common.deleteNamed": { "name": string | number };
+    "common.deletedUser": {};
     "common.difficulty": {};
     "common.duplicate": {};
     "common.edit": {};

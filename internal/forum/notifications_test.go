@@ -336,6 +336,34 @@ func TestModeratorActionsNotifyTheAuthor(t *testing.T) {
 	assert.Equal(t, len(notices(t, s.db, s.mod)), 0)
 }
 
+// A deleted account gets no notification: neither of a quote of its post nor of a moderator's
+// action on its post or topic.
+func TestDeletedUserGetsNoNotifications(t *testing.T) {
+	s := newNotifyScene(t)
+	bobs := mustReply(t, s.f, s.topic, s.bob, "bob's words", at(2))
+	bobsTopic, _ := mustCreateTopic(t, s.f, s.section, s.bob, "bob's topic", at(2))
+	_, err := s.db.Exec(context.Background(), `UPDATE users SET status = 'deleted', name = '' WHERE id = $1`, s.bob)
+	assert.NilError(t, err)
+	// Wipe deletes the notifications a tombstone had (forum.WipeUser).
+	_, err = s.db.Exec(context.Background(), `DELETE FROM forum_notifications WHERE user_id = $1`, s.bob)
+	assert.NilError(t, err)
+
+	mustReply(t, s.f, s.topic, s.carol, quoteOf("bob", bobs)+quoteOf("alice", s.first), at(3))
+	s.h.userID = s.mod
+	redirectedTo(t, s.h.post(t, s.f, postURL(bobs)+"/delete", url.Values{"reason": {"old"}}))
+	redirectedTo(t, s.h.post(t, s.f, modURL(bobsTopic, topicClose), url.Values{}))
+	assert.Equal(t, len(notices(t, s.db, s.bob)), 0)
+
+	// The quote still notifies the living author it quotes.
+	var quotes int
+	for _, n := range notices(t, s.db, s.alice) {
+		if n.Kind == string(notifyQuote) {
+			quotes++
+		}
+	}
+	assert.Equal(t, quotes, 1)
+}
+
 // A user's read notifications older than 90 days go when a new one comes to them; unread ones of
 // any age and newer read ones stay, and so do other users'.
 func TestOldReadNotificationsGo(t *testing.T) {

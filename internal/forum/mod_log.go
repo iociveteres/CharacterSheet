@@ -171,7 +171,7 @@ func (f *Forum) modLogPage(w http.ResponseWriter, r *http.Request, v view) {
 	data.Pagination = pagination{Lang: v.Lang, Path: path, Current: page, Total: pages}
 	title := i18n.T(v.Lang, "forum.moderation.log")
 	if data.User != nil {
-		title += ": " + data.User.Name
+		title += ": " + shownName(v.Lang, data.User.Name)
 	}
 	f.render(w, r, http.StatusOK, "mod_log.html", data, Page{Title: title, NoIndex: true})
 }

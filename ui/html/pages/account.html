@@ -27,6 +27,26 @@
 {{template "account_avatar" $}}
 
 {{template "theme_changer" $}}
+
+<section class="account-section account-export">
+    <h2>{{t $.Lang "site.account.export.title"}}</h2>
+    <p>{{t $.Lang "site.account.export.intro"}}</p>
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountExport"}}'>{{t $.Lang "site.account.export.open"}}</a>
+    </div>
+</section>
+
+<section class="account-section account-delete">
+    <h2>{{t $.Lang "site.account.delete.title"}}</h2>
+    {{range $.Form.NonFieldErrors}}
+    <div class='error'>{{.}}</div>
+    {{end}}
+    <p>{{t $.Lang "site.account.delete.intro"}}</p>
+    <form method="POST" action='{{reverseRev "AccountDelete"}}'>
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        <input type='submit' class="muted" value='{{t $.Lang "site.account.delete.start"}}'>
+    </form>
+</section>
 {{end }}
 </div>
 {{end}}

@@ -19,8 +19,8 @@ import { setEncounterList, setShownView } from "./encounter/actions";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
-    KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
-    SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
+    KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, PlayerDeletedMessage,
+    ReorderFoldersMessage, SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
 import type { ChatMessage, RoomChat, RoomPayload } from "./payload.gen";
 import type { ConnectionLost } from "../socket";
@@ -150,6 +150,16 @@ export function listenRemote(): void {
             folders.value = folders.value.filter(f => f.ownerId !== msg.userID);
             sheets.value = sheets.value.filter(s => s.ownerId !== msg.userID);
         });
+    });
+    // Unlike a kick, the sheets stay: the server handed them to the heir (plan _prd/account_deletion, 5.2).
+    document.addEventListener("ws:playerDeleted", e => {
+        const { userID, heirID, messagesDeleted } = (e as CustomEvent<PlayerDeletedMessage>).detail;
+        runOrQueue(() => {
+            players.value = players.value.filter(p => p.id !== userID);
+            folders.value = folders.value.map(f => f.ownerId === userID ? { ...f, ownerId: heirID } : f);
+            sheets.value = sheets.value.map(s => s.ownerId === userID ? { ...s, ownerId: heirID } : s);
+        });
+        if (messagesDeleted) chat.value = { ...chat.value, messages: chat.value.messages.filter(m => m.userId !== userID) };
     });
     document.addEventListener("ws:changePlayerRole", e => {
         const msg = (e as CustomEvent<ChangePlayerRoleMessage>).detail;

@@ -53,6 +53,8 @@ func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	exec("../../migrations/000050_add_label_data_to_room_messages.up.sql")
 	exec("../../migrations/000051_sheet_content_size.up.sql")
 	exec("../../migrations/000058_user_avatars.up.sql")
+	exec("../../migrations/000061_account_deletion.up.sql")
+	exec("../../migrations/000062_data_exports.up.sql")
 	t.Cleanup(func() { exec("./testdata/sheet_homes_teardown.sql") })
 
 	return pool

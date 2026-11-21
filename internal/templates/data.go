@@ -39,9 +39,12 @@ type Data struct {
 	ShowIncidentNotice      bool
 	Token                   string
 	OnlineUsers             int
-	Embedded                *EmbeddedPage  // set only for embedded.html
-	Avatar                  *AccountAvatar // set only for account.html
-	Head                    *PageHead      // what a site page adds to base.html's head; nil for most
+	Embedded                *EmbeddedPage           // set only for embedded.html
+	Avatar                  *AccountAvatar          // set only for account.html
+	DeletionSummary         *models.DeletionSummary // set only for delete_account.html
+	DeleteAt                time.Time               // set only for account_deletion.html
+	Export                  *ExportPage             // set only for data_export.html
+	Head                    *PageHead               // what a site page adds to base.html's head; nil for most
 	// ForumBadge counts the unread forum notifications of the signed-in user as the nav shows them
 	// ("3", "9+", empty for none); nil for a guest. It is called only by the nav, so a page drawn
 	// without it (a room) never asks the forum.
@@ -76,6 +79,22 @@ type PageHead struct {
 	Viewport bool
 	// Styles and Scripts are paths under /static, after the site's own.
 	Styles, Scripts []string
+	// Refresh reloads the page every so many seconds, 0 for never: the export page follows its
+	// archive so, without JS.
+	Refresh int
+}
+
+// ExportPage is the page of the export of the user's data (internal/webapp/data_export.go).
+type ExportPage struct {
+	// State is that of models.DataExport, "" for no export.
+	State string
+	// Ahead is how many exports are queued before a queued one.
+	Ahead int
+	// Size, AvailableUntil and NextAt are of a ready archive: its size as shown, until when it
+	// is kept and when a new one may be built, zero for now.
+	Size           string
+	AvailableUntil time.Time
+	NextAt         time.Time
 }
 
 // AccountAvatar is the avatar block of the Account page.
