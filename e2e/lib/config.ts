@@ -29,7 +29,7 @@ export const config = {
 };
 
 /** A role of the seeded room: its users by key (cmd/seedtest). */
-export type SeedRole = "gm" | "moderator" | "player" | "player2" | "outsider";
+export type SeedRole = "gm" | "moderator" | "player" | "player2" | "outsider" | "leaver";
 
 export interface SeedUser {
     key: SeedRole;
@@ -51,6 +51,8 @@ export interface Seed {
     kindSheets: { pathfinder_crusade: number };
     /** The forum sections of the forum scenarios, emptied by every seed, and a topic on two pages in the first. */
     forum: { section: number; movedTo: number; longTopic: number };
+    /** The leaver's delete_account token (the link of the email) and their folder, made anew by every seed. */
+    account: { deleteToken: string; leaverFolder: number };
 }
 
 const SEED_FILE = env("E2E_SEED", "scripts/perf/.seed.json");

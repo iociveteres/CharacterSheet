@@ -7,7 +7,9 @@
 // encounter (encounter.go) and the gm's sheets of the other kinds are made
 // anew. The seeded moderator is a moderator of the forum too (forum.go); the
 // gm and the player have an avatar, the outsider a lock on one (avatars.go).
-// The chat is kept.
+// The leaver, a player with a sheet in a folder, gets a delete_account token
+// whose plaintext the output carries (account.go); after the account scenario
+// wiped them, the seed makes a new leaver. The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
 //	npm run seed
@@ -58,6 +60,8 @@ var users = []*seedUser{
 	{Key: "player", Name: "Seed Player", Email: "player@seed.test", Role: models.RolePlayer},
 	{Key: "player2", Name: "Seed Player 2", Email: "player2@seed.test", Role: models.RolePlayer},
 	{Key: "outsider", Name: "Seed Outsider", Email: "outsider@seed.test"},
+	// Deletes their account in e2e/scenarios/account (account.go).
+	{Key: "leaver", Name: "Seed Leaver", Email: "leaver@seed.test", Role: models.RolePlayer},
 }
 
 type output struct {
@@ -72,6 +76,8 @@ type output struct {
 	StressEncounter int `json:"stressEncounter"`
 	// What the forum scenarios write in.
 	Forum forumSeed `json:"forum"`
+	// What the account scenarios delete.
+	Account accountSeed `json:"account"`
 }
 
 func main() {
@@ -125,6 +131,9 @@ func checkLocal(dsn string) error {
 
 func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error) {
 	out := output{Password: password, Users: users}
+	if err := resetLeaver(ctx, db); err != nil {
+		return out, fmt.Errorf("leaver: %w", err)
+	}
 	for _, u := range users {
 		id, err := ensureUser(ctx, db, m, u)
 		if err != nil {
@@ -179,6 +188,9 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 	}
 	if err := ensureAvatars(ctx, m); err != nil {
 		return out, fmt.Errorf("avatars: %w", err)
+	}
+	if out.Account, err = ensureLeaver(ctx, db, m, roomID); err != nil {
+		return out, fmt.Errorf("leaver: %w", err)
 	}
 	return out, nil
 }
