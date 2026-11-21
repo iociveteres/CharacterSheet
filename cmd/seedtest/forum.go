@@ -58,8 +58,18 @@ WHERE id = ANY($1) AND created_at > now() - interval '2 days'`, ids); err != nil
 		if out.MovedTo, err = ensureForumSection(ctx, tx, forumMovedSection); err != nil {
 			return err
 		}
-		args := pgx.NamedArgs{"sections": []int{out.Section, out.MovedTo}, "users": ids, "moderator": moderator.ID,
-			"player": player.ID, "about": seedAbout}
+		// Subsections a scenario made inside them go too, with their topics: a section has no delete
+		// in the forum, and each run would add one.
+		rows, err := tx.Query(ctx, `SELECT id FROM forum_sections WHERE parent_id = ANY($1)`, []int{out.Section, out.MovedTo})
+		if err != nil {
+			return err
+		}
+		subsections, err := pgx.CollectRows(rows, pgx.RowTo[int])
+		if err != nil {
+			return err
+		}
+		args := pgx.NamedArgs{"sections": append([]int{out.Section, out.MovedTo}, subsections...), "subsections": subsections,
+			"users": ids, "moderator": moderator.ID, "player": player.ID, "about": seedAbout}
 		for _, q := range []string{
 			`DELETE FROM forum_notifications WHERE user_id = ANY(@users)
 			    OR topic_id IN (SELECT id FROM forum_topics WHERE section_id = ANY(@sections))
@@ -72,6 +82,7 @@ WHERE id = ANY($1) AND created_at > now() - interval '2 days'`, ids); err != nil
 			`DELETE FROM forum_read_marks WHERE section_id = ANY(@sections)`,
 			`DELETE FROM forum_posts WHERE topic_id IN (SELECT id FROM forum_topics WHERE section_id = ANY(@sections))`,
 			`DELETE FROM forum_topics WHERE section_id = ANY(@sections)`,
+			`DELETE FROM forum_sections WHERE id = ANY(@subsections)`,
 			`UPDATE forum_bans SET lifted_at = now(), lifted_by = @moderator WHERE user_id = ANY(@users) AND lifted_at IS NULL`,
 			// The player's page has an «About» to read, edit and erase; the others write their own.
 			`DELETE FROM forum_profiles WHERE user_id = ANY(@users)`,
