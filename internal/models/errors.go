@@ -25,6 +25,8 @@ var (
 	// ErrSheetTooLarge: the content written would be larger than the
 	// content_size check of character_sheets allows (migration 000051).
 	ErrSheetTooLarge = errors.New("models: the sheet would be too large")
+	// ErrDeletionScheduled: the right password of an account in its grace period before the wipe.
+	ErrDeletionScheduled = errors.New("models: account deletion is scheduled")
 )
 
 // sheetTooLarge is ErrSheetTooLarge for a violation of the content_size

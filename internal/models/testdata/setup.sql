@@ -29,10 +29,11 @@ CREATE TABLE users (
     deleted_at      TIMESTAMPTZ  NULL
 );
 
--- 4. Seed a user record
-INSERT INTO users (name, email, hashed_password, created) VALUES (
+-- 4. Seed a user record: a confirmed account, which GetLocale finds
+INSERT INTO users (name, email, hashed_password, created, status) VALUES (
     'Alice Jones',
     'alice@example.com',
     '$2a$12$NuTjWXm3KKntReFwyBVHyuf/to.HEwTy.eS206TNfkGfr6HzGJSWG',
-    TIMESTAMPTZ '2022-01-01 10:00:00+00'
+    TIMESTAMPTZ '2022-01-01 10:00:00+00',
+    'email_verified'
 );

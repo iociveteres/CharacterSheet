@@ -115,3 +115,11 @@ func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, ne
 	}
 	return 0, models.ErrNoRecord
 }
+
+func (m *UserModel) Wipe(ctx context.Context, userID int) (*models.WipedAccount, error) {
+	return nil, models.ErrNoRecord
+}
+
+func (m *UserModel) DeletePending(ctx context.Context, olderThan time.Duration) (int64, error) {
+	return 0, nil
+}
