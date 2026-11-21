@@ -62,3 +62,12 @@ func TestOnlineCountForms(t *testing.T) {
 		}
 	}
 }
+
+// The address becomes a link and the rest of the text stays text.
+func TestMailtoIn(t *testing.T) {
+	got := string(mailtoIn("Write <b>me</b> at a&b@example.com.", "a&b@example.com"))
+	want := `Write &lt;b&gt;me&lt;/b&gt; at <a href="mailto:a&amp;b@example.com">a&amp;b@example.com</a>.`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}

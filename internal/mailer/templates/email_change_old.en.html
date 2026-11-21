@@ -1,0 +1,18 @@
+{{define "subject"}}Change of your Charactersheet email{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+You asked to change the email of your account to {{.NewEmail}}. To confirm, open the following link within 24 hours:
+{{.ConfirmLink}}
+
+Then we send a link to the new address: the email changes once it is opened.
+If it wasn't you, do nothing: your email stays as it is. Someone knows your password, though: change it.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>You asked to change the email of your account to {{.NewEmail}}. To confirm, open the following link within 24 hours:</p>
+<p><a href="{{.ConfirmLink}}">{{.ConfirmLink}}</a></p>
+<p>Then we send a link to the new address: the email changes once it is opened.</p>
+<p>If it wasn't you, do nothing: your email stays as it is. Someone knows your password, though: change it.</p>
+{{end}}

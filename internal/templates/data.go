@@ -46,6 +46,8 @@ type Data struct {
 	DeletionSummary         *models.DeletionSummary // set only for delete_account.html
 	DeleteAt                time.Time               // set only for account_deletion.html
 	Export                  *ExportPage             // set only for data_export.html
+	PendingEmail            string                  // set only for account.html: the new address of a change in progress
+	EmailLink               *EmailLinkPage          // set only for email_link.html
 	Head                    *PageHead               // what a site page adds to base.html's head; nil for most
 	// ForumBadge counts the unread forum notifications of the signed-in user as the nav shows them
 	// ("3", "9+", empty for none); nil for a guest. It is called only by the nav, so a page drawn
@@ -98,6 +100,31 @@ type ExportPage struct {
 	AvailableUntil time.Time
 	NextAt         time.Time
 }
+
+// EmailLinkPage is a page of a link of an email change (internal/webapp/email_change.go).
+type EmailLinkPage struct {
+	Step  string // EmailStep*: whose link it is
+	State string // EmailLink*: what the page says
+	// Email is the address the link is about: the new one for the links of the change, the one put
+	// back for the revert link; "" on an invalid link.
+	Email string
+}
+
+// The steps and states of EmailLinkPage.
+const (
+	EmailStepOld    = "old"    // the link to the current address
+	EmailStepNew    = "new"    // the link to the new address
+	EmailStepRevert = "revert" // the link that puts the old address back
+
+	EmailLinkConfirm = "confirm" // the button, before anything is done
+	EmailLinkDone    = "done"
+	EmailLinkInvalid = "invalid" // used, expired or never made
+	EmailLinkTaken   = "taken"   // the address belongs to another account by now
+)
+
+// AuthorEmail is where a user without access to their old mailbox writes to have the email
+// changed by hand (plan _prd/account_name_email, decision 8); the privacy policy gives it too.
+const AuthorEmail = "iociveteres@gmail.com"
 
 // FormerNamesJSON is FormerNames for account.js, which draws the line anew after a rename.
 func (d Data) FormerNamesJSON() (string, error) {

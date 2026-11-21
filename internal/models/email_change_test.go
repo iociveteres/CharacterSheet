@@ -79,9 +79,18 @@ func TestEmailChange(t *testing.T) {
 	if _, err := m.ConfirmNewEmail(d.ctx, old.Plaintext); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("the old address's link at the new one's step: %v", err)
 	}
+	shown, err := tokens.Email(d.ctx, ScopeChangeEmailOld, old.Plaintext)
+	assert.NilError(t, err)
+	assert.Equal(t, shown, "new@example.com")
+	if _, err := tokens.Email(d.ctx, ScopeChangeEmailNew, old.Plaintext); !errors.Is(err, ErrNoRecord) {
+		t.Errorf("the old address's link looked up in another scope: %v", err)
+	}
 	next, err := m.ConfirmOldEmail(d.ctx, old.Plaintext)
 	assert.NilError(t, err)
 	assert.Equal(t, next.Email, "new@example.com")
+	if _, err := tokens.Email(d.ctx, ScopeChangeEmailOld, old.Plaintext); !errors.Is(err, ErrNoRecord) {
+		t.Errorf("a used link looked up: %v", err)
+	}
 	if _, err := m.ConfirmOldEmail(d.ctx, old.Plaintext); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("the old address's link twice: %v", err)
 	}
@@ -214,6 +223,9 @@ func TestEmailChangeExpiredTokens(t *testing.T) {
 	pending, err := m.PendingEmailChange(d.ctx, ivan)
 	assert.NilError(t, err)
 	assert.Equal(t, pending, "")
+	if _, err := tokens.Email(d.ctx, ScopeChangeEmailOld, expired(ScopeChangeEmailOld, "new@example.com")); !errors.Is(err, ErrNoRecord) {
+		t.Errorf("an expired link looked up: %v", err)
+	}
 	if _, _, err := m.RevertEmail(d.ctx, expired(ScopeRevertEmail, "gone@example.com")); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("expired revert link: %v", err)
 	}

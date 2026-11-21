@@ -3,6 +3,8 @@ package templates
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"strings"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
@@ -69,4 +71,11 @@ func onlineCountForms(lang string) (string, error) {
 	forms["zero"] = i18n.T(lang, "site.home.online.none")
 	b, err := json.Marshal(forms)
 	return string(b), err
+}
+
+// mailtoIn is the translated text with each occurrence of the address made a mailto link: the
+// catalog gets the address as a parameter, the link is not part of a translation.
+func mailtoIn(text, email string) template.HTML {
+	link := fmt.Sprintf(`<a href="mailto:%[1]s">%[1]s</a>`, template.HTMLEscapeString(email))
+	return template.HTML(strings.ReplaceAll(template.HTMLEscapeString(text), template.HTMLEscapeString(email), link))
 }

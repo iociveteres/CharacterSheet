@@ -195,19 +195,7 @@ func (app *Application) accountDeleteConfirmPost(w http.ResponseWriter, r *http.
 
 	// The account no longer passes authenticate, so what is left of its sessions is a guest's
 	// either way: a failure here is only logged.
-	if err := app.destroySessions(r, userID); err != nil {
-		app.ErrorLog.Output(2, fmt.Sprintf("destroy sessions of user %d: %s", userID, err))
-	}
-	// A hub checks the user only when a socket connects: the open tabs are closed here.
-	rooms, err := app.Models.Rooms.ByUser(r.Context(), userID)
-	if err != nil {
-		app.ErrorLog.Output(2, fmt.Sprintf("rooms of user %d to close sockets: %s", userID, err))
-	}
-	roomIDs := make([]int, len(rooms))
-	for i, room := range rooms {
-		roomIDs[i] = room.ID
-	}
-	app.WSServer.KickUser(userID, roomIDs)
+	app.closeUserSessions(r, userID)
 
 	mailLang := mailLanguage(r, user)
 	deleteAt := mailDate(mailLang, scheduled.DeleteAt, util.GetTimeLocation(r))
@@ -227,8 +215,10 @@ func (app *Application) accountDeleteConfirmPost(w http.ResponseWriter, r *http.
 	http.Redirect(w, r, reverse.Rev("AccountDeletion"), http.StatusSeeOther)
 }
 
-// destroySessions deletes every session of the user, the current one last. Iterate loads every
-// session from the store; at the site's numbers that is fine (plan, section 4.1).
+// destroySessions deletes every session of the user, the current one last: the request would
+// save it back otherwise. The current session of a guest or another user stays (a revert link of
+// email_change.go opens anywhere). Iterate loads every session from the store; at the site's
+// numbers that is fine (plan, section 4.1).
 func (app *Application) destroySessions(r *http.Request, userID int) error {
 	err := app.SessionManager.Iterate(r.Context(), func(ctx context.Context) error {
 		if app.SessionManager.GetInt(ctx, "authenticatedUserID") == userID {
@@ -236,7 +226,7 @@ func (app *Application) destroySessions(r *http.Request, userID int) error {
 		}
 		return nil
 	})
-	if err != nil {
+	if err != nil || app.SessionManager.GetInt(r.Context(), "authenticatedUserID") != userID {
 		return err
 	}
 	return app.SessionManager.Destroy(r.Context())

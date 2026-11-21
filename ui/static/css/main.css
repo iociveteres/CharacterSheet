@@ -287,6 +287,43 @@ html[data-theme="dark"] .avatar-hue {
     margin-bottom: 0;
 }
 
+/* The email change: its form (ui/html/pages/account_email.html) and the pages of the links of its
+   emails (email_link.html) share the paragraphs and buttons of the deletion. */
+.account-email-form p,
+.account-email-link p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.account-email-form .delete-actions,
+.account-email-link .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.account-email-link div.delete-actions:last-child {
+    border-top: none;
+    margin-bottom: 0;
+}
+
+.account-email-form .email-field {
+    margin-bottom: 12px;
+}
+
+.account-email-form input[type="email"],
+.account-email-form input[type="password"] {
+    background: var(--bg-input);
+    border-color: var(--border-medium);
+}
+
+.account-email-form .email-no-access {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
 /* The way back from the export page, under its buttons. */
 .account-export .export-back {
     margin: 14px 0 0;

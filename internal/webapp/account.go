@@ -39,11 +39,17 @@ func (app *Application) renderAccount(w http.ResponseWriter, r *http.Request, st
 		app.serverError(w, err)
 		return
 	}
+	pendingEmail, err := app.Models.Users.PendingEmailChange(r.Context(), user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
 	data := app.newTemplateData(r)
 	data.User = user
 	data.Avatar = avatar
 	data.FormerNames = former
+	data.PendingEmail = pendingEmail
 	data.Form = deleteForm
 	// Laid out for phones, as the forum; crop.css goes before account.css, which sizes the frame.
 	data.Head = &templates.PageHead{

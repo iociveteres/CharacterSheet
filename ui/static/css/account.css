@@ -243,3 +243,22 @@ main:has(#avatar) {
 #account-name .account-name-input[aria-invalid="true"] {
     border-color: var(--accent-attention);
 }
+
+/* The email row: the change link after the address, the change in progress under it with its
+   cancel button, which looks like the link (main.css, .button-linklike). */
+.account-email-change {
+    margin-left: 8px;
+    font-size: 15px;
+}
+
+#account-email .account-email-pending {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+#account-email .account-email-cancel {
+    font-family: inherit;
+    font-size: inherit;
+}

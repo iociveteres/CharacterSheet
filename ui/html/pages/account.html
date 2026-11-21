@@ -19,7 +19,17 @@
     </tr>
     <tr>
         <th>{{t $.Lang "site.account.email"}}</th>
-        <td>{{.Email}}</td>
+        <td id="account-email">
+            <span class="account-email">{{.Email}}</span>
+            <a class="account-email-change" href='{{reverseRev "AccountEmail"}}'>{{t $.Lang "site.account.email.change"}}</a>
+            {{- with $.PendingEmail}}
+            <form class="account-email-pending" method="POST" action='{{reverseRev "AccountEmailCancel"}}'>
+                <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+                {{t $.Lang "site.account.email.pending" "email" .}} ·
+                <button type="submit" class="button-linklike account-email-cancel">{{t $.Lang "site.account.email.cancel"}}</button>
+            </form>
+            {{- end}}
+        </td>
     </tr>
     <tr>
         <th>{{t $.Lang "site.account.joined"}}</th>

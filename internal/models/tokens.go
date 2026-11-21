@@ -66,6 +66,7 @@ type TokenModelInterface interface {
 	DeleteAllForUser(ctx context.Context, scope TokenScope, userID int) error
 	CheckExists(ctx context.Context, scope TokenScope, token string) (bool, error)
 	UserID(ctx context.Context, scope TokenScope, token string) (int, error)
+	Email(ctx context.Context, scope TokenScope, token string) (string, error)
 }
 
 type TokenModel struct {
@@ -122,4 +123,18 @@ func (m *TokenModel) UserID(ctx context.Context, scope TokenScope, tokenPlaintex
 		return 0, ErrNoRecord
 	}
 	return id, err
+}
+
+// Email is the address of a token of the scope that has not expired (see email_change.go), ""
+// for a token without one; ErrNoRecord for none. It uses up nothing: the page of a link shows
+// what its button will do.
+func (m *TokenModel) Email(ctx context.Context, scope TokenScope, tokenPlaintext string) (string, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+	var email string
+	err := m.DB.QueryRow(ctx, `SELECT COALESCE(email, '') FROM tokens WHERE scope = $1 AND hash = $2 AND expiry > now()`,
+		scope, tokenHash[:]).Scan(&email)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNoRecord
+	}
+	return email, err
 }

@@ -29,6 +29,8 @@ var functions = template.FuncMap{
 	"str":               str,
 	"t":                 i18n.TemplateT,
 	"slide":             slideURL,
+	"mailtoIn":          mailtoIn,
+	"authorEmail":       func() string { return AuthorEmail },
 }
 
 // NewTemplateCache returns the page templates by language, then by file name of the page.
