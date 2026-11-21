@@ -33,6 +33,10 @@ type userStatus string
 const (
 	statusPending       userStatus = "pending"
 	statusEmailVerified userStatus = "email_verified"
+	// In the grace period after the user scheduled the deletion.
+	statusDeleting userStatus = "deleting"
+	// The wiped tombstone row (plan: _prd/account_deletion, section 3).
+	statusDeleted userStatus = "deleted"
 )
 
 type User struct {

@@ -393,7 +393,9 @@ func TestCreatureAuthor(t *testing.T) {
 		t.Errorf("the outsider's: %v", got)
 	}
 
-	// The name goes with the account.
+	// The name goes with the account. Its sheets go first: character_sheets.owner_id
+	// doesn't cascade, as in production.
+	r.exec(`DELETE FROM character_sheets WHERE owner_id = $1`, r.player)
 	r.exec(`DELETE FROM users WHERE id = $1`, r.player)
 	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, []string{"Fresh by gm", "Ork Boy by ", "Ork Boy by ", "Ork Boy by ", "Ulrich by "}) {
 		t.Errorf("after the author left: %v", got)

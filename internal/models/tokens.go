@@ -16,6 +16,8 @@ type TokenScope string
 const (
 	ScopeVerification   TokenScope = "verification"
 	ScopeChangePassword TokenScope = "change_password"
+	ScopeDeleteAccount  TokenScope = "delete_account"
+	ScopeCancelDeletion TokenScope = "cancel_deletion"
 )
 
 type Token struct {
