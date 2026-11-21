@@ -48,3 +48,11 @@ CREATE TABLE room_messages (
     character_name TEXT,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Tokens as they are before migration 000063, which adds their email column.
+CREATE TABLE tokens (
+    hash    BYTEA PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expiry  TIMESTAMPTZ NOT NULL,
+    scope   token_scope NOT NULL
+);

@@ -532,8 +532,8 @@ func TestAuthenticateStatuses(t *testing.T) {
 		t.Run(string(tt.status), func(t *testing.T) {
 			email := string(tt.status) + "@example.com"
 			var id int
-			err := db.QueryRow(ctx, `INSERT INTO users (name, email, hashed_password, status) VALUES ('u', $1, $2, $3) RETURNING id`,
-				email, string(hash), tt.status).Scan(&id)
+			err := db.QueryRow(ctx, `INSERT INTO users (name, email, hashed_password, status) VALUES ($1, $2, $3, $4) RETURNING id`,
+				string(tt.status), email, string(hash), tt.status).Scan(&id)
 			assert.NilError(t, err)
 
 			// A wrong password says nothing of the status.

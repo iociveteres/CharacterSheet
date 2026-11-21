@@ -20,6 +20,9 @@ const (
 	ScopeChangePassword TokenScope = "change_password"
 	ScopeDeleteAccount  TokenScope = "delete_account"
 	ScopeCancelDeletion TokenScope = "cancel_deletion"
+	ScopeChangeEmailOld TokenScope = "change_email_old"
+	ScopeChangeEmailNew TokenScope = "change_email_new"
+	ScopeRevertEmail    TokenScope = "revert_email"
 )
 
 type Token struct {
@@ -28,6 +31,9 @@ type Token struct {
 	UserID    int
 	Expiry    time.Time
 	Scope     TokenScope
+	// The address the token is about: the new one for change_email_*, the one to put back for
+	// revert_email; empty for the other scopes, stored as NULL.
+	Email string
 }
 
 func generateToken(userID int, ttl time.Duration, scope TokenScope) (*Token, error) {
@@ -77,9 +83,9 @@ func (m *TokenModel) New(ctx context.Context, userID int, ttl time.Duration, sco
 
 func (m *TokenModel) Insert(ctx context.Context, token *Token) error {
 	query := `
-INSERT INTO tokens (hash, user_id, expiry, scope)
-VALUES ($1, $2, $3, $4)`
-	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope}
+INSERT INTO tokens (hash, user_id, expiry, scope, email)
+VALUES ($1, $2, $3, $4, NULLIF($5, ''))`
+	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope, token.Email}
 	_, err := m.DB.Exec(ctx, query, args...)
 	return err
 }

@@ -13,3 +13,14 @@ CREATE TABLE users (
     status     user_status NOT NULL DEFAULT 'email_verified',
     deleted_at timestamptz
 );
+
+-- Names unique regardless of case, and their history: migration 000063.
+CREATE UNIQUE INDEX users_name_key ON users (lower(name COLLATE "und-x-icu")) WHERE name <> '';
+
+CREATE TABLE user_name_history (
+    id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id    int  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name       text NOT NULL,
+    changed_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX user_name_history_user_id_changed_at_idx ON user_name_history (user_id, changed_at DESC);
