@@ -66,6 +66,15 @@ func (app *Application) StartLimitSweeper(ctx context.Context) {
 	ratelimit.StartSweeper(ctx, &app.wg, time.Minute, app.limits.all...)
 }
 
+// devLimitsReset gives every client of every limiter its burst back, for e2e: a scenario run
+// again within minutes would meet the limits of the run before. Only under -dev.
+func (app *Application) devLimitsReset(w http.ResponseWriter, r *http.Request) {
+	for _, l := range app.limits.all {
+		l.Reset()
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // formEmail counts every email alike, whether or not someone has it: a
 // refusal must not tell which do.
 func formEmail(r *http.Request) string {
@@ -107,6 +116,8 @@ func (app *Application) Routes() http.Handler {
 	if app.Dev {
 		// e2e runs the account jobs at once (account_jobs.go); production has no such route.
 		router.HandlerFunc(http.MethodPost, "/dev/account-jobs/run", app.devAccountJobsRun)
+		// e2e sends the email change form more often than emailChangePerUser lets a person.
+		router.HandlerFunc(http.MethodPost, "/dev/limits/reset", app.devLimitsReset)
 	}
 
 	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate, app.language)

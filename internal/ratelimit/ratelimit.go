@@ -64,6 +64,13 @@ func (l *Limiter) Sweep() {
 	}
 }
 
+// Reset forgets every key: each has its burst back.
+func (l *Limiter) Reset() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	clear(l.buckets)
+}
+
 func (l *Limiter) Len() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()

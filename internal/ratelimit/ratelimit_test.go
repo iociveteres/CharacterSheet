@@ -84,3 +84,19 @@ func TestSweeperStopsWithItsContext(t *testing.T) {
 	cancel()
 	wg.Wait()
 }
+
+func TestLimiterResetGivesTheBurstBack(t *testing.T) {
+	l, _ := newTestLimiter(1, 2, time.Hour)
+	for range 2 {
+		l.Allow("a")
+	}
+	if ok, _ := l.Allow("a"); ok {
+		t.Fatal("request past the burst let through")
+	}
+	l.Reset()
+	for i := range 2 {
+		if ok, _ := l.Allow("a"); !ok {
+			t.Fatalf("request %d refused after the reset", i+1)
+		}
+	}
+}
