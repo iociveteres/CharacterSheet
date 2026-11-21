@@ -14,7 +14,7 @@ import { byline, kindInitials, quotaText } from "../../../bestiary/format";
 import { sectionOf } from "../../../bestiary/sections";
 import { renderStatBlockView, useSheetView, type SheetInstance } from "../../../sheet/api";
 import type { SheetKind } from "../../../sheet/kinds/kinds.gen";
-import { t } from "../../../i18n";
+import { t, userName } from "../../../i18n";
 
 const TABS = [{ tab: "combat", label: t("room.encounter.tab.combat") }, { tab: "monsters", label: t("room.encounter.tab.monsters") }] as const;
 
@@ -30,7 +30,7 @@ export function EncounterTabs() {
 }
 
 /** Another user's collection names its owner. */
-const collectionLabel = (c: { name: string; own: boolean; owner: string }) => c.own ? c.name : `${c.name} · ${c.owner}`;
+const collectionLabel = (c: { name: string; own: boolean; owner: string }) => c.own ? c.name : `${c.name} · ${userName(c.owner)}`;
 
 function CollectionItem({ id, label }: { id: number | null; label: string }) {
     const picked = creatureFilter.value.collection === id;

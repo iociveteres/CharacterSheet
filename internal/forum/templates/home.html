@@ -139,8 +139,8 @@
      and of a parent page (sections.go, sectionLast). */}}
 {{define "forum-section-last"}}
 {{- with .Post}}
-                    <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
-                    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a><a href="{{.URL}}">{{$.Time .At}}</a></span>
+                    <a class="topic" href="{{.TopicURL}}">{{$.TitleOf .TopicTitle}}</a>
+                    <span class="by">{{$.UserLink "forum-author-name" .AuthorID .AuthorName}}<a href="{{.URL}}">{{$.Time .At}}</a></span>
 {{- else}}
                     <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
 {{- end}}

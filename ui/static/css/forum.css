@@ -1992,6 +1992,12 @@ main.forum-wide {
     text-decoration: underline;
 }
 
+/* A deleted account has no page: its name is the reader's words, grey and without a link
+   (view.UserLink). */
+#forum .deleted-user {
+    color: var(--text-secondary);
+}
+
 /* ===== The user page (/forum/user/:id, users.md) ===== */
 
 /* The head: the avatar at its post size, then the name, role and facts. */

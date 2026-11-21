@@ -58,14 +58,28 @@ type notificationLine struct {
 	Unread bool
 }
 
+// shownParams are the parameters a row keeps as its text takes them. The deletion of an account
+// empties its name in others' quote notifications, and the title of a topic it erased whole
+// (_prd/account_deletion/plan.md, 4.3): the reader's words stand for them.
+func shownParams(lang string, kept map[string]any) i18n.Params {
+	params := i18n.Params{}
+	for k, value := range kept {
+		params[k] = value
+	}
+	if name, ok := kept["name"].(string); ok {
+		params["name"] = shownName(lang, name)
+	}
+	if title, ok := kept["title"].(string); ok {
+		params["title"] = shownTitle(lang, title)
+	}
+	return params
+}
+
 // line words the row in the reader's language. The text takes the parameters the row keeps, so a
 // topic the viewer no longer sees still has its title; it is a link only while the viewer may read
 // the topic (CanReadTopic), and leads to the post of the row — for replies, the first unread one.
 func (n notificationRow) line(v view, accountURL string) notificationLine {
-	params := i18n.Params{}
-	for k, value := range n.Params {
-		params[k] = value
-	}
+	params := shownParams(v.Lang, n.Params)
 	key := "forum.notifications.text." + string(n.Kind)
 	switch n.Kind {
 	case notifyReplies:

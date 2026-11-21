@@ -53,7 +53,7 @@ func quoteText(lang string, p post) string {
 func quoteHead(lang string, p post) string {
 	var b strings.Builder
 	b.WriteString("> **")
-	b.WriteString(escapeMarkdown(p.AuthorName))
+	b.WriteString(escapeMarkdown(shownName(lang, p.AuthorName)))
 	b.WriteString("** [")
 	// The name of the author can be anything; the words of the catalog only need their brackets
 	// kept from closing the link.

@@ -31,6 +31,25 @@ func userURL(id int) string {
 	return "/forum/user/" + strconv.Itoa(id)
 }
 
+// shownName is a name as the reader sees it. A deleted account keeps its id with an empty name
+// (_prd/account_deletion/plan.md, 3), which the reader's language words; a sign-up never leaves a
+// name empty.
+func shownName(lang, name string) string {
+	if name == "" {
+		return i18n.T(lang, "common.deletedUser")
+	}
+	return name
+}
+
+// shownTitle is a topic's title as the reader sees it: a topic its author erased whole with their
+// account keeps an empty one, which moderators and notifications still show.
+func shownTitle(lang, title string) string {
+	if title == "" {
+		return i18n.T(lang, "forum.topics.erasedTitle")
+	}
+	return title
+}
+
 // forumUser is a user as their page shows them.
 type forumUser struct {
 	ID           int
@@ -119,7 +138,8 @@ func (f *Forum) loadUser(ctx context.Context, id int, v Viewer, now time.Time) (
 			ORDER BY l.id DESC LIMIT 1
 		) e ON true
 		LEFT JOIN users em ON em.id = e.moderator_id
-		WHERE u.id = $1`, id, now, v.CanReadDeletedPosts(), string(actionEraseAbout)).
+		-- A deleted account has no page (_prd/account_deletion/plan.md, 3).
+		WHERE u.id = $1 AND u.status <> 'deleted'`, id, now, v.CanReadDeletedPosts(), string(actionEraseAbout)).
 		Scan(&u.Name, &u.RegisteredAt, &u.Moderator, &u.Posts, &u.Topics, &u.ListedPosts, &u.ListedTopics,
 			&lastID, &lastAt, &u.About,
 			&banAt, &banReason, &banExpires, &banByID, &banBy,

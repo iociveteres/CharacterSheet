@@ -168,6 +168,8 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 		return
 	}
 	data := deletePostData{view: v, Post: p, ByModerator: v.Viewer.DeletesAsModerator(p.post)}
+	// A deleted account (an empty name, _prd/account_deletion/plan.md, 3) has nobody left to ban.
+	actOnAuthor := v.Viewer.CanActOnAuthor(p.post) && p.AuthorName != ""
 	var form modForm
 	if r.Method == http.MethodPost {
 		var err error
@@ -177,7 +179,7 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 		}
 		// Only the window of a moderator over a member's post has the boxes (an own post, another
 		// moderator's have none): a form that sends them anyway is refused before anything changes.
-		if (form.Ban || form.Recent) && !v.Viewer.CanActOnAuthor(p.post) {
+		if (form.Ban || form.Recent) && !actOnAuthor {
 			forbidden(w)
 			return
 		}
@@ -190,7 +192,7 @@ func (f *Forum) deletePost(w http.ResponseWriter, r *http.Request, v view) {
 			return
 		}
 	}
-	if v.Viewer.CanActOnAuthor(p.post) {
+	if actOnAuthor {
 		a := deleteAuthor{ID: p.AuthorID, Name: p.AuthorName, Days: banDays}
 		var err error
 		if a.Ban, err = f.standingBan(r.Context(), p.AuthorID, v.Now); err == nil {

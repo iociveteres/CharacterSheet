@@ -6,11 +6,11 @@
     <div class="forum-head forum-topic-head">
         <div class="forum-head-text">
             {{with .Topic}}
-            <h2>{{.Title}}
+            <h2>{{$.TitleOf .Title}}
                 {{- if or .Pinned .Closed}}<span class="forum-marks forum-topic-title-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
                 {{- if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}</h2>
             <div class="forum-topic-meta">
-                <span><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a> · {{$.Time .CreatedAt}} · {{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
+                <span>{{$.UserLink "forum-author-name" .AuthorID .AuthorName}} · {{$.Time .CreatedAt}} · {{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
             </div>
             {{end}}
         </div>
@@ -35,7 +35,7 @@
 
     {{- /* Only a moderator reads a deleted topic: who deleted it, when, why (design/decisions.md, 20). */}}
     {{with .Topic}}{{if .Deleted}}
-    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> <a class="forum-author-name" href="{{userURL .DeletedByID}}">{{.DeletedByName}}</a>, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
+    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> {{$.UserLink "forum-author-name" .DeletedByID .DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
     {{end}}{{end}}
 
     {{template "forum-pagination" .Pagination}}

@@ -1,7 +1,7 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- template "forum-mod-mode-strip" .}}
     {{- with .Post.Topic}}
-    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{$.TitleOf .Title}}</a></nav>
     {{- end}}
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.restorePost"}}</h2></div></div>

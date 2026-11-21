@@ -4,7 +4,7 @@
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.moderation.log"}}</h2>
         {{- with .User}}
-        <span class="forum-description">{{t $.Lang "forum.users.logOf"}} <a class="forum-author-name" href="{{userURL .ID}}">{{.Name}}</a> · <a href="/forum/mod/log">{{t $.Lang "forum.users.logAll"}}</a></span>
+        <span class="forum-description">{{t $.Lang "forum.users.logOf"}} {{$.UserLink "forum-author-name" .ID .Name}} · <a href="/forum/mod/log">{{t $.Lang "forum.users.logAll"}}</a></span>
         {{- end}}</div></div>
 
     {{if gt .Pagination.Total 1}}
@@ -19,12 +19,12 @@
         {{- range .Lines}}
         <li class="forum-row" id="log-{{.ID}}">
             <div class="forum-row-main">
-                <span class="meta"><a class="forum-author-name" href="{{userURL .ModeratorID}}">{{.ModeratorName}}</a> · {{$.Time .At}}</span>
+                <span class="meta">{{$.UserLink "forum-author-name" .ModeratorID .ModeratorName}} · {{$.Time .At}}</span>
                 <span class="forum-log-what"><strong>{{.ActionText $.Lang}}</strong>
-                    {{- if .UserID}}: <a class="forum-author-name" href="{{userURL .UserID}}">{{.UserName}}</a>
+                    {{- if .UserID}}: {{$.UserLink "forum-author-name" .UserID .UserName}}
                     {{- with .PostID}} · <a href="/forum/post/{{.}}">{{t $.Lang "forum.moderation.logPost"}}</a>{{end}}
-                    {{- else if .PostID}}: <a href="/forum/post/{{.PostID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
-                    {{- else if .TopicID}}: <a href="/forum/topic/{{.TopicID}}">{{.TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .PostID}}: <a href="/forum/post/{{.PostID}}">{{$.TitleOf .TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                    {{- else if .TopicID}}: <a href="/forum/topic/{{.TopicID}}">{{$.TitleOf .TopicTitle}}</a>{{if .TopicDeleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
                     {{- else if .SectionID}}: <a href="/forum/section/{{.SectionID}}">{{.SectionName}}</a>
                     {{- end}}</span>
                 {{- with .Was}}
