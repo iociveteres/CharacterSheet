@@ -98,6 +98,10 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness)
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 	router.HandlerFunc(http.MethodGet, "/stats/online", app.onlineUsersHandler)
+	if app.Dev {
+		// e2e runs the account jobs at once (account_jobs.go); production has no such route.
+		router.HandlerFunc(http.MethodPost, "/dev/account-jobs/run", app.devAccountJobsRun)
+	}
 
 	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate, app.language)
 	// The body is bounded ahead of noSurf and the rate limited after it: a

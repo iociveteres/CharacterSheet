@@ -32,6 +32,9 @@ type UserModelInterface interface {
 	CancelDeletion(ctx context.Context, userID int) error
 	Wipe(ctx context.Context, userID int) (*WipedAccount, error)
 	DeletePending(ctx context.Context, olderThan time.Duration) (int64, error)
+	PendingAccounts(ctx context.Context) ([]PendingAccount, error)
+	MarkReminded(ctx context.Context, userID int) error
+	HurryDeletion(ctx context.Context, userID int) error
 }
 
 type userStatus string

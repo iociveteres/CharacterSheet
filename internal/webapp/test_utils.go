@@ -87,13 +87,17 @@ func (noNotifications) UnreadNotifications(context.Context, int) (int, error) { 
 
 type sentMail struct {
 	Recipient string
+	// Template is the name of the email's template.
+	Template string
 	mailer.Message
 }
 
-// testMailer renders emails as mailer.Mailer does and keeps them instead of sending.
+// testMailer renders emails as mailer.Mailer does and keeps them instead of sending; with fail
+// set it sends nothing and returns it, as an SMTP server that is down.
 type testMailer struct {
 	mu   sync.Mutex
 	sent []sentMail
+	fail error
 }
 
 func (m *testMailer) Send(recipient, lang, name string, data any) error {
@@ -103,8 +107,19 @@ func (m *testMailer) Send(recipient, lang, name string, data any) error {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.sent = append(m.sent, sentMail{recipient, msg})
+	if m.fail != nil {
+		return m.fail
+	}
+	m.sent = append(m.sent, sentMail{Recipient: recipient, Template: name, Message: msg})
 	return nil
+}
+
+// failMails makes the emails fail with err from now on; nil sends them again.
+func (app *Application) failMails(err error) {
+	m := app.Mailer.(*testMailer)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.fail = err
 }
 
 // sentMails waits for the emails that handlers send in the background.

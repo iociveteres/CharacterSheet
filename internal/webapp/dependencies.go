@@ -14,7 +14,9 @@ import (
 )
 
 type Dependencies struct {
-	Debug          bool
+	Debug bool
+	// Dev is the -dev flag: it adds the routes e2e needs, such as /dev/account-jobs/run.
+	Dev            bool
 	ErrorLog       *log.Logger
 	InfoLog        *log.Logger
 	Models         models.Models
@@ -39,6 +41,9 @@ type Application struct {
 	wg          sync.WaitGroup
 	onlineUsers atomic.Int64
 	limits      *limiters
+	// accountJobs lets one pass of the account jobs run at a time: the ticker's and the -dev
+	// route's would send a reminder twice.
+	accountJobs sync.Mutex
 }
 
 func NewApplication(deps *Dependencies) *Application {
@@ -46,7 +51,7 @@ func NewApplication(deps *Dependencies) *Application {
 }
 
 // Wait blocks until background tasks started via app.background, the
-// online-users updater and the limit sweeper have finished. cmd/web calls
+// online-users updater, the limit sweeper and the account jobs have finished. cmd/web calls
 // this during shutdown.
 func (app *Application) Wait() {
 	app.wg.Wait()

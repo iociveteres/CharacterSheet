@@ -11,13 +11,35 @@ import (
 // UserModel knows user 1 (Alice); Locale is what SetLocale saved for her, InsertedLocale
 // the locale of the last Insert. Alice's deletion is scheduled by ScheduleDeletion with
 // DeleteToken and cancelled by CancelDeletion; while it is pending she is in her grace period.
+// Wipe carries it out: then Wiped is set and the deletion is gone.
 type UserModel struct {
 	mu             sync.Mutex
 	Locale         string
 	InsertedLocale string
 	// Deletion is Alice's pending deletion, nil for none.
-	Deletion *models.DeletionChoices
-	DeleteAt time.Time
+	Deletion   *models.DeletionChoices
+	DeleteAt   time.Time
+	RemindedAt *time.Time
+	Wiped      bool
+	// PendingOlderThan is what the last DeletePending got.
+	PendingOlderThan time.Duration
+}
+
+// Schedule puts Alice into her grace period with the deletion at deleteAt and the reminder at
+// remindedAt, nil for none, as the database of the background job might have it.
+func (m *UserModel) Schedule(deleteAt time.Time, remindedAt *time.Time) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Deletion = &models.DeletionChoices{}
+	m.DeleteAt = deleteAt
+	m.RemindedAt = remindedAt
+}
+
+// State is Alice's reminder, nil for none, and whether she is wiped.
+func (m *UserModel) State() (remindedAt *time.Time, wiped bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.RemindedAt, m.Wiped
 }
 
 func (m *UserModel) deleting() bool {
@@ -169,6 +191,7 @@ func (m *UserModel) ScheduleDeletion(ctx context.Context, userID int, tokenPlain
 	}
 	m.Deletion = &choices
 	m.DeleteAt = time.Now().Add(models.DeletionGrace)
+	m.RemindedAt = nil
 	return &models.ScheduledDeletion{DeleteAt: m.DeleteAt, CancelToken: CancelToken}, nil
 }
 
@@ -191,10 +214,54 @@ func (m *UserModel) CancelDeletion(ctx context.Context, userID int) error {
 	return nil
 }
 
+// Wipe gives Alice's email, name and locale, and no rooms.
 func (m *UserModel) Wipe(ctx context.Context, userID int) (*models.WipedAccount, error) {
-	return nil, models.ErrNoRecord
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID != 1 || m.Deletion == nil {
+		return nil, models.ErrNoRecord
+	}
+	m.Deletion = nil
+	m.Wiped = true
+	return &models.WipedAccount{Email: "alice@example.com", Name: "Alice", Locale: m.Locale}, nil
 }
 
 func (m *UserModel) DeletePending(ctx context.Context, olderThan time.Duration) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.PendingOlderThan = olderThan
 	return 0, nil
+}
+
+func (m *UserModel) PendingAccounts(ctx context.Context) ([]models.PendingAccount, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.Deletion == nil {
+		return nil, nil
+	}
+	return []models.PendingAccount{{
+		UserID: 1, Email: "alice@example.com", Name: "Alice", Locale: m.Locale, DeleteAt: m.DeleteAt, RemindedAt: m.RemindedAt,
+	}}, nil
+}
+
+func (m *UserModel) MarkReminded(ctx context.Context, userID int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID == 1 && m.Deletion != nil {
+		now := time.Now()
+		m.RemindedAt = &now
+	}
+	return nil
+}
+
+func (m *UserModel) HurryDeletion(ctx context.Context, userID int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if userID != 1 || m.Deletion == nil {
+		return models.ErrNoRecord
+	}
+	back := time.Now().Add(-48 * time.Hour)
+	m.DeleteAt = back
+	m.RemindedAt = &back
+	return nil
 }

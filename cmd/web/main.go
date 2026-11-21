@@ -83,7 +83,7 @@ func main() {
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
-	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch)")
+	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch) and add the routes of e2e")
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel == "" {
 		logLevel = "error"
@@ -190,6 +190,7 @@ func main() {
 
 	app := webapp.NewApplication(&webapp.Dependencies{
 		Debug:          cfg.debug,
+		Dev:            cfg.dev,
 		ErrorLog:       errorLog,
 		InfoLog:        infoLog,
 		Models:         m,
