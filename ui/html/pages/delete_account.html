@@ -9,6 +9,8 @@
 <form class="account-section account-delete" method="POST" action='{{reverseRev "AccountDeleteConfirm" $.Token}}'>
     <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
 
+    <p>{{t $.Lang "site.account.delete.exportFirst"}} <a href='{{reverseRev "AccountExport"}}'>{{t $.Lang "site.account.export.open"}}</a></p>
+
     {{with .LoneRooms}}
     <p>{{t $.Lang "site.account.delete.loneRooms"}}</p>
     <ul>{{range .}}<li>{{.Name}}</li>{{end}}</ul>

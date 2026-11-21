@@ -9,6 +9,7 @@
     <p>{{t .Lang "site.account.delete.pendingHint"}}</p>
     <div class="delete-actions">
         <input type='submit' value='{{t .Lang "site.account.delete.cancel"}}'>
+        <a class="button secondary" href='{{reverseRev "AccountExport"}}'>{{t .Lang "site.account.export.open"}}</a>
     </div>
 </form>
 </div>

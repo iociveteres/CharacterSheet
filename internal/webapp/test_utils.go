@@ -56,6 +56,7 @@ func newTestApplication(t *testing.T) *Application {
 		Bestiary:        &mocks.BestiaryModel{},
 		Portraits:       &mocks.PortraitModel{},
 		Avatars:         &mocks.AvatarModel{},
+		DataExports:     &mocks.DataExportModel{},
 	}
 
 	quiet := log.New(io.Discard, "", 0)
@@ -68,6 +69,7 @@ func newTestApplication(t *testing.T) *Application {
 		FormDecoder:    formDecoder,
 		SessionManager: sessionManager,
 		Mailer:         &testMailer{},
+		ExportDir:      t.TempDir(),
 	})
 	// No pool: a test that opens a forum page makes its own forum on forumtest.NewDB, the
 	// schema and migrations cost every test that gets one.

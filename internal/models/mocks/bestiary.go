@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -105,7 +106,9 @@ func (m *BestiaryModel) Export(ctx context.Context, userID, collectionID int) (*
 	if err := own(userID, collectionID); err != nil {
 		return nil, err
 	}
-	return &models.CollectionFile{Format: models.CollectionFileFormat, Version: models.CollectionFileVersion, Name: "Orks", Creatures: []models.CreatureInFile{}}, nil
+	return &models.CollectionFile{Format: models.CollectionFileFormat, Version: models.CollectionFileVersion, Name: "Orks", Creatures: []models.CreatureInFile{
+		{SheetKind: models.DefaultSheetKind, Content: json.RawMessage(`{"characterInfo": {"characterName": "Boy"}}`)},
+	}}, nil
 }
 
 func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, creatures []models.CreatureInFile) (int, error) {

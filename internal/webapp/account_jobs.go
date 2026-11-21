@@ -24,8 +24,10 @@ const (
 	pendingAccountAge = 30 * 24 * time.Hour
 )
 
-// StartAccountJobs makes a pass of the account jobs now and every 10 minutes, until ctx is done.
+// StartAccountJobs makes a pass of the account jobs now and every 10 minutes, and starts the
+// workers of the data exports, until ctx is done.
 func (app *Application) StartAccountJobs(ctx context.Context) {
+	app.startExportWorkers(ctx)
 	app.wg.Add(1)
 	go func() {
 		defer app.wg.Done()
@@ -42,8 +44,9 @@ func (app *Application) StartAccountJobs(ctx context.Context) {
 	}()
 }
 
-// runAccountJobs makes one pass: the reminders, the wipes that are due and the accounts never
-// confirmed. A failure is logged and the pass goes on; what failed is tried on the next one.
+// runAccountJobs makes one pass: the reminders, the wipes that are due, the accounts never
+// confirmed and the expired data exports. A failure is logged and the pass goes on; what failed
+// is tried on the next one.
 func (app *Application) runAccountJobs(ctx context.Context) {
 	app.accountJobs.Lock()
 	defer app.accountJobs.Unlock()
@@ -61,6 +64,14 @@ func (app *Application) runAccountJobs(ctx context.Context) {
 		app.ErrorLog.Output(2, fmt.Sprintf("account jobs: delete pending accounts: %s", err))
 	} else if n > 0 {
 		app.InfoLog.Printf("deleted %d accounts never confirmed", n)
+	}
+
+	files, err := app.Models.DataExports.DeleteExpired(ctx, exportLifetime)
+	if err != nil {
+		app.ErrorLog.Output(2, fmt.Sprintf("account jobs: delete expired data exports: %s", err))
+	}
+	for _, f := range files {
+		app.removeExportFile(f)
 	}
 }
 
@@ -108,8 +119,9 @@ func (app *Application) remindDeletion(ctx context.Context, a models.PendingAcco
 	return app.Models.Users.MarkReminded(ctx, a.UserID)
 }
 
-// wipeAccount carries out the deletion and, after its commit, tells the open rooms and emails
-// the former address. The log line has the id only: it is for working out what happened.
+// wipeAccount carries out the deletion and, after its commit, tells the open rooms, emails the
+// former address and deletes the archive of the data export. The log line has the id only: it is
+// for working out what happened.
 func (app *Application) wipeAccount(ctx context.Context, userID int, unreminded bool) {
 	w, err := app.Models.Users.Wipe(ctx, userID)
 	if errors.Is(err, models.ErrNoRecord) {
@@ -129,6 +141,8 @@ func (app *Application) wipeAccount(ctx context.Context, userID int, unreminded 
 	if err := app.Mailer.Send(w.Email, jobMailLanguage(w.Locale), "account_deleted", map[string]any{"Name": w.Name}); err != nil {
 		app.ErrorLog.Output(2, fmt.Sprintf("account jobs: send account deleted to user %d: %s", userID, err))
 	}
+	// Wipe took the export's row; the archive goes only now that the wipe is committed.
+	app.removeExportFile(w.ExportFile)
 }
 
 // jobMailLanguage is the language of an email the job sends: the user's, else the default, as

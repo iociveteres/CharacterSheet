@@ -165,6 +165,12 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, routeAdd("AccountDeletionCancelLink", "/account/deletion/cancel/token/:token", ":token"), dynamic.ThenFunc(app.accountDeletionCancelLink))
 	router.Handler(http.MethodPost, reverse.Get("AccountDeletionCancelLink"), form.ThenFunc(app.accountDeletionCancelLinkPost))
 
+	// The export of the user's data (data_export.go): for the signed-in user and for one in the
+	// grace period of a deletion, so the routes are not protected and check the user themselves.
+	router.Handler(http.MethodGet, routeAdd("AccountExport", "/account/export"), dynamic.ThenFunc(app.accountExport))
+	router.Handler(http.MethodPost, reverse.Get("AccountExport"), form.ThenFunc(app.accountExportPost))
+	router.Handler(http.MethodGet, routeAdd("AccountExportDownload", "/account/export/download"), dynamic.ThenFunc(app.accountExportDownload))
+
 	router.Handler(http.MethodGet, routeAdd("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
 	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), form.ThenFunc(app.accountPasswordResetPost))
 

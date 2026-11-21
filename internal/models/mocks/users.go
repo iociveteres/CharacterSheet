@@ -23,6 +23,8 @@ type UserModel struct {
 	Wiped      bool
 	// PendingOlderThan is what the last DeletePending got.
 	PendingOlderThan time.Duration
+	// ExportFile is the archive of Alice's data export that Wipe returns.
+	ExportFile string
 }
 
 // Schedule puts Alice into her grace period with the deletion at deleteAt and the reminder at
@@ -223,7 +225,7 @@ func (m *UserModel) Wipe(ctx context.Context, userID int) (*models.WipedAccount,
 	}
 	m.Deletion = nil
 	m.Wiped = true
-	return &models.WipedAccount{Email: "alice@example.com", Name: "Alice", Locale: m.Locale}, nil
+	return &models.WipedAccount{Email: "alice@example.com", Name: "Alice", Locale: m.Locale, ExportFile: m.ExportFile}, nil
 }
 
 func (m *UserModel) DeletePending(ctx context.Context, olderThan time.Duration) (int64, error) {

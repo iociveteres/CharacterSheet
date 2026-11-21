@@ -28,6 +28,10 @@ type Dependencies struct {
 	Gamedata       gamedata.Catalogs
 	Mailer         MailSender
 	Forum          ForumService
+	// ExportDir is where the archives of the data exports are written (data_export.go);
+	// ExportWorkers is how many are built at once, none in tests that start no workers.
+	ExportDir     string
+	ExportWorkers int
 }
 
 // MailSender is mailer.Mailer; tests put a fake in its place.
@@ -44,10 +48,12 @@ type Application struct {
 	// accountJobs lets one pass of the account jobs run at a time: the ticker's and the -dev
 	// route's would send a reminder twice.
 	accountJobs sync.Mutex
+	// exportWake wakes an idle worker of the data exports when one is queued.
+	exportWake chan struct{}
 }
 
 func NewApplication(deps *Dependencies) *Application {
-	return &Application{Dependencies: deps, limits: newLimiters()}
+	return &Application{Dependencies: deps, limits: newLimiters(), exportWake: make(chan struct{}, 1)}
 }
 
 // Wait blocks until background tasks started via app.background, the
