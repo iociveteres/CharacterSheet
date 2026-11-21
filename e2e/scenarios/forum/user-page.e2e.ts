@@ -63,7 +63,7 @@ describe("forum: the user page and «About»", () => {
         const facts = await player.page.locator(".forum-user-facts dt").allInnerTexts();
         expect(facts.map(s => s.trim())).toEqual(["Registered", "Posts", "Topics", "Last post"]);
         const own = player.page.locator(".forum-user-head p.meta").first();
-        expect((await own.innerText()).trim()).toBe("This is your page. The avatar is changed on the page “Account”.");
+        expect((await own.innerText()).trim()).toBe("This is your page. The name and the avatar are changed on the page “Account”.");
         expect(await own.locator("a").getAttribute("href")).toBe("/account/view#avatar");
 
         const tabs = player.page.locator(".forum-user-tabs a.tab");

@@ -36,8 +36,12 @@ type ExportAccount struct {
 	CreatedAt time.Time `json:"createdAt"`
 	// Locale is the language the user picked, "" for none.
 	Locale string `json:"locale"`
+	// FormerNames are all of them, newest first; the pages show only the last few.
+	FormerNames []NameChange `json:"formerNames"`
 }
 
+// Account leaves out an email change not yet confirmed (plan _prd/account_name_email, section 7):
+// it is a token, not data of the account.
 func (m *DataExportModel) Account(ctx context.Context, userID int) (*ExportAccount, error) {
 	a := &ExportAccount{}
 	err := m.DB.QueryRow(ctx, `SELECT name, email, created_at, COALESCE(locale, '') FROM users WHERE id = $1`, userID).
@@ -45,6 +49,10 @@ func (m *DataExportModel) Account(ctx context.Context, userID int) (*ExportAccou
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNoRecord
 	}
+	if err != nil {
+		return nil, err
+	}
+	a.FormerNames, err = (&UserModel{DB: m.DB}).NameHistory(ctx, userID, 0)
 	return a, err
 }
 

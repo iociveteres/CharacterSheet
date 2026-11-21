@@ -4,14 +4,17 @@
 //   npm run seed [-- --base URL]
 //
 // Writes, next to the perf session (all gitignored):
-//   scripts/perf/.auth-<key>.json  session of a user: gm, moderator, player, player2, outsider, leaver
+//   scripts/perf/.auth-<key>.json  session of a user: gm, moderator, player, player2, outsider, leaver,
+//                                  renamer, mover
 //   scripts/perf/.seed.json        the room id, the users with their sheets and session files,
 //                                  the stress sheets of scripts/perf/stress.mjs, the gm's sheets of
 //                                  the other kinds (kindSheets.pathfinder_crusade), the gm's
 //                                  encounter of the stress test (stressEncounter), the forum
 //                                  scenarios' sections and long topic (forum), the leaver's
-//                                  deletion token and folder (account)
-// Run it again after a test that kicked someone or changed roles, or deleted the leaver.
+//                                  deletion token and folder, the links of the mover's email
+//                                  change (account)
+// Run it again after a test that kicked someone or changed roles, deleted the leaver, renamed
+// someone or changed the mover's email.
 
 import { chromium } from 'playwright-core';
 import { parseArgs } from 'node:util';
@@ -64,4 +67,4 @@ try {
     await browser.close();
 }
 
-writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets, stressEncounter: seed.stressEncounter, forum: seed.forum, account: seed.account }, null, 2) + '\n');
+writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, password: seed.password, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets, stressEncounter: seed.stressEncounter, forum: seed.forum, account: seed.account }, null, 2) + '\n');

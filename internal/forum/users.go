@@ -254,6 +254,28 @@ type userData struct {
 	Pagination pagination
 	Mod        *userMod
 	Forms      userForms
+	// FormerNames are the user's last names before the current one, the latest first.
+	FormerNames []formerName
+}
+
+// formerName is a name the user had until ChangedAt (_prd/account_name_email/plan.md, §3).
+type formerName struct {
+	Name      string
+	ChangedAt time.Time
+}
+
+// formerNamesShown is how many former names the page shows, as the Account page; the history keeps
+// them all.
+const formerNamesShown = 10
+
+func (f *Forum) formerNames(ctx context.Context, userID int) ([]formerName, error) {
+	rows, err := f.db.Query(ctx, `
+		SELECT name, changed_at FROM user_name_history
+		WHERE user_id = $1 ORDER BY changed_at DESC, id DESC LIMIT $2`, userID, formerNamesShown)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[formerName])
 }
 
 // TopicLine is a row of the tab «Topics»: {{template "forum-topic-row" ($.TopicLine .)}}.
@@ -334,6 +356,9 @@ func (f *Forum) renderUser(w http.ResponseWriter, r *http.Request, v view, id, s
 		data.Posts, err = f.userPosts(ctx, u.ID, page, v.Shown)
 	} else {
 		data.Topics, err = f.topicRows(ctx, "t.author_id = $1", "t.created_at DESC, t.id DESC", u.ID, page, userTopicsPerPage, v.Shown)
+	}
+	if err == nil {
+		data.FormerNames, err = f.formerNames(ctx, u.ID)
 	}
 	if err != nil {
 		f.host.ServerError(w, r, err)

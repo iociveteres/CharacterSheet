@@ -20,6 +20,9 @@ const (
 	ScopeChangePassword TokenScope = "change_password"
 	ScopeDeleteAccount  TokenScope = "delete_account"
 	ScopeCancelDeletion TokenScope = "cancel_deletion"
+	ScopeChangeEmailOld TokenScope = "change_email_old"
+	ScopeChangeEmailNew TokenScope = "change_email_new"
+	ScopeRevertEmail    TokenScope = "revert_email"
 )
 
 type Token struct {
@@ -28,6 +31,9 @@ type Token struct {
 	UserID    int
 	Expiry    time.Time
 	Scope     TokenScope
+	// The address the token is about: the new one for change_email_*, the one to put back for
+	// revert_email; empty for the other scopes, stored as NULL.
+	Email string
 }
 
 func generateToken(userID int, ttl time.Duration, scope TokenScope) (*Token, error) {
@@ -60,6 +66,7 @@ type TokenModelInterface interface {
 	DeleteAllForUser(ctx context.Context, scope TokenScope, userID int) error
 	CheckExists(ctx context.Context, scope TokenScope, token string) (bool, error)
 	UserID(ctx context.Context, scope TokenScope, token string) (int, error)
+	Email(ctx context.Context, scope TokenScope, token string) (string, error)
 }
 
 type TokenModel struct {
@@ -77,9 +84,9 @@ func (m *TokenModel) New(ctx context.Context, userID int, ttl time.Duration, sco
 
 func (m *TokenModel) Insert(ctx context.Context, token *Token) error {
 	query := `
-INSERT INTO tokens (hash, user_id, expiry, scope)
-VALUES ($1, $2, $3, $4)`
-	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope}
+INSERT INTO tokens (hash, user_id, expiry, scope, email)
+VALUES ($1, $2, $3, $4, NULLIF($5, ''))`
+	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope, token.Email}
 	_, err := m.DB.Exec(ctx, query, args...)
 	return err
 }
@@ -116,4 +123,18 @@ func (m *TokenModel) UserID(ctx context.Context, scope TokenScope, tokenPlaintex
 		return 0, ErrNoRecord
 	}
 	return id, err
+}
+
+// Email is the address of a token of the scope that has not expired (see email_change.go), ""
+// for a token without one; ErrNoRecord for none. It uses up nothing: the page of a link shows
+// what its button will do.
+func (m *TokenModel) Email(ctx context.Context, scope TokenScope, tokenPlaintext string) (string, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+	var email string
+	err := m.DB.QueryRow(ctx, `SELECT COALESCE(email, '') FROM tokens WHERE scope = $1 AND hash = $2 AND expiry > now()`,
+		scope, tokenHash[:]).Scan(&email)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNoRecord
+	}
+	return email, err
 }

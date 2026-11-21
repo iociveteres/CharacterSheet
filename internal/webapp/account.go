@@ -3,8 +3,6 @@ package webapp
 import (
 	"errors"
 	"net/http"
-	"strings"
-	"unicode/utf8"
 
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
@@ -36,10 +34,22 @@ func (app *Application) renderAccount(w http.ResponseWriter, r *http.Request, st
 		app.serverError(w, err)
 		return
 	}
+	former, err := app.formerNames(r, user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	pendingEmail, err := app.Models.Users.PendingEmailChange(r.Context(), user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
 	data := app.newTemplateData(r)
 	data.User = user
 	data.Avatar = avatar
+	data.FormerNames = former
+	data.PendingEmail = pendingEmail
 	data.Form = deleteForm
 	// Laid out for phones, as the forum; crop.css goes before account.css, which sizes the frame.
 	data.Head = &templates.PageHead{
@@ -64,9 +74,7 @@ func (app *Application) accountAvatar(r *http.Request, user *models.User) (*temp
 	if hash, ok := hashes[user.ID]; ok {
 		a.URL = avatarURL(hash)
 	}
-	if first, _ := utf8.DecodeRuneInString(user.Name); first != utf8.RuneError {
-		a.Initial = strings.ToUpper(string(first))
-	}
+	a.Initial = nameInitial(user.Name)
 	return a, nil
 }
 

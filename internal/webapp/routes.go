@@ -30,6 +30,10 @@ type limiters struct {
 	uploadsPerUser *ratelimit.Limiter
 	// The email with the link of the account's deletion page.
 	deleteLinkPerUser *ratelimit.Limiter
+	// Renames of the Account page: the name history is not swollen by a script.
+	renamePerUser *ratelimit.Limiter
+	// The email with the link of an email change: three at once leave room for a wrong password.
+	emailChangePerUser *ratelimit.Limiter
 
 	all []*ratelimit.Limiter
 }
@@ -51,6 +55,8 @@ func newLimiters() *limiters {
 	ls.resetPerEmail = add(3, time.Hour, 3)
 	ls.uploadsPerUser = add(20, time.Minute, 20)
 	ls.deleteLinkPerUser = add(1, 10*time.Minute, 1)
+	ls.renamePerUser = add(10, time.Hour, 10)
+	ls.emailChangePerUser = add(1, 10*time.Minute, 3)
 	return ls
 }
 
@@ -58,6 +64,15 @@ func newLimiters() *limiters {
 // requests back in full, until ctx is done.
 func (app *Application) StartLimitSweeper(ctx context.Context) {
 	ratelimit.StartSweeper(ctx, &app.wg, time.Minute, app.limits.all...)
+}
+
+// devLimitsReset gives every client of every limiter its burst back, for e2e: a scenario run
+// again within minutes would meet the limits of the run before. Only under -dev.
+func (app *Application) devLimitsReset(w http.ResponseWriter, r *http.Request) {
+	for _, l := range app.limits.all {
+		l.Reset()
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // formEmail counts every email alike, whether or not someone has it: a
@@ -101,6 +116,8 @@ func (app *Application) Routes() http.Handler {
 	if app.Dev {
 		// e2e runs the account jobs at once (account_jobs.go); production has no such route.
 		router.HandlerFunc(http.MethodPost, "/dev/account-jobs/run", app.devAccountJobsRun)
+		// e2e sends the email change form more often than emailChangePerUser lets a person.
+		router.HandlerFunc(http.MethodPost, "/dev/limits/reset", app.devLimitsReset)
 	}
 
 	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate, app.language)
@@ -147,11 +164,26 @@ func (app *Application) Routes() http.Handler {
 	protected := dynamic.Append(app.requireAuthentication)
 	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.signedInUser, nil))
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodPut, "/account/name", protected.Append(
+		app.rateLimit(limits.renamePerUser, app.signedInUser, app.refuseRename),
+	).ThenFunc(app.accountNamePut))
 	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
 	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
 	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))
 	// Public: no session, no CSRF; anyone may see an avatar (internal/webapp/avatars.go).
 	router.HandlerFunc(http.MethodGet, "/avatar/:hash", app.avatarGet)
+
+	// The email change (email_change.go): the form, its cancel on the Account page, and the pages of
+	// the links of the emails, which need no sign-in. The form counts its limit itself.
+	router.Handler(http.MethodGet, routeAdd("AccountEmail", "/account/email"), protected.ThenFunc(app.accountEmail))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmail"), alice.New(app.limitBody(maxFormBody)).Extend(protected).ThenFunc(app.accountEmailPost))
+	router.Handler(http.MethodPost, routeAdd("AccountEmailCancel", "/account/email/cancel"), protected.ThenFunc(app.accountEmailCancelPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailOld", "/account/email/old/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailOld))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailOld"), form.ThenFunc(app.accountEmailOldPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailNew", "/account/email/new/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailNew))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailNew"), form.ThenFunc(app.accountEmailNewPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailRevert", "/account/email/revert/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailRevert))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailRevert"), form.ThenFunc(app.accountEmailRevertPost))
 
 	// The deletion of the account (account_deletion.go): the email with the link, the deletion
 	// page of the link, the grace page and the cancel link of the email.

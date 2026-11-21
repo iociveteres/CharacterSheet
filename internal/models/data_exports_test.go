@@ -185,11 +185,27 @@ func TestExportContent(t *testing.T) {
 	d.exec(`INSERT INTO forum_bans (user_id, moderator_id, reason) VALUES ($1, $2, 'r')`, alice, bob)
 	d.exec(`INSERT INTO user_avatar_locks (user_id, reason, moderator_id) VALUES ($1, 'r', $2)`, alice, bob)
 
+	d.exec(`INSERT INTO user_name_history (user_id, name, changed_at) VALUES ($1, 'first', '2020-01-01'), ($1, 'second', '2021-01-01'), ($2, 'bob''s', '2022-01-01')`, alice, bob)
+	d.exec(`INSERT INTO tokens (hash, user_id, expiry, scope, email) VALUES ('', $1, now() + interval '1 day', 'change_email_new', 'new@example.com')`, alice)
+
 	account, err := m.Account(d.ctx, alice)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, account.Name, "alice")
+	// The email being changed to stays out: it is a token, not the account's.
+	assert.Equal(t, account.Email, "alice@example.com")
+	if len(account.FormerNames) != 2 || account.FormerNames[0].Name != "second" || account.FormerNames[1].Name != "first" ||
+		!account.FormerNames[1].ChangedAt.Equal(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("former names %+v, want all of alice's, newest first", account.FormerNames)
+	}
+	bobAccount, err := m.Account(d.ctx, bob)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bobAccount.FormerNames) != 1 {
+		t.Errorf("former names of bob %+v", bobAccount.FormerNames)
+	}
 
 	var sheets []ExportSheet
 	if err := m.Sheets(d.ctx, alice, func(s ExportSheet) error { sheets = append(sheets, s); return nil }); err != nil {

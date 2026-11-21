@@ -185,3 +185,92 @@ main:has(#avatar) {
         }
     }
 }
+
+/* The name renamed in place (ui/static/js/account/Name.tsx). The cell is right-aligned as the
+   table's last column; the error goes under the name. */
+#account-name p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#account-name .account-name-error {
+    color: var(--accent-attention);
+}
+
+/* ✎ after the name: an icon, plain and faint until hovered; main.css styles every button with a
+   selector of five :not()s (0,5,1), the id beats it. Mirrored, its tip to the lower left. */
+#account-name button.account-rename {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    margin: 0 0 0 4px;
+    padding: 0 4px;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    opacity: 0.6;
+    cursor: pointer;
+    transform: scaleX(-1);
+}
+
+#account-name button.account-rename:hover {
+    opacity: 1;
+}
+
+/* The field keeps the line's height and the name's font; common.css gives text inputs 18px mono. */
+#account-name .account-name-input {
+    box-sizing: border-box;
+    width: min(100%, 24em);
+    height: 1.5em;
+    margin: 0;
+    padding: 0 3px;
+    font: inherit;
+    text-align: right;
+    color: var(--text);
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+}
+
+#account-name .account-name-input[aria-invalid="true"] {
+    border-color: var(--accent-attention);
+}
+
+/* The email row: the change link after the address, the change in progress under it with its
+   cancel button, which looks like the link (main.css, .button-linklike). */
+.account-email-change {
+    margin-left: 8px;
+    font-size: 15px;
+}
+
+#account-email .account-email-pending {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+#account-email .account-email-cancel {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* The panel of former names (main.css, .former-names) hangs from the cell, its right edge under the
+   end of the name: the name is the right column. */
+#account-name {
+    position: relative;
+}
+
+#account-name .former-names {
+    position: static;
+}
+
+#account-name .former-names-panel {
+    right: 18px;
+    left: auto;
+    text-align: left;
+}

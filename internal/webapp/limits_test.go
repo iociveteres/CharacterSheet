@@ -116,3 +116,31 @@ func TestUploadsLimitPerUser(t *testing.T) {
 	assert.Equal(t, header.Get("Retry-After"), "3")
 	assert.StringContains(t, body, "Too Many Requests")
 }
+
+// The route of e2e gives the limited clients their burst back; without -dev there is none.
+func TestDevLimitsReset(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	code, _, _ := ts.postForm(t, "/dev/limits/reset", url.Values{})
+	assert.Equal(t, code, http.StatusNotFound)
+	ts.Close()
+
+	app = newTestApplication(t)
+	app.Dev = true
+	ts = newTestServer(t, app.Routes())
+	defer ts.Close()
+	_, _, body := ts.get(t, "/user/login")
+	token := extractCSRFToken(t, body)
+	login := func() int {
+		code, _, _ := ts.postFormFrom(t, "/user/login", "10.4.0.1", loginForm(token, "alice@example.com"))
+		return code
+	}
+	for range 5 {
+		login()
+	}
+	assert.Equal(t, login(), http.StatusTooManyRequests)
+
+	code, _, _ = ts.postForm(t, "/dev/limits/reset", url.Values{})
+	assert.Equal(t, code, http.StatusNoContent)
+	assert.Equal(t, login(), http.StatusUnprocessableEntity)
+}

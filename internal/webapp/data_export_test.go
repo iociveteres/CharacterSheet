@@ -104,6 +104,18 @@ func TestExportArchive(t *testing.T) {
 			t.Errorf("%s is no JSON: %s", name, files[name])
 		}
 	}
+	var account struct {
+		FormerNames []struct {
+			Name      string    `json:"name"`
+			ChangedAt time.Time `json:"changedAt"`
+		} `json:"formerNames"`
+	}
+	if err := json.Unmarshal(files["account.json"], &account); err != nil {
+		t.Fatal(err)
+	}
+	if len(account.FormerNames) != 1 || account.FormerNames[0].Name != "Alicia" || account.FormerNames[0].ChangedAt.IsZero() {
+		t.Errorf("former names in account.json: %s", files["account.json"])
+	}
 	lengths := map[string]int{"chat.json": 1, "forum/posts.json": 1, "forum/topics.json": 0}
 	for name, n := range lengths {
 		var items []json.RawMessage

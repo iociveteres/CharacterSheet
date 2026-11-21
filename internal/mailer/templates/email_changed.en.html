@@ -1,0 +1,18 @@
+{{define "subject"}}Your Charactersheet email has changed{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+The email of your account has changed to {{.NewEmail}}. This address no longer receives the account's letters.
+
+If it wasn't you, return the email by the following link within 7 days:
+{{.RevertLink}}
+Every sign-in to the account will be closed; then change the password.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>The email of your account has changed to {{.NewEmail}}. This address no longer receives the account's letters.</p>
+<p>If it wasn't you, return the email by the following link within 7 days:</p>
+<p><a href="{{.RevertLink}}">{{.RevertLink}}</a></p>
+<p>Every sign-in to the account will be closed; then change the password.</p>
+{{end}}

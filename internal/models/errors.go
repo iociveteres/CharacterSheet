@@ -27,7 +27,24 @@ var (
 	ErrSheetTooLarge = errors.New("models: the sheet would be too large")
 	// ErrDeletionScheduled: the right password of an account in its grace period before the wipe.
 	ErrDeletionScheduled = errors.New("models: account deletion is scheduled")
+	// ErrDuplicateName: the name is someone else's, compared regardless of case (users_name_key).
+	ErrDuplicateName = errors.New("models: duplicate name")
 )
+
+// duplicateUser is ErrDuplicateEmail or ErrDuplicateName for a unique violation of the user's
+// email or name, else err itself.
+func duplicateUser(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		switch pgErr.ConstraintName {
+		case "users_email_key":
+			return ErrDuplicateEmail
+		case "users_name_key":
+			return ErrDuplicateName
+		}
+	}
+	return err
+}
 
 // sheetTooLarge is ErrSheetTooLarge for a violation of the content_size
 // check, else err itself.

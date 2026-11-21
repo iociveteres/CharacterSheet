@@ -46,3 +46,16 @@ func (m *TokenModel) UserID(ctx context.Context, scope models.TokenScope, tokenP
 	}
 	return 0, models.ErrNoRecord
 }
+
+// Email knows the tokens of the links of Alice's email change (users.go): the new address for
+// the links of the change, hers for the revert link.
+func (m *TokenModel) Email(ctx context.Context, scope models.TokenScope, tokenPlaintext string) (string, error) {
+	switch {
+	case scope == models.ScopeChangeEmailOld && tokenPlaintext == EmailOldToken,
+		scope == models.ScopeChangeEmailNew && tokenPlaintext == EmailNewToken:
+		return "new@example.com", nil
+	case scope == models.ScopeRevertEmail && tokenPlaintext == EmailRevertToken:
+		return alicesEmail, nil
+	}
+	return "", models.ErrNoRecord
+}

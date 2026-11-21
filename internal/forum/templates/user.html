@@ -9,7 +9,25 @@
     <div class="forum-user-head">
         {{- template "forum-avatar" $.Avatar}}
         <div class="forum-user-info">
-            <h2>{{.Name}}</h2>
+            {{- /* The former names under ▾ (_prd/account_name_email/plan.md, §3): a <details> that opens
+                 without a script, styled by main.css as on the Account page; main.ts closes it on a
+                 click elsewhere and on Esc. */}}
+            <div class="forum-user-name">
+                <h2>{{.Name}}</h2>
+                {{- with $.FormerNames}}
+                <details class="former-names">
+                    <summary class="former-names-toggle" title="{{t $.Lang "forum.users.formerNames"}}" aria-label="{{t $.Lang "forum.users.formerNames"}}">▾</summary>
+                    <div class="former-names-panel">
+                        <div class="former-names-title">{{t $.Lang "forum.users.formerNames"}}</div>
+                        <ol>
+                            {{- range .}}
+                            <li><span class="former-name">{{.Name}}</span><span class="former-date">{{humanDay $.Lang .ChangedAt $.TimeZone}}</span></li>
+                            {{- end}}
+                        </ol>
+                    </div>
+                </details>
+                {{- end}}
+            </div>
             <span class="role">{{if .Moderator}}{{t $.Lang "forum.posts.moderator"}}{{else}}{{t $.Lang "forum.posts.member"}}{{end}}</span>
             <dl class="forum-user-facts">
                 <dt>{{t $.Lang "forum.users.registered"}}</dt><dd>{{humanDay $.Lang .RegisteredAt $.TimeZone}}</dd>

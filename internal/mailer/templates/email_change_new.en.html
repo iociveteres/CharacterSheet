@@ -1,0 +1,16 @@
+{{define "subject"}}Confirm your new Charactersheet email{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+To make this address the email of your Charactersheet account, open the following link within 24 hours:
+{{.ConfirmLink}}
+
+If you didn't ask for it, do nothing: the address won't be used.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>To make this address the email of your Charactersheet account, open the following link within 24 hours:</p>
+<p><a href="{{.ConfirmLink}}">{{.ConfirmLink}}</a></p>
+<p>If you didn't ask for it, do nothing: the address won't be used.</p>
+{{end}}

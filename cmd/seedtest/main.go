@@ -9,7 +9,9 @@
 // gm and the player have an avatar, the outsider a lock on one (avatars.go).
 // The leaver, a player with a sheet in a folder, gets a delete_account token
 // whose plaintext the output carries (account.go); after the account scenario
-// wiped them, the seed makes a new leaver. The chat is kept.
+// wiped them, the seed makes a new leaver. The mover gets the tokens of an
+// email change and of its revert (account.go). Every seeded user gets their
+// name back without a history of names. The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
 //	npm run seed
@@ -62,6 +64,11 @@ var users = []*seedUser{
 	{Key: "outsider", Name: "Seed Outsider", Email: "outsider@seed.test"},
 	// Deletes their account in e2e/scenarios/account (account.go).
 	{Key: "leaver", Name: "Seed Leaver", Email: "leaver@seed.test", Role: models.RolePlayer},
+	// Renames themself and sends the form of an email change in e2e/scenarios/account.
+	{Key: "renamer", Name: "Seed Renamer", Email: "renamer@seed.test"},
+	// Changes their email by the links of the seed and takes it back (account.go), which closes
+	// every session of theirs.
+	{Key: "mover", Name: "Seed Mover", Email: moverEmail},
 }
 
 type output struct {
@@ -134,6 +141,9 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 	if err := resetLeaver(ctx, db); err != nil {
 		return out, fmt.Errorf("leaver: %w", err)
 	}
+	if err := resetMover(ctx, db); err != nil {
+		return out, fmt.Errorf("mover: %w", err)
+	}
 	for _, u := range users {
 		id, err := ensureUser(ctx, db, m, u)
 		if err != nil {
@@ -192,6 +202,9 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 	if out.Account, err = ensureLeaver(ctx, db, m, roomID); err != nil {
 		return out, fmt.Errorf("leaver: %w", err)
 	}
+	if out.Account.Mover, err = ensureMover(ctx, m); err != nil {
+		return out, fmt.Errorf("mover: %w", err)
+	}
 	return out, nil
 }
 
@@ -221,7 +234,8 @@ WHERE id = $1`, id, owner.Name+"'s "+k.Label); err != nil {
 }
 
 // ensureUser creates the user or resets its password to the seed one, and marks the e-mail
-// verified so that it can sign in.
+// verified so that it can sign in. A user a scenario renamed gets the seed name back without the
+// history of names, and an email change in progress or a revert link of a scenario goes.
 func ensureUser(ctx context.Context, db *pgxpool.Pool, m models.Models, u *seedUser) (int, error) {
 	id, err := m.Users.Insert(ctx, u.Name, u.Email, password, "")
 	if errors.Is(err, models.ErrDuplicateEmail) {
@@ -237,7 +251,14 @@ func ensureUser(ctx context.Context, db *pgxpool.Pool, m models.Models, u *seedU
 		return 0, err
 	}
 	// No saved language: the scenarios pick theirs with the lang cookie, which a saved one outranks.
-	_, err = db.Exec(ctx, `UPDATE users SET status = 'email_verified', locale = NULL WHERE id = $1`, id)
+	if _, err = db.Exec(ctx, `UPDATE users SET status = 'email_verified', locale = NULL, name = $2 WHERE id = $1`, id, u.Name); err != nil {
+		return 0, err
+	}
+	if _, err = db.Exec(ctx, `DELETE FROM user_name_history WHERE user_id = $1`, id); err != nil {
+		return 0, err
+	}
+	_, err = db.Exec(ctx, `DELETE FROM tokens WHERE user_id = $1 AND scope::text = ANY($2)`, id,
+		[]models.TokenScope{models.ScopeChangeEmailOld, models.ScopeChangeEmailNew, models.ScopeRevertEmail})
 	return id, err
 }
 

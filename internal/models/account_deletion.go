@@ -82,7 +82,7 @@ FOR UPDATE`, userID).Scan(&chat, &posts, &publicCollections, &heirs)
 		return nil, err
 	}
 	// The rows of tables whose key cascades on a real DELETE of the user.
-	for _, table := range []string{"room_members", "dice_presets", "tokens", "user_avatars", "user_avatar_locks"} {
+	for _, table := range []string{"room_members", "dice_presets", "tokens", "user_avatars", "user_avatar_locks", "user_name_history"} {
 		if _, err := tx.Exec(ctx, `DELETE FROM `+table+` WHERE user_id = $1`, userID); err != nil {
 			return nil, err
 		}

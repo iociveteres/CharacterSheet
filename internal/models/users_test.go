@@ -111,7 +111,7 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	}
 
 	// A taken email leaves neither a user nor a collection.
-	if _, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word", ""); !errors.Is(err, ErrDuplicateEmail) {
+	if _, err := m.Insert(ctx, "Robert", "bob@example.com", "pa$$word", ""); !errors.Is(err, ErrDuplicateEmail) {
 		t.Errorf("got %v, want ErrDuplicateEmail", err)
 	}
 	var n int

@@ -1,0 +1,66 @@
+{{define "title"}}{{with .EmailLink}}{{if eq .Step "revert"}}{{t $.Lang "site.account.email.revertTitle"}}{{else}}{{t $.Lang "site.account.email.title"}}{{end}}{{end}}{{end}}
+{{define "main"}}
+{{- /* A page of a link of an email change (internal/webapp/email_change.go, templates.EmailLinkPage):
+     the button of the link, since mail scanners open links on their own, then what it did. The token
+     is in the address: no referrer. */}}
+<meta name="referrer" content="no-referrer" />
+<div class="account-page">
+{{with .EmailLink}}
+<h2>{{if eq .Step "revert"}}{{t $.Lang "site.account.email.revertTitle"}}{{else}}{{t $.Lang "site.account.email.title"}}{{end}}</h2>
+<div class="account-section account-email-link" data-step="{{.Step}}" data-state="{{.State}}">
+{{if eq .State "confirm"}}
+    <form method="POST">
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        {{if eq .Step "old"}}
+        <p>{{t $.Lang "site.account.email.oldIntro" "email" .Email}}</p>
+        {{else if eq .Step "new"}}
+        <p>{{t $.Lang "site.account.email.newIntro" "email" .Email}}</p>
+        {{else}}
+        <p>{{t $.Lang "site.account.email.revertIntro" "email" .Email}}</p>
+        {{end}}
+        <div class="delete-actions">
+            <input type='submit' value='{{if eq .Step "old"}}{{t $.Lang "site.account.email.oldSubmit"}}{{else if eq .Step "new"}}{{t $.Lang "site.account.email.newSubmit"}}{{else}}{{t $.Lang "site.account.email.revertSubmit"}}{{end}}'>
+        </div>
+    </form>
+{{else if eq .State "done"}}
+    {{if eq .Step "old"}}
+    <p>{{t $.Lang "site.account.email.oldDone" "email" .Email}}</p>
+    {{else if eq .Step "new"}}
+    <p>{{t $.Lang "site.account.email.newDone" "email" .Email}}</p>
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountView"}}'>{{t $.Lang "site.account.export.backAccount"}}</a>
+    </div>
+    {{else}}
+    <p>{{t $.Lang "site.account.email.reverted" "email" .Email}}</p>
+    {{- /* The reset form of password_request_reset.html with the address put back: its link goes
+         there. */}}
+    <form method="POST" action='{{reverseRev "PasswordRequestReset"}}'>
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        <input type='hidden' name='email' value='{{.Email}}'>
+        <div class="delete-actions">
+            <input type='submit' value='{{t $.Lang "site.auth.reset.submit"}}'>
+        </div>
+    </form>
+    {{end}}
+{{else if eq .State "taken"}}
+    {{if eq .Step "revert"}}
+    {{- $author := authorEmail}}
+    <p>{{mailtoIn (t $.Lang "site.account.email.revertTaken" "email" .Email "author" $author) $author}}</p>
+    {{else}}
+    <p>{{t $.Lang "site.account.email.taken" "email" .Email}}</p>
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountEmail"}}'>{{t $.Lang "site.account.email.again"}}</a>
+    </div>
+    {{end}}
+{{else}}
+    <p>{{t $.Lang "site.account.email.invalid"}}</p>
+    {{if ne .Step "revert"}}
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountEmail"}}'>{{t $.Lang "site.account.email.again"}}</a>
+    </div>
+    {{end}}
+{{end}}
+</div>
+{{end}}
+</div>
+{{end}}

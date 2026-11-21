@@ -1,15 +1,14 @@
 package models
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"golang.org/x/crypto/bcrypt"
@@ -35,6 +34,14 @@ type UserModelInterface interface {
 	PendingAccounts(ctx context.Context) ([]PendingAccount, error)
 	MarkReminded(ctx context.Context, userID int) error
 	HurryDeletion(ctx context.Context, userID int) error
+	Rename(ctx context.Context, id int, name string) error
+	NameHistory(ctx context.Context, id int, limit int) ([]NameChange, error)
+	RequestEmailChange(ctx context.Context, id int, password, newEmail string) (*Token, error)
+	ConfirmOldEmail(ctx context.Context, tokenPlaintext string) (*Token, error)
+	ConfirmNewEmail(ctx context.Context, tokenPlaintext string) (*EmailChanged, error)
+	RevertEmail(ctx context.Context, tokenPlaintext string) (userID int, email string, err error)
+	PendingEmailChange(ctx context.Context, id int) (string, error)
+	CancelEmailChange(ctx context.Context, id int) error
 }
 
 type userStatus string
@@ -63,7 +70,9 @@ type UserModel struct {
 	DB *pgxpool.Pool
 }
 
-// Insert saves locale as the user's language, "" for none.
+// Insert saves locale as the user's language, "" for none. ErrDuplicateEmail for an email of
+// another account or kept for its owner by a live revert link, ErrDuplicateName for a name taken
+// regardless of case.
 func (m *UserModel) Insert(ctx context.Context, name, email, password, locale string) (int, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
@@ -81,16 +90,13 @@ RETURNING id`
 	}
 	defer tx.Rollback(ctx)
 
+	if taken, err := emailTaken(ctx, tx, email, 0); err != nil || taken {
+		return 0, cmp.Or(err, ErrDuplicateEmail)
+	}
 	var id int
 	err = tx.QueryRow(ctx, stmt, name, email, string(hashedPassword), locale).Scan(&id)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == pgerrcode.UniqueViolation && pgErr.ConstraintName == "users_email_key" {
-				return 0, ErrDuplicateEmail
-			}
-		}
-		return 0, err
+		return 0, duplicateUser(err)
 	}
 	// Every user has a default collection in the bestiary from the start,
 	// named in their language: it is known by is_default, not by the name.
