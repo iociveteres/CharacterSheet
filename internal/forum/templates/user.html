@@ -1,4 +1,5 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
     {{- template "forum-ban-notice" .}}
     <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a></nav>
 
@@ -21,7 +22,7 @@
             {{- if $.Own}}
             <p class="meta">{{t $.Lang "forum.users.ownPage"}} <a href="{{$.AccountURL}}">{{t $.Lang "forum.users.ownPageAccount"}}</a>.</p>
             {{- end}}
-            {{- if and ($.Viewer.CanModerateUser $.User) .Banned}}{{with .Ban}}
+            {{- if and ($.Shown.CanModerateUser $.User) .Banned}}{{with .Ban}}
             <p class="meta forum-user-banned">{{with .ExpiresAt}}{{t $.Lang "forum.users.bannedUntil" "date" ($.Date .)}}{{else}}{{t $.Lang "forum.users.bannedForever"}}{{end}}</p>
             {{- end}}{{end}}
         </div>
@@ -104,7 +105,7 @@
     <section class="forum-panel forum-user-mod">
         <h3>{{t .Lang "forum.moderation.menu"}}</h3>
 
-        {{- if .Viewer.CanActOnUser $u}}
+        {{- if .Shown.CanActOnUser $u}}
         <div class="forum-user-mod-row forum-user-mod-ban">
             <span class="what">{{t .Lang "forum.users.ban"}}</span>
             <div class="state">
@@ -149,7 +150,7 @@
 
         {{- /* Nothing of another moderator's but their history: no ban, avatar or «О себе». A lock
              from before the grant is lifted on the page «Bans». */}}
-        {{- if .Viewer.CanActOnUser $u}}
+        {{- if .Shown.CanActOnUser $u}}
         <div class="forum-user-mod-row forum-user-mod-avatar">
             <span class="what">{{t .Lang "forum.users.avatar"}}</span>
             <div class="state">

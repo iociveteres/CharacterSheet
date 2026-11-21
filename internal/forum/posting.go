@@ -112,6 +112,9 @@ type newTopicData struct {
 	Choices []Section
 	Chosen  int
 	Form    postForm
+	// allowed is where the viewer may start the topic by their real rights; Choices is what the
+	// form shows (view.Shown).
+	allowed []Section
 }
 
 // familyOf reads the family of the section: its parent, or itself at the top, and the subsections,
@@ -132,15 +135,16 @@ func (f *Forum) familyOf(ctx context.Context, s Section) ([]Section, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[Section])
 }
 
-// choose reads the field "section" of a form with a choice: one of Choices, else an error under the
-// field. A section the form did not offer — another family's, one of moderators' topics for a
-// member — is no choice either: CanStartTopic picked the offer.
+// choose reads the field "section" of a form with a choice: one of allowed, else an error under the
+// field. A section of another family, or one of moderators' topics for a member, is no choice
+// either: CanStartTopic picked them. A moderator out of the moderator mode is offered what a member
+// is, but may still pick the others.
 func (d *newTopicData) choose(r *http.Request) {
 	if len(d.Choices) < 2 {
 		return
 	}
 	id, err := strconv.Atoi(r.PostForm.Get("section"))
-	for _, c := range d.Choices {
+	for _, c := range d.allowed {
 		if err == nil && c.ID == id {
 			d.Chosen = id
 			return
@@ -186,7 +190,11 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 		}
 		for _, c := range family {
 			if v.Viewer.CanStartTopic(c) {
-				data.Choices = append(data.Choices, c)
+				data.allowed = append(data.allowed, c)
+				// The page's own section stays offered: the moderator came to its form.
+				if v.Shown.CanStartTopic(c) || c.ID == s.ID {
+					data.Choices = append(data.Choices, c)
+				}
 			}
 		}
 	}

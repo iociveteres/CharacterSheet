@@ -34,6 +34,17 @@ type testHost struct {
 	avatarIDs   [][]int
 	avatarLocks map[int]*AvatarLock
 	removeErr   error
+	// modModeOff sends get and post without the moderator mode's cookie. By default every request
+	// carries it, so the tests of what moderators see see it; for anyone else it does nothing.
+	modModeOff bool
+}
+
+// withModMode puts the moderator mode's cookie on req unless the host has the mode off.
+func (h *testHost) withModMode(req *http.Request) *http.Request {
+	if !h.modModeOff {
+		req.AddCookie(&http.Cookie{Name: modModeCookie, Value: "on"})
+	}
+	return req
 }
 
 func (h *testHost) UserID(*http.Request) (int, bool) { return h.userID, h.userID != 0 }
@@ -104,7 +115,7 @@ func (h *testHost) get(t *testing.T, f *Forum, target string) *httptest.Response
 	t.Helper()
 	h.err, h.status, h.page, h.notFound = nil, 0, Page{}, false
 	rec := httptest.NewRecorder()
-	f.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+	f.Handler().ServeHTTP(rec, h.withModMode(httptest.NewRequest(http.MethodGet, target, nil)))
 	if h.err != nil {
 		t.Fatalf("GET %s: %v", target, h.err)
 	}

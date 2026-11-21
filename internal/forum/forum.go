@@ -157,6 +157,7 @@ func (f *Forum) routes() (*http.ServeMux, []string) {
 	mux.HandleFunc("POST /forum/view/density", f.withView(f.setDensity))
 	mux.HandleFunc("POST /forum/view/images", f.withView(f.setImages))
 	mux.HandleFunc("POST /forum/view/fold", f.withView(f.setFold))
+	mux.HandleFunc("POST /forum/view/mod-mode", f.withView(f.setModMode))
 	mux.HandleFunc("GET /forum/user/{id}", f.withView(f.userPage))
 	mux.HandleFunc("POST /forum/user/{id}/about", f.withView(f.saveAbout))
 	mux.HandleFunc("POST /forum/user/{id}/about/erase", f.withView(f.eraseAbout))
@@ -175,8 +176,15 @@ type view struct {
 	Lang      string
 	TimeZone  *time.Location
 	CSRFToken string
-	Viewer    Viewer
-	Now       time.Time
+	// Viewer is who opens the page with their real rights: handlers ask it whether an action is
+	// allowed, and the pages only moderators reach show by it.
+	Viewer Viewer
+	// Shown is the viewer as the pages that members see too show them: a moderator out of the
+	// moderator mode is a member there (Viewer.Shown).
+	Shown Viewer
+	Now   time.Time
+	// Here is the address of the page, for «Turn off» of the moderator mode's strip to come back to.
+	Here string
 	// Density is the reader's step of the menu "View ▾" (density.go).
 	Density string
 	// ImagesOpen is the menu's "Pictures at once": the pictures of posts are not under a spoiler.
@@ -184,11 +192,17 @@ type view struct {
 }
 
 func (f *Forum) view(r *http.Request) view {
+	// A page drawn in answer to a form (an error, 422) has an address that GET may not open.
+	here := "/forum/"
+	if r.Method == http.MethodGet {
+		here = r.URL.RequestURI()
+	}
 	return view{
 		Lang:       i18n.FromContext(r.Context()),
 		TimeZone:   util.GetTimeLocation(r),
 		CSRFToken:  f.host.CSRFToken(r),
 		Now:        f.now(),
+		Here:       here,
 		Density:    densityFromRequest(r),
 		ImagesOpen: imagesOpenFromRequest(r),
 	}

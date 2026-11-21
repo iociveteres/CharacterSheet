@@ -242,7 +242,9 @@ main.forum-wide {
     min-width: 200px;
 }
 
-#forum .forum-view-menu .forum-menu-panel button {
+/* The checkbox item of the moderator mode in «Moderation ▾» is such a form too. */
+#forum .forum-view-menu .forum-menu-panel button,
+#forum .forum-mod-menu .forum-menu-panel button {
     display: block;
     width: 100%;
     height: auto;
@@ -257,7 +259,8 @@ main.forum-wide {
     cursor: pointer;
 }
 
-#forum .forum-view-menu .forum-menu-panel button:hover {
+#forum .forum-view-menu .forum-menu-panel button:hover,
+#forum .forum-mod-menu .forum-menu-panel button:hover {
     background: var(--bg-item2);
 }
 
@@ -1938,7 +1941,8 @@ main.forum-wide {
         padding: 9px 14px;
     }
 
-    #forum .forum-view-menu .forum-menu-panel button {
+    #forum .forum-view-menu .forum-menu-panel button,
+    #forum .forum-mod-menu .forum-menu-panel button {
         padding: 9px 14px 9px 30px;
     }
 
@@ -2366,5 +2370,64 @@ main.forum-wide {
 
     .forum-mod-sections .forum-subrow {
         padding-left: 24px;
+    }
+}
+
+/* ===== Moderator mode (_prd/forum/moderator-mode) ===== */
+
+/* A band across the forum in the colour of a moderator's name and role (.forum-post.mod), unlike
+   every notice of the forum: what the page shows is not what members see. */
+.forum-mod-mode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 4px 6px 4px 12px;
+    background: var(--accent);
+    color: var(--bg-light);
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.forum-mod-mode .ico {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.forum-mod-mode-note {
+    opacity: 0.85;
+}
+
+.forum-mod-mode form {
+    margin: 0 0 0 auto;
+}
+
+/* «Turn off»: a light outline button on the band that inverts on hover. */
+#forum .forum-mod-mode .forum-mod-mode-off {
+    height: auto;
+    padding: 2px 12px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font: inherit;
+    cursor: pointer;
+}
+
+#forum .forum-mod-mode .forum-mod-mode-off:hover {
+    background: var(--bg-light);
+    color: var(--accent);
+}
+
+/* On a phone the name of the mode and «Turn off» keep one line; the note goes. */
+@media (max-width: 600px) {
+    .forum-mod-mode-note {
+        display: none;
     }
 }

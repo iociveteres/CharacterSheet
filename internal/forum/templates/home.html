@@ -1,4 +1,5 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
     {{- template "forum-ban-notice" .}}
     {{- /* No visible heading: the page is plainly the forum (design/decisions.md, 12); the h2 keeps
          the page's outline for screen readers. The buttons are a line on the right above the list:
@@ -40,11 +41,20 @@
                     </form>
                 </div>
             </details>
-            {{- /* The moderators' pages (design/decisions.md, 15). */}}
+            {{- /* The moderators' pages (design/decisions.md, 15), at any moderator mode: the mode is
+                 turned on here (_prd/forum/moderator-mode/plan.md, decision 1), a checkbox item like
+                 "Pictures at once". */}}
             {{- if .Viewer.CanModerate}}
             <details class="forum-menu forum-mod-menu">
                 <summary class="f-btn f-secondary">{{t .Lang "forum.moderation.menu"}} ▾</summary>
                 <div class="forum-menu-panel">
+                    <form method="post" action="/forum/view/mod-mode">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <input type="hidden" name="redirect" value="/forum/">
+                        <button type="submit" name="mode" value="{{if .Viewer.ModMode}}off{{else}}on{{end}}" class="forum-menu-toggle forum-mod-mode-toggle" aria-pressed="{{.Viewer.ModMode}}">
+                            {{- t .Lang "forum.moderation.mode"}}</button>
+                    </form>
+                    <hr>
                     <a href="/forum/mod/sections">{{t .Lang "forum.moderation.sections"}}</a>
                     <a href="/forum/mod/log">{{t .Lang "forum.moderation.log"}}</a>
                     <a href="/forum/mod/bans">{{t .Lang "forum.moderation.bans"}}</a>

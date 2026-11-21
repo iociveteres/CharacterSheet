@@ -362,7 +362,7 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	s, err := f.loadSection(r.Context(), id, v.Viewer)
+	s, err := f.loadSection(r.Context(), id, v.Shown)
 	if errors.Is(err, pgx.ErrNoRows) {
 		f.host.NotFound(w, r)
 		return
@@ -376,7 +376,7 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	topics, err := f.sectionTopics(r.Context(), id, page, v.Viewer)
+	topics, err := f.sectionTopics(r.Context(), id, page, v.Shown)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return

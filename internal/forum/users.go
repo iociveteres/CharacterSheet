@@ -274,6 +274,11 @@ func (f *Forum) userPage(w http.ResponseWriter, r *http.Request, v view) {
 // renderUser draws the user page with forms as they are, the open one after an error with status
 // 422.
 func (f *Forum) renderUser(w http.ResponseWriter, r *http.Request, v view, id, status int, forms userForms) {
+	// A moderator's form brought back with its error shows as in the moderator mode, whatever the
+	// mode: the action came by its address (_prd/forum/moderator-mode/plan.md, mechanism 4).
+	if forms.Open != "" && forms.Open != "about" {
+		v.Shown = v.Viewer
+	}
 	page, pageOK := pageParam(r)
 	tab := r.URL.Query().Get("tab")
 	if tab == "" {
@@ -285,7 +290,7 @@ func (f *Forum) renderUser(w http.ResponseWriter, r *http.Request, v view, id, s
 		return
 	}
 	ctx := r.Context()
-	u, err := f.loadUser(ctx, id, v.Viewer, v.Now)
+	u, err := f.loadUser(ctx, id, v.Shown, v.Now)
 	if errors.Is(err, pgx.ErrNoRows) {
 		f.host.NotFound(w, r)
 		return
@@ -306,16 +311,16 @@ func (f *Forum) renderUser(w http.ResponseWriter, r *http.Request, v view, id, s
 	}
 	data.Pagination = pagination{Lang: v.Lang, Path: path, Current: page, Total: pages}
 	if tab == "posts" {
-		data.Posts, err = f.userPosts(ctx, u.ID, page, v.Viewer)
+		data.Posts, err = f.userPosts(ctx, u.ID, page, v.Shown)
 	} else {
-		data.Topics, err = f.topicRows(ctx, "t.author_id = $1", "t.created_at DESC, t.id DESC", u.ID, page, userTopicsPerPage, v.Viewer)
+		data.Topics, err = f.topicRows(ctx, "t.author_id = $1", "t.created_at DESC, t.id DESC", u.ID, page, userTopicsPerPage, v.Shown)
 	}
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
 	}
 	avatarURL := ""
-	if v.Viewer.CanModerateUser(u) {
+	if v.Shown.CanModerateUser(u) {
 		mod, err := f.userMod(r, u)
 		if err != nil {
 			f.host.ServerError(w, r, err)

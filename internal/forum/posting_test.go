@@ -21,7 +21,7 @@ func (h *testHost) post(t *testing.T, f *Forum, target string, form url.Values) 
 	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
-	f.Handler().ServeHTTP(rec, req)
+	f.Handler().ServeHTTP(rec, h.withModMode(req))
 	if h.err != nil {
 		t.Fatalf("POST %s: %v", target, h.err)
 	}

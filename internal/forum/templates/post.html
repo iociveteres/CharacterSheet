@@ -1,7 +1,7 @@
 {{- /* A post of a topic; dot is postCard (view.Card). */}}
 {{define "forum-post"}}
 {{- with .Post}}
-{{- if and .Deleted (not $.Viewer.CanReadDeletedPosts)}}
+{{- if and .Deleted (not $.Shown.CanReadDeletedPosts)}}
 {{- /* One line in the post's place, with its author, time, anchor and number (design/decisions.md,
      20); its text never reaches the template. */}}
 <article class="forum-post deleted-stub" id="post-{{.ID}}">
@@ -32,10 +32,10 @@
                 {{- with .EditedAt}}<span class="edited">{{t $.Lang "forum.posts.edited"}} {{$.Time .}}</span>{{end -}}
             </div>
         {{- if $.Actions}}
-        {{- $edit := $.Viewer.CanEditPost $.Topic $.Post}}
-        {{- $delete := $.Viewer.CanDeletePost $.Topic $.Post}}
-        {{- $quote := $.Viewer.CanQuote $.Topic $.Post}}
-        {{- $restore := $.Viewer.CanRestorePost $.Topic $.Post}}
+        {{- $edit := $.Shown.CanEditPost $.Topic $.Post}}
+        {{- $delete := $.Shown.CanDeletePost $.Topic $.Post}}
+        {{- $quote := $.Shown.CanQuote $.Topic $.Post}}
+        {{- $restore := $.Shown.CanRestorePost $.Topic $.Post}}
         {{- /* Only the actions the viewer may take (design/decisions.md, 8). Quote opens the reply
              form on the last page of the topic with the quote in it. A moderator deletes any reply
              and restores a deleted post; the author's ban is in the delete window and on their page

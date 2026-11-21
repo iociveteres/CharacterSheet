@@ -14,6 +14,8 @@ type Viewer struct {
 	Name         string
 	RegisteredAt time.Time
 	Moderator    bool
+	// ModMode is a moderator's moderator mode (mod_mode.go); never on for anyone else.
+	ModMode bool
 	// Ban is the standing ban of the viewer, nil without one. Ask Banned, not this field: a ban
 	// does not bind a moderator.
 	Ban *Ban
@@ -26,6 +28,18 @@ type Ban struct {
 	CreatedAt time.Time
 	// ExpiresAt is nil for a ban until lifted.
 	ExpiresAt *time.Time
+}
+
+// Shown is the viewer as a page that members see too shows them: in the moderator mode the viewer
+// themself, out of it a moderator becomes a member. A moderator's old ban does not come back with
+// it: it never bound them (Banned).
+func (v Viewer) Shown() Viewer {
+	if !v.Moderator || v.ModMode {
+		return v
+	}
+	v.Moderator = false
+	v.Ban = nil
+	return v
 }
 
 func (v Viewer) SignedIn() bool {
@@ -76,8 +90,10 @@ func (f *Forum) withView(h func(http.ResponseWriter, *http.Request, view)) http.
 				f.host.ServerError(w, r, err)
 				return
 			}
+			viewer.ModMode = viewer.Moderator && modModeFromRequest(r)
 			v.Viewer = viewer
 		}
+		v.Shown = v.Viewer.Shown()
 		h(w, r, v)
 	}
 }

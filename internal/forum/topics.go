@@ -254,6 +254,8 @@ func (v view) Card(t Topic, p post, actions bool) postCard {
 // lonePostCard is the post a page of its own acts on (delete, restore, ban), without the actions,
 // with its author's avatar fetched for it alone.
 func (f *Forum) lonePostCard(r *http.Request, v view, p postTarget) postCard {
+	// These pages are moderators' or the author's own: the post shows by the real rights.
+	v.Shown = v.Viewer
 	p.AuthorAvatar = f.avatars(r, p.AuthorID)[p.AuthorID]
 	return v.Card(p.Topic.Topic, p.post, false)
 }
@@ -344,7 +346,13 @@ func (f *Forum) topic(w http.ResponseWriter, r *http.Request, v view) {
 // renderTopic shows an existing page of a topic the viewer may read. noIndex is for the addresses
 // that show it with something in the reply form: a quote, a preview, an error.
 func (f *Forum) renderTopic(w http.ResponseWriter, r *http.Request, v view, t topicPage, page int, form postForm, status int, noIndex bool) {
-	posts, err := f.topicPosts(r.Context(), t.ID, page, v.Viewer)
+	// Pages only a moderator reaches show as in the moderator mode, whatever the mode: a deleted
+	// topic, and a reply form a moderator brought here by its address (a quote, an error of a reply)
+	// that the page out of the mode would not show.
+	if t.Deleted() || noIndex && v.Viewer.CanReply(t.Topic) && !v.Shown.CanReply(t.Topic) {
+		v.Shown = v.Viewer
+	}
+	posts, err := f.topicPosts(r.Context(), t.ID, page, v.Shown)
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
