@@ -133,6 +133,7 @@ func (app *Application) Routes() http.Handler {
 
 	router.Handler(http.MethodGet, routeAdd("About", "/about"), dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, routeAdd("Donate", "/donate"), dynamic.ThenFunc(app.donate))
+	router.Handler(http.MethodGet, routeAdd("Privacy", "/privacy"), dynamic.ThenFunc(app.privacy))
 	router.Handler(http.MethodPost, routeAdd("Language", "/language"), dynamic.ThenFunc(app.languagePost))
 
 	protected := dynamic.Append(app.requireAuthentication)

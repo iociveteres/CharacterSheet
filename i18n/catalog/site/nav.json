@@ -8,5 +8,6 @@
   "site.nav.login": { "en": "Login", "ru": "Войти" },
   "site.nav.language": { "en": "Language", "ru": "Язык", "note": "accessible name of the language select" },
   "site.nav.about": { "en": "About", "ru": "О сайте", "note": "footer link and the title of the about page" },
-  "site.nav.donate": { "en": "Donate", "ru": "Поддержать", "note": "footer link to the donation page" }
+  "site.nav.donate": { "en": "Donate", "ru": "Поддержать", "note": "footer link to the donation page" },
+  "site.nav.privacy": { "en": "Privacy", "ru": "Конфиденциальность", "note": "footer link and the title of the privacy policy page" }
 }
