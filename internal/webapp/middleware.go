@@ -28,8 +28,8 @@ const imgSrc = "'self' blob:"
 func contentSecurityPolicy(imgSrc string) string {
 	return "default-src 'self';" +
 		"img-src " + imgSrc + ";" +
-		"style-src 'self' fonts.googleapis.com;" +
-		"font-src fonts.gstatic.com;" +
+		"style-src 'self';" +
+		"font-src 'self';" +
 		"script-src 'self' cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';" +
 		// The collect host is baked into cloud.umami.is/script.js at umami's build and has
 		// moved before (from api-gateway.umami.dev): check the script if beacons get blocked.
@@ -233,7 +233,7 @@ func (app *Application) cacheStaticAssets(next http.Handler) http.Handler {
 			switch ext {
 			case ".css", ".js":
 				maxAge = "max-age=2592000"
-			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico":
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico", ".woff2":
 				maxAge = "max-age=2592000"
 			default:
 				maxAge = "max-age=86400"
