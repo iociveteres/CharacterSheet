@@ -10,8 +10,8 @@ import (
 
 // NameChange is a former name of a user and when it was left.
 type NameChange struct {
-	Name      string
-	ChangedAt time.Time
+	Name      string    `json:"name"`
+	ChangedAt time.Time `json:"changedAt"`
 }
 
 // Rename gives a confirmed account a new name, in one transaction with the former name written to

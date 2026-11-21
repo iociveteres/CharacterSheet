@@ -183,9 +183,10 @@ func (m *DataExportModel) Account(ctx context.Context, userID int) (*models.Expo
 		}
 	}
 	if userID == 1 {
-		return &models.ExportAccount{Name: "Alice", Email: "alice@example.com", Locale: "ru"}, nil
+		return &models.ExportAccount{Name: "Alice", Email: "alice@example.com", Locale: "ru",
+			FormerNames: []models.NameChange{{Name: "Alicia", ChangedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}}}, nil
 	}
-	return &models.ExportAccount{Name: "Bob", Email: "bob@example.com"}, nil
+	return &models.ExportAccount{Name: "Bob", Email: "bob@example.com", FormerNames: []models.NameChange{}}, nil
 }
 
 func (m *DataExportModel) Avatar(ctx context.Context, userID int) (*models.Avatar, error) {

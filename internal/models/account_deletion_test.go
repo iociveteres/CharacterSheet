@@ -421,6 +421,7 @@ func TestWipeTombstone(t *testing.T) {
 	d.exec(`INSERT INTO user_avatars (user_id, hash, mime, data) VALUES ($1, 'a', 'image/webp', '\x00')`, leaver)
 	d.exec(`INSERT INTO user_avatar_locks (user_id, reason, moderator_id) VALUES ($1, 'r', $2)`, leaver, gm)
 	d.exec(`INSERT INTO data_exports (user_id, state, file_name) VALUES ($1, 'ready', 'export.zip')`, leaver)
+	d.exec(`INSERT INTO user_name_history (user_id, name) VALUES ($1, 'former'), ($2, 'kept')`, leaver, bystander)
 
 	m := UserModel{DB: d.db}
 	// Nothing scheduled: nothing to do.
@@ -451,9 +452,10 @@ func TestWipeTombstone(t *testing.T) {
 	if locale != nil || deletedAt == nil {
 		t.Errorf("locale %v, deleted_at %v", locale, deletedAt)
 	}
-	for _, table := range []string{"room_members", "dice_presets", "tokens", "user_avatars", "user_avatar_locks", "data_exports"} {
+	for _, table := range []string{"room_members", "dice_presets", "tokens", "user_avatars", "user_avatar_locks", "data_exports", "user_name_history"} {
 		assert.Equal(t, d.int(`SELECT count(*) FROM `+table+` WHERE user_id = $1`, leaver), 0)
 	}
+	assert.Equal(t, d.int(`SELECT count(*) FROM user_name_history WHERE user_id = $1`, bystander), 1)
 
 	if _, err := m.Authenticate(d.ctx, "leaver@example.com", "pa$$word"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Errorf("Authenticate: %v", err)
