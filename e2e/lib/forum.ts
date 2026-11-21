@@ -156,6 +156,22 @@ export async function openModItem(p: Player, path: string): Promise<void> {
 }
 
 /**
+ * Turns the moderator mode on or off by its item in «Moderation ▾» on the forum's home
+ * (_prd/forum/moderator-mode); off by default, a moderator sees the forum as a member does.
+ */
+export async function setModMode(p: Player, on: boolean): Promise<void> {
+    await openForum(p);
+    const item = p.page.locator("button.forum-mod-mode-toggle");
+    if ((await item.getAttribute("aria-pressed")) === String(on)) return;
+    await p.page.locator("details.forum-mod-menu > summary").click();
+    await follow(p.page, item);
+    expect(await item.getAttribute("aria-pressed")).toBe(String(on));
+}
+
+/** Whether the open page has the strip of the moderator mode. */
+export const inModMode = async (p: Player) => (await p.page.locator(".forum-mod-mode").count()) > 0;
+
+/**
  * Takes moderator's action `action` on the open topic through its menu, with
  * `section` (the target of a move) and the reason.
  */

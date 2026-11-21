@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
-import { closeIncidentNotice, follow, forumSeed, idIn, openForum, openModItem, openSection, uniqueTitle } from "../../lib/forum";
+import { closeIncidentNotice, follow, forumSeed, idIn, openForum, openModItem, openSection, setModMode, uniqueTitle } from "../../lib/forum";
 
 describe("forum subsections", () => {
     let browser: Browser;
@@ -26,6 +26,7 @@ describe("forum subsections", () => {
         author = await Player.create(browser, "author", { role: "player" });
         reader = await Player.create(browser, "reader", { role: "player2" });
         await closeIncidentNotice(moderator, author, reader);
+        await setModMode(moderator, true);
         parent = forumSeed().section;
     });
 

@@ -11,10 +11,7 @@ import { launch, Player } from "../../lib/player";
 import { pickFile, pngFile, type FilePayload } from "../../lib/portrait";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import {
-    closeIncidentNotice, createTopic, expectFits, flash, follow, forumSeed, liftAvatarLock, openAccount, openAuthorPage,
-    openForum, openModItem, openNotifications, openSection, openTopic, post, readAllNotifications, reply, uniqueTitle,
-} from "../../lib/forum";
+import { closeIncidentNotice, createTopic, expectFits, flash, follow, forumSeed, liftAvatarLock, openAccount, openAuthorPage, openForum, openModItem, openNotifications, openSection, openTopic, post, readAllNotifications, reply, setModMode, uniqueTitle } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
 const REASON = "An advert in the picture.";
@@ -66,6 +63,8 @@ describe("forum: avatars", () => {
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
         modPhone = await Player.create(browser, "moderator phone", { role: "moderator", ...PHONE });
         await closeIncidentNotice(player, phone, moderator, modPhone);
+        await setModMode(moderator, true);
+        await setModMode(modPhone, true);
         // A run that failed halfway may have left the ban.
         await liftAvatarLock(moderator, name());
         await openNotifications(player);
