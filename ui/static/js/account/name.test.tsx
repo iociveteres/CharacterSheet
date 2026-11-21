@@ -3,11 +3,11 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { NameRow, type FormerName } from "./Name";
 
-const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+const flush = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 let container: HTMLElement;
 let fetchMock: ReturnType<typeof vi.fn>;
-let renamed: ReturnType<typeof vi.fn>;
+let renamed: ReturnType<typeof vi.fn<(initial: string) => void>>;
 
 beforeEach(() => {
     fetchMock = vi.fn();
