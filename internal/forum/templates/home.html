@@ -54,29 +54,84 @@
         </div>
     </div>
     <div>
-        <div class="forum-list-head forum-sections">
-            <span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>
+        {{- /* The tree (_prd/forum/subsections): every row has the column of the fold arrow, empty
+             without subsections, so that every name starts at the same place. */}}
+        <div class="forum-list-head forum-sections forum-tree-head">
+            <span></span><span></span><span>{{t .Lang "forum.sections.section"}}</span><span>{{t .Lang "forum.sections.lastPost"}}</span>
         </div>
-        <ul class="forum-list forum-sections">
-            {{range .Sections}}
-            {{- /* The first span is the column of the unread dot. */}}
-            <li class="forum-row{{if .Unread}} unread{{end}}">
+        <ul class="forum-list forum-sections forum-tree">
+            {{- range .Sections}}
+            {{- if .Children}}
+            {{- /* A parent carries both its faces and forum.css shows one by the class folded:
+                 unfolded, its own counters and last post, its subsections under it; folded, those of
+                 the family and the line «Subsections:». The forum script only toggles the class. */}}
+            <li class="forum-row forum-tree-row forum-parent{{if .Folded}} folded{{end}}{{if .Unread}} unread{{end}}" id="section-{{.ID}}" data-section="{{.ID}}">
                 <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <form class="forum-fold" method="post" action="/forum/view/fold">
+                    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                    <input type="hidden" name="section" value="{{.ID}}">
+                    <button type="submit" aria-expanded="{{not .Folded}}" data-fold="{{t $.Lang "forum.sections.fold"}}" data-unfold="{{t $.Lang "forum.sections.unfold"}}"
+                        {{- if .Folded}} title="{{t $.Lang "forum.sections.unfold"}}" aria-label="{{t $.Lang "forum.sections.unfold"}}"
+                        {{- else}} title="{{t $.Lang "forum.sections.fold"}}" aria-label="{{t $.Lang "forum.sections.fold"}}"{{end}}>
+                        <span class="when-open">{{template "forum-chevron-down"}}</span><span class="when-folded">{{template "forum-chevron-right"}}</span></button>
+                </form>
                 <div class="forum-row-main">
-                    <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
-                    {{with .Description}}<span class="meta">{{.}}</span>{{end}}
-                    <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                    <div class="forum-row-line">
+                        <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                        <span class="meta forum-counts when-open">{{if .TopicCount}}{{t $.Lang "forum.sections.own"}} {{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}{{end}}</span>
+                        <span class="meta forum-counts when-folded">{{t $.Lang "forum.sections.topicCount" "count" .Family.TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .Family.PostCount}}</span>
+                    </div>
+                    {{with .Description}}<span class="meta forum-row-desc">{{.}}</span>{{end}}
+                    <span class="forum-subsections when-folded"><span class="label">{{t $.Lang "forum.sections.subsections"}}</span>
+                        {{- range .Children}}<a href="{{.URL}}"{{if .Unread}} class="unread" title="{{t $.Lang "forum.topics.unread"}}"{{end}}>{{.Name}}</a>{{end}}</span>
                 </div>
-                <div class="forum-row-last">
-                    {{with .LastPost}}
-                    <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
-                    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a><a href="{{.URL}}">{{$.Time .At}}</a></span>
-                    {{else}}
-                    <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
-                    {{end}}
+                <div class="forum-row-last when-open">
+                    {{- if .TopicCount}}{{template "forum-section-last" ($.SectionLast .LastPost)}}{{end}}
+                </div>
+                <div class="forum-row-last when-folded">
+                    {{- template "forum-section-last" ($.SectionLast .Family.LastPost)}}
                 </div>
             </li>
-            {{end}}
+            {{- range .Children}}
+            {{- /* A subsection: one line, its description in the name's tooltip. */}}
+            <li class="forum-row forum-tree-row forum-subrow{{if .Folded}} folded{{end}}{{if .Unread}} unread{{end}}" data-parent="{{.ParentID}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <div class="forum-row-main">
+                    <div class="forum-row-line">
+                        <a class="forum-row-title" href="{{.URL}}"{{with .Description}} title="{{.}}"{{end}}>{{.Name}}</a>
+                        <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                    </div>
+                </div>
+                <div class="forum-row-last">{{template "forum-section-last" ($.SectionLast .LastPost)}}</div>
+            </li>
+            {{- end}}
+            {{- else}}
+            {{- /* The first span is the column of the unread dot, the second of the fold arrow. */}}
+            <li class="forum-row forum-tree-row{{if .Unread}} unread{{end}}" id="section-{{.ID}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <span class="forum-fold"></span>
+                <div class="forum-row-main">
+                    <div class="forum-row-line">
+                        <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                        <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                    </div>
+                    {{with .Description}}<span class="meta forum-row-desc">{{.}}</span>{{end}}
+                </div>
+                <div class="forum-row-last">{{template "forum-section-last" ($.SectionLast .LastPost)}}</div>
+            </li>
+            {{- end}}
+            {{- end}}
         </ul>
     </div>
 </div>
+
+{{- /* The last post of a section's row, two lines: the topic, the author and the time; of the home
+     and of a parent page (sections.go, sectionLast). */}}
+{{define "forum-section-last"}}
+{{- with .Post}}
+                    <a class="topic" href="{{.TopicURL}}">{{.TopicTitle}}</a>
+                    <span class="by"><a class="forum-author-name" href="{{userURL .AuthorID}}">{{.AuthorName}}</a><a href="{{.URL}}">{{$.Time .At}}</a></span>
+{{- else}}
+                    <span class="meta">{{t $.Lang "forum.sections.noPosts"}}</span>
+{{- end}}
+{{- end}}

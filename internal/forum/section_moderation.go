@@ -37,16 +37,34 @@ func (f *Forum) modOnly(w http.ResponseWriter, r *http.Request, v view) bool {
 
 type sectionsModData struct {
 	view
-	Sections []Section
+	Sections []modSectionRow
 }
 
-// Last is whether the i-th section ends the list: its button "down" moves nothing.
-func (d sectionsModData) Last(i int) bool {
-	return i == len(d.Sections)-1
+// modSectionRow is a row of the moderators' tree of sections. First and Last: the section begins or
+// ends its siblings, so its button "up" or "down" moves nothing.
+type modSectionRow struct {
+	Section
+	First, Last bool
 }
 
-// sectionsPage is the moderators' list of sections in the order of the home, with the buttons that
-// move one up or down and the links to edit one or add another. A section is never deleted.
+// modSectionRows marks the ends of each run of siblings in a list in the order of the home.
+func modSectionRows(sections []Section) []modSectionRow {
+	rows := make([]modSectionRow, len(sections))
+	last := map[int]int{}
+	for i, s := range sections {
+		_, seen := last[s.ParentID]
+		rows[i] = modSectionRow{Section: s, First: !seen}
+		last[s.ParentID] = i
+	}
+	for _, i := range last {
+		rows[i].Last = true
+	}
+	return rows
+}
+
+// sectionsPage is the moderators' list of sections in the order of the home, subsections under
+// their parent, with the buttons that move one up or down among its siblings and the links to edit
+// one or add another. A section is never deleted.
 func (f *Forum) sectionsPage(w http.ResponseWriter, r *http.Request, v view) {
 	if !f.modOnly(w, r, v) {
 		return
@@ -56,7 +74,7 @@ func (f *Forum) sectionsPage(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.ServerError(w, r, err)
 		return
 	}
-	f.render(w, r, http.StatusOK, "sections_mod.html", sectionsModData{view: v, Sections: sections}, Page{
+	f.render(w, r, http.StatusOK, "sections_mod.html", sectionsModData{view: v, Sections: modSectionRows(sections)}, Page{
 		Title:   i18n.T(v.Lang, "forum.moderation.sections"),
 		NoIndex: true,
 	})
@@ -67,6 +85,8 @@ type sectionForm struct {
 	Name           string
 	Description    string
 	ModsOnlyTopics bool
+	// Parent is the section it is inside, 0 at the top level; -1 for a value that is no section.
+	Parent int
 	validator.Validator
 }
 
@@ -78,7 +98,21 @@ func readSectionForm(r *http.Request) (sectionForm, error) {
 		Name:           strings.TrimSpace(r.PostForm.Get("name")),
 		Description:    strings.TrimSpace(r.PostForm.Get("description")),
 		ModsOnlyTopics: r.PostForm.Get("mods_only_topics") != "",
+		Parent:         parentParam(r.PostForm.Get("parent")),
 	}, nil
+}
+
+// parentParam is the field "parent": empty for the top level, else a section's id; -1 for what is
+// neither.
+func parentParam(value string) int {
+	if value == "" {
+		return 0
+	}
+	id, err := strconv.Atoi(value)
+	if err != nil || id < 1 {
+		return -1
+	}
+	return id
 }
 
 func (s *sectionForm) check(lang string) {
@@ -89,17 +123,30 @@ func (s *sectionForm) check(lang string) {
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": sectionNameMaxChars}))
 	s.Check(validator.MaxChars(s.Description, sectionDescriptionMaxChars), "description",
 		i18n.T(lang, "forum.errors.tooLong", i18n.Params{"count": sectionDescriptionMaxChars}))
+	s.Check(s.Parent >= 0, "parent", i18n.T(lang, "forum.moderation.noSection"))
 }
+
+// A subsection has no subsections (_prd/forum/subsections, 1): the parent must be at the top level
+// and the section that goes inside it must have no subsections of its own.
+var (
+	errNesting  = errors.New("forum: sections nest one level deep")
+	errNoParent = errors.New("forum: no such parent section")
+)
 
 type sectionModData struct {
 	view
 	// Section is the one edited; its ID is 0 on the page of a new one.
 	Section Section
 	Form    sectionForm
+	// Parents are what the field «Inside section» offers: the top level but the section itself.
+	Parents []Section
+	// HasChildren: the section is a parent, which cannot go inside another; the field is off.
+	HasChildren bool
 }
 
 // editSection is the page of a new section (no id in the address) or of an existing one, and the
-// address its form posts to. A new section goes last; done, the browser goes back to the list.
+// address its form posts to. A new section goes last among its siblings; done, the browser goes
+// back to the list.
 func (f *Forum) editSection(w http.ResponseWriter, r *http.Request, v view) {
 	if !f.modOnly(w, r, v) {
 		return
@@ -122,7 +169,23 @@ func (f *Forum) editSection(w http.ResponseWriter, r *http.Request, v view) {
 			return
 		}
 	}
-	data := sectionModData{view: v, Section: s, Form: sectionForm{Name: s.Name, Description: s.Description, ModsOnlyTopics: s.ModsOnlyTopics}}
+	sections, err := f.sectionList(r.Context())
+	if err != nil {
+		f.host.ServerError(w, r, err)
+		return
+	}
+	data := sectionModData{view: v, Section: s,
+		Form: sectionForm{Name: s.Name, Description: s.Description, ModsOnlyTopics: s.ModsOnlyTopics, Parent: s.ParentID}}
+	for _, c := range sections {
+		if c.ParentID == 0 && c.ID != s.ID {
+			data.Parents = append(data.Parents, c)
+		}
+		data.HasChildren = data.HasChildren || s.ID != 0 && c.ParentID == s.ID
+	}
+	if s.ID == 0 {
+		// «+ Subsection» of the list comes with its parent chosen.
+		data.Form.Parent = max(parentParam(r.URL.Query().Get("parent")), 0)
+	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		form, err := readSectionForm(r)
@@ -132,12 +195,19 @@ func (f *Forum) editSection(w http.ResponseWriter, r *http.Request, v view) {
 		}
 		if form.check(v.Lang); form.Valid() {
 			entry, change := sectionChange(s.ID, form)
-			if err := f.moderate(r.Context(), v.Viewer, v.Now, entry, change); err != nil {
+			err := f.moderate(r.Context(), v.Viewer, v.Now, entry, change)
+			switch {
+			case errors.Is(err, errNesting):
+				form.AddError("parent", i18n.T(v.Lang, "forum.moderation.nestOnce"))
+			case errors.Is(err, errNoParent):
+				form.AddError("parent", i18n.T(v.Lang, "forum.moderation.noSection"))
+			case err != nil:
 				f.host.ServerError(w, r, err)
 				return
+			default:
+				http.Redirect(w, r, sectionsURL, http.StatusSeeOther)
+				return
 			}
-			http.Redirect(w, r, sectionsURL, http.StatusSeeOther)
-			return
 		}
 		data.Form, status = form, http.StatusUnprocessableEntity
 	}
@@ -148,36 +218,101 @@ func (f *Forum) editSection(w http.ResponseWriter, r *http.Request, v view) {
 	f.render(w, r, status, "section_mod.html", data, Page{Title: title, NoIndex: true})
 }
 
-// sectionChange creates a section (id 0) at the end of the list or changes one; the log keeps
-// what an edit replaced.
+// sectionChange creates a section (id 0) at the end of its siblings or changes one; the log keeps
+// what an edit replaced. A section whose parent changes goes last among its new siblings, with its
+// topics.
 func sectionChange(id int, form sectionForm) (modEntry, modChange) {
 	if id == 0 {
 		return modEntry{Action: actionCreateSection}, func(ctx context.Context, tx pgx.Tx, e *modEntry) error {
+			if err := lockFamily(ctx, tx, 0, form.Parent); err != nil {
+				return err
+			}
 			return tx.QueryRow(ctx, `
-				INSERT INTO forum_sections (name, description, mods_only_topics, position)
-				VALUES ($1, $2, $3, (SELECT COALESCE(max(position), 0) + 1 FROM forum_sections))
-				RETURNING id`, form.Name, form.Description, form.ModsOnlyTopics).Scan(&e.SectionID)
+				INSERT INTO forum_sections (name, description, mods_only_topics, parent_id, position)
+				VALUES ($1, $2, $3, NULLIF($4, 0), (SELECT COALESCE(max(position), 0) + 1 FROM forum_sections
+				                                    WHERE parent_id IS NOT DISTINCT FROM NULLIF($4, 0)))
+				RETURNING id`, form.Name, form.Description, form.ModsOnlyTopics, form.Parent).Scan(&e.SectionID)
 		}
 	}
 	return modEntry{Action: actionEditSection, SectionID: id}, func(ctx context.Context, tx pgx.Tx, e *modEntry) error {
+		if err := lockFamily(ctx, tx, id, form.Parent); err != nil {
+			return err
+		}
 		var old Section
 		err := tx.QueryRow(ctx, `
-			UPDATE forum_sections s SET name = $2, description = $3, mods_only_topics = $4
-			FROM (SELECT id, name, description, mods_only_topics FROM forum_sections WHERE id = $1 FOR UPDATE) o
-			WHERE s.id = o.id AND (o.name, o.description, o.mods_only_topics) IS DISTINCT FROM ($2, $3, $4)
-			RETURNING o.name, o.description, o.mods_only_topics`, id, form.Name, form.Description, form.ModsOnlyTopics).
-			Scan(&old.Name, &old.Description, &old.ModsOnlyTopics)
+			UPDATE forum_sections s SET name = $2, description = $3, mods_only_topics = $4, parent_id = NULLIF($5, 0),
+			    position = CASE WHEN o.parent = $5 THEN s.position
+			                    ELSE (SELECT COALESCE(max(position), 0) + 1 FROM forum_sections
+			                          WHERE parent_id IS NOT DISTINCT FROM NULLIF($5, 0)) END
+			FROM (SELECT id, name, description, mods_only_topics, COALESCE(parent_id, 0) AS parent
+			      FROM forum_sections WHERE id = $1) o
+			WHERE s.id = o.id AND (o.name, o.description, o.mods_only_topics, o.parent) IS DISTINCT FROM ($2, $3, $4, $5)
+			RETURNING o.name, o.description, o.mods_only_topics, o.parent`,
+			id, form.Name, form.Description, form.ModsOnlyTopics, form.Parent).
+			Scan(&old.Name, &old.Description, &old.ModsOnlyTopics, &old.ParentID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return errNoChange
 		}
 		e.Data["name"], e.Data["description"], e.Data["modsOnlyTopics"] = old.Name, old.Description, old.ModsOnlyTopics
+		if old.ParentID != form.Parent {
+			// Where it was and where it went, 0 for the top level; the log names them as they are now.
+			e.Data["parent"], e.Data["parentTo"] = old.ParentID, form.Parent
+		}
 		return err
 	}
 }
 
-// moveSection swaps the section with its neighbour above or below (the form's direction) and
-// numbers all sections anew: positions may tie, and a swap of tied numbers would move nothing. The
-// first section up or the last down stays. The browser goes back to the section in the list.
+// lockFamily locks the section id (0 for a new one) and the parent it goes inside (0 for the top
+// level), in the order of their ids, and keeps sections one level deep: the parent exists and is at
+// the top level, and a section with subsections goes nowhere inside. Creating a subsection locks
+// its parent and moving a section locks the section, so of two that would make a second level
+// between them one waits for the other and then sees it.
+func lockFamily(ctx context.Context, tx pgx.Tx, id, parent int) error {
+	if parent == 0 {
+		return nil
+	}
+	if parent == id {
+		return errNesting
+	}
+	rows, err := tx.Query(ctx, `
+		SELECT id, COALESCE(parent_id, 0) FROM forum_sections WHERE id = ANY($1) ORDER BY id FOR UPDATE`,
+		[]int{id, parent})
+	if err != nil {
+		return err
+	}
+	parents := map[int]int{}
+	var rowID, rowParent int
+	_, err = pgx.ForEachRow(rows, []any{&rowID, &rowParent}, func() error {
+		parents[rowID] = rowParent
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	grand, ok := parents[parent]
+	if !ok {
+		return errNoParent
+	}
+	if grand != 0 {
+		return errNesting
+	}
+	if id == 0 {
+		return nil
+	}
+	var hasChildren bool
+	if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM forum_sections WHERE parent_id = $1)`, id).Scan(&hasChildren); err != nil {
+		return err
+	}
+	if hasChildren {
+		return errNesting
+	}
+	return nil
+}
+
+// moveSection swaps the section with its sibling above or below (the form's direction) and numbers
+// its siblings anew: positions may tie, and a swap of tied numbers would move nothing. A subsection
+// stays inside its parent; the first up or the last down stays. The browser goes back to the
+// section in the list.
 func (f *Forum) moveSection(w http.ResponseWriter, r *http.Request, v view) {
 	id, ok := idParam(r)
 	if !ok {
@@ -199,7 +334,10 @@ func (f *Forum) moveSection(w http.ResponseWriter, r *http.Request, v view) {
 	found := false
 	err := f.moderate(r.Context(), v.Viewer, v.Now, modEntry{Action: actionMoveSection, SectionID: id},
 		func(ctx context.Context, tx pgx.Tx, e *modEntry) error {
-			rows, err := tx.Query(ctx, `SELECT id FROM forum_sections ORDER BY position, id FOR UPDATE`)
+			rows, err := tx.Query(ctx, `
+				SELECT id FROM forum_sections
+				WHERE parent_id IS NOT DISTINCT FROM (SELECT parent_id FROM forum_sections WHERE id = $1)
+				ORDER BY position, id FOR UPDATE`, id)
 			if err != nil {
 				return err
 			}
@@ -214,7 +352,7 @@ func (f *Forum) moveSection(w http.ResponseWriter, r *http.Request, v view) {
 				return errNoChange
 			}
 			ids[from], ids[to] = ids[to], ids[from]
-			// Places in the list, from 1, as the log page will word them.
+			// Places among the siblings, from 1, as the log page will word them.
 			e.Data["from"], e.Data["to"] = from+1, to+1
 			_, err = tx.Exec(ctx, `
 				UPDATE forum_sections s SET position = o.n
@@ -233,10 +371,12 @@ func (f *Forum) moveSection(w http.ResponseWriter, r *http.Request, v view) {
 	http.Redirect(w, r, sectionsURL+"#section-"+strconv.Itoa(id), http.StatusSeeOther)
 }
 
-// loadSectionByID is a section as stored, without the counters of the home.
+// loadSectionByID is a section as stored, with its parent's name, without the counters of the home.
 func (f *Forum) loadSectionByID(ctx context.Context, id int) (Section, error) {
 	row, err := f.db.Query(ctx, `
-		SELECT id, name, description, position, mods_only_topics FROM forum_sections WHERE id = $1`, id)
+		SELECT `+sectionColumns+` FROM forum_sections s
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
+		WHERE s.id = $1`, id)
 	if err != nil {
 		return Section{}, err
 	}

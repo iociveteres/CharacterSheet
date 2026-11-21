@@ -20,6 +20,22 @@
             {{- with .Form.Errors.description}} aria-invalid="true" aria-describedby="forum-section-description-error"{{end}}>{{.Form.Description}}</textarea>
         {{with .Form.Errors.description}}<span class="error field-error" id="forum-section-description-error">{{.}}</span>{{end}}
 
+        {{- /* Inside which section of the top level: one level only, so a parent's field is off
+             (section_moderation.go, lockFamily checks it again). */}}
+        <label class="field-label" for="forum-section-parent">{{t .Lang "forum.moderation.parent"}}</label>
+        <select id="forum-section-parent" name="parent"
+            {{- if .HasChildren}} disabled aria-describedby="forum-section-parent-note"
+            {{- else if .Form.Errors.parent}} aria-invalid="true" aria-describedby="forum-section-parent-error"{{end}}>
+            <option value="">{{t .Lang "forum.moderation.topLevel"}}</option>
+            {{- range .Parents}}
+            <option value="{{.ID}}"{{if eq .ID $.Form.Parent}} selected{{end}}>{{.Name}}</option>
+            {{- end}}
+        </select>
+        {{- if .HasChildren}}
+        <span class="meta forum-field-note" id="forum-section-parent-note">{{t .Lang "forum.moderation.parentLocked"}}</span>
+        {{- end}}
+        {{with .Form.Errors.parent}}<span class="error field-error" id="forum-section-parent-error">{{.}}</span>{{end}}
+
         <label class="forum-check"><input type="checkbox" name="mods_only_topics" value="1"{{if .Form.ModsOnlyTopics}} checked{{end}}>
             {{t .Lang "forum.moderation.modsOnlyTopics"}}</label>
 

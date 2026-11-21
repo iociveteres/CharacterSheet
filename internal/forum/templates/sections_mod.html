@@ -8,21 +8,23 @@
         </div>
     </div>
 
-    {{- /* The sections in the order of the home (section_moderation.go). A section is never
-         deleted; it moves one place at a time by its buttons, without dragging. */}}
+    {{- /* The sections in the order of the home, subsections under their parent
+         (section_moderation.go). A section is never deleted; it moves one place at a time among its
+         siblings by its buttons, without dragging. */}}
     <ul class="forum-list forum-mod-sections">
-        {{- range $i, $s := .Sections}}
-        <li class="forum-row" id="section-{{$s.ID}}">
+        {{- range .Sections}}
+        <li class="forum-row{{if .ParentID}} forum-subrow{{end}}" id="section-{{.ID}}">
             <div class="forum-row-main">
-                <span><a class="forum-row-title" href="{{$s.URL}}">{{$s.Name}}</a>
-                {{- if $s.ModsOnlyTopics}} <span class="forum-label">{{t $.Lang "forum.moderation.modsOnlyTopics"}}</span>{{end}}</span>
-                {{with $s.Description}}<span class="meta">{{.}}</span>{{end}}
+                <span><a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                {{- if .ModsOnlyTopics}} <span class="forum-label">{{t $.Lang "forum.moderation.modsOnlyTopics"}}</span>{{end}}</span>
+                {{with .Description}}<span class="meta">{{.}}</span>{{end}}
             </div>
-            <form class="forum-mod-section-actions" method="POST" action="/forum/mod/sections/{{$s.ID}}/move">
+            <form class="forum-mod-section-actions" method="POST" action="/forum/mod/sections/{{.ID}}/move">
                 <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                <button type="submit" class="f-btn f-secondary" name="direction" value="up"{{if eq $i 0}} disabled{{end}}>↑ {{t $.Lang "forum.moderation.moveUp"}}</button>
-                <button type="submit" class="f-btn f-secondary" name="direction" value="down"{{if $.Last $i}} disabled{{end}}>↓ {{t $.Lang "forum.moderation.moveDown"}}</button>
-                <a class="f-btn f-secondary" href="/forum/mod/sections/{{$s.ID}}/edit">✎ {{t $.Lang "common.edit"}}</a>
+                <button type="submit" class="f-btn f-secondary" name="direction" value="up"{{if .First}} disabled{{end}}>↑ {{t $.Lang "forum.moderation.moveUp"}}</button>
+                <button type="submit" class="f-btn f-secondary" name="direction" value="down"{{if .Last}} disabled{{end}}>↓ {{t $.Lang "forum.moderation.moveDown"}}</button>
+                <a class="f-btn f-secondary" href="/forum/mod/sections/{{.ID}}/edit">✎ {{t $.Lang "common.edit"}}</a>
+                {{- if not .ParentID}}<a class="f-btn f-secondary forum-new-subsection" href="/forum/mod/sections/new?parent={{.ID}}">+ {{t $.Lang "forum.moderation.newSubsection"}}</a>{{end}}
             </form>
         </li>
         {{- end}}

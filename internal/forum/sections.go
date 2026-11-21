@@ -17,11 +17,28 @@ type Section struct {
 	Description    string
 	Position       int
 	ModsOnlyTopics bool
+	// ParentID is 0 for a section of the top level; a subsection has no subsections of its own
+	// (_prd/forum/subsections). ParentName is the parent's, for the breadcrumbs.
+	ParentID   int
+	ParentName string
 }
 
 func (s Section) URL() string {
 	return "/forum/section/" + strconv.Itoa(s.ID)
 }
+
+func (s Section) ParentURL() string {
+	return Section{ID: s.ParentID}.URL()
+}
+
+// sectionColumns are the columns of Section, in its order, of forum_sections s joined to its
+// parent ps: LEFT JOIN forum_sections ps ON ps.id = s.parent_id.
+const sectionColumns = `s.id, s.name, s.description, s.position, s.mods_only_topics,
+	COALESCE(s.parent_id, 0), COALESCE(ps.name, '')`
+
+// treeOrder puts the sections of forum_sections s joined to its parent ps in the order of the home:
+// each top section by position, its subsections by position right under it.
+const treeOrder = `COALESCE(ps.position, s.position), COALESCE(ps.id, s.id), s.parent_id IS NOT NULL, s.position, s.id`
 
 // sectionSummary is a section of the forum home with its counters, counted by the query: they
 // are not stored (_prd/forum/plan.md, «Данные»).
@@ -34,7 +51,36 @@ type sectionSummary struct {
 	// LastPost is nil while the section has no visible post.
 	LastPost *lastPost
 	// Unread is whether a visible topic of the section is unread by the viewer; never for a guest.
+	// A parent's is of its whole family, in both of its faces.
 	Unread bool
+	// Children are the subsections of a parent of the home, in order; none on a parent page.
+	Children []sectionSummary
+	// Family is what a folded parent shows: its counters with those of its subsections, the newest
+	// last post among them. An unfolded one shows its own; its subsections stand under it.
+	Family family
+	// Folded: the reader folded this parent on the home (fold.go); its subsections hide too.
+	Folded bool
+}
+
+type family struct {
+	TopicCount int
+	PostCount  int
+	LastPost   *lastPost
+}
+
+// gather counts the family of a parent from its own counters and its children's.
+func (s *sectionSummary) gather() {
+	s.Family = family{TopicCount: s.TopicCount, PostCount: s.PostCount, LastPost: s.LastPost}
+	for _, c := range s.Children {
+		s.Family.TopicCount += c.TopicCount
+		s.Family.PostCount += c.PostCount
+		s.Unread = s.Unread || c.Unread
+		// The order of the query of a section's last post: the newest, a tie by topic id.
+		if l, best := c.LastPost, s.Family.LastPost; l != nil &&
+			(best == nil || l.At.After(best.At) || l.At.Equal(best.At) && l.TopicID > best.TopicID) {
+			s.Family.LastPost = l
+		}
+	}
 }
 
 type lastPost struct {
@@ -55,11 +101,35 @@ func (p lastPost) TopicURL() string {
 }
 
 // sections reads the sections of the home in one query, whatever the number of topics, with
-// whether each has an unread topic (reads.go).
+// whether each has an unread topic (reads.go): the top level, each parent with its subsections in
+// Children and the counters of its family.
 func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error) {
+	rows, err := f.sectionSummaries(ctx, v, 0)
+	if err != nil {
+		return nil, err
+	}
+	var top []sectionSummary
+	place := map[int]int{}
+	for _, s := range rows {
+		if i, ok := place[s.ParentID]; ok {
+			top[i].Children = append(top[i].Children, s)
+			continue
+		}
+		place[s.ID] = len(top)
+		top = append(top, s)
+	}
+	for i := range top {
+		top[i].gather()
+	}
+	return top, nil
+}
+
+// sectionSummaries reads sections with their own counters in the order of the home: all of them
+// for parent 0, else the subsections of that parent.
+func (f *Forum) sectionSummaries(ctx context.Context, v Viewer, parent int) ([]sectionSummary, error) {
 	// A guest is user 0: no marks join and $1 > 0 skips the search for unread topics.
 	rows, err := f.db.Query(ctx, `
-		SELECT s.id, s.name, s.description, s.position, s.mods_only_topics,
+		SELECT `+sectionColumns+`,
 		       (SELECT count(*) FROM forum_topics t WHERE t.section_id = s.id AND t.deleted_at IS NULL),
 		       (SELECT count(*) FROM forum_posts p JOIN forum_topics t ON t.id = p.topic_id
 		        WHERE t.section_id = s.id AND t.deleted_at IS NULL AND p.deleted_at IS NULL),
@@ -70,6 +140,7 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 		           WHERE t.section_id = s.id AND t.deleted_at IS NULL AND t.last_post_at > $2
 		             AND t.last_post_id > GREATEST(r.last_read_post_id, sm.post_id, fm.post_id, 0))
 		FROM forum_sections s
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
 		LEFT JOIN forum_read_marks sm ON sm.user_id = $1 AND sm.section_id = s.id
 		LEFT JOIN forum_read_marks fm ON fm.user_id = $1 AND fm.section_id IS NULL
 		LEFT JOIN LATERAL (
@@ -81,7 +152,8 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 			ORDER BY t.last_post_at DESC, t.id DESC
 			LIMIT 1
 		) l ON true
-		ORDER BY s.position, s.id`, v.ID, v.RegisteredAt)
+		WHERE $3 = 0 OR s.parent_id = $3
+		ORDER BY `+treeOrder, v.ID, v.RegisteredAt, parent)
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +162,24 @@ func (f *Forum) sections(ctx context.Context, v Viewer) ([]sectionSummary, error
 		var postID, topicID, authorID *int
 		var title, author *string
 		var at *time.Time
-		err := row.Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics,
+		err := row.Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics, &s.ParentID, &s.ParentName,
 			&s.TopicCount, &s.PostCount, &postID, &topicID, &title, &authorID, &author, &at, &s.Unread)
 		if postID != nil {
 			s.LastPost = &lastPost{PostID: *postID, TopicID: *topicID, TopicTitle: *title, AuthorID: *authorID, AuthorName: *author, At: *at}
 		}
 		return s, err
 	})
+}
+
+// sectionLast is the dot of the template "forum-section-last": a section's last post, nil for none.
+type sectionLast struct {
+	view
+	Post *lastPost
+}
+
+// SectionLast: {{template "forum-section-last" ($.SectionLast .LastPost)}}.
+func (v view) SectionLast(p *lastPost) sectionLast {
+	return sectionLast{view: v, Post: p}
 }
 
 type homeData struct {
@@ -111,6 +194,14 @@ func (f *Forum) home(w http.ResponseWriter, r *http.Request, v view) {
 	if err != nil {
 		f.host.ServerError(w, r, err)
 		return
+	}
+	folded := foldedFromRequest(r)
+	for i := range sections {
+		p := &sections[i]
+		p.Folded = len(p.Children) > 0 && folded[p.ID]
+		for j := range p.Children {
+			p.Children[j].Folded = p.Folded
+		}
 	}
 	data := homeData{view: v, Sections: sections}
 	if v.Viewer.SignedIn() {
@@ -128,19 +219,30 @@ func (f *Forum) home(w http.ResponseWriter, r *http.Request, v view) {
 	})
 }
 
-// loadSection reads the section and the number of its topics the viewer sees; pgx.ErrNoRows for
+// sectionHead is a section page's section with what its page counts.
+type sectionHead struct {
+	Section
+	// Topics is the number of its topics the viewer sees.
+	Topics int
+	// Subsections is the number of its subsections: a parent's page lists them above its topics.
+	Subsections int
+}
+
+// loadSection reads the section with its parent's name and what its page counts; pgx.ErrNoRows for
 // a section that does not exist.
-func (f *Forum) loadSection(ctx context.Context, id int, v Viewer) (Section, int, error) {
-	var s Section
-	var topics int
+func (f *Forum) loadSection(ctx context.Context, id int, v Viewer) (sectionHead, error) {
+	var s sectionHead
 	err := f.db.QueryRow(ctx, `
-		SELECT s.id, s.name, s.description, s.position, s.mods_only_topics,
+		SELECT `+sectionColumns+`,
 		       (SELECT count(*) FROM forum_topics t
-		        WHERE t.section_id = s.id AND ($2 OR t.deleted_at IS NULL))
+		        WHERE t.section_id = s.id AND ($2 OR t.deleted_at IS NULL)),
+		       (SELECT count(*) FROM forum_sections c WHERE c.parent_id = s.id)
 		FROM forum_sections s
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
 		WHERE s.id = $1`, id, v.Moderator).
-		Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics, &topics)
-	return s, topics, err
+		Scan(&s.ID, &s.Name, &s.Description, &s.Position, &s.ModsOnlyTopics, &s.ParentID, &s.ParentName,
+			&s.Topics, &s.Subsections)
+	return s, err
 }
 
 // topicRow is a topic of the section page.
@@ -239,7 +341,11 @@ type topicLine struct {
 
 type sectionData struct {
 	view
-	Section    Section
+	Section Section
+	// Parent: the section has subsections. Children are they, on its first page only; a parent
+	// without topics of its own shows no list of topics, not even «no topics».
+	Parent     bool
+	Children   []sectionSummary
 	Topics     []topicRow
 	Pagination pagination
 }
@@ -256,7 +362,7 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.NotFound(w, r)
 		return
 	}
-	s, count, err := f.loadSection(r.Context(), id, v.Viewer)
+	s, err := f.loadSection(r.Context(), id, v.Viewer)
 	if errors.Is(err, pgx.ErrNoRows) {
 		f.host.NotFound(w, r)
 		return
@@ -265,7 +371,7 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.ServerError(w, r, err)
 		return
 	}
-	pages := pageCount(count, topicsPerPage)
+	pages := pageCount(s.Topics, topicsPerPage)
 	if page > pages {
 		f.host.NotFound(w, r)
 		return
@@ -277,9 +383,16 @@ func (f *Forum) section(w http.ResponseWriter, r *http.Request, v view) {
 	}
 	data := sectionData{
 		view:       v,
-		Section:    s,
+		Section:    s.Section,
+		Parent:     s.Subsections > 0,
 		Topics:     topics,
 		Pagination: pagination{Lang: v.Lang, Path: s.URL(), Current: page, Total: pages},
+	}
+	if data.Parent && page == 1 {
+		if data.Children, err = f.sectionSummaries(r.Context(), v.Viewer, s.ID); err != nil {
+			f.host.ServerError(w, r, err)
+			return
+		}
 	}
 	f.render(w, r, http.StatusOK, "section.html", data, Page{
 		Title:       pageTitle(v.Lang, s.Name, page),

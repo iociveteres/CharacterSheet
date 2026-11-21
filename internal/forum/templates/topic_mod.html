@@ -1,6 +1,6 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- with .Topic}}
-    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t $.Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a><span class="sep">›</span><a href="{{.URL}}">{{.Title}}</a></nav>
     {{- end}}
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{.Heading}}</h2></div></div>
@@ -19,7 +19,8 @@
         <select id="forum-mod-section" name="section"
             {{- with .Form.Errors.section}} aria-invalid="true" aria-describedby="forum-mod-section-error"{{end}}>
             {{- range .Sections}}
-            <option value="{{.ID}}"{{if eq .ID $.Form.SectionID}} selected{{end}}>{{.Name}}</option>
+            {{- /* A tree: subsections under their parent, indented; any of them can be chosen. */}}
+            <option value="{{.ID}}"{{if eq .ID $.Form.SectionID}} selected{{end}}>{{if .ParentID}}&nbsp;&nbsp;&nbsp;&nbsp;{{end}}{{.Name}}</option>
             {{- end}}
         </select>
         {{with .Form.Errors.section}}<span class="error field-error" id="forum-mod-section-error">{{.}}</span>{{end}}

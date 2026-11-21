@@ -1,8 +1,10 @@
 package forum
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"charactersheet.iociveteres.net/internal/i18n"
@@ -103,8 +105,48 @@ func forbidden(w http.ResponseWriter) {
 
 type newTopicData struct {
 	view
+	// Section is the one the form was opened from; Chosen is where the topic goes, among Choices:
+	// the sections of its family where the viewer may start a topic. With fewer than two the form
+	// has no choice and the topic goes to Section.
 	Section Section
+	Choices []Section
+	Chosen  int
 	Form    postForm
+}
+
+// familyOf reads the family of the section: its parent, or itself at the top, and the subsections,
+// in the order of the home.
+func (f *Forum) familyOf(ctx context.Context, s Section) ([]Section, error) {
+	root := s.ID
+	if s.ParentID != 0 {
+		root = s.ParentID
+	}
+	rows, err := f.db.Query(ctx, `
+		SELECT `+sectionColumns+` FROM forum_sections s
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
+		WHERE s.id = $1 OR s.parent_id = $1
+		ORDER BY `+treeOrder, root)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[Section])
+}
+
+// choose reads the field "section" of a form with a choice: one of Choices, else an error under the
+// field. A section the form did not offer — another family's, one of moderators' topics for a
+// member — is no choice either: CanStartTopic picked the offer.
+func (d *newTopicData) choose(r *http.Request) {
+	if len(d.Choices) < 2 {
+		return
+	}
+	id, err := strconv.Atoi(r.PostForm.Get("section"))
+	for _, c := range d.Choices {
+		if err == nil && c.ID == id {
+			d.Chosen = id
+			return
+		}
+	}
+	d.Form.AddError("section", i18n.T(d.Lang, "forum.moderation.noSection"))
 }
 
 // newTopic is the page of the new topic form and the address it posts to. A guest goes to sign in
@@ -121,7 +163,7 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.RedirectToLogin(w, r)
 		return
 	}
-	s, _, err := f.loadSection(r.Context(), id, v.Viewer)
+	head, err := f.loadSection(r.Context(), id, v.Viewer)
 	if errors.Is(err, pgx.ErrNoRows) {
 		f.host.NotFound(w, r)
 		return
@@ -130,17 +172,31 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 		f.host.ServerError(w, r, err)
 		return
 	}
+	s := head.Section
 	if !v.Viewer.CanStartTopic(s) {
 		forbidden(w)
 		return
 	}
-	data := newTopicData{view: v, Section: s}
+	data := newTopicData{view: v, Section: s, Chosen: s.ID}
+	if s.ParentID != 0 || head.Subsections > 0 {
+		family, err := f.familyOf(r.Context(), s)
+		if err != nil {
+			f.host.ServerError(w, r, err)
+			return
+		}
+		for _, c := range family {
+			if v.Viewer.CanStartTopic(c) {
+				data.Choices = append(data.Choices, c)
+			}
+		}
+	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if data.Form, err = readPostForm(r); err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
+		data.choose(r)
 		if data.Form.tab {
 			f.render(w, r, data.Form.tabStatus(v.Lang), "new_topic.html", data, Page{
 				Title:   i18n.T(v.Lang, "forum.topics.new"),
@@ -163,7 +219,7 @@ func (f *Forum) newTopic(w http.ResponseWriter, r *http.Request, v view) {
 			}
 		}
 		if data.Form.Valid() {
-			_, postID, err := f.createTopic(r.Context(), s.ID, v.Viewer.ID, data.Form.Title, data.Form.Body, v.Now)
+			_, postID, err := f.createTopic(r.Context(), data.Chosen, v.Viewer.ID, data.Form.Title, data.Form.Body, v.Now)
 			if err != nil {
 				f.host.ServerError(w, r, err)
 				return

@@ -1,7 +1,9 @@
 // The forum's script: it only improves what the pages already do with forms and links
 // (_prd/forum/plan.md): the preview tabs without a reload, Quote with a selection, a spoiler that a
-// click opens and closes, the line of a picture that did not load. It needs no words of its own:
-// the quote head and that line come from the server.
+// click opens and closes, the line of a picture that did not load, a parent folded on the home
+// without a reload. It needs no words of its own: the quote head, that line and the fold arrow's
+// labels come from the server.
+import { toggleFold } from "./fold";
 import { showBroken } from "./images";
 import { closePreview, openPreview, tabField } from "./preview";
 import { quoteOf } from "./quote";
@@ -65,6 +67,18 @@ document.addEventListener("input", event => {
 document.addEventListener("error", event => {
     if (event.target instanceof HTMLImageElement) showBroken(event.target);
 }, true);
+
+// The fold arrow of a parent on the home is a form that reloads the page; here the rows fold at
+// once, and the same form goes in the background for the cookie that keeps it.
+document.addEventListener("submit", event => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches("form.forum-fold")) return;
+    if (!toggleFold(form)) return;
+    event.preventDefault();
+    // manual: the answer is a redirect to the home, which nobody needs to load; the cookie comes
+    // with the redirect.
+    void fetch(form.action, { method: "POST", body: new FormData(form), redirect: "manual" }).catch(() => {});
+});
 
 // An empty field hidden under its preview cannot show the browser's message: show the field.
 document.addEventListener("invalid", event => {

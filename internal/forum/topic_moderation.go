@@ -313,10 +313,13 @@ func changed(rows int64, err error) error {
 	return err
 }
 
-// sectionList is every section in the order of the home, for a choice of one.
+// sectionList is every section in the order of the home, subsections right under their parent,
+// for a choice of one and the moderators' tree.
 func (f *Forum) sectionList(ctx context.Context) ([]Section, error) {
 	rows, err := f.db.Query(ctx, `
-		SELECT id, name, description, position, mods_only_topics FROM forum_sections ORDER BY position, id`)
+		SELECT `+sectionColumns+` FROM forum_sections s
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
+		ORDER BY `+treeOrder)
 	if err != nil {
 		return nil, err
 	}

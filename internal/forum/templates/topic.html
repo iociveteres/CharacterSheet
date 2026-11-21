@@ -1,6 +1,6 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
     {{- template "forum-ban-notice" .}}
-    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a></nav>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Topic.Section}}<span class="sep">›</span><a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a></nav>
 
     <div class="forum-head forum-topic-head">
         <div class="forum-head-text">

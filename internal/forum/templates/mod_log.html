@@ -32,6 +32,9 @@
                 {{- if .FromSection}}
                 <span class="meta">{{.FromSection}} → {{.SectionName}}</span>
                 {{- end}}
+                {{- if .ParentMoved}}
+                <span class="meta">{{t $.Lang "forum.moderation.logParent"}}: {{with .FromParent}}{{.}}{{else}}{{t $.Lang "forum.moderation.logTopLevel"}}{{end}} → {{with .ToParent}}{{.}}{{else}}{{t $.Lang "forum.moderation.logTopLevel"}}{{end}}</span>
+                {{- end}}
                 {{- if .From}}
                 <span class="meta">{{t $.Lang "forum.moderation.logPlace"}}: {{.From}} → {{.To}}</span>
                 {{- end}}

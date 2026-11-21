@@ -157,7 +157,7 @@ func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, err
 	err := f.db.QueryRow(ctx, `
 		SELECT t.id, t.section_id, t.author_id, t.title, t.pinned, t.closed, t.created_at, t.deleted_at,
 		       t.reply_count, t.last_post_id, t.last_post_at, a.name,
-		       s.id, s.name, s.description, s.position, s.mods_only_topics,
+		       `+sectionColumns+`,
 		       (SELECT count(*) FROM forum_posts p WHERE p.topic_id = t.id),
 		       fp.body, d.id, d.name,
 		       (SELECT l.reason FROM forum_mod_log l
@@ -166,6 +166,7 @@ func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, err
 		       EXISTS (SELECT 1 FROM forum_subscriptions sub WHERE sub.user_id = $3 AND sub.topic_id = t.id)
 		FROM forum_topics t
 		JOIN forum_sections s ON s.id = t.section_id
+		LEFT JOIN forum_sections ps ON ps.id = s.parent_id
 		JOIN users a ON a.id = t.author_id
 		LEFT JOIN users d ON d.id = t.deleted_by AND t.deleted_at IS NOT NULL
 		LEFT JOIN LATERAL (
@@ -178,7 +179,7 @@ func (f *Forum) loadTopic(ctx context.Context, id, viewerID int) (topicPage, err
 		Scan(&t.ID, &t.SectionID, &t.AuthorID, &t.Title, &t.Pinned, &t.Closed, &t.CreatedAt, &t.DeletedAt,
 			&t.ReplyCount, &t.LastPostID, &t.LastPostAt, &t.AuthorName,
 			&t.Section.ID, &t.Section.Name, &t.Section.Description, &t.Section.Position, &t.Section.ModsOnlyTopics,
-			&t.PostCount, &first, &deletedByID, &deletedBy, &reason, &t.Subscribed)
+			&t.Section.ParentID, &t.Section.ParentName, &t.PostCount, &first, &deletedByID, &deletedBy, &reason, &t.Subscribed)
 	if first != nil {
 		t.FirstPost = *first
 	}

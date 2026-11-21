@@ -51,6 +51,10 @@ type logLine struct {
 	// Restorable is how many of the posts of a deletion of the last day are still deleted by it
 	// (restorableSQL): «Restore all» shows while there are some.
 	Restorable int
+	// ParentMoved: an edit of a section moved it to another parent, from FromParent to ToParent;
+	// a name is empty for the top level.
+	ParentMoved          bool
+	FromParent, ToParent string
 }
 
 // ActionText words the code of the line in the reader's language; a code this build does not know
@@ -194,13 +198,16 @@ func (f *Forum) logLines(ctx context.Context, userID, limit, offset int) ([]logL
 		       COALESCE(CASE WHEN l.action = 'avatar.remove' THEN l.data->>'lock' END, ''),
 		       CASE WHEN l.action = 'avatar.remove' THEN (l.data->>'lockUntil')::timestamptz END,
 		       COALESCE(CASE WHEN l.action IN ('post.delete_recent', 'post.restore_recent') THEN jsonb_array_length(l.data->'posts') END, 0),
-		       CASE WHEN l.action = 'post.delete_recent' THEN (SELECT count(*) FROM forum_posts q WHERE `+restorableSQL+`) ELSE 0 END
+		       CASE WHEN l.action = 'post.delete_recent' THEN (SELECT count(*) FROM forum_posts q WHERE `+restorableSQL+`) ELSE 0 END,
+		       l.action = 'section.edit' AND l.data ? 'parent', COALESCE(fp.name, ''), COALESCE(tp.name, '')
 		FROM forum_mod_log l
 		JOIN users m ON m.id = l.moderator_id
 		LEFT JOIN forum_topics t ON t.id = l.topic_id
 		LEFT JOIN forum_sections s ON s.id = l.section_id
 		LEFT JOIN users u ON u.id = l.user_id
 		LEFT JOIN forum_sections fs ON fs.id = CASE WHEN l.action = 'topic.move' THEN (l.data->>'fromSection')::int END
+		LEFT JOIN forum_sections fp ON fp.id = CASE WHEN l.action = 'section.edit' THEN (l.data->>'parent')::int END
+		LEFT JOIN forum_sections tp ON tp.id = CASE WHEN l.action = 'section.edit' THEN (l.data->>'parentTo')::int END
 		WHERE $3 = 0 OR l.user_id = $3
 		ORDER BY l.id DESC
 		LIMIT $1 OFFSET $2`, limit, offset, userID)

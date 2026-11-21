@@ -2197,3 +2197,174 @@ main.forum-wide {
 .forum-user-about .forum-user-form > summary {
     cursor: pointer;
 }
+
+/* ===== Subsections ===== */
+
+/* A section of the top level may have subsections one level deep (_prd/forum/subsections): the home
+   shows them as a tree under their parent, which folds them by its arrow; a parent page lists them
+   above its topics in the same compact rows. Last in the file: these rules override the lists'. */
+
+/* ===== Compact rows: the home and a parent's subsections ===== */
+
+/* The name and the counts on one line, the description under it; the counts wrap under the name
+   only when the name is long. */
+.forum-row-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 10px;
+    min-width: 0;
+}
+
+.forum-row-line .forum-counts {
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+/* ===== Home: the tree ===== */
+
+/* A column for the fold arrow in every row, empty without subsections, so that every section's
+   name starts at the same place. */
+.forum-tree .forum-row,
+.forum-list-head.forum-tree-head {
+    grid-template-columns: 8px 16px minmax(0, 1fr) min(380px, 38%);
+    column-gap: 8px;
+}
+
+/* A subsection: its dot under the parent's name, its name a step further in. The last post's
+   column keeps its width, so it stays level with the parents'. */
+.forum-tree .forum-subrow {
+    grid-template-columns: 50px minmax(0, 1fr) min(380px, 38%);
+    border-top-style: dashed;
+}
+
+.forum-tree .forum-subrow .unread-dot {
+    justify-self: end;
+}
+
+/* Folding: the server renders the class folded from the cookie forum_folded, the forum script
+   toggles it. A parent carries both faces: unfolded, its own counts and last post; folded, the
+   family's and the line «Подразделы:».
+   Through #forum: #forum .meta would show a hidden count again. */
+#forum .forum-tree .forum-subrow.folded,
+#forum .forum-parent.folded .when-open,
+#forum .forum-parent:not(.folded) .when-folded {
+    display: none;
+}
+
+#forum .forum-fold button {
+    display: block;
+    width: 16px;
+    height: 20px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+#forum .forum-fold button:hover {
+    color: var(--text);
+}
+
+#forum .forum-fold .ico {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* The dot and the arrow stand level with the name's line, not in the middle of the row: a folded
+   parent has three lines. */
+.forum-tree .forum-fold {
+    align-self: start;
+    padding-top: 1px;
+}
+
+.forum-tree .unread-dot {
+    align-self: start;
+    margin-top: 7px;
+}
+
+/* A folded parent's subsections in a line under the description. */
+.forum-subsections {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 4px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.forum-subsections .label {
+    color: var(--text-secondary);
+}
+
+/* A comma after every link but the last; the links wrap whole on a phone. */
+.forum-subsections a:not(:last-child)::after {
+    content: ",";
+    color: var(--text-secondary);
+}
+
+/* An unread subsection: the row's dot, smaller, and a bold name (design/decisions.md, 11). */
+.forum-subsections a.unread {
+    font-weight: bold;
+}
+
+.forum-subsections a.unread::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background: var(--link);
+    vertical-align: 2px;
+}
+
+/* ===== Parent page ===== */
+
+/* The column heads name the subsections' list and the topics' one; on a phone, where they are
+   hidden, a heading does. */
+#forum .forum-list-title {
+    display: none;
+    margin: 4px 0 -4px;
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* ===== Moderators ===== */
+
+.forum-mod-sections .forum-subrow {
+    padding-left: 38px;
+    border-top-style: dashed;
+}
+
+.forum-field-note {
+    margin-top: -4px;
+}
+
+@media (max-width: 760px) {
+    #forum .forum-list-title {
+        display: block;
+    }
+
+    .forum-tree .forum-row {
+        grid-template-columns: 8px 16px minmax(0, 1fr);
+    }
+
+    .forum-tree .forum-row > .forum-row-last {
+        grid-column: 3;
+    }
+
+    .forum-tree .forum-subrow {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .forum-tree .forum-subrow > .forum-row-last {
+        grid-column: 2;
+    }
+
+    .forum-mod-sections .forum-subrow {
+        padding-left: 24px;
+    }
+}

@@ -1,11 +1,23 @@
 <div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
-    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a></nav>
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}<span class="sep">›</span><a href="{{.Section.URL}}">{{.Section.Name}}</a></nav>
 
     <div class="forum-head"><div class="forum-head-text"><h2>{{t .Lang "forum.topics.new"}}</h2></div></div>
 
     {{- /* An error goes under its field, the field gets a red frame (design/decisions.md, 17). */}}
     <form class="forum-form forum-panel" action="{{.Section.URL}}/new" method="POST">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        {{- /* In a family of sections, where the topic goes: the parent and its subsections where the
+             viewer may start one, the section of the page chosen (posting.go, newTopicData). */}}
+        {{- if gt (len .Choices) 1}}
+        <label class="field-label" for="forum-topic-section">{{t .Lang "forum.sections.section"}}</label>
+        <select id="forum-topic-section" name="section"
+            {{- with .Form.Errors.section}} aria-invalid="true" aria-describedby="forum-topic-section-error"{{end}}>
+            {{- range .Choices}}
+            <option value="{{.ID}}"{{if eq .ID $.Chosen}} selected{{end}}>{{if .ParentID}}&nbsp;&nbsp;&nbsp;&nbsp;{{end}}{{.Name}}</option>
+            {{- end}}
+        </select>
+        {{with .Form.Errors.section}}<span class="error field-error" id="forum-topic-section-error">{{.}}</span>{{end}}
+        {{- end}}
         <label class="field-label" for="forum-topic-title">{{t .Lang "forum.topics.title"}}</label>
         <input type="text" id="forum-topic-title" name="title" value="{{.Form.Title}}" required
             {{- with .Form.Errors.title}} aria-invalid="true" aria-describedby="forum-topic-title-error"{{end}}>

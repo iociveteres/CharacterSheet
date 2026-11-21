@@ -332,6 +332,8 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 	// same query.
 	reader := forumtest.User(t, db, "reader", at(0))
 	section := newSection(t, db, "section")
+	// A parent page lists its subsections in one more query, whatever their number.
+	child := newSubsection(t, db, "child", section)
 	topic, firstPost := mustCreateTopic(t, write, section, moderator, "topic", at(0))
 	assert.NilError(t, readTopicUpTo(ctx, db, reader, topic, firstPost, at(0)))
 	assert.NilError(t, write.markRead(ctx, reader, &section))
@@ -339,6 +341,7 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 	targets := []string{
 		"/forum/",
 		fmt.Sprintf("/forum/section/%d", section),
+		fmt.Sprintf("/forum/section/%d", child),
 		fmt.Sprintf("/forum/topic/%d", topic),
 		fmt.Sprintf("/forum/topic/%d/unread", topic),
 		fmt.Sprintf("/forum/post/%d", firstPost),
@@ -366,6 +369,8 @@ func TestPagesMakeConstantQueries(t *testing.T) {
 		assert.NilError(t, err)
 		mustCreateTopic(t, write, id, author, fmt.Sprintf("topic %d", i), at(i))
 		mustCreateTopic(t, write, section, author, fmt.Sprintf("more %d", i), at(i))
+		mustCreateTopic(t, write, child, author, fmt.Sprintf("child %d", i), at(i))
+		newSubsection(t, db, fmt.Sprintf("child %d", i), section)
 		mustReply(t, write, topic, author, "reply", at(i))
 	}
 	many := queries()

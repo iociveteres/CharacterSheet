@@ -54,17 +54,29 @@ func readTopicUpTo(ctx context.Context, db execer, userID, topicID, postID int, 
 }
 
 // markRead moves the user's mark of a section, or of the whole forum for a nil section, to the
-// newest post in it: everything there is read, what comes after is not.
+// newest post in it: everything there is read, what comes after is not. A parent's marks its
+// subsections too, each its own mark at its own newest post: a subsection's leaves its siblings.
 func (f *Forum) markRead(ctx context.Context, userID int, sectionID *int) error {
 	// last_post_id is the newest visible post of a topic, and it is what the unread formula
 	// compares the mark with. No topic yet — nothing to mark.
+	if sectionID == nil {
+		_, err := f.db.Exec(ctx, `
+			INSERT INTO forum_read_marks (user_id, section_id, post_id)
+			SELECT $1, NULL, max(t.last_post_id) FROM forum_topics t
+			HAVING max(t.last_post_id) IS NOT NULL
+			ON CONFLICT (user_id, section_id) DO UPDATE SET post_id = EXCLUDED.post_id
+			WHERE forum_read_marks.post_id < EXCLUDED.post_id`, userID)
+		return err
+	}
 	_, err := f.db.Exec(ctx, `
 		INSERT INTO forum_read_marks (user_id, section_id, post_id)
-		SELECT $1, $2::int, max(t.last_post_id) FROM forum_topics t
-		WHERE $2::int IS NULL OR t.section_id = $2
+		SELECT $1, t.section_id, max(t.last_post_id) FROM forum_topics t
+		JOIN forum_sections s ON s.id = t.section_id
+		WHERE s.id = $2 OR s.parent_id = $2
+		GROUP BY t.section_id
 		HAVING max(t.last_post_id) IS NOT NULL
 		ON CONFLICT (user_id, section_id) DO UPDATE SET post_id = EXCLUDED.post_id
-		WHERE forum_read_marks.post_id < EXCLUDED.post_id`, userID, sectionID)
+		WHERE forum_read_marks.post_id < EXCLUDED.post_id`, userID, *sectionID)
 	return err
 }
 
