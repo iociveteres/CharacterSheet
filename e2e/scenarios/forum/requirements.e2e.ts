@@ -9,7 +9,7 @@ import type { Browser } from "playwright-core";
 import { seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
-import { badge, canReply, closeIncidentNotice, createTopic, deleteAndBan, follow, forumSeed, idIn, liftBans, moderateTopic, openForum, openLastPage, openNotifications, openSection, openTopic, post, readAllNotifications, reply, sendReply, setModMode, topicRow, uniqueTitle } from "../../lib/forum";
+import { badge, canReply, closeSiteNotice, createTopic, deleteAndBan, follow, forumSeed, idIn, liftBans, moderateTopic, openForum, openLastPage, openNotifications, openSection, openTopic, post, readAllNotifications, reply, sendReply, setModMode, topicRow, uniqueTitle } from "../../lib/forum";
 
 describe("forum: topic, replies, notifications, moderation", () => {
     let browser: Browser;
@@ -27,7 +27,7 @@ describe("forum: topic, replies, notifications, moderation", () => {
         reader = await Player.create(browser, "reader", { role: "player2" });
         gm = await Player.create(browser, "gm", { role: "gm" });
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
-        await closeIncidentNotice(author, reader, gm, moderator);
+        await closeSiteNotice(author, reader, gm, moderator);
         await setModMode(moderator, true);
         // What an earlier run left unread.
         for (const p of [author, reader]) {

@@ -9,7 +9,7 @@ import { seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { closeIncidentNotice, createTopic, expectFits, flash, follow, forumSeed, openAuthorPage, openNotifications, openSection, openTopic, readAllNotifications, reply, setModMode, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, expectFits, flash, follow, forumSeed, openAuthorPage, openNotifications, openSection, openTopic, readAllNotifications, reply, setModMode, uniqueTitle } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
 const ABOUT = "Plays **Dark Heresy** on Sundays.";
@@ -40,7 +40,7 @@ describe("forum: the user page and «About»", () => {
         phone = await Player.create(browser, "player2 phone", { role: "player2", ...PHONE });
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
         modPhone = await Player.create(browser, "moderator phone", { role: "moderator", ...PHONE });
-        await closeIncidentNotice(player, phone, moderator, modPhone);
+        await closeSiteNotice(player, phone, moderator, modPhone);
         await setModMode(moderator, true);
         await setModMode(modPhone, true);
         await openNotifications(player);

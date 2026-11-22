@@ -496,7 +496,7 @@ html[data-theme="dark"] .avatar-hue {
         font-size: 16px;
     }
 
-    .incident-notice .close {
+    .site-notice .close {
         min-width: 40px;
         min-height: 40px;
     }
@@ -630,7 +630,7 @@ div.flash {
     text-align: center;
 }
 
-.incident-notice {
+.site-notice {
     position: fixed;
     bottom: 16px;
     left: 50%;
@@ -645,11 +645,11 @@ div.flash {
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
 }
 
-.incident-notice p {
+.site-notice p {
     margin: 6px 0;
 }
 
-.incident-notice .close {
+.site-notice .close {
     position: absolute;
     top: 6px;
     right: 8px;
@@ -663,7 +663,7 @@ div.flash {
     cursor: pointer;
 }
 
-.incident-notice .close:hover {
+.site-notice .close:hover {
     opacity: 1;
     color: var(--text);
 }

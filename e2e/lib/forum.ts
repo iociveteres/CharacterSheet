@@ -19,12 +19,12 @@ export const idIn = (url: string, kind: "topic" | "post"): number =>
 const postIn = (url: string) => Number(/#post-(\d+)/.exec(url)?.[1] ?? idIn(url, "post"));
 
 /**
- * The site's incident notice stays closed, as for a user who closed it once
+ * The site's notice stays closed, as for a user who closed it once
  * (the cookie its close button sets): on a phone it covers the form buttons,
  * and without scripts it cannot be closed.
  */
-export async function closeIncidentNotice(...players: Player[]): Promise<void> {
-    for (const p of players) await p.context.addCookies([{ name: "incident_notice_closed", value: "1", url: p.base }]);
+export async function closeSiteNotice(...players: Player[]): Promise<void> {
+    for (const p of players) await p.context.addCookies([{ name: "forum_notice_closed", value: "1", url: p.base }]);
 }
 
 /** Clicks what leads to another page and waits for that page. */

@@ -6,7 +6,7 @@ import type { Browser } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import {
-    badge, closeIncidentNotice, createTopic, follow, forumSeed, idIn, openForum, openNotifications, openSection, openTopic, post,
+    badge, closeSiteNotice, createTopic, follow, forumSeed, idIn, openForum, openNotifications, openSection, openTopic, post,
     readAllNotifications, reply, sendReply, typeReply, uniqueTitle,
 } from "../../lib/forum";
 
@@ -22,7 +22,7 @@ describe("forum without scripts", () => {
         browser = await launch();
         author = await Player.create(browser, "author", { role: "outsider", javaScript: false });
         replier = await Player.create(browser, "replier", { role: "player2", javaScript: false });
-        await closeIncidentNotice(author, replier);
+        await closeSiteNotice(author, replier);
         await openNotifications(replier);
         await readAllNotifications(replier);
     });

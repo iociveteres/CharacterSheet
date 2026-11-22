@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, Locator } from "playwright-core";
 import { seedUser } from "../../lib/config";
 import { resetLimits } from "../../lib/account";
-import { closeIncidentNotice, createTopic, forumSeed, openAccount, openAuthorPage, openSection, openTopic, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, forumSeed, openAccount, openAuthorPage, openSection, openTopic, uniqueTitle } from "../../lib/forum";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 
@@ -39,7 +39,7 @@ describe("renaming an account", () => {
         browser = await launch();
         renamer = await Player.create(browser, "renamer", { role: "renamer" });
         reader = await Player.create(browser, "player", { role: "player" });
-        await closeIncidentNotice(renamer, reader);
+        await closeSiteNotice(renamer, reader);
     });
 
     afterAll(async () => {

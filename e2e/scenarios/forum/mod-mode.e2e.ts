@@ -8,7 +8,7 @@ import type { Browser } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import {
-    closeIncidentNotice, createTopic, expectFits, follow, forumSeed, inModMode, openSection, openTopic, post, reply, setModMode, uniqueTitle,
+    closeSiteNotice, createTopic, expectFits, follow, forumSeed, inModMode, openSection, openTopic, post, reply, setModMode, uniqueTitle,
 } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
@@ -43,7 +43,7 @@ describe("forum: moderator mode", () => {
         author = await Player.create(browser, "author", { role: "player" });
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
         modPhone = await Player.create(browser, "moderator phone", { role: "moderator", ...PHONE });
-        await closeIncidentNotice(author, moderator, modPhone);
+        await closeSiteNotice(author, moderator, modPhone);
         // A topic with two replies of the author; the second taken back by them.
         await openSection(author, forumSeed().section);
         ({ topic } = await createTopic(author, uniqueTitle("Moderator mode"), "The question."));

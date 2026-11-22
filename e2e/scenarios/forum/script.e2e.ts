@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
-import { closeIncidentNotice, createTopic, follow, forumSeed, idIn, openSection, openTopic, post, reply, setModMode, topicRow, typeReply, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, follow, forumSeed, idIn, openSection, openTopic, post, reply, setModMode, topicRow, typeReply, uniqueTitle } from "../../lib/forum";
 
 const BODY = "The first paragraph has a **bold** word in it.\n\nThe second paragraph hides ||a secret||.";
 
@@ -44,7 +44,7 @@ describe("forum script", () => {
         browser = await launch();
         // A moderator is not held by the posting limits, and this file posts a lot.
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
-        await closeIncidentNotice(moderator);
+        await closeSiteNotice(moderator);
         await setModMode(moderator, true);
         await openSection(moderator, forumSeed().section);
         ({ topic, post: first } = await createTopic(moderator, uniqueTitle("Script"), BODY));

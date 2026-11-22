@@ -8,7 +8,7 @@ import type { Browser, Locator, Route } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { closeIncidentNotice, createTopic, expectFits, forumSeed, openForum, openSection, openTopic, post, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, expectFits, forumSeed, openForum, openSection, openTopic, post, uniqueTitle } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
 const BODY = [
@@ -67,7 +67,7 @@ describe("forum: pictures under a spoiler and the View menu", () => {
         const moderator = await Player.create(browser, "moderator", { role: "moderator" });
         reader = await Player.create(browser, "reader", { role: "player" });
         phone = await Player.create(browser, "reader phone", { role: "player", ...PHONE });
-        await closeIncidentNotice(moderator, reader, phone);
+        await closeSiteNotice(moderator, reader, phone);
         await standInHosts(reader);
         await standInHosts(phone);
         await openSection(moderator, forumSeed().section);
