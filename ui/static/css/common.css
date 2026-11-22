@@ -104,7 +104,7 @@ header a {
 }
 
 .sheet {
-    background-color: var(--bg-light);
+    background-color: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
 }
@@ -122,7 +122,7 @@ header a {
     gap: 12px;
     padding: 10px 14px;
     border-radius: 8px;
-    background: var(--bg-light);
+    background: var(--bg);
     border: 1px solid var(--border-light);
 }
 
@@ -322,13 +322,12 @@ select {
     mask-size: cover;
 }
 
-/* background area revealed by inverted mask */
+/* The logo's background, revealed by the inverted mask: the page's, which the header lies on (main.css). */
 .recolor::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: var(--bg);
-    /* actual page background color */
+    background: var(--bg-light);
     -webkit-mask-image: url("/static/img/icon_mask_inv.png");
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: cover;
