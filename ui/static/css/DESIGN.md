@@ -3,7 +3,8 @@
 Tokens are in `themes/themes.css`.
 
 ## Backgrounds
-- Page under the panels: `bg-light` (near black or white).
+- Page under the panels: `bg-light` (near black or white). The site header with the logo lies on it;
+  the row of links and the footer are `bg` panels across the page (`main.css`).
 - Panel, sheet: `bg`.
 - Item on a panel: `bg-item`; nested: `bg-item2`, `bg-item3`. Each level is lighter in the dark theme, darker in the light one.
 - Menus and popovers: one level above what they cover.
