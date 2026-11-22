@@ -199,10 +199,12 @@ jobs:
           echo '[]' > internal/gamedata/assets/placeholder.json
 
       # Built first, so the wait below is for the server and not the compiler.
+      # -dev adds the /dev routes the account scenarios call (rate limit reset,
+      # a pass of the account jobs); it serves the bundle built above from disk.
       - name: Start the server
         run: |
           go build -o "$RUNNER_TEMP/web" ./cmd/web
-          nohup "$RUNNER_TEMP/web" -addr :4002 -log-level info > "$RUNNER_TEMP/server.log" 2>&1 &
+          nohup "$RUNNER_TEMP/web" -addr :4002 -dev -log-level info > "$RUNNER_TEMP/server.log" 2>&1 &
           for i in $(seq 1 30); do
             if curl -fs http://localhost:4002/readiness > /dev/null; then
               exit 0
