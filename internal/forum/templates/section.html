@@ -1,0 +1,110 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
+    {{- template "forum-ban-notice" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Section}}</nav>
+
+    <div class="forum-head">
+        <div class="forum-head-text">
+            <h2>{{.Section.Name}}</h2>
+            {{with .Section.Description}}<span class="forum-description">{{.}}</span>{{end}}
+        </div>
+        {{- /* Level with the heading, under it on a phone. */}}
+        <div class="forum-actions forum-head-top">
+            {{if .Viewer.SignedIn}}
+            <form method="post" action="{{.Section.URL}}/read">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="f-btn f-secondary forum-mark-read">{{t .Lang "forum.topics.markRead"}}</button>
+            </form>
+            {{end}}
+            {{if .Shown.CanStartTopic .Section}}
+            <a class="f-btn f-primary forum-new-topic" href="{{.Section.URL}}/new">+ {{t .Lang "forum.topics.new"}}</a>
+            {{else if .Viewer.SignInToStartTopic .Section}}
+            <a class="f-btn f-secondary forum-sign-in" href="{{.Section.URL}}/new" rel="nofollow">{{t .Lang "forum.topics.signInToStart"}}</a>
+            {{end}}
+        </div>
+    </div>
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+
+    {{- /* A parent lists its subsections above its own topics, on its first page, in rows of the
+         home; to a sibling a subsection leads through the parent (_prd/forum/subsections). On a phone,
+         where the column heads are hidden, a heading names each list. */}}
+    {{- with .Children}}
+    <h3 class="forum-list-title">{{t $.Lang "forum.sections.subsectionsTitle"}}</h3>
+    <div>
+        <div class="forum-list-head forum-sections">
+            <span></span><span>{{t $.Lang "forum.sections.subsection"}}</span><span>{{t $.Lang "forum.sections.lastPost"}}</span>
+        </div>
+        <ul class="forum-list forum-sections">
+            {{- range .}}
+            <li class="forum-row{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <div class="forum-row-main">
+                    <div class="forum-row-line">
+                        <a class="forum-row-title" href="{{.URL}}">{{.Name}}</a>
+                        <span class="meta forum-counts">{{t $.Lang "forum.sections.topicCount" "count" .TopicCount}} · {{t $.Lang "forum.sections.postCount" "count" .PostCount}}</span>
+                    </div>
+                    {{with .Description}}<span class="meta forum-row-desc">{{.}}</span>{{end}}
+                </div>
+                <div class="forum-row-last">{{template "forum-section-last" ($.SectionLast .LastPost)}}</div>
+            </li>
+            {{- end}}
+        </ul>
+    </div>
+    {{- end}}
+
+    {{if .Topics}}
+    {{- if .Parent}}<h3 class="forum-list-title">{{t .Lang "forum.sections.topicsTitle"}}</h3>{{end}}
+    <div>
+        <div class="forum-list-head forum-topics">
+            <span></span><span>{{if .Parent}}{{t .Lang "forum.sections.ownTopics"}}{{else}}{{t .Lang "forum.topics.topic"}}{{end}}</span><span class="forum-col-count">{{t .Lang "forum.topics.replies"}}</span><span class="forum-col-last">{{t .Lang "forum.sections.lastPost"}}</span>
+        </div>
+        <ol class="forum-list forum-topics">
+            {{range .Topics}}{{template "forum-topic-row" ($.TopicLine .)}}{{end}}
+        </ol>
+    </div>
+    {{else if not .Parent}}
+    <div class="forum-list"><p class="forum-empty">{{t .Lang "forum.topics.empty"}}</p></div>
+    {{end}}
+
+    {{if gt .Pagination.Total 1}}
+    <div class="forum-toolbar">{{template "forum-pagination" .Pagination}}</div>
+    {{end}}
+</div>
+
+{{- /* A topic as a row of a list (sections.go, topicLine): its section, or the tab «Topics» of a user
+     page, where the author is the user and the row names the section instead. */}}
+{{define "forum-topic-row"}}
+{{- with .Row}}
+            <li class="forum-row{{if .Pinned}} pinned{{end}}{{if .Deleted}} deleted{{end}}{{if .Unread}} unread{{end}}">
+                <span class="unread-dot"{{if .Unread}} title="{{t $.Lang "forum.topics.unread"}}"{{end}}></span>
+                <div class="forum-row-main">
+                    <div>
+                        {{- /* An unread topic opens at its first unread post. */}}
+                        <a class="forum-row-title" href="{{if .Unread}}{{.UnreadURL}}{{else}}{{.URL}}{{end}}">{{$.TitleOf .Title}}</a>
+                        {{if or .Pinned .Closed}}<span class="forum-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
+                        {{if .Deleted}}<span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}
+                        {{with .Pages}}<span class="forum-minipages">{{range .}}{{if .Gap}}<span>…</span>{{else}}<a href="{{.URL}}">{{.Number}}</a>{{end}}{{end}}</span>{{end}}
+                    </div>
+                    {{- if $.BySection}}
+                    <span class="meta">{{.SectionName}} · {{$.Time .CreatedAt}}</span>
+                    {{- else}}
+                    <span class="meta">{{$.UserLink "forum-author-name" .AuthorID .AuthorName}} · {{$.Time .CreatedAt}}</span>
+                    {{- end}}
+                </div>
+                {{- /* The column head names the number; on a phone, where the head is hidden, the words. */}}
+                <div class="forum-row-count"><span class="forum-count-number">{{count .ReplyCount}}</span><span class="forum-count-words">{{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span></div>
+                <div class="forum-row-last">
+                    {{if .LastPostID}}<span class="by">{{$.UserLink "forum-author-name" .LastAuthorID .LastAuthorName}}<a href="{{.LastPostURL}}">{{$.Time .LastPostAt}}</a></span>{{end}}
+                </div>
+            </li>
+{{- end}}
+{{- end}}
+
+{{- /* The parent of a subsection in the breadcrumbs, before the section's own link or after «Forum»
+     on its page; nothing for a section of the top level. The dot is a Section. */}}
+{{define "forum-parent-crumb"}}
+{{- if .ParentID}}<span class="sep">›</span><a href="{{.ParentURL}}">{{.ParentName}}</a>{{end}}
+{{- end}}

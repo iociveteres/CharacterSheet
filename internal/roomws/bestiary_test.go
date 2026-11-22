@@ -46,14 +46,14 @@ func newBestiaryPages(t *testing.T) *bestiaryPages {
 	server, dial := serveHubs(t, models.Models{CharacterSheets: sheets, RoomMessages: messages}, func(server *Server, userID int, w http.ResponseWriter, r *http.Request) {
 		server.BestiaryWs(userID, w, r)
 	}, func(server *Server, userID int) *Hub {
-		return server.GetOrInitBestiaryHub(userID)
+		return server.bestiaryHub(userID)
 	})
 	return &bestiaryPages{server: server, sheets: sheets, messages: messages, dial: dial}
 }
 
 // mark sends a marker to the tabs of the user as mark of audienceRoom does.
 func (b *bestiaryPages) mark(userID int) {
-	b.server.GetOrInitBestiaryHub(userID).BroadcastToUsers(nil, []int{userID}, []byte(`{"type":"marker"}`))
+	b.server.bestiaryHub(userID).BroadcastToUsers(nil, []int{userID}, []byte(`{"type":"marker"}`))
 }
 
 func expectRefused(t *testing.T, p *peer, eventID string) {

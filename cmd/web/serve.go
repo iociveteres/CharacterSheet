@@ -31,6 +31,8 @@ func serve(app *webapp.Application, cfg config, lifeLog *log.Logger) error {
 
 	statsCtx, statsCancel := context.WithCancel(context.Background())
 	app.StartOnlineUsersUpdater(statsCtx)
+	app.StartLimitSweeper(statsCtx)
+	app.StartAccountJobs(statsCtx)
 
 	shutdownError := make(chan error)
 	go func() {

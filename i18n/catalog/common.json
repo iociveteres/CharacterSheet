@@ -26,6 +26,7 @@
   "common.unknown": { "en": "Unknown", "ru": "Неизвестно" },
   "common.more": { "en": "More", "ru": "Ещё" },
   "common.owner": { "en": "Owner", "ru": "Владелец" },
+  "common.deletedUser": { "en": "Deleted user", "ru": "Удалённый пользователь", "note": "вместо имени пользователя, удалившего аккаунт: автор сообщения в чате, поста на форуме, владелец коллекции бестиария" },
   "common.role.gamemaster": { "en": "Gamemaster", "ru": "Ведущий", "note": "роль в комнате; ключ — сохранённое значение роли" },
   "common.role.moderator": { "en": "Moderator", "ru": "Модератор", "note": "роль в комнате" },
   "common.role.player": { "en": "Player", "ru": "Игрок", "note": "роль в комнате" },
@@ -36,5 +37,14 @@
   "common.modifier": { "en": "Modifier", "ru": "Модификатор", "note": "в таблице сложности книги столбец «Мод»" },
   "common.bonus": { "en": "Bonus", "ru": "Бонус" },
   "common.sheetKind.blackCrusade": { "en": "Black Crusade", "ru": "Black Crusade", "note": "вид листа, название игры; по-русски тоже латиницей, как на обложке. Последний сегмент — сохранённый вид black_crusade" },
-  "common.sheetKind.pathfinderCrusade": { "en": "Pathfinder Crusade", "ru": "Pathfinder Crusade", "note": "вид листа, название игры; по-русски тоже латиницей. Последний сегмент — сохранённый вид pathfinder_crusade" }
+  "common.sheetKind.pathfinderCrusade": { "en": "Pathfinder Crusade", "ru": "Pathfinder Crusade", "note": "вид листа, название игры; по-русски тоже латиницей. Последний сегмент — сохранённый вид pathfinder_crusade" },
+  "common.connection.reconnecting": { "en": "No connection. Reconnecting…", "ru": "Нет связи. Подключаемся заново…", "note": "плашка над страницей, пока сокет закрыт" },
+  "common.connection.newVersion": { "en": "A new version is out: reload the page to go on editing.", "ru": "Вышла новая версия: перезагрузите страницу, чтобы продолжить правки.", "note": "сервер запущен с более новой сборкой, чем у страницы" },
+  "common.connection.reload": { "en": "Reload", "ru": "Перезагрузить", "note": "кнопка в плашке о новой версии" },
+  "common.crop.zoom": { "en": "Zoom", "ru": "Масштаб", "note": "ползунок в окне кадрирования портрета и аватара" },
+  "common.crop.chooseFile": { "en": "Choose file…", "ru": "Выбрать файл…", "note": "кнопка окна кадрирования" },
+  "common.crop.keep": { "en": "Keep", "ru": "Оставить", "note": "ответ «нет» на «Удалить портрет?» / «Удалить аватар?» в окне кадрирования" },
+  "common.crop.notAnImage": { "en": "Not an image: choose a PNG, JPEG or WebP file", "ru": "Это не изображение: выберите файл PNG, JPEG или WebP" },
+  "common.crop.encodeFailed": { "en": "The browser could not encode the image", "ru": "Браузер не смог сохранить изображение в файл" },
+  "common.crop.weight": { "en": "{format} · {size} KB", "ru": "{format} · {size} КБ", "note": "формат и размер готового файла в окне кадрирования" }
 }

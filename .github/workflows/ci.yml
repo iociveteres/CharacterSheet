@@ -116,3 +116,116 @@ jobs:
         run: |
           npm run gen:types
           git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts ui/static/js/room/encounter/types.gen.ts ui/static/js/bestiary/types.gen.ts ui/static/js/bestiary/payload.gen.ts
+
+      # internal/models/sheet_paths_test.go requires the server's shape check to
+      # take every path of this file.
+      - name: The field paths of the client schemas are up to date
+        run: |
+          npm run gen:schema-paths
+          git diff --exit-code -- internal/models/testdata/schema_paths.json
+
+  # Browser scenarios (e2e/) against a fresh server on the seed of npm run seed.
+  # Not blocking for now. Runs only for this workflow itself: deploy.yml calls
+  # it with its own event, and github.workflow is then the caller's name.
+  e2e:
+    if: github.workflow == 'CI' && (github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: charactersheet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e -d charactersheet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://e2e:pass@localhost:5432/charactersheet?sslmode=disable
+      # The socket accepts only this Origin.
+      BASE_URL: http://localhost:4002
+      # main.go exits without a port, the mail client without a host; that
+      # nothing answers there is only logged.
+      SMTP_HOSTNAME: localhost
+      SMTP_PORT: "587"
+      E2E_BASE: http://localhost:4002
+      E2E_AUTH: scripts/perf/.auth-gm.json
+      E2E_VIEWER_AUTH: scripts/perf/.auth-player.json
+      # The server runs on the gamedata placeholder (e2e/lib/config.ts).
+      E2E_NO_GAMEDATA: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # The version setup.sh of the server repo installs on production.
+      - name: Install migrate
+        run: |
+          curl -fsSL https://github.com/golang-migrate/migrate/releases/download/v4.18.3/migrate.linux-amd64.tar.gz \
+            | tar -xz -C "$RUNNER_TEMP" migrate
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Migrate
+        run: migrate -database "$DATABASE_URL" -path ./migrations up
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Build the bundle
+        run: npm run build
+
+      - name: Gamedata placeholder
+        run: |
+          mkdir -p internal/gamedata/assets
+          echo '[]' > internal/gamedata/assets/placeholder.json
+
+      # Built first, so the wait below is for the server and not the compiler.
+      # -dev adds the /dev routes the account scenarios call (rate limit reset,
+      # a pass of the account jobs); it serves the bundle built above from disk.
+      - name: Start the server
+        run: |
+          go build -o "$RUNNER_TEMP/web" ./cmd/web
+          nohup "$RUNNER_TEMP/web" -addr :4002 -dev -log-level info > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:4002/readiness > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/server.log"
+          exit 1
+
+      # The seed signs its users in with Chrome, which the runner image has.
+      - name: Seed the test room
+        run: |
+          npm run seed
+          echo "E2E_ROOM=$(node -p "require('./scripts/perf/.seed.json').roomId")" >> "$GITHUB_ENV"
+
+      # sheet-width reads the filled sheets of E2E_FULL_ROOM, which the seed does
+      # not make. old-build skips itself without a server on :4001, dev-silence
+      # without the watch bundle.
+      - name: e2e
+        run: npm run test:e2e -- --reporter=dot --exclude e2e/scenarios/ui/sheet-width.e2e.ts
+
+      - name: Server log
+        if: always()
+        run: cat "$RUNNER_TEMP/server.log"

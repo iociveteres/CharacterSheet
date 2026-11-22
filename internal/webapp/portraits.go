@@ -1,30 +1,27 @@
 package webapp
 
 import (
-	"bytes"
 	"errors"
-	"image"
-	_ "image/jpeg"
 	"io"
 	"net/http"
 	"regexp"
 
 	"charactersheet.iociveteres.net/internal/models"
 	"github.com/julienschmidt/httprouter"
-	_ "golang.org/x/image/webp"
 )
 
-// The size the client crops a portrait to (sheet/profile/PortraitEditor.tsx).
+// The size the client crops a portrait to (PORTRAIT in sheet/profile/Portrait.tsx).
 const portraitWidth, portraitHeight = 360, 480
 
-var portraitHash = regexp.MustCompile(`^[0-9a-f]{16}$`)
+// imageHash is the address of a portrait or an avatar: the first 16 hex of the sha256 of its data.
+var imageHash = regexp.MustCompile(`^[0-9a-f]{16}$`)
 
 // portraitGet serves GET /portrait/:hash. The URL changes with the image, so
 // the browser keeps it for good; private, as only the viewers of a sheet may
 // see it. secureHeaders sets nosniff.
 func (app *Application) portraitGet(w http.ResponseWriter, r *http.Request) {
 	hash := httprouter.ParamsFromContext(r.Context()).ByName("hash")
-	if !portraitHash.MatchString(hash) {
+	if !imageHash.MatchString(hash) {
 		app.notFound(w)
 		return
 	}
@@ -40,25 +37,6 @@ func (app *Application) portraitGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", p.Mime)
 	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable")
 	w.Write(p.Data)
-}
-
-// portraitMime is the type of a WebP or JPEG image of the portrait's size,
-// read from its header; "" for anything else.
-func portraitMime(data []byte) string {
-	var mime string
-	switch {
-	case len(data) >= 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP":
-		mime = "image/webp"
-	case bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}):
-		mime = "image/jpeg"
-	default:
-		return ""
-	}
-	config, format, err := image.DecodeConfig(bytes.NewReader(data))
-	if err != nil || "image/"+format != mime || config.Width != portraitWidth || config.Height != portraitHeight {
-		return ""
-	}
-	return mime
 }
 
 // portraitPut serves PUT /sheet/portrait/:id: the body is the image itself.
@@ -79,7 +57,7 @@ func (app *Application) portraitPut(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	mime := portraitMime(data)
+	mime := croppedImageMime(data, portraitWidth, portraitHeight)
 	if mime == "" {
 		app.clientError(w, http.StatusBadRequest)
 		return

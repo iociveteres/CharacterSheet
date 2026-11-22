@@ -1,0 +1,276 @@
+/* The avatar block of the Account page (ui/html/partials/avatar.html, ui/static/js/account). The
+   picture is the shared crop frame (crop.css, linked before this file) named "avatar": these rules
+   give it its size, the place of its window and the texts beside it. The block is a panel on the
+   page (main.css, .account-page). Backgrounds and buttons: DESIGN.md. */
+
+.avatar-settings {
+    margin-top: 28px;
+}
+
+/* main.css scrolls <main> on its own (overflow: auto): the crop window beside the picture, taller
+   than what is left of a short page, would be cut off inside it, under the footer. */
+main:has(#avatar) {
+    overflow: visible;
+}
+
+.avatar-row {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.avatar-lock + .avatar-row {
+    margin-top: 12px;
+}
+
+.avatar-cell {
+    flex-shrink: 0;
+}
+
+/* 128px: the page has room; the window's previews show the forum's own sizes. */
+.crop-box.avatar,
+.avatar-letter {
+    width: 128px;
+    height: 128px;
+}
+
+/* No avatar without the script, or a lock: the forum's letter, not a frame that invites a click. */
+.avatar-letter {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-medium);
+    border-radius: 4px;
+    font-size: 56px;
+    font-weight: bold;
+}
+
+.avatar-side {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.avatar-side p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.avatar-side .hint {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.avatar-side form {
+    margin: 0;
+}
+
+.avatar-side .avatar-error {
+    color: var(--accent-attention);
+    font-size: 14px;
+}
+
+/* main.css styles every button with a selector of five :not()s (0,5,1); an id beats it. By role,
+   as in the sheet's crop window. */
+#avatar button {
+    font: inherit;
+    font-size: 15px;
+    font-weight: normal;
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    width: auto;
+    height: auto;
+    margin: 0;
+}
+
+#avatar button:hover:not(:disabled) {
+    background: var(--button-bg-subtle-hover);
+}
+
+#avatar button.primary {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+    border-color: var(--button-border);
+    font-weight: bold;
+}
+
+#avatar button.primary:hover:not(:disabled) {
+    background: var(--button-bg-hover);
+}
+
+#avatar button.danger:hover:not(:disabled) {
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+}
+
+#avatar button.danger.confirm {
+    color: var(--accent-attention);
+}
+
+#avatar button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* The moderator's lock: the stripe of a ban, a level above the panel. */
+.avatar-lock {
+    padding: 8px 12px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    border-left: 3px solid var(--accent-attention);
+    border-radius: 3px;
+    font-size: 15px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.avatar-lock .reason {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+    .crop-box.avatar,
+    .avatar-letter {
+        width: 96px;
+        height: 96px;
+    }
+
+    .avatar-letter {
+        font-size: 44px;
+    }
+
+    /* No room beside the picture: the window lies over the screen on a dimmed backdrop, the
+       popover itself (a tap on it closes the window, CropFrame.tsx), and scrolls inside it when
+       taller than the screen. The page behind does not scroll. */
+    .crop-popover.avatar-pop {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        width: auto;
+        display: flex;
+        box-sizing: border-box;
+        padding: 16px 8px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: rgb(0 0 0 / 0.55);
+    }
+
+    body:has(.avatar-pop) {
+        overflow: hidden;
+    }
+
+    /* Auto margins centre it, and keep its top reachable when it is taller than the screen. */
+    .avatar-pop .crop-pop {
+        margin: auto;
+        max-width: 100%;
+        padding: 10px;
+
+        .crop-body {
+            flex-direction: column;
+        }
+
+        .crop-side {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+    }
+}
+
+/* The name renamed in place (ui/static/js/account/Name.tsx). The cell is right-aligned as the
+   table's last column; the error goes under the name. */
+#account-name p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#account-name .account-name-error {
+    color: var(--accent-attention);
+}
+
+/* ✎ after the name: an icon, plain and faint until hovered; main.css styles every button with a
+   selector of five :not()s (0,5,1), the id beats it. Mirrored, its tip to the lower left. */
+#account-name button.account-rename {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    margin: 0 0 0 4px;
+    padding: 0 4px;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    opacity: 0.6;
+    cursor: pointer;
+    transform: scaleX(-1);
+}
+
+#account-name button.account-rename:hover {
+    opacity: 1;
+}
+
+/* The field keeps the line's height and the name's font; common.css gives text inputs 18px mono. */
+#account-name .account-name-input {
+    box-sizing: border-box;
+    width: min(100%, 24em);
+    height: 1.5em;
+    margin: 0;
+    padding: 0 3px;
+    font: inherit;
+    text-align: right;
+    color: var(--text);
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+}
+
+#account-name .account-name-input[aria-invalid="true"] {
+    border-color: var(--accent-attention);
+}
+
+/* The email row: the change link after the address, the change in progress under it with its
+   cancel button, which looks like the link (main.css, .button-linklike). */
+.account-email-change {
+    margin-left: 8px;
+    font-size: 15px;
+}
+
+#account-email .account-email-pending {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+#account-email .account-email-cancel {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* The panel of former names (main.css, .former-names) hangs from the cell, its right edge under the
+   end of the name: the name is the right column. */
+#account-name {
+    position: relative;
+}
+
+#account-name .former-names {
+    position: static;
+}
+
+#account-name .former-names-panel {
+    right: 18px;
+    left: auto;
+    text-align: left;
+}

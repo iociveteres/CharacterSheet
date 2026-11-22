@@ -92,18 +92,20 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, t
 
 func (app *Application) newTemplateData(r *http.Request) *templates.Data {
 	// The cookie is set by the notice's close button (main.js); deciding on the server keeps the
-	// closed notice from flashing on every page load.
-	_, noticeClosed := r.Cookie("incident_notice_closed")
+	// closed notice from flashing on every page load. A new notice takes a new cookie name, or
+	// those who closed the previous one would never see it.
+	_, noticeClosed := r.Cookie("forum_notice_closed")
 	return &templates.Data{
-		Lang:               i18n.FromContext(r.Context()),
-		RequestURI:         r.URL.RequestURI(),
-		ShowIncidentNotice: noticeClosed != nil,
-		CurrentYear:        time.Now().Year(),
-		Flash:              app.SessionManager.PopString(r.Context(), "flash"),
-		IsAuthenticated:    app.isAuthenticated(r),
-		CSRFToken:          nosurf.Token(r),
-		TimeZone:           util.GetTimeLocation(r),
-		OnlineUsers:        app.onlineUsersCount(),
+		Lang:            i18n.FromContext(r.Context()),
+		RequestURI:      r.URL.RequestURI(),
+		ShowSiteNotice:  noticeClosed != nil,
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.SessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
+		TimeZone:        util.GetTimeLocation(r),
+		OnlineUsers:     app.onlineUsersCount(),
+		ForumBadge:      app.forumBadge(r),
 	}
 }
 

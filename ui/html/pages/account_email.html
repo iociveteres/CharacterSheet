@@ -1,0 +1,32 @@
+{{define "title"}}{{t .Lang "site.account.email.title"}}{{end}}
+{{define "main"}}
+{{- /* The form of an email change (internal/webapp/email_change.go): the new address and the
+     password; the links come by email. */}}
+<div class="account-page">
+<h2>{{t .Lang "site.account.email.title"}}</h2>
+<form class="account-section account-email-form" method="POST" action='{{reverseRev "AccountEmail"}}' novalidate>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    {{range .Form.NonFieldErrors}}
+    <div class='error'>{{.}}</div>
+    {{end}}
+    <p>{{t .Lang "site.account.email.current" "email" .User.Email}}</p>
+    <p>{{t .Lang "site.account.email.intro"}}</p>
+    <div class="email-field">
+        <label for="email-new">{{t .Lang "site.account.email.new"}}</label>
+        {{with .Form.Errors.email}}<label class='error' for="email-new">{{.}}</label>{{end}}
+        <input id="email-new" type="email" name="email" value="{{.Form.Email}}" autocomplete="email" required>
+    </div>
+    <div class="email-field">
+        <label for="email-password">{{t .Lang "site.auth.password.current"}}</label>
+        {{with .Form.Errors.password}}<label class='error' for="email-password">{{.}}</label>{{end}}
+        <input id="email-password" type="password" name="password" autocomplete="current-password" required>
+    </div>
+    <div class="delete-actions">
+        <input type='submit' value='{{t .Lang "site.account.email.submit"}}'>
+        <a class="button secondary" href='{{reverseRev "AccountView"}}'>{{t .Lang "site.account.export.backAccount"}}</a>
+    </div>
+    {{- $author := authorEmail}}
+    <p class="hint email-no-access">{{mailtoIn (t .Lang "site.account.email.noAccess" "email" $author) $author}}</p>
+</form>
+</div>
+{{end}}

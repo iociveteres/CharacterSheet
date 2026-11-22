@@ -137,7 +137,7 @@ RETURNING id`
 	var id int
 	err = m.DB.QueryRow(ctx, stmt, userID, roomID, kind, content).Scan(&id)
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return id, nil
 }
@@ -713,7 +713,8 @@ func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome
         INSERT INTO character_sheets (owner_id, author_id, author_label, room_id, encounter_id, collection_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
         SELECT $2, CASE WHEN cs.room_id IS NOT NULL THEN cs.owner_id ELSE cs.author_id END, cs.author_label,
                $3, $4, $5, cs.sheet_kind, jsonb_set(cs.content, '{characterInfo,characterName}', to_jsonb($6::text)), cs.id,
-               CASE WHEN c.owner_id <> $2 THEN c.name || ' · ' || u.name ELSE cs.source_label END,
+               -- A deleted owner's name is empty (_prd/account_deletion/plan.md, 3): the collection alone.
+               CASE WHEN c.owner_id <> $2 THEN concat_ws(' · ', c.name, NULLIF(u.name, '')) ELSE cs.source_label END,
                now(), now()
         FROM character_sheets cs
         LEFT JOIN bestiary_collections c ON c.id = cs.collection_id
@@ -721,7 +722,7 @@ func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome
         WHERE cs.id = $1
         RETURNING id`, srcID, userID, home.RoomID, home.EncounterID, home.CollectionID, name).Scan(&id)
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	if _, err := q.Exec(ctx, `
         INSERT INTO sheet_portraits (sheet_id, hash)

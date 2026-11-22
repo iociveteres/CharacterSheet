@@ -133,22 +133,26 @@ func mustURL(t *testing.T, raw string) *url.URL {
 
 var titleAndHeadingRX = regexp.MustCompile(`(?s)<title>([^<]+)</title>.*?<h2>([^<]+)</h2>`)
 
-func TestAboutInBothLanguages(t *testing.T) {
-	app := newTestApplication(t)
-	ts := newTestServer(t, app.Routes())
-	defer ts.Close()
+func TestPagesInBothLanguages(t *testing.T) {
+	for _, path := range []string{"/about", "/privacy"} {
+		t.Run(path, func(t *testing.T) {
+			app := newTestApplication(t)
+			ts := newTestServer(t, app.Routes())
+			defer ts.Close()
 
-	_, _, body := ts.get(t, "/about")
-	en := titleAndHeadingRX.FindStringSubmatch(body)
-	if en == nil {
-		t.Fatal("the en page has no title or heading")
-	}
+			_, _, body := ts.get(t, path)
+			en := titleAndHeadingRX.FindStringSubmatch(body)
+			if en == nil {
+				t.Fatal("the en page has no title or heading")
+			}
 
-	ts.Client().Jar.SetCookies(mustURL(t, ts.URL), []*http.Cookie{{Name: "lang", Value: "ru", Path: "/"}})
-	_, _, body = ts.get(t, "/about")
-	assert.StringContains(t, body, "/static/dist/i18n.ru.js?v=")
-	ru := titleAndHeadingRX.FindStringSubmatch(body)
-	if ru == nil || ru[1] == en[1] || ru[2] == en[2] {
-		t.Errorf("title and heading %q in ru, %q in en: the ru page has the en text", ru, en)
+			ts.Client().Jar.SetCookies(mustURL(t, ts.URL), []*http.Cookie{{Name: "lang", Value: "ru", Path: "/"}})
+			_, _, body = ts.get(t, path)
+			assert.StringContains(t, body, "/static/dist/i18n.ru.js?v=")
+			ru := titleAndHeadingRX.FindStringSubmatch(body)
+			if ru == nil || ru[1] == en[1] || ru[2] == en[2] {
+				t.Errorf("title and heading %q in ru, %q in en: the ru page has the en text", ru, en)
+			}
+		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -30,14 +31,14 @@ type newInviteLinkCreatedMsg struct {
 func (app *Server) newInviteLinkHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg newInviteLinkMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal newInviteLink message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
 	var expiresAt *time.Time
 	if msg.ExpiresInDays != nil {
 		if *msg.ExpiresInDays < 0 {
-			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("expiresInDays cannot be negative"), msg.EventID, "validation"))
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 			return
 		}
 		t := time.Now().Add(time.Duration(*msg.ExpiresInDays) * 24 * time.Hour)
@@ -46,7 +47,7 @@ func (app *Server) newInviteLinkHandler(ctx context.Context, client *Client, hub
 
 	if msg.MaxUses != nil {
 		if *msg.MaxUses < 0 {
-			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("maxUses cannot be negative"), msg.EventID, "validation"))
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 			return
 		}
 		if *msg.MaxUses == 0 {
@@ -113,7 +114,7 @@ type kickPlayerMsg struct {
 func (app *Server) kickPlayerHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg kickPlayerMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal kickPlayer message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -127,6 +128,11 @@ func (app *Server) kickPlayerHandler(ctx context.Context, client *Client, hub *H
 
 	// Delay gives the client time to receive the broadcast before being disconnected.
 	go func() {
+		defer func() {
+			if v := recover(); v != nil {
+				logPanic(app.ErrorLog, v, fmt.Sprintf("kick of user %d from room %d", msg.UserID, hub.roomID))
+			}
+		}()
 		time.Sleep(2 * time.Second)
 		hub.KickUser(msg.UserID)
 	}()
@@ -142,7 +148,7 @@ type ChangePlayerRoleMsg struct {
 func (app *Server) changePlayerRoleHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg ChangePlayerRoleMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changePlayerRole message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -153,4 +159,52 @@ func (app *Server) changePlayerRoleHandler(ctx context.Context, client *Client, 
 
 	hub.BroadcastFrom(client, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+}
+
+type playerDeletedMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	UserID  int    `json:"userID"`
+	// Who got the user's sheets and folders in the room, 0 for nobody.
+	HeirID          int  `json:"heirID"`
+	MessagesDeleted bool `json:"messagesDeleted"`
+}
+
+// PlayerDeleted tells the open pages of the rooms that stay after the wipe of an account (plan
+// _prd/account_deletion, section 5.2): the player goes, their sheets and folders go to the heir,
+// their chat messages go if they chose so, and whoever became a gamemaster is told as by a role
+// change. A room no one has open has no one to tell.
+func (app *Server) PlayerDeleted(userID int, rooms []models.WipedRoom) {
+	for _, room := range rooms {
+		hub := app.RoomHub(room.RoomID)
+		if hub == nil {
+			continue
+		}
+		deleted, err := json.Marshal(&playerDeletedMsg{
+			Type:            "playerDeleted",
+			EventID:         uuid.New().String(),
+			UserID:          userID,
+			HeirID:          room.HeirID,
+			MessagesDeleted: room.MessagesDeleted,
+		})
+		if err != nil {
+			app.ErrorLog.Print(err)
+			return
+		}
+		hub.BroadcastAll(deleted)
+		if room.PromotedID == 0 {
+			continue
+		}
+		promoted, err := json.Marshal(&ChangePlayerRoleMsg{
+			Type:    "changePlayerRole",
+			EventID: uuid.New().String(),
+			UserID:  room.PromotedID,
+			Role:    models.RoleGamemaster,
+		})
+		if err != nil {
+			app.ErrorLog.Print(err)
+			return
+		}
+		hub.BroadcastAll(promoted)
+	}
 }

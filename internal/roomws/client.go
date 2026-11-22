@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -55,6 +58,8 @@ type Client struct {
 	// lang is the language of the page that opened the socket, for the text sent to this
 	// client alone.
 	lang string
+	// limiter is nil when the server sets no MessageLimit.
+	limiter *rate.Limiter
 }
 
 type wsHandler func(ctx context.Context, client *Client, hub *Hub, raw []byte)
@@ -133,8 +138,12 @@ func (c *Client) readPump(app *Server) {
 	handlers := c.hub.handlers
 
 	defer func() {
+		if v := recover(); v != nil {
+			logPanic(app.ErrorLog, v, fmt.Sprintf("readPump of user %d in room %d (bestiary of %d)", c.userID, c.hub.roomID, c.hub.ownerID))
+		}
 		c.hub.unregister <- c
 		c.conn.Close()
+		app.release(c.hub)
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -147,7 +156,7 @@ func (c *Client) readPump(app *Server) {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				c.infoLog.Printf("socket of user %d closed: %v", c.userID, err)
 			}
 			break
 		}
@@ -163,10 +172,25 @@ func (c *Client) readPump(app *Server) {
 			continue
 		}
 
+		// The connection stays: the client reloads the sheet on the error, as on
+		// any refused edit.
+		if c.limiter != nil && !c.limiter.Allow() {
+			c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "rateLimited", http.StatusTooManyRequests))
+			continue
+		}
+
 		if h, ok := handlers[base.Type]; ok {
 			func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
+				// One message that trips a handler costs only its answer: the
+				// connection and the rest of the server go on.
+				defer func() {
+					if v := recover(); v != nil {
+						logPanic(app.ErrorLog, v, fmt.Sprintf("handler %q of user %d in room %d (bestiary of %d)", base.Type, c.userID, c.hub.roomID, c.hub.ownerID))
+						c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "internal", http.StatusInternalServerError))
+					}
+				}()
 				h(ctx, c, c.hub, message)
 			}()
 		} else {
@@ -184,6 +208,9 @@ func (c *Client) readPump(app *Server) {
 func (c *Client) writePump(server *Server) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		if v := recover(); v != nil {
+			logPanic(server.ErrorLog, v, fmt.Sprintf("writePump of user %d in room %d (bestiary of %d)", c.userID, c.hub.roomID, c.hub.ownerID))
+		}
 		ticker.Stop()
 		c.conn.Close()
 	}()
@@ -222,4 +249,10 @@ func (c *Client) writePump(server *Server) {
 			}
 		}
 	}
+}
+
+// logPanic writes a panic that a socket goroutine recovered from. Called in
+// the deferred function, debug.Stack still holds the frames of the panic.
+func logPanic(l *log.Logger, v any, where string) {
+	l.Output(2, fmt.Sprintf("panic in %s: %v\n%s", where, v, debug.Stack()))
 }

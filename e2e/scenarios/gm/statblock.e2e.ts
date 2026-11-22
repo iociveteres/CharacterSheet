@@ -7,7 +7,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, Locator } from "playwright-core";
 import type { Msg } from "../../lib/probes";
-import { seed, seedUser } from "../../lib/config";
+import { config, seed, seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
@@ -126,7 +126,7 @@ describe("the stat block", () => {
         expect(JSON.stringify(await player.received())).not.toContain(REAL);
     });
 
-    it("adds a condition picked from the stat block's suggestions, which the sheet shows", async () => {
+    it.skipIf(!config.gamedata)("adds a condition picked from the stat block's suggestions, which the sheet shows", async () => {
         await pick(npc);
         // The condition of beforeAll was a createItem too.
         await gm.clearRecords();

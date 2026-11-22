@@ -1,15 +1,45 @@
 {{define "title"}}{{t .Lang "site.account.title"}}{{end}}
 {{define "main"}}
+{{- /* .account-page: main.css lays the page out by levels, as the forum. */}}
+<div class="account-page">
 <h2>{{t .Lang "site.account.title"}}</h2>
 {{with .User}}
 <table>
     <tr>
         <th>{{t $.Lang "site.account.name"}}</th>
-        <td>{{.Name}}</td>
+        {{- /* account.js (ui/static/js/account/Name.tsx) draws the cell anew from data-*, with ✎ to
+             rename in place; without the script it is the name and its ▾ of former names, a
+             <details> as the forum's user page has (main.css, .former-names). */}}
+        <td id="account-name" data-name="{{.Name}}" data-former="{{$.FormerNamesJSON}}" data-csrf="{{$.CSRFToken}}">
+            <span class="account-name">{{.Name}}</span>
+            {{- with $.FormerNames}}
+            <details class="former-names">
+                <summary class="former-names-toggle" title="{{t $.Lang "account.name.former"}}" aria-label="{{t $.Lang "account.name.former"}}">▾</summary>
+                <div class="former-names-panel">
+                    <div class="former-names-title">{{t $.Lang "account.name.former"}}</div>
+                    <ol>
+                        {{- range .}}
+                        <li><span class="former-name">{{.Name}}</span><span class="former-date">{{.Date}}</span></li>
+                        {{- end}}
+                    </ol>
+                </div>
+            </details>
+            {{- end}}
+        </td>
     </tr>
     <tr>
         <th>{{t $.Lang "site.account.email"}}</th>
-        <td>{{.Email}}</td>
+        <td id="account-email">
+            <span class="account-email">{{.Email}}</span>
+            <a class="account-email-change" href='{{reverseRev "AccountEmail"}}'>{{t $.Lang "site.account.email.change"}}</a>
+            {{- with $.PendingEmail}}
+            <form class="account-email-pending" method="POST" action='{{reverseRev "AccountEmailCancel"}}'>
+                <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+                {{t $.Lang "site.account.email.pending" "email" .}} ·
+                <button type="submit" class="button-linklike account-email-cancel">{{t $.Lang "site.account.email.cancel"}}</button>
+            </form>
+            {{- end}}
+        </td>
     </tr>
     <tr>
         <th>{{t $.Lang "site.account.joined"}}</th>
@@ -22,6 +52,29 @@
     </tr>
 </table>
 
+{{template "account_avatar" $}}
+
 {{template "theme_changer" $}}
+
+<section class="account-section account-export">
+    <h2>{{t $.Lang "site.account.export.title"}}</h2>
+    <p>{{t $.Lang "site.account.export.intro"}}</p>
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountExport"}}'>{{t $.Lang "site.account.export.open"}}</a>
+    </div>
+</section>
+
+<section class="account-section account-delete">
+    <h2>{{t $.Lang "site.account.delete.title"}}</h2>
+    {{range $.Form.NonFieldErrors}}
+    <div class='error'>{{.}}</div>
+    {{end}}
+    <p>{{t $.Lang "site.account.delete.intro"}}</p>
+    <form method="POST" action='{{reverseRev "AccountDelete"}}'>
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        <input type='submit' class="muted" value='{{t $.Lang "site.account.delete.start"}}'>
+    </form>
+</section>
 {{end }}
+</div>
 {{end}}

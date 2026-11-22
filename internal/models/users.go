@@ -1,15 +1,14 @@
 package models
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"golang.org/x/crypto/bcrypt"
@@ -26,6 +25,23 @@ type UserModelInterface interface {
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
 	PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error)
 	ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error)
+	DeletionSummary(ctx context.Context, userID int) (*DeletionSummary, error)
+	ScheduleDeletion(ctx context.Context, userID int, tokenPlaintext string, choices DeletionChoices) (*ScheduledDeletion, error)
+	PendingDeletion(ctx context.Context, userID int) (time.Time, error)
+	CancelDeletion(ctx context.Context, userID int) error
+	Wipe(ctx context.Context, userID int) (*WipedAccount, error)
+	DeletePending(ctx context.Context, olderThan time.Duration) (int64, error)
+	PendingAccounts(ctx context.Context) ([]PendingAccount, error)
+	MarkReminded(ctx context.Context, userID int) error
+	HurryDeletion(ctx context.Context, userID int) error
+	Rename(ctx context.Context, id int, name string) error
+	NameHistory(ctx context.Context, id int, limit int) ([]NameChange, error)
+	RequestEmailChange(ctx context.Context, id int, password, newEmail string) (*Token, error)
+	ConfirmOldEmail(ctx context.Context, tokenPlaintext string) (*Token, error)
+	ConfirmNewEmail(ctx context.Context, tokenPlaintext string) (*EmailChanged, error)
+	RevertEmail(ctx context.Context, tokenPlaintext string) (userID int, email string, err error)
+	PendingEmailChange(ctx context.Context, id int) (string, error)
+	CancelEmailChange(ctx context.Context, id int) error
 }
 
 type userStatus string
@@ -33,6 +49,10 @@ type userStatus string
 const (
 	statusPending       userStatus = "pending"
 	statusEmailVerified userStatus = "email_verified"
+	// In the grace period after the user scheduled the deletion.
+	statusDeleting userStatus = "deleting"
+	// The wiped tombstone row (plan: _prd/account_deletion, section 3).
+	statusDeleted userStatus = "deleted"
 )
 
 type User struct {
@@ -50,7 +70,9 @@ type UserModel struct {
 	DB *pgxpool.Pool
 }
 
-// Insert saves locale as the user's language, "" for none.
+// Insert saves locale as the user's language, "" for none. ErrDuplicateEmail for an email of
+// another account or kept for its owner by a live revert link, ErrDuplicateName for a name taken
+// regardless of case.
 func (m *UserModel) Insert(ctx context.Context, name, email, password, locale string) (int, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
@@ -68,16 +90,13 @@ RETURNING id`
 	}
 	defer tx.Rollback(ctx)
 
+	if taken, err := emailTaken(ctx, tx, email, 0); err != nil || taken {
+		return 0, cmp.Or(err, ErrDuplicateEmail)
+	}
 	var id int
 	err = tx.QueryRow(ctx, stmt, name, email, string(hashedPassword), locale).Scan(&id)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == pgerrcode.UniqueViolation && pgErr.ConstraintName == "users_email_key" {
-				return 0, ErrDuplicateEmail
-			}
-		}
-		return 0, err
+		return 0, duplicateUser(err)
 	}
 	// Every user has a default collection in the bestiary from the start,
 	// named in their language: it is known by is_default, not by the name.
@@ -89,15 +108,15 @@ RETURNING id`
 	return id, tx.Commit(ctx)
 }
 
-// Verify whether a user exists with the provided email address and password.
-// Returns the relevant user ID if they do.
+// Authenticate returns the id of the user with the email and password. The password is checked
+// before the status, so that only the right one learns of it: ErrUserNotActivated for an account
+// whose email is not confirmed, ErrDeletionScheduled for one in its grace period before the wipe,
+// both with the id.
 func (m *UserModel) Authenticate(ctx context.Context, email, password string) (int, error) {
-	// Retrieve the id and hashed password associated with the given email. If
-	// no matching email exists we return the ErrInvalidCredentials error.
 	const stmt = `
 SELECT id, hashed_password, status
   FROM users
- WHERE email = $1`
+ WHERE email = $1 AND status <> 'deleted'`
 
 	var id int
 	var hashedPassword []byte
@@ -112,12 +131,6 @@ SELECT id, hashed_password, status
 		}
 	}
 
-	if status != statusEmailVerified {
-		return id, ErrUserNotActivated
-	}
-
-	// Check whether the hashed password and plain-text password provided match.
-	// If they don't, return the ErrInvalidCredentials error.
 	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
@@ -126,8 +139,14 @@ SELECT id, hashed_password, status
 			return 0, err
 		}
 	}
-	// Otherwise, the password is correct. Return the user ID.
-	return id, nil
+	switch status {
+	case statusEmailVerified:
+		return id, nil
+	case statusDeleting:
+		return id, ErrDeletionScheduled
+	default:
+		return id, ErrUserNotActivated
+	}
 }
 
 // Check if a user with a specific ID exists.
@@ -136,7 +155,7 @@ func (m *UserModel) Exists(ctx context.Context, id int) (bool, error) {
 SELECT EXISTS(
     SELECT 1
       FROM users
-     WHERE id = $1
+     WHERE id = $1 AND status <> 'deleted'
 )`
 	var exists bool
 	err := m.DB.QueryRow(ctx, stmt, id).Scan(&exists)
@@ -144,10 +163,11 @@ SELECT EXISTS(
 }
 
 // GetLocale returns the language the user picked, "" if none, or ErrNoRecord: the web app
-// checks the session's user with it on every request instead of Exists.
+// checks the session's user with it on every request instead of Exists. Only a confirmed account
+// is found, so a session left of an account in its grace period or of a tombstone is a guest's.
 func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
 	var locale *string
-	err := m.DB.QueryRow(ctx, `SELECT locale FROM users WHERE id = $1`, id).Scan(&locale)
+	err := m.DB.QueryRow(ctx, `SELECT locale FROM users WHERE id = $1 AND status = 'email_verified'`, id).Scan(&locale)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", ErrNoRecord
 	}
@@ -166,7 +186,7 @@ func (m *UserModel) Get(ctx context.Context, id int) (*User, error) {
 	const stmt = `
 SELECT id, name, email, created_at, COALESCE(locale, '')
   FROM users
- WHERE id = $1`
+ WHERE id = $1 AND status <> 'deleted'`
 
 	row := m.DB.QueryRow(ctx, stmt, id)
 
@@ -192,7 +212,7 @@ func (m *UserModel) GetByEmail(ctx context.Context, email string) (*User, error)
 	const stmt = `
 SELECT id, name, email, created_at, COALESCE(locale, '')
   FROM users
- WHERE email = $1`
+ WHERE email = $1 AND status <> 'deleted'`
 
 	row := m.DB.QueryRow(ctx, stmt, email)
 
@@ -246,6 +266,10 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 	return err
 }
 
+// PasswordReset sets the password of the user of the token and uses the token up. As
+// Authenticate, it tells an account that may not sign in by the error, with the id:
+// ErrUserNotActivated for one not confirmed, ErrDeletionScheduled for one in its grace period.
+// The password is changed in both cases.
 func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
@@ -277,18 +301,27 @@ func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, ne
 		return 0, err
 	}
 
-	stmt := `
-	UPDATE users 
-	SET hashed_password = $1 
-	WHERE id = $2`
-
-	_, err = tx.Exec(ctx, stmt, string(newHashedPassword), userID)
+	var status userStatus
+	err = tx.QueryRow(ctx, `
+	UPDATE users
+	SET hashed_password = $1
+	WHERE id = $2
+	RETURNING status`, string(newHashedPassword), userID).Scan(&status)
+	if err != nil {
+		return 0, err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
-
-	return userID, err
+	switch status {
+	case statusEmailVerified:
+		return userID, nil
+	case statusDeleting:
+		return userID, ErrDeletionScheduled
+	default:
+		return userID, ErrUserNotActivated
+	}
 }
 
 func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error) {
@@ -333,4 +366,13 @@ func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope,
 	}
 
 	return userID, nil
+}
+
+// DeletePending deletes the accounts whose email was not confirmed for olderThan. Such an account
+// owns only its empty default collection and its tokens, which go by the cascades of a real DELETE.
+func (m *UserModel) DeletePending(ctx context.Context, olderThan time.Duration) (int64, error) {
+	tag, err := m.DB.Exec(ctx, `
+DELETE FROM users
+ WHERE status = 'pending' AND created_at < now() - make_interval(secs => $1)`, olderThan.Seconds())
+	return tag.RowsAffected(), err
 }

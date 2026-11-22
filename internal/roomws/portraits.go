@@ -44,6 +44,8 @@ func (app *Server) PortraitChanged(ctx context.Context, sheetID int, portrait *s
 		return
 	}
 	if audience.RoomID != 0 {
-		app.GetOrInitHub(audience.RoomID).BroadcastToUsers(nil, audience.Viewers, msg)
+		if hub := app.RoomHub(audience.RoomID); hub != nil {
+			hub.BroadcastToUsers(nil, audience.Viewers, msg)
+		}
 	}
 }

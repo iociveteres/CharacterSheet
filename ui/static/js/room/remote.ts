@@ -19,10 +19,11 @@ import { setEncounterList, setShownView } from "./encounter/actions";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
-    KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
-    SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
+    KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, PlayerDeletedMessage,
+    ReorderFoldersMessage, SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
 import type { ChatMessage, RoomChat, RoomPayload } from "./payload.gen";
+import type { ConnectionLost } from "../socket";
 
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
@@ -150,6 +151,16 @@ export function listenRemote(): void {
             sheets.value = sheets.value.filter(s => s.ownerId !== msg.userID);
         });
     });
+    // Unlike a kick, the sheets stay: the server handed them to the heir (plan _prd/account_deletion, 5.2).
+    document.addEventListener("ws:playerDeleted", e => {
+        const { userID, heirID, messagesDeleted } = (e as CustomEvent<PlayerDeletedMessage>).detail;
+        runOrQueue(() => {
+            players.value = players.value.filter(p => p.id !== userID);
+            folders.value = folders.value.map(f => f.ownerId === userID ? { ...f, ownerId: heirID } : f);
+            sheets.value = sheets.value.map(s => s.ownerId === userID ? { ...s, ownerId: heirID } : s);
+        });
+        if (messagesDeleted) chat.value = { ...chat.value, messages: chat.value.messages.filter(m => m.userId !== userID) };
+    });
     document.addEventListener("ws:changePlayerRole", e => {
         const msg = (e as CustomEvent<ChangePlayerRoleMessage>).detail;
         runOrQueue(() => {
@@ -161,9 +172,9 @@ export function listenRemote(): void {
     document.addEventListener("ws:newInviteLink", e => {
         inviteLink.value = (e as CustomEvent<InviteLinkMessage>).detail.link;
     });
-    // socket.js gives up after three reconnects.
-    window.addEventListener("ws:connectionLost", () => {
-        modals.value = { ...modals.value, connectionLost: true };
+    // socket.ts stops reconnecting once the user is signed out or out of the room.
+    window.addEventListener("ws:connectionLost", e => {
+        modals.value = { ...modals.value, connectionLost: (e as CustomEvent<ConnectionLost>).detail.reason };
     });
 
     document.addEventListener("ws:chatMessage", e => {

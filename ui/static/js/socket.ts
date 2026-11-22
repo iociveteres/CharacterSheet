@@ -5,20 +5,35 @@
 // room:sendMessage, the name the sheet has always used, and room:closeSocket
 // closes the socket for good.
 
-const MAX_RECONNECT_ATTEMPTS = 3;
+/** Why the page stopped reconnecting: the session ended, or the page is no longer the user's. */
+export type ConnectionLostReason = "signedOut" | "noAccess";
+
+export interface ConnectionLost {
+    reason: ConnectionLostReason;
+}
+
+const MAX_DELAY_MS = 30_000;
+/** Failed reconnects in a row after which the check URL tells whether to go on. */
+const CHECK_EVERY = 3;
 
 /**
- * Connects to `path` on this host and reconnects after a drop, three times
- * at most: ws:disconnected and ws:reconnected on document mark a drop, and
- * ws:connectionLost on window that the page has to be reloaded. Once the page
- * dispatches room:closeSocket, the socket closes and none of that follows.
+ * Connects to `path` on this host and reconnects after a drop for as long as
+ * it takes: ws:disconnected and ws:reconnected on document mark a drop. The
+ * browser does not tell a script why a handshake was refused, so after every
+ * third failure in a row `checkURL`, a page of the same user, says whether it
+ * is worth going on; when the user was signed out or lost the page,
+ * ws:connectionLost on window (ConnectionLost) says it has to be reloaded.
+ * Once the page dispatches room:closeSocket, the socket closes and none of
+ * that follows.
  */
-export function connectSocket(path: string): void {
+export function connectSocket(path: string, checkURL: string): void {
     let socket: WebSocket | null = null;
-    let reconnectAttempts = 0;
+    /** Reconnects in a row that closed without opening. */
+    let failures = 0;
     let isUnloading = false;
     let wasDisconnected = false;
     let closedByPage = false;
+    let gaveUp = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
     window.addEventListener("beforeunload", () => {
@@ -26,52 +41,82 @@ export function connectSocket(path: string): void {
         isUnloading = true;
     });
 
+    const done = () => isUnloading || closedByPage || gaveUp;
+    const connecting = () => socket !== null && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING);
+
     function connect(): void {
-        if (closedByPage) return;
-        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        if (done()) return;
+        if (connecting()) {
             console.log("Socket already open/connecting — skipping connect");
             return;
         }
 
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        socket = new WebSocket(`${protocol}//${window.location.host}${path}`);
+        const current = new WebSocket(`${protocol}//${window.location.host}${path}`);
+        socket = current;
+        let opened = false;
 
-        socket.addEventListener("open", () => {
+        current.addEventListener("open", () => {
             console.log("WebSocket connected");
-            reconnectAttempts = 0;
+            opened = true;
+            failures = 0;
             // What was said meanwhile never arrived; the sheet reads itself again.
             if (wasDisconnected) document.dispatchEvent(new CustomEvent("ws:reconnected"));
             wasDisconnected = false;
         });
 
-        socket.addEventListener("message", handleMessage);
+        current.addEventListener("message", handleMessage);
 
-        socket.addEventListener("error", e => {
+        current.addEventListener("error", e => {
             console.error("WebSocket error", e);
         });
 
-        socket.addEventListener("close", e => {
+        current.addEventListener("close", e => {
             console.log("WebSocket closed:", e.code, e.reason, "; wasClean:", e.wasClean);
-            if (isUnloading || closedByPage) {
+            if (done()) {
                 console.log("Page unloading or done with the socket — skipping reconnect");
                 return;
             }
             if (!wasDisconnected) document.dispatchEvent(new CustomEvent("ws:disconnected"));
             wasDisconnected = true;
-            handleDisconnection();
+            if (!opened) failures++;
+            if (failures > 0 && failures % CHECK_EVERY === 0) void checkThenRetry(current);
+            else retry();
         });
     }
 
-    function handleDisconnection(): void {
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-            reconnectTimer = setTimeout(connect, 2000 * reconnectAttempts);
-        } else {
-            console.error("Max reconnection attempts reached");
-            window.dispatchEvent(new CustomEvent("ws:connectionLost"));
-        }
+    function retry(): void {
+        // The spread keeps the tabs of a restarted server from coming back in the same second.
+        const delay = Math.min(MAX_DELAY_MS, 1000 * 2 ** failures * (0.8 + Math.random() * 0.4));
+        console.log(`Reconnecting in ${Math.round(delay / 1000)} s (${failures} failed in a row)`);
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, delay);
     }
+
+    async function checkThenRetry(failed: WebSocket): Promise<void> {
+        const reason = await lostReason(checkURL);
+        // An online or visibility retry may have gone meanwhile.
+        if (socket !== failed || done()) return;
+        if (reason === null) {
+            retry();
+            return;
+        }
+        gaveUp = true;
+        console.error(`Stopped reconnecting: ${reason}`);
+        window.dispatchEvent(new CustomEvent<ConnectionLost>("ws:connectionLost", { detail: { reason } }));
+    }
+
+    // The network or the tab is back: no point in waiting out the delay.
+    function retryNow(): void {
+        if (!wasDisconnected || done() || connecting()) return;
+        clearTimeout(reconnectTimer);
+        failures = 0;
+        connect();
+    }
+    window.addEventListener("online", retryNow);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") retryNow();
+    });
 
     function handleMessage(e: MessageEvent<string>): void {
         // The server joins the messages it has queued with newlines.
@@ -106,4 +151,21 @@ export function connectSocket(path: string): void {
     });
 
     connect();
+}
+
+/**
+ * Why the socket of the page is refused, by what `checkURL` answers: null
+ * while the user may still have it, or when the network is what fails.
+ */
+async function lostReason(checkURL: string): Promise<ConnectionLostReason | null> {
+    let res: Response;
+    try {
+        // requireAuthentication sends a signed-out user to /user/login.
+        res = await fetch(checkURL, { redirect: "manual", credentials: "same-origin" });
+    } catch {
+        return null;
+    }
+    if (res.type === "opaqueredirect") return "signedOut";
+    if (res.status === 403 || res.status === 404) return "noAccess";
+    return null;
 }

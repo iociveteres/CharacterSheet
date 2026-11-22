@@ -1,0 +1,2458 @@
+/* Forum pages (internal/forum/templates), linked only by them; laid out by the prototype the author
+   approved (_prd/forum/design: proto.css, decisions.md). The site header and nav at phone width are
+   in main.css: they belong to the site. main.css restyles every nav, button, form div, textarea
+   and table, so the forum's rules go through #forum where they meet those. */
+
+/* ===== Page ===== */
+
+/* Wider than the site's 800px frame, aimed at 1280px screens; header and nav keep theirs. The class
+   comes from forumHost.Render (EmbeddedPage.MainClass). */
+main.forum-wide {
+    max-width: 1240px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Density (extras/decisions.md, 6 and 8; extras/density.md): what a step changes is a variable here,
+   and the rules below read it. These values are "Normal", the default; the class forum-large or
+   forum-compact on #forum (the cookie forum_density, density.go) swaps them. No step changes the
+   width of the author column or of the text column. */
+#forum {
+    --f-gap: 10px;              /* between the page's blocks: crumbs, head, pages, list */
+    --f-h2: 22px;
+    --f-text: 16px;             /* a post's text */
+    --f-text-lh: 1.45;
+    --f-par: 8px;               /* between a post's paragraphs */
+    --f-title: 17px;            /* a list row's title */
+    --f-title-lh: 1.3;
+    --f-row-pad: 6px;           /* a list row's top and bottom */
+    --f-counts-top: 0px;        /* the home's line of counts under a section's description */
+    --f-last: 14px;             /* the last post's topic in a row */
+    --f-last-lh: 1.25;
+    --f-posts-gap: 6px;
+    --f-author-pad: 8px 12px;
+    --f-author-gap: 1px;
+    --f-name: 16px;
+    --f-facts: 13px;
+    --f-facts-top: 4px;
+    --f-av-gap: 4px;            /* under the avatar (block 5 of extras/plan.md) */
+    --f-main-pad: 8px 14px 6px;
+    --f-main-gap: 6px;
+    --f-meta: 13px;             /* the number and time under a post */
+    --f-h2-phone: 20px;
+    --f-title-phone: 16px;
+    --f-row-pad-phone: 5px;
+    --f-author-pad-phone: 6px 10px 4px;
+    --f-av-phone: 36px;
+    --f-main-pad-phone: 6px 10px;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--f-gap);
+}
+
+/* Larger: the forum as it was before the steps. */
+#forum.forum-large {
+    --f-gap: 14px;
+    --f-h2: 24px;
+    --f-text: 18px;
+    --f-text-lh: 1.5;
+    --f-par: 10px;
+    --f-title: 19px;
+    --f-title-lh: 1.3;
+    --f-row-pad: 10px;
+    --f-counts-top: 2px;
+    --f-last: 15px;
+    --f-last-lh: 1.3;
+    --f-posts-gap: 8px;
+    --f-author-pad: 12px 14px;
+    --f-author-gap: 3px;
+    --f-name: 17px;
+    --f-facts: 13px;
+    --f-facts-top: 8px;
+    --f-av-gap: 6px;
+    --f-main-pad: 10px 16px 8px;
+    --f-main-gap: 8px;
+    --f-meta: 14px;
+    --f-h2-phone: 21px;
+    --f-title-phone: 18px;
+    --f-row-pad-phone: 8px;
+    --f-author-pad-phone: 8px 12px 6px;
+    --f-av-phone: 36px;
+    --f-main-pad-phone: 8px 12px;
+}
+
+/* Compact: and the avatar beside the name (the author column's grid, under "Topic"). */
+#forum.forum-compact {
+    --f-gap: 8px;
+    --f-h2: 20px;
+    --f-text: 15px;
+    --f-text-lh: 1.35;
+    --f-par: 6px;
+    --f-title: 16px;
+    --f-title-lh: 1.25;
+    --f-row-pad: 3px;
+    --f-counts-top: 0px;
+    --f-last: 14px;
+    --f-last-lh: 1.2;
+    --f-posts-gap: 4px;
+    --f-author-pad: 6px 10px;
+    --f-author-gap: 0px;
+    --f-name: 15px;
+    --f-facts: 12px;
+    --f-facts-top: 3px;
+    --f-av-gap: 0px;
+    --f-main-pad: 6px 12px 4px;
+    --f-main-gap: 4px;
+    --f-meta: 13px;
+    --f-h2-phone: 19px;
+    --f-title-phone: 15px;
+    --f-row-pad-phone: 3px;
+    --f-author-pad-phone: 4px 10px 3px;
+    --f-av-phone: 28px;
+    --f-main-pad-phone: 4px 10px;
+}
+
+#forum .forum-head h2 {
+    margin: 0;
+    font-size: var(--f-h2);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+/* main.css styles every nav as the site bar, and main.js marks the first nav link to the current
+   path as live: page 1 of a topic links to the topic's own path. */
+#forum nav {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    justify-content: flex-start;
+}
+
+#forum nav a.live {
+    cursor: pointer;
+}
+
+#forum nav a.live:after {
+    display: none;
+}
+
+.forum-breadcrumbs {
+    font-size: 15px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-breadcrumbs a {
+    color: var(--text-secondary);
+}
+
+#forum .forum-breadcrumbs a:hover {
+    color: var(--link);
+}
+
+.forum-breadcrumbs .sep {
+    margin: 0 6px;
+}
+
+/* A heading with its buttons on the right; on a phone the buttons go under it. */
+.forum-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+}
+
+.forum-head-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.forum-description {
+    color: var(--text-secondary);
+}
+
+/* Wrapped, the buttons stay on the right: the menu's panel opens leftwards from there. */
+.forum-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+/* Level with the heading rather than with the description under it (the section page). */
+.forum-actions.forum-head-top {
+    align-self: flex-start;
+}
+
+/* The moderator's menu "Moderation ▾" (design/decisions.md, 15, 16): a <details>, so it opens
+   without a script; the panel lies over the page, as a menu. It opens leftwards from the button's
+   right edge on a phone too: the buttons of a head stay on the right when they wrap under it. */
+.forum-menu {
+    position: relative;
+}
+
+.forum-menu > summary {
+    list-style: none;
+}
+
+.forum-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 0;
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+#forum .forum-menu-panel a {
+    padding: 4px 14px;
+    color: var(--text);
+}
+
+#forum .forum-menu-panel a:hover {
+    background: var(--bg-item2);
+    text-decoration: none;
+}
+
+#forum .forum-menu-panel a.danger {
+    color: var(--accent-attention);
+}
+
+/* "View ▾" on the forum home (extras/decisions.md, 24): each choice a form of one button; the
+   current one is a selection, bold accent with a ✓ (DESIGN.md). */
+.forum-view-menu .forum-menu-panel {
+    min-width: 200px;
+}
+
+/* The checkbox item of the moderator mode in «Moderation ▾» is such a form too. */
+#forum .forum-view-menu .forum-menu-panel button,
+#forum .forum-mod-menu .forum-menu-panel button {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 4px 14px 4px 30px;
+    position: relative;
+    background: none;
+    border: none;
+    border-radius: 0;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+}
+
+#forum .forum-view-menu .forum-menu-panel button:hover,
+#forum .forum-mod-menu .forum-menu-panel button:hover {
+    background: var(--bg-item2);
+}
+
+#forum .forum-view-menu .forum-menu-panel button[aria-current="true"] {
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.forum-view-menu button[aria-current="true"]::before {
+    content: "✓";
+    position: absolute;
+    left: 12px;
+}
+
+/* "Pictures at once": a checkbox item, off by default (extras/decisions.md, 12). */
+.forum-menu-toggle::before {
+    content: "☐";
+    position: absolute;
+    left: 10px;
+}
+
+.forum-menu-toggle[aria-pressed="true"]::before {
+    content: "☑";
+}
+
+/* A topic's head: the buttons level with the title's first line at any width; a long title wraps
+   beside them instead of pushing them to a line of their own, and the author's line runs under both
+   (extras/decisions.md, 10). */
+.forum-topic-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 2px 12px;
+}
+
+.forum-topic-head .forum-head-text {
+    display: contents;
+}
+
+.forum-topic-head .forum-topic-meta {
+    grid-column: 1 / -1;
+}
+
+.forum-topic-head .forum-actions {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+}
+
+/* The subscription: a bell before its label, filled while on. On a phone the bell alone; its title
+   and pressed state, and the label hidden only from the eye, name it for a screen reader. */
+.forum-bell {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.forum-subscribe.on .forum-bell {
+    fill: currentColor;
+}
+
+.forum-menu-short {
+    display: none;
+}
+
+.forum-menu-panel hr {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 4px 0;
+}
+
+/* Pagination on the left, actions on the right. */
+.forum-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ===== Buttons by role (DESIGN.md) ===== */
+
+#forum .f-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 12px;
+    border-radius: 3px;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#forum .f-primary {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+    border: 1px solid var(--button-border);
+    font-weight: bold;
+}
+
+#forum .f-primary:hover {
+    background: var(--button-bg-hover);
+}
+
+#forum .f-secondary {
+    background: var(--button-bg-subtle);
+    color: var(--text);
+    border: 1px solid var(--border-medium);
+    font-weight: normal;
+}
+
+#forum .f-secondary:hover {
+    background: var(--button-bg-subtle-hover);
+}
+
+/* A toggle that is on, as the subscription to a topic (design/decisions.md, 16): filled. */
+#forum .f-secondary.on {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+    border-color: var(--button-border);
+}
+
+#forum .f-secondary.on:hover {
+    background: var(--button-bg-hover);
+}
+
+/* Delete looks secondary and reddens on hover (DESIGN.md, «Buttons by role»). */
+#forum .f-secondary.danger:hover {
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+}
+
+/* Faint text actions under a post: no border, text-secondary until hovered. */
+#forum .f-icon {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#forum .f-icon:hover {
+    opacity: 1;
+    color: var(--text);
+}
+
+#forum .f-icon.danger:hover {
+    color: var(--accent-attention);
+}
+
+/* ===== Small marks ===== */
+
+.forum-marks {
+    display: inline-flex;
+    gap: 4px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.forum-mark {
+    display: inline-flex;
+}
+
+/* Inline SVG (templates/icons.html): the site's CSP takes no data: images for a mask. */
+.ico {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    vertical-align: -2px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.forum-label {
+    display: inline-block;
+    padding: 0 6px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: normal;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.forum-label.deleted {
+    border-color: var(--accent-attention);
+    color: var(--accent-attention);
+}
+
+/* The column of the unread dot (block 4): names stay aligned with a dot and without one. */
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--link);
+    visibility: hidden;
+}
+
+.unread .unread-dot {
+    visibility: visible;
+}
+
+.unread .forum-row-title {
+    font-weight: bold;
+}
+
+#forum .meta {
+    display: inline;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.forum-author-name {
+    color: var(--text);
+}
+
+/* ===== Pagination ===== */
+
+#forum nav.forum-pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+#forum .forum-page {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+}
+
+#forum a.forum-page:hover {
+    background: var(--button-bg-subtle-hover);
+    text-decoration: none;
+    color: var(--text);
+}
+
+/* The current page is a selection: accent frame and bold accent number (DESIGN.md). */
+#forum .forum-page.current {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.forum-page-gap {
+    padding: 0 4px;
+    color: var(--text-secondary);
+}
+
+/* Pages of a long topic in the section list. */
+.forum-minipages {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 6px;
+    vertical-align: 1px;
+}
+
+.forum-minipages a,
+.forum-minipages span {
+    padding: 0 5px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--text-secondary);
+}
+
+.forum-minipages a:hover {
+    color: var(--link);
+    text-decoration: none;
+}
+
+/* ===== Lists: sections, topics (and notifications, block 6) ===== */
+
+/* One panel, rows divided by a line (design/decisions.md, 9). */
+.forum-list {
+    list-style: none;
+    padding: 0;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.forum-row,
+.forum-list-head {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) 80px min(300px, 30%);
+    gap: 4px 12px;
+    align-items: center;
+    padding: var(--f-row-pad) 14px var(--f-row-pad) 10px;
+}
+
+.forum-row {
+    border-top: 1px solid var(--border-light);
+}
+
+.forum-row:first-child {
+    border-top: none;
+}
+
+/* Pinned topics end with a heavier line before the rest (design/decisions.md, 10). */
+.forum-row.pinned + .forum-row:not(.pinned) {
+    border-top: 2px solid var(--border-medium);
+}
+
+.forum-row.deleted {
+    background: repeating-linear-gradient(-45deg, transparent 0 8px, var(--bg-darken) 8px 9px);
+}
+
+#forum .forum-row.deleted .forum-row-title {
+    color: var(--text-secondary);
+}
+
+/* Home: topic and post counts are a line under the description, so the last post gets the room
+   (design/decisions.md, 13). */
+.forum-sections .forum-row,
+.forum-list-head.forum-sections {
+    grid-template-columns: 8px minmax(0, 1fr) min(380px, 38%);
+}
+
+.forum-counts {
+    margin-top: var(--f-counts-top);
+}
+
+.forum-list-head {
+    padding-top: 0;
+    padding-bottom: 2px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.forum-list-head .forum-col-count {
+    text-align: center;
+}
+
+.forum-list-head .forum-col-last {
+    text-align: right;
+}
+
+.forum-row-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+#forum .forum-row-title {
+    font-size: var(--f-title);
+    line-height: var(--f-title-lh);
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-row-title:hover {
+    color: var(--link);
+}
+
+.forum-row-count {
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* The column head names the number; the words come back on a phone, where the head is hidden
+   (design/decisions.md, 5). */
+.forum-count-words {
+    display: none;
+}
+
+.forum-row-last {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: var(--f-last-lh);
+    font-size: var(--f-last);
+}
+
+#forum .forum-row-last .topic {
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#forum .forum-row-last .topic:hover {
+    color: var(--link);
+}
+
+.forum-row-last .by {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.forum-row-last .by .forum-author-name {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#forum .forum-row-last .by a {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+#forum .forum-row-last .by a:hover {
+    color: var(--link);
+}
+
+/* Topic list: the last column is just author and time. */
+.forum-topics .forum-row-last {
+    text-align: right;
+}
+
+.forum-topics .forum-row-last .by {
+    flex-direction: column;
+    gap: 0;
+}
+
+.forum-topics .forum-row-last .by .forum-author-name {
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.forum-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* ===== Notices: closed topic, sign in, a ban ===== */
+
+.forum-notice {
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-left: 3px solid var(--accent-notice);
+    border-radius: 3px;
+}
+
+.forum-notice.plain {
+    border-left-color: var(--border-medium);
+    text-align: center;
+}
+
+/* The guest's way to reply is as wide as its text, in the middle under the posts. */
+.forum-notice.forum-sign-in {
+    align-self: center;
+}
+
+/* A deleted topic, as its moderator reads it: the stripe of what is gone. */
+.forum-notice.forum-deleted-notice {
+    border-left-color: var(--accent-attention);
+}
+
+/* A ban: until when, and the reason on a line of its own (design/decisions.md, 20). */
+.forum-notice.forum-ban-notice {
+    border-left-color: var(--accent-attention);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-ban-notice .meta {
+    display: block;
+}
+
+/* A heading for screen readers only: the home has no visible one (design/decisions.md, 12). */
+.forum-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ===== Topic ===== */
+
+.forum-topic-meta {
+    display: flex;
+    gap: 4px 12px;
+    flex-wrap: wrap;
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+.forum-topic-title-marks {
+    margin-left: 6px;
+}
+
+.forum-topic-title-marks .ico {
+    width: 20px;
+    height: 20px;
+}
+
+.forum-posts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--f-posts-gap);
+}
+
+/* A post: the author's column on the left (design/decisions.md, 2 and 7). */
+.forum-post {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    scroll-margin-top: 8px;
+}
+
+.forum-post:target {
+    border-color: var(--accent);
+}
+
+.forum-post-author {
+    padding: var(--f-author-pad);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--f-author-gap);
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+}
+
+.forum-post-author .name {
+    font-size: var(--f-name);
+    font-weight: bold;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+/* A moderator's name and role in accent. */
+.forum-post.mod .forum-post-author .name,
+.forum-post.mod .forum-post-author .role {
+    color: var(--accent);
+}
+
+/* Label and value pairs: "Posts: 1 024", "Joined: 02 Oct 2026". */
+.forum-post-author .facts {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0 6px;
+    margin-top: var(--f-facts-top);
+    font-size: var(--f-facts);
+}
+
+.forum-post-author .facts span:nth-child(2n) {
+    color: var(--text);
+}
+
+/* The author's avatar, 96 CSS px from a stored 192×192, sharp on a 2× screen, centred in the
+   column (extras/decisions.md, 1); the name and role centred under it, the facts at the left
+   (decision 9). Compact puts it beside them, a phone at the left of the author line (below). */
+.forum-avatar {
+    display: block;
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+    border-radius: 3px;
+    overflow: hidden;
+    align-self: center;
+}
+
+.forum-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#forum .forum-post-author .forum-avatar {
+    margin-bottom: var(--f-av-gap);
+}
+
+.forum-post:not(.reply) .forum-post-author .name,
+.forum-post:not(.reply) .forum-post-author .role {
+    align-self: center;
+    text-align: center;
+}
+
+/* No avatar: the first letter of the name on the user's tint (decision 15; colours in main.css,
+   .avatar-hue). */
+.forum-avatar.letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    font-weight: bold;
+    line-height: 1;
+    user-select: none;
+}
+
+/* The writer's own avatar in the reply form, small and at the top. */
+.forum-post.reply .forum-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    align-self: flex-start;
+}
+
+/* Compact on a wide screen: the avatar at 48px beside the name and role, the facts under all three;
+   the column keeps its 180px, and a post of a line or two is as tall as its text. Without an avatar
+   the column stays as on the other steps. */
+@media (min-width: 601px) {
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        grid-auto-rows: auto;
+        align-content: start;
+        column-gap: 8px;
+    }
+
+    #forum.forum-compact .forum-post-author .forum-avatar {
+        grid-row: 1 / span 2;
+        width: 48px;
+        height: 48px;
+        margin: 0;
+        align-self: start;
+        font-size: 24px;
+    }
+
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) > :not(.forum-avatar) {
+        grid-column: 2;
+        align-self: center;
+        justify-self: start;
+        text-align: left;
+    }
+
+    #forum.forum-compact .forum-post-author:has(.forum-avatar) .facts {
+        grid-column: 1 / -1;
+    }
+}
+
+/* A column, so that the bottom line sits at the bottom of the card (margin-top: auto). */
+.forum-post-main {
+    min-width: 0;
+    padding: var(--f-main-pad);
+    display: flex;
+    flex-direction: column;
+    gap: var(--f-main-gap);
+}
+
+.forum-post-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 4px 12px;
+    flex-wrap: wrap;
+    font-size: var(--f-meta);
+    color: var(--text-secondary);
+}
+
+.forum-post-meta .edited {
+    font-style: italic;
+}
+
+#forum .forum-post .num {
+    color: var(--text-secondary);
+}
+
+#forum .forum-post .num:hover {
+    color: var(--link);
+}
+
+/* The bottom line: the number, the time and "edited" at the left, the actions at the right
+   (extras/decisions.md, 7 and 9); a long meta line pushes the actions to a line of their own, still
+   at the right. */
+.forum-post-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 16px;
+    margin-top: auto;
+}
+
+.forum-post-foot .forum-post-meta {
+    margin-right: auto;
+}
+
+.forum-post-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-left: auto;
+}
+
+/* A deleted post keeps its place, author, time and number as one line (design/decisions.md, 20). */
+.forum-post.deleted-stub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    padding: 6px 16px;
+    background: transparent;
+    border-style: dashed;
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Who wrote it and when, as in the line under a topic title; not italic. */
+.forum-post.deleted-stub .by {
+    font-style: normal;
+    font-size: 14px;
+}
+
+#forum .forum-post.deleted-stub .num {
+    margin-left: auto;
+    font-style: normal;
+}
+
+/* What a moderator sees of a deleted post: the whole card, dashed red, its text faint
+   (design/decisions.md, 20). Red outweighs the frame of :target: the post a moderator just deleted
+   is the one the browser comes back to. */
+.forum-post.deleted-mod {
+    border-style: dashed;
+    border-color: var(--accent-attention);
+}
+
+.forum-post.deleted-mod .forum-post-body {
+    opacity: 0.55;
+}
+
+.deleted-note {
+    font-size: 14px;
+    color: var(--accent-attention);
+    overflow-wrap: anywhere;
+}
+
+/* ===== Post text (Markdown, internal/forum/markdown.go) ===== */
+
+/* main.css takes every margin away; the gap gives the blocks theirs back. */
+.forum-post-body {
+    overflow-wrap: anywhere;
+    display: flex;
+    flex-direction: column;
+    gap: var(--f-par);
+    font-size: var(--f-text);
+    line-height: var(--f-text-lh);
+}
+
+.forum-post-body li > * + * {
+    margin-top: 0.4em;
+}
+
+.forum-post-body ul,
+.forum-post-body ol {
+    padding-left: 1.6em;
+}
+
+.forum-post-body ol {
+    list-style-type: decimal;
+}
+
+.forum-post-body li ul {
+    list-style-type: circle;
+}
+
+/* Headings no larger than 20px, under the topic's 24px. */
+#forum .forum-post-body h1,
+#forum .forum-post-body h2,
+#forum .forum-post-body h3 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.3;
+}
+
+#forum .forum-post-body h4,
+#forum .forum-post-body h5,
+#forum .forum-post-body h6 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+/* The site font is monospace already, so code differs by its background; the browser's own
+   monospace would differ in face and size. */
+.forum-post-body code,
+.forum-post-body pre {
+    font-family: inherit;
+}
+
+.forum-post-body code {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--bg-item);
+}
+
+/* A long line of code scrolls inside its block, not the page. */
+.forum-post-body pre {
+    padding: 8px 12px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    overflow-x: auto;
+    overflow-wrap: normal;
+    line-height: 1.4;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-dark) transparent;
+}
+
+.forum-post-body pre code {
+    padding: 0;
+    background: none;
+}
+
+.forum-post-body blockquote {
+    padding: 4px 12px;
+    border-left: 3px solid var(--border-dark);
+    background: var(--bg-item);
+    border-radius: 0 3px 3px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* "Name wrote in #N:" over a quote, small and faint: the renderer puts the first line of a quote
+   that links to a post into span.quote-head (quoteHeadTransformer in markdown.go). */
+.forum-post-body blockquote .quote-head {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* The name is bold in the text of the quote ("> **Name** [wrote in #N](…):"), plain in its head,
+   as in the prototype. */
+.forum-post-body blockquote .quote-head strong {
+    font-weight: normal;
+}
+
+#forum .forum-post-body blockquote .quote-head a {
+    color: var(--text-secondary);
+}
+
+#forum .forum-post-body blockquote .quote-head a:hover {
+    color: var(--link);
+}
+
+.forum-post-body blockquote code,
+.forum-post-body blockquote pre {
+    background: var(--bg-item2);
+}
+
+.forum-post-body hr {
+    border: none;
+    border-top: 1px solid var(--border-medium);
+}
+
+/* ||spoiler||: a grey bar that opens on a click. Without a script the click focuses it (it has
+   tabindex), so it opens on focus, by Tab and by a tap, and a click elsewhere closes it again.
+   The forum script (html.forum-js) toggles .open on a click, Enter or Space instead, so that a
+   second click closes it. While hidden, a link inside takes no click: the first one opens the
+   spoiler instead of following an unseen link. */
+.forum-post-body .spoiler {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--text-secondary);
+    color: transparent;
+    cursor: pointer;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+:root:not(.forum-js) .forum-post-body .spoiler:not(:focus-within):not(.open) *,
+.forum-js .forum-post-body .spoiler:not(.open) * {
+    color: transparent;
+    background: transparent;
+    border-color: transparent;
+    text-decoration-color: transparent;
+}
+
+:root:not(.forum-js) .forum-post-body .spoiler:not(:focus-within):not(.open) a,
+.forum-js .forum-post-body .spoiler:not(.open) a {
+    pointer-events: none;
+}
+
+:root:not(.forum-js) .forum-post-body .spoiler:focus-within,
+.forum-post-body .spoiler.open {
+    background: var(--bg-item2);
+    color: inherit;
+    cursor: auto;
+}
+
+.forum-post-body .spoiler:focus-visible {
+    outline: 1px solid var(--accent);
+}
+
+/* ===== Pictures in posts (images.go, extras/images.md) ===== */
+
+/* A picture from any https host under a closed spoiler of its own: a <details> whose line names the
+   caption and the host. The <img> inside is lazy, so the browser asks the host for it only once the
+   spoiler opens; "Pictures at once" renders the blocks open. No script needed. */
+.forum-img-spoiler {
+    max-width: 100%;
+    margin: 0;
+}
+
+/* The closed line: the forum's quiet button, as wide as its text. */
+.forum-img-spoiler > summary {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 4px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+    font-size: 15px;
+    line-height: 1.35;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.forum-img-spoiler > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-img-spoiler > summary:hover {
+    background: var(--bg-item2);
+}
+
+.forum-img-spoiler > summary:focus-visible {
+    outline: 1px solid var(--accent);
+}
+
+/* ▸ closed, ▾ open, as the forum's other <details>. */
+.forum-img-spoiler > summary::before {
+    content: "▸";
+    color: var(--text-secondary);
+}
+
+.forum-img-spoiler[open] > summary::before {
+    content: "▾";
+}
+
+.forum-img-spoiler .cap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.forum-img-spoiler .host {
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* In a quote (bg-item): one level up. */
+.forum-post-body blockquote .forum-img-spoiler > summary {
+    background: var(--bg-item2);
+}
+
+.forum-post-body blockquote .forum-img-spoiler > summary:hover {
+    background: var(--bg-item3);
+}
+
+/* Open: the picture under its line; the line stays, to close it again. */
+.forum-img-spoiler[open] > summary {
+    margin-bottom: 6px;
+}
+
+.forum-img-spoiler .forum-img-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+/* The picture: no wider than the post, no taller than 480px (360px on a phone); a click opens the
+   original in a new tab. Its size is unknown until it loads: min-height keeps a loading picture
+   from being a 0px line. */
+.forum-img-link:not([hidden]) {
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
+    vertical-align: top;
+}
+
+.forum-img {
+    max-width: 100%;
+    max-height: 480px;
+    min-height: 40px;
+    min-width: 40px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+    object-fit: contain;
+}
+
+/* A quote's pictures smaller: the reader saw them in the quoted post. */
+.forum-post-body blockquote .forum-img {
+    max-height: 240px;
+}
+
+/* A picture that did not load (removed, host down, blocked for this reader, not a picture at all
+   as a Yandex Disk page): one line with its link, which the forum script shows in its place. */
+.forum-img-broken:not([hidden]) {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px dashed var(--accent-attention);
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-img-broken:hover {
+    color: var(--link);
+}
+
+/* An http:// picture (a https page cannot show it), one inside a link or past the limit of blocks
+   stays a link, marked as a picture. */
+.forum-img-off::before {
+    content: "🖼 ";
+}
+
+@media (max-width: 600px) {
+    .forum-img {
+        max-height: 360px;
+    }
+
+    /* A finger-sized line, as the forum's other buttons on a phone. */
+    .forum-img-spoiler > summary {
+        min-height: 40px;
+        align-items: center;
+        padding: 6px 12px;
+    }
+}
+
+/* ===== Forms ===== */
+
+#forum form div {
+    margin-bottom: 0;
+}
+
+#forum form div:last-child {
+    border-top: none;
+}
+
+#forum form label {
+    margin: 0;
+}
+
+.forum-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.forum-form .field-label {
+    font-weight: bold;
+}
+
+#forum .forum-form input[type="text"],
+#forum .forum-form textarea {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+#forum .forum-form textarea {
+    height: auto;
+    min-height: 180px;
+    resize: vertical;
+}
+
+/* The field under the preview the script shows in its place. */
+#forum .forum-form textarea[hidden] {
+    display: none;
+}
+
+#forum .forum-form select {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+/* A reason is a line or two, not a post. */
+#forum .forum-form textarea.forum-reason {
+    min-height: 80px;
+}
+
+/* The error is under its field (design/decisions.md, 17); main.css colours a field only after an
+   .error, so the frame goes by aria-invalid. By element: input[type="text"] above outweighs a bare
+   attribute. */
+#forum .forum-form input[aria-invalid="true"],
+#forum .forum-form select[aria-invalid="true"],
+#forum .forum-form textarea[aria-invalid="true"] {
+    border-color: var(--accent-attention);
+}
+
+#forum .forum-form .field-error,
+#forum .forum-form .forum-form-error {
+    font-size: 15px;
+}
+
+/* A checkbox with its words on the right: main.css styles a bare label as a block. */
+#forum .forum-form .forum-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#forum .forum-check input {
+    margin: 0;
+}
+
+/* The first section has no "Up", the last no "Down". */
+#forum .f-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+#forum .f-secondary:disabled:hover {
+    background: var(--button-bg-subtle);
+}
+
+/* The moderators' lists of sections and bans: the name and what is known of it, the buttons on the
+   right. */
+.forum-mod-sections .forum-row,
+.forum-mod-bans .forum-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
+    padding: var(--f-row-pad) 14px;
+}
+
+.forum-mod-sections .forum-row-title {
+    margin-right: 6px;
+}
+
+.forum-mod-section-actions,
+.forum-mod-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+/* Notifications: kind and time small above the text, a reason on its own line (design/decisions.md,
+   21); unread ones bold, with the dot (11). */
+.forum-notes .forum-row {
+    grid-template-columns: 8px minmax(0, 1fr);
+}
+
+#forum .forum-notes .note-text {
+    overflow-wrap: anywhere;
+}
+
+#forum .forum-notes .unread .note-text {
+    font-weight: bold;
+}
+
+/* The moderation log: who and when above, what and why under it, one column. */
+.forum-mod-log .forum-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--f-row-pad) 14px;
+}
+
+.forum-ban-reason,
+.forum-log-what,
+.forum-log-reason {
+    overflow-wrap: anywhere;
+}
+
+/* «Restore all» under a line of the log, at its left as the line's text. */
+.forum-log-restore {
+    margin-top: 6px;
+}
+
+/* The terms of a ban, a line of choices under their caption. */
+#forum .forum-ban-terms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.forum-ban-terms legend {
+    margin-bottom: 6px;
+    padding: 0;
+}
+
+/* The page that confirms a deletion: the post, then the question's buttons under it. */
+.forum-confirm {
+    margin-top: 12px;
+}
+
+/* The moderator's deletion of another's post (post_delete.html): what to do with its author, a
+   box under the reason (extras/decisions.md, 11). The ban's terms open under its box by :has(), no
+   script; the button says what it will do. */
+#forum .forum-delete-author {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0 0;
+    padding: 8px 12px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.forum-delete-author > legend {
+    padding: 0 4px;
+}
+
+/* A label of two lines would squeeze its box: flex shrinks the input. */
+.forum-delete-author .forum-check input {
+    flex-shrink: 0;
+}
+
+.forum-delete-banned {
+    overflow-wrap: anywhere;
+}
+
+.forum-delete-ban {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px 0 0 26px;
+}
+
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-ban {
+    display: flex;
+}
+
+.forum-delete-and-ban,
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-plain {
+    display: none;
+}
+
+.forum-delete:has(#forum-ban-author:checked) .forum-delete-and-ban {
+    display: inline;
+}
+
+.forum-form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* The markup hint, left of the buttons. */
+.forum-form-buttons .left {
+    margin-right: auto;
+}
+
+/* Text / Preview tabs over the message field (design/decisions.md, 18); the preview takes the
+   field's place. Without a script a tab is a submit button. */
+.forum-tabs-bar {
+    display: flex;
+    gap: 4px;
+}
+
+#forum .forum-tabs-bar .tab {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 1px 12px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 15px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+#forum .forum-tabs-bar .tab:hover {
+    color: var(--text);
+}
+
+/* The current tab is a selection: accent frame and bold accent name (DESIGN.md). */
+#forum .forum-tabs-bar .tab.current {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: bold;
+    cursor: default;
+}
+
+.forum-form .tab-preview {
+    min-height: 180px;
+    padding: 8px 12px;
+    border: 1px dashed var(--border-medium);
+    border-radius: 3px;
+}
+
+/* The reply's field is lower (rows 6). */
+.forum-post.reply:not(.forum-edit) .tab-preview {
+    min-height: 140px;
+}
+
+/* "Markup": the table opens over the field, as a menu, and the form does not move
+   (design/decisions.md, 6). */
+.forum-hint {
+    position: relative;
+}
+
+.forum-hint>summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.forum-hint>summary:hover {
+    color: var(--text);
+}
+
+#forum .forum-hint table {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 5;
+    width: max-content;
+    margin: 0;
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    border-collapse: separate;
+    padding: 4px 0;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+    font-size: 15px;
+}
+
+#forum .forum-hint tr {
+    border: none;
+    background: transparent;
+}
+
+#forum .forum-hint td {
+    padding: 2px 12px;
+    border: none;
+    text-align: left;
+    vertical-align: top;
+}
+
+#forum .forum-hint td:first-child {
+    color: var(--text-secondary);
+    white-space: pre;
+}
+
+/* The picture's row is the long one: its explanation wraps rather than widening the table; on a
+   phone its example breaks after the caption too, so that the table fits the screen. */
+#forum .forum-hint .forum-hint-wide td:last-child {
+    max-width: 320px;
+}
+
+@media (max-width: 600px) {
+    #forum .forum-hint table {
+        max-width: calc(100vw - 24px);
+    }
+
+    #forum .forum-hint .forum-hint-wide td:first-child {
+        white-space: normal;
+    }
+}
+
+.forum-hint code {
+    padding: 0 4px;
+    background: var(--bg-item2);
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+.forum-hint .forum-hint-link {
+    color: var(--link);
+    text-decoration: underline;
+}
+
+.forum-hint .forum-hint-quote {
+    padding-left: 8px;
+    border-left: 3px solid var(--border-dark);
+}
+
+.forum-hint .spoiler {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--text-secondary);
+    color: transparent;
+}
+
+/* The reply form looks like a post: the writer's name on the left (design/decisions.md, 19). */
+.forum-post.reply .forum-post-main {
+    padding-bottom: 12px;
+}
+
+/* A form page (new topic): one panel. */
+.forum-panel {
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+/* ===== Narrow: lists ===== */
+
+/* Below a tablet the columns would squeeze a title into a few words a line: a row becomes the
+   title with its counts and last post on lines under it. Posts keep their author column longer. */
+@media (max-width: 760px) {
+    .forum-list-head {
+        display: none;
+    }
+
+    .forum-row,
+    .forum-sections .forum-row {
+        grid-template-columns: 8px minmax(0, 1fr);
+        padding: var(--f-row-pad-phone) 10px var(--f-row-pad-phone) 8px;
+    }
+
+    .forum-row > .forum-row-count,
+    .forum-row > .forum-row-last {
+        grid-column: 2;
+    }
+
+    .forum-row-count {
+        text-align: left;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .forum-count-number {
+        display: none;
+    }
+
+    .forum-count-words {
+        display: inline;
+    }
+
+    .forum-topics .forum-row-last {
+        text-align: left;
+    }
+
+    .forum-topics .forum-row-last .by {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+    /* The last reply's line, under the topic's own author line. */
+    .forum-topics .forum-row-last .by::before {
+        content: "↳";
+    }
+
+    .forum-topics .forum-row-last .by .forum-author-name {
+        font-size: 13px;
+    }
+
+    .forum-row-last .by {
+        justify-content: flex-start;
+    }
+}
+
+/* ===== Phone ===== */
+
+@media (max-width: 600px) {
+    /* The buttons of a section or a ban go under its name. */
+    .forum-mod-sections .forum-row,
+    .forum-mod-bans .forum-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .forum-mod-section-actions,
+    .forum-mod-list-actions {
+        justify-content: flex-start;
+    }
+
+    main.forum-wide {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    #forum .forum-head h2 {
+        font-size: var(--f-h2-phone);
+    }
+
+    #forum .forum-row-title {
+        font-size: var(--f-title-phone);
+    }
+
+    /* The topic's buttons as 40px squares beside the title: the bell and "⋯". They lie over a float
+       that keeps their place, so they don't make the title's first line taller: the author's line
+       comes right under the title and wraps around their place, never under them. The float's width
+       counts the buttons the head can hold. */
+    .forum-topic-head {
+        display: block;
+        position: relative;
+    }
+
+    .forum-topic-head .forum-head-text,
+    .forum-topic-head .forum-topic-meta {
+        display: block;
+    }
+
+    .forum-topic-head .forum-topic-meta {
+        margin-top: 2px;
+    }
+
+    .forum-topic-head:has(.forum-subscribe, .forum-menu) .forum-head-text::before {
+        content: "";
+        float: right;
+        width: 40px;
+        height: 40px;
+        margin-left: 12px;
+    }
+
+    .forum-topic-head:has(.forum-subscribe):has(.forum-menu) .forum-head-text::before {
+        width: 84px;
+    }
+
+    .forum-topic-head .forum-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        gap: 4px;
+    }
+
+    #forum .forum-topic-head .forum-subscribe,
+    #forum .forum-topic-head .forum-menu > summary {
+        width: 40px;
+        padding: 0;
+    }
+
+    #forum .forum-topic-head .forum-subscribe .forum-bell {
+        width: 20px;
+        height: 20px;
+    }
+
+    .forum-topic-head .forum-subscribe-label,
+    .forum-topic-head .forum-menu-long {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .forum-topic-head .forum-menu-short {
+        display: inline;
+        font-size: 20px;
+    }
+
+    /* The author column folds into a line above the text. */
+    .forum-post {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .forum-post-author {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px 8px;
+        padding: var(--f-author-pad-phone);
+        border-right: none;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .forum-post-author .facts {
+        display: flex;
+        gap: 4px;
+        margin: 0;
+    }
+
+    .forum-post-author .facts span:nth-child(2n):not(:last-child) {
+        margin-right: 6px;
+    }
+
+    /* The avatar at the left of the author line, over both its lines (name and role, then the
+       facts): 96 would add more than its own height to every post (extras/decisions.md, 14). */
+    #forum .forum-post-author:has(.forum-avatar) {
+        position: relative;
+        /* border-box: room for the avatar and a few pixels above and below it, as in a line of two. */
+        min-height: calc(var(--f-av-phone) + 10px);
+        padding-left: calc(var(--f-av-phone) + 18px);
+    }
+
+    #forum .forum-post-author .forum-avatar {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: var(--f-av-phone);
+        height: var(--f-av-phone);
+        margin: 0;
+        font-size: calc(var(--f-av-phone) / 2);
+    }
+
+    .forum-post:not(.reply) .forum-post-author .name,
+    .forum-post:not(.reply) .forum-post-author .role {
+        align-self: auto;
+        text-align: left;
+    }
+
+    .forum-post-main {
+        padding: var(--f-main-pad-phone);
+    }
+
+    .forum-post-body pre {
+        font-size: 14px;
+    }
+
+    .forum-panel {
+        padding: 10px 12px;
+    }
+
+    /* Finger-sized controls: buttons, fields, pages and tabs at least 40px tall. 16px text keeps a
+       phone browser from zooming in on the field it focuses. */
+    #forum .f-btn,
+    #forum .forum-page,
+    #forum .forum-tabs-bar .tab {
+        min-height: 40px;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    #forum .forum-form input[type="text"],
+    #forum .forum-form select,
+    #forum .forum-form textarea {
+        min-height: 40px;
+        font-size: 16px;
+    }
+
+    #forum .forum-form .forum-check {
+        min-height: 40px;
+    }
+
+    #forum .forum-check input {
+        width: 20px;
+        height: 20px;
+    }
+
+    #forum .forum-menu-panel a {
+        padding: 9px 14px;
+    }
+
+    #forum .forum-view-menu .forum-menu-panel button,
+    #forum .forum-mod-menu .forum-menu-panel button {
+        padding: 9px 14px 9px 30px;
+    }
+
+    .forum-hint>summary {
+        padding: 9px 0;
+    }
+
+    /* Links among text keep their line; their padding widens what a finger hits around them. */
+    #forum .forum-post-actions a,
+    #forum .forum-post .num,
+    #forum .forum-breadcrumbs a {
+        display: inline-block;
+        padding: 8px 4px;
+        margin: -8px -4px;
+    }
+
+    /* Still pushed to the right of the deleted post's line. */
+    #forum .forum-post.deleted-stub .num {
+        margin-left: auto;
+    }
+
+    .forum-post-actions {
+        gap: 4px 20px;
+    }
+
+    .forum-minipages a,
+    .forum-minipages span {
+        padding: 4px 8px;
+    }
+}
+
+/* A name links to the user's page (block 6 of extras/plan.md): it reads as a name, the link shows
+   on hover. The last column's links are grey (above); its name keeps the text colour. */
+#forum a.forum-author-name,
+#forum .forum-post-author a.name,
+#forum .forum-row-last .by a.forum-author-name {
+    color: var(--text);
+    text-decoration: none;
+}
+
+#forum .forum-post.mod .forum-post-author a.name {
+    color: var(--accent);
+}
+
+#forum a.forum-author-name:hover,
+#forum .forum-post-author a.name:hover {
+    text-decoration: underline;
+}
+
+/* A deleted account has no page: its name is the reader's words, grey and without a link
+   (view.UserLink). */
+#forum .deleted-user {
+    color: var(--text-secondary);
+}
+
+/* ===== The user page (/forum/user/:id, users.md) ===== */
+
+/* The head: the avatar at its post size, then the name, role and facts. */
+.forum-user-head {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.forum-user-head .forum-avatar {
+    align-self: flex-start;
+    margin: 0;
+}
+
+.forum-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+#forum .forum-user-info h2 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* The name and its ▾ of former names (main.css, .former-names); the panel hangs from the line of
+   the name, its left edge under the name's, so a long name does not push it off the screen. */
+.forum-user-name {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    min-width: 0;
+}
+
+.forum-user-name .former-names {
+    position: static;
+}
+
+/* The column beside the avatar is narrower than the screen on a phone. */
+.forum-user-name .former-names-panel {
+    max-width: min(22rem, 100%);
+}
+
+.forum-user-info .role {
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+.forum-user-facts {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 0 10px;
+    margin: 4px 0 0;
+    font-size: 15px;
+}
+
+.forum-user-facts dt {
+    color: var(--text-secondary);
+}
+
+.forum-user-facts dd {
+    margin: 0;
+}
+
+.forum-user-info .meta {
+    margin: 4px 0 0;
+}
+
+.forum-user-banned {
+    color: var(--accent-attention);
+}
+
+/* The moderators' block: a row per thing they act on, its state and the action. */
+.forum-user-mod {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#forum .forum-user-mod h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.forum-user-mod-row {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 6px 12px;
+    align-items: baseline;
+    font-size: 15px;
+}
+
+.forum-user-mod-row .what {
+    color: var(--text-secondary);
+}
+
+.forum-user-mod-row .forum-ban-reason {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* The action under the state: a button, or a form that opens in place (<details>, no script). */
+.forum-user-mod-row > details,
+.forum-user-mod-row > form,
+.forum-user-log-all {
+    grid-column: 2;
+    margin: 0;
+}
+
+.forum-user-form > summary {
+    list-style: none;
+    display: inline-flex;
+}
+
+.forum-user-form > summary::-webkit-details-marker {
+    display: none;
+}
+
+.forum-user-form[open] > summary {
+    color: var(--text-secondary);
+}
+
+.forum-user-form > form {
+    margin-top: 8px;
+    max-width: 560px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: var(--bg-item);
+}
+
+.forum-user-log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.forum-user-log-all {
+    font-size: 14px;
+}
+
+/* The user's posts: the topic, a line of the text, where and when. */
+.forum-user-posts .forum-row {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.forum-user-excerpt {
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.forum-user-posts .forum-row.deleted .forum-user-excerpt {
+    opacity: 0.6;
+}
+
+#forum .forum-user-tabs .tab {
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .forum-user-head {
+        gap: 12px;
+    }
+
+    .forum-user-head .forum-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 30px;
+    }
+
+    .forum-user-facts {
+        font-size: 14px;
+    }
+
+    /* The state under its name, the action under both. */
+    .forum-user-mod-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    .forum-user-mod-row > details,
+    .forum-user-mod-row > form,
+    .forum-user-log-all {
+        grid-column: 1;
+    }
+}
+
+/* The avatar locks on the bans page: as a ban, the letter of the user first, the button on the right. */
+.forum-avatar-locks .forum-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    padding: 10px 14px;
+}
+
+.forum-avatar-locks .forum-avatar {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    font-size: 20px;
+}
+
+/* The user's own text under the head (extras/decisions.md, 21): the post's typography; on their own page
+   "✎ Изменить" opens its form in place. */
+.forum-user-about {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#forum .forum-user-about h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.forum-user-about .forum-user-form > form {
+    max-width: none;
+}
+
+.forum-user-about .forum-user-form > summary {
+    cursor: pointer;
+}
+
+/* ===== Subsections ===== */
+
+/* A section of the top level may have subsections one level deep (_prd/forum/subsections): the home
+   shows them as a tree under their parent, which folds them by its arrow; a parent page lists them
+   above its topics in the same compact rows. Last in the file: these rules override the lists'. */
+
+/* ===== Compact rows: the home and a parent's subsections ===== */
+
+/* The name and the counts on one line, the description under it; the counts wrap under the name
+   only when the name is long. */
+.forum-row-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 10px;
+    min-width: 0;
+}
+
+.forum-row-line .forum-counts {
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+/* ===== Home: the tree ===== */
+
+/* A column for the fold arrow in every row, empty without subsections, so that every section's
+   name starts at the same place. */
+.forum-tree .forum-row,
+.forum-list-head.forum-tree-head {
+    grid-template-columns: 8px 16px minmax(0, 1fr) min(380px, 38%);
+    column-gap: 8px;
+}
+
+/* A subsection: its dot under the parent's name, its name a step further in. The last post's
+   column keeps its width, so it stays level with the parents'. */
+.forum-tree .forum-subrow {
+    grid-template-columns: 50px minmax(0, 1fr) min(380px, 38%);
+    border-top-style: dashed;
+}
+
+.forum-tree .forum-subrow .unread-dot {
+    justify-self: end;
+}
+
+/* Folding: the server renders the class folded from the cookie forum_folded, the forum script
+   toggles it. A parent carries both faces: unfolded, its own counts and last post; folded, the
+   family's and the line «Подразделы:».
+   Through #forum: #forum .meta would show a hidden count again. */
+#forum .forum-tree .forum-subrow.folded,
+#forum .forum-parent.folded .when-open,
+#forum .forum-parent:not(.folded) .when-folded {
+    display: none;
+}
+
+#forum .forum-fold button {
+    display: block;
+    width: 16px;
+    height: 20px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+#forum .forum-fold button:hover {
+    color: var(--text);
+}
+
+#forum .forum-fold .ico {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* The dot and the arrow stand level with the name's line, not in the middle of the row: a folded
+   parent has three lines. */
+.forum-tree .forum-fold {
+    align-self: start;
+    padding-top: 1px;
+}
+
+.forum-tree .unread-dot {
+    align-self: start;
+    margin-top: 7px;
+}
+
+/* A folded parent's subsections in a line under the description. */
+.forum-subsections {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 4px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.forum-subsections .label {
+    color: var(--text-secondary);
+}
+
+/* A comma after every link but the last; the links wrap whole on a phone. */
+.forum-subsections a:not(:last-child)::after {
+    content: ",";
+    color: var(--text-secondary);
+}
+
+/* An unread subsection: the row's dot, smaller, and a bold name (design/decisions.md, 11). */
+.forum-subsections a.unread {
+    font-weight: bold;
+}
+
+.forum-subsections a.unread::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background: var(--link);
+    vertical-align: 2px;
+}
+
+/* ===== Parent page ===== */
+
+/* The column heads name the subsections' list and the topics' one; on a phone, where they are
+   hidden, a heading does. */
+#forum .forum-list-title {
+    display: none;
+    margin: 4px 0 -4px;
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* ===== Moderators ===== */
+
+.forum-mod-sections .forum-subrow {
+    padding-left: 38px;
+    border-top-style: dashed;
+}
+
+.forum-field-note {
+    margin-top: -4px;
+}
+
+@media (max-width: 760px) {
+    #forum .forum-list-title {
+        display: block;
+    }
+
+    .forum-tree .forum-row {
+        grid-template-columns: 8px 16px minmax(0, 1fr);
+    }
+
+    .forum-tree .forum-row > .forum-row-last {
+        grid-column: 3;
+    }
+
+    .forum-tree .forum-subrow {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .forum-tree .forum-subrow > .forum-row-last {
+        grid-column: 2;
+    }
+
+    .forum-mod-sections .forum-subrow {
+        padding-left: 24px;
+    }
+}
+
+/* ===== Moderator mode (_prd/forum/moderator-mode) ===== */
+
+/* A band across the forum in the colour of a moderator's name and role (.forum-post.mod), unlike
+   every notice of the forum: what the page shows is not what members see. */
+.forum-mod-mode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 4px 6px 4px 12px;
+    background: var(--accent);
+    color: var(--bg-light);
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.forum-mod-mode .ico {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.forum-mod-mode-note {
+    opacity: 0.85;
+}
+
+.forum-mod-mode form {
+    margin: 0 0 0 auto;
+}
+
+/* «Turn off»: a light outline button on the band that inverts on hover. */
+#forum .forum-mod-mode .forum-mod-mode-off {
+    height: auto;
+    padding: 2px 12px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font: inherit;
+    cursor: pointer;
+}
+
+#forum .forum-mod-mode .forum-mod-mode-off:hover {
+    background: var(--bg-light);
+    color: var(--accent);
+}
+
+/* On a phone the name of the mode and «Turn off» keep one line; the note goes. */
+@media (max-width: 600px) {
+    .forum-mod-mode-note {
+        display: none;
+    }
+}

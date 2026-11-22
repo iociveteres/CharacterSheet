@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { listenRemote } from "./remote";
-import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
+import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts, type Modals } from "./state";
 import { freezeList, thawList } from "./dragFreeze";
 import type { Folder, Sheet } from "./characters";
 import { changeFolderVisibility, changeSheetVisibility, loadEarlierMessages } from "./actions";
@@ -11,7 +11,7 @@ import { labelText } from "../sheet/api";
 import { encounter, shownView } from "./encounter/state";
 import type { ChatMessage, RoomPayload } from "./payload.gen";
 
-const closed = { invite: false, import: false, kicked: false, connectionLost: false };
+const closed: Modals = { invite: false, import: false, kicked: false, connectionLost: false };
 
 const receive = (msg: { type: string; [key: string]: unknown }) => document.dispatchEvent(new CustomEvent(`ws:${msg.type}`, { detail: msg }));
 
@@ -76,10 +76,10 @@ it("a new invite link replaces the shown one", () => {
     expect(inviteLink.value).toBe("http://localhost/invite/abc");
 });
 
-it("a lost connection shows its modal", () => {
-    window.dispatchEvent(new CustomEvent("ws:connectionLost"));
+it("a lost connection shows its modal with the reason", () => {
+    window.dispatchEvent(new CustomEvent("ws:connectionLost", { detail: { reason: "noAccess" } }));
 
-    expect(modals.value.connectionLost).toBe(true);
+    expect(modals.value.connectionLost).toBe("noAccess");
 });
 
 describe("toasts", () => {
@@ -137,6 +137,17 @@ describe("the chat", () => {
 
         receive({ type: "deleteMessage", eventID: "e", messageId: 2 });
 
+        expect(ids()).toEqual([1, 3]);
+    });
+
+    it("drops the messages of a deleted player who chose so, and only theirs", () => {
+        for (const [id, userId] of [[1, 2], [2, 3], [3, 2], [4, 3]]) {
+            receive({ type: "chatMessage", eventID: "e", messageId: id, userId, userName: "U", messageBody: "m", created: "2026-09-27T10:00:00Z" });
+        }
+
+        receive({ type: "playerDeleted", eventID: "e", userID: 2, heirID: 1, messagesDeleted: false });
+        expect(ids()).toEqual([1, 2, 3, 4]);
+        receive({ type: "playerDeleted", eventID: "e", userID: 3, heirID: 1, messagesDeleted: true });
         expect(ids()).toEqual([1, 3]);
     });
 
@@ -537,6 +548,14 @@ describe("the character list", () => {
         expect(players.value.map(p => p.id)).toEqual([1]);
         expect(folders.value.map(f => f.id)).toEqual([10]);
         expect(sheetIds()).toEqual([100]);
+    });
+
+    it("hands a deleted player's folders and sheets to the heir rather than drop them", () => {
+        receive({ type: "playerDeleted", eventID: "e", userID: 2, heirID: 1, messagesDeleted: false });
+
+        expect(players.value.map(p => p.id)).toEqual([1]);
+        expect(folders.value.map(f => [f.id, f.ownerId])).toEqual([[10, 1], [20, 1], [21, 1]]);
+        expect(sheets.value.map(s => [s.id, s.ownerId, s.folderId])).toEqual([[100, 1, null], [200, 1, 20], [201, 1, null]]);
     });
 
     it("changes the role of another player", () => {

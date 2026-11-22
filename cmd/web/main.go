@@ -6,11 +6,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
@@ -43,6 +45,10 @@ type config struct {
 		username string
 		password string
 		sender   string
+	}
+	export struct {
+		dir     string
+		workers int
 	}
 }
 
@@ -82,13 +88,16 @@ func main() {
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
-	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch)")
+	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch) and add the routes of e2e")
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel == "" {
 		logLevel = "error"
 	}
 	flag.StringVar(&cfg.logLevel, "log-level", logLevel, "Log level (error|info|debug)")
 	flag.Int64Var(&cfg.rollSeed, "roll-seed", 0, "Repeat the same rolls from run to run, seeded with this number (0: random rolls)")
+
+	flag.StringVar(&cfg.export.dir, "export-dir", filepath.Join(os.TempDir(), "charactersheet-exports"), "Folder of the archives of the users' data exports")
+	flag.IntVar(&cfg.export.workers, "export-workers", 2, "How many archives of data exports are built at once")
 
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
@@ -162,17 +171,34 @@ func main() {
 
 	m := models.NewModels(pool)
 
+	// A field edit goes at most every 200 ms per path (sheet/network.ts); a
+	// drag or a batch makes short bursts. Under -dev the stress run and e2e
+	// send faster than that.
+	var messageLimit roomws.MessageLimit
+	if !cfg.dev {
+		messageLimit = roomws.MessageLimit{PerSecond: 20, Burst: 60}
+	}
+
+	var builds roomws.Builds
+	if !cfg.dev {
+		builds = roomws.Builds{Room: ui.Version("dist/room.js"), Bestiary: ui.Version("dist/bestiary.js")}
+	}
+
 	wsServer := roomws.NewServer(&roomws.Dependencies{
-		Models:   m,
-		Gamedata: catalog,
-		InfoLog:  infoLog,
-		DebugLog: debugLog,
-		ErrorLog: errorLog,
-		BaseURL:  os.Getenv("BASE_URL"),
+		Debug:        cfg.debug,
+		Models:       m,
+		Gamedata:     catalog,
+		InfoLog:      infoLog,
+		DebugLog:     debugLog,
+		ErrorLog:     errorLog,
+		BaseURL:      os.Getenv("BASE_URL"),
+		MessageLimit: messageLimit,
+		Builds:       builds,
 	})
 
 	app := webapp.NewApplication(&webapp.Dependencies{
 		Debug:          cfg.debug,
+		Dev:            cfg.dev,
 		ErrorLog:       errorLog,
 		InfoLog:        infoLog,
 		Models:         m,
@@ -183,7 +209,13 @@ func main() {
 		BaseURL:        os.Getenv("BASE_URL"),
 		Gamedata:       catalog,
 		Mailer:         mailer,
+		ExportDir:      cfg.export.dir,
+		ExportWorkers:  cfg.export.workers,
 	})
+	app.Forum, err = forum.New(pool, os.Getenv("BASE_URL"), app.ForumHost())
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	if err := serve(app, cfg, lifeLog); err != nil {
 		errorLog.Fatal(err)

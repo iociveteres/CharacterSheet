@@ -3,5 +3,6 @@
 import { connectSocket } from '../socket';
 
 const roomId = document.getElementById('room')?.dataset.roomId;
-if (roomId) connectSocket(`/room/ws/${roomId}`);
+// The room's state answers 404 once the user is no longer in the room.
+if (roomId) connectSocket(`/room/ws/${roomId}`, `/room/state/${roomId}`);
 else console.error('Room ID not found');

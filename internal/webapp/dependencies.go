@@ -14,7 +14,9 @@ import (
 )
 
 type Dependencies struct {
-	Debug          bool
+	Debug bool
+	// Dev is the -dev flag: it adds the routes e2e needs, such as /dev/account-jobs/run.
+	Dev            bool
 	ErrorLog       *log.Logger
 	InfoLog        *log.Logger
 	Models         models.Models
@@ -25,6 +27,11 @@ type Dependencies struct {
 	BaseURL        string
 	Gamedata       gamedata.Catalogs
 	Mailer         MailSender
+	Forum          ForumService
+	// ExportDir is where the archives of the data exports are written (data_export.go);
+	// ExportWorkers is how many are built at once, none in tests that start no workers.
+	ExportDir     string
+	ExportWorkers int
 }
 
 // MailSender is mailer.Mailer; tests put a fake in its place.
@@ -37,14 +44,21 @@ type Application struct {
 	*Dependencies
 	wg          sync.WaitGroup
 	onlineUsers atomic.Int64
+	limits      *limiters
+	// accountJobs lets one pass of the account jobs run at a time: the ticker's and the -dev
+	// route's would send a reminder twice.
+	accountJobs sync.Mutex
+	// exportWake wakes an idle worker of the data exports when one is queued.
+	exportWake chan struct{}
 }
 
 func NewApplication(deps *Dependencies) *Application {
-	return &Application{Dependencies: deps}
+	return &Application{Dependencies: deps, limits: newLimiters(), exportWake: make(chan struct{}, 1)}
 }
 
-// Wait blocks until background tasks started via app.background and the
-// online-users updater have finished. cmd/web calls this during shutdown.
+// Wait blocks until background tasks started via app.background, the
+// online-users updater, the limit sweeper and the account jobs have finished. cmd/web calls
+// this during shutdown.
 func (app *Application) Wait() {
 	app.wg.Wait()
 }

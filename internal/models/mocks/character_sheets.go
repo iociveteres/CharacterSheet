@@ -65,7 +65,12 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind models.SheetKind) (int, error) {
 	return 1, nil
 }
+
+// InsertWithContent refuses content the content_size check of the database would.
 func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind models.SheetKind, content json.RawMessage) (int, error) {
+	if len(content) > 524288 {
+		return 0, models.ErrSheetTooLarge
+	}
 	return 1, nil
 }
 func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) ([]int, error) {

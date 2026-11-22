@@ -325,8 +325,7 @@ func TestQuotaCountsPortraits(t *testing.T) {
 	}
 
 	// Past the quota, a new image of an NPC is rejected and nothing changes.
-	r.exec(`INSERT INTO character_sheets (owner_id, collection_id, content)
-        VALUES ($1, $2, jsonb_build_object('filler', $3::text))`, r.gm, c, incompressible(QuotaBytes-int(used())-1000))
+	r.fill(r.gm, "collection_id", c, QuotaBytes-int(used())-1000)
 	npc := s.Participants[0].SheetID
 	_, err := r.portraits().Put(r.ctx, r.gm, npc, "image/webp", []byte(incompressible(2000)))
 	var quota *QuotaError

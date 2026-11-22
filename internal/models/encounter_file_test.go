@@ -234,7 +234,10 @@ func TestLoadEncounterFile(t *testing.T) {
 	// The whole file or nothing.
 	encounters := r.count(`SELECT count(*) FROM encounters`)
 	sheets := r.count(`SELECT count(*) FROM character_sheets`)
-	big := npcFile(1, "Small", incompressible(QuotaBytes))
+	big := npcFile(1, "Small")
+	for range QuotaBytes/(400<<10) + 1 {
+		big.Npcs = append(big.Npcs, npcFile(1, incompressible(400<<10)).Npcs...)
+	}
 	var quota *QuotaError
 	if _, err := r.encounters.Load(r.ctx, r.gm, r.room, r.reread(big), "en"); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
@@ -347,20 +350,22 @@ func TestReplaceNpcs(t *testing.T) {
 		t.Errorf("groups %+v", replaced.Groups)
 	}
 
-	// The NPCs it replaces free their place in the quota.
-	big := npcFile(1, incompressible(QuotaBytes*2/3))
+	// The NPCs it replaces free their place in the quota; each NPC fits a sheet.
+	big := npcFile(1)
+	for range QuotaBytes*2/3/(400<<10) + 1 {
+		big.Npcs = append(big.Npcs, npcFile(1, incompressible(400<<10)).Npcs...)
+	}
 	replaced = r.must(r.encounters.ReplaceNpcs(r.ctx, r.ref(replaced), r.reread(big)))
 	replaced = r.must(r.encounters.ReplaceNpcs(r.ctx, r.ref(replaced), r.reread(big)))
 	var quota *QuotaError
-	r.exec(`INSERT INTO character_sheets (owner_id, encounter_id, content) VALUES ($1, $2, jsonb_build_object('filler', $3::text))`,
-		r.gm, r.create("Other").ID, incompressible(QuotaBytes/2))
+	r.fill(r.gm, "encounter_id", r.create("Other").ID, QuotaBytes/2)
 	if _, err := r.encounters.ReplaceNpcs(r.ctx, r.ref(replaced), r.reread(big)); !errors.As(err, &quota) {
 		t.Fatalf("got %v, want a QuotaError", err)
 	}
 	if quota.Adding < QuotaBytes*2/3 || quota.Used > QuotaBytes/2+QuotaBytes/100 {
 		t.Errorf("quota error %+v: Used should leave out the NPCs replaced", quota)
 	}
-	if got := r.must(r.encounters.Get(r.ctx, r.gm, s.ID)); len(npcNames(got)) != 1 {
+	if got := r.must(r.encounters.Get(r.ctx, r.gm, s.ID)); len(npcNames(got)) != len(big.Npcs) {
 		t.Errorf("a refused file changed the NPCs: %v", npcNames(got))
 	}
 

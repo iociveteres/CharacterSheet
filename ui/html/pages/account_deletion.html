@@ -1,0 +1,16 @@
+{{define "title"}}{{t .Lang "site.account.delete.pendingTitle"}}{{end}}
+{{define "main"}}
+{{- /* The grace page of an account scheduled for deletion (internal/webapp/account_deletion.go). */}}
+<div class="account-page">
+<h2>{{t .Lang "site.account.delete.pendingTitle"}}</h2>
+<form class="account-section account-delete" method="POST" action='{{reverseRev "AccountDeletionCancel"}}'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    <p>{{t .Lang "site.account.delete.pending" "date" (humanDate .Lang .DeleteAt .TimeZone)}}</p>
+    <p>{{t .Lang "site.account.delete.pendingHint"}}</p>
+    <div class="delete-actions">
+        <input type='submit' value='{{t .Lang "site.account.delete.cancel"}}'>
+        <a class="button secondary" href='{{reverseRev "AccountExport"}}'>{{t .Lang "site.account.export.open"}}</a>
+    </div>
+</form>
+</div>
+{{end}}

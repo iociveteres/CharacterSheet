@@ -1,0 +1,48 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a><span class="sep">›</span><a href="/forum/mod/sections">{{t .Lang "forum.moderation.sections"}}</a></nav>
+
+    <div class="forum-head"><div class="forum-head-text"><h2>
+        {{- if .Section.ID}}{{t .Lang "forum.moderation.editSection"}}{{else}}{{t .Lang "forum.moderation.newSection"}}{{end -}}
+    </h2></div></div>
+
+    {{- /* A new section (no id) or an existing one (section_moderation.go). The name is one text, as
+         typed, in every language (decision 3 of the plan). */}}
+    <form class="forum-form forum-panel forum-mod-form" method="POST"
+        action="{{if .Section.ID}}/forum/mod/sections/{{.Section.ID}}/edit{{else}}/forum/mod/sections/new{{end}}">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <label class="field-label" for="forum-section-name">{{t .Lang "common.name"}}</label>
+        <input type="text" id="forum-section-name" name="name" value="{{.Form.Name}}" required
+            {{- if .Form.Errors.name}} aria-invalid="true" aria-describedby="forum-section-name-error"{{end}}>
+        {{with .Form.Errors.name}}<span class="error field-error" id="forum-section-name-error">{{.}}</span>{{end}}
+
+        <label class="field-label" for="forum-section-description">{{t .Lang "forum.moderation.sectionDescription"}}</label>
+        <textarea class="forum-reason" id="forum-section-description" name="description" rows="3"
+            {{- with .Form.Errors.description}} aria-invalid="true" aria-describedby="forum-section-description-error"{{end}}>{{.Form.Description}}</textarea>
+        {{with .Form.Errors.description}}<span class="error field-error" id="forum-section-description-error">{{.}}</span>{{end}}
+
+        {{- /* Inside which section of the top level: one level only, so a parent's field is off
+             (section_moderation.go, lockFamily checks it again). */}}
+        <label class="field-label" for="forum-section-parent">{{t .Lang "forum.moderation.parent"}}</label>
+        <select id="forum-section-parent" name="parent"
+            {{- if .HasChildren}} disabled aria-describedby="forum-section-parent-note"
+            {{- else if .Form.Errors.parent}} aria-invalid="true" aria-describedby="forum-section-parent-error"{{end}}>
+            <option value="">{{t .Lang "forum.moderation.topLevel"}}</option>
+            {{- range .Parents}}
+            <option value="{{.ID}}"{{if eq .ID $.Form.Parent}} selected{{end}}>{{.Name}}</option>
+            {{- end}}
+        </select>
+        {{- if .HasChildren}}
+        <span class="meta forum-field-note" id="forum-section-parent-note">{{t .Lang "forum.moderation.parentLocked"}}</span>
+        {{- end}}
+        {{with .Form.Errors.parent}}<span class="error field-error" id="forum-section-parent-error">{{.}}</span>{{end}}
+
+        <label class="forum-check"><input type="checkbox" name="mods_only_topics" value="1"{{if .Form.ModsOnlyTopics}} checked{{end}}>
+            {{t .Lang "forum.moderation.modsOnlyTopics"}}</label>
+
+        <div class="forum-form-buttons">
+            <a class="f-btn f-secondary" href="/forum/mod/sections">{{t .Lang "common.cancel"}}</a>
+            <button type="submit" class="f-btn f-primary">{{if .Section.ID}}{{t .Lang "common.save"}}{{else}}{{t .Lang "common.create"}}{{end}}</button>
+        </div>
+    </form>
+</div>

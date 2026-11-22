@@ -145,7 +145,6 @@ func (app *Application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.WSServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -293,7 +292,6 @@ func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.CharacterSheet = sheetView.CharacterSheet
 	data.CanEditSheet = sheetView.CanEdit
 
-	app.WSServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -324,7 +322,9 @@ func (app *Application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.WSServer.NewPlayerHandler(app.WSServer.HubMap[roomID], userID, user.Name, user.CreatedAt)
+	if hub := app.WSServer.RoomHub(roomID); hub != nil {
+		app.WSServer.NewPlayerHandler(hub, userID, user.Name, user.CreatedAt)
+	}
 
 	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(roomID)), http.StatusSeeOther)
 }

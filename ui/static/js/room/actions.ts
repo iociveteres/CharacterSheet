@@ -91,6 +91,10 @@ export async function importSheet(file: File | undefined): Promise<void> {
         const response = await fetch("/sheet/import", { method: "POST", body: form });
         if (response.ok) {
             setModal("import", false);
+        } else if (response.status === 413) {
+            await confirm(t("room.modals.import.tooLarge"));
+        } else if (response.status === 429) {
+            await confirm(t("room.modals.import.rateLimited"));
         } else {
             await confirm(t("room.modals.import.failed"));
         }

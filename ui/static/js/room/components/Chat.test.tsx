@@ -200,6 +200,15 @@ describe("the messages", () => {
         ]);
     });
 
+    it("name the author of a deleted account, whose name is empty", () => {
+        act(() => {
+            chat.value = { messages: [{ ...message(1, 7), userName: "" }], hasMore: false };
+        });
+
+        expect($(".author-name")!.textContent).not.toBe("");
+        expect($$(".message-body").map(m => m.textContent)).toEqual(["m1"]);
+    });
+
     it("have a delete menu for the gamemaster only", async () => {
         act(() => {
             chat.value = { messages: [message(1, 2)], hasMore: false };

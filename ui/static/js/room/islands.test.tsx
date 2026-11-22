@@ -12,6 +12,7 @@ beforeAll(() => {
     document.body.innerHTML = `
         <div class="room" id="room">
             <div class="toasts" id="toasts"></div>
+            <div id="connection-bar"></div>
             <div id="character-sheet-container"></div>
             <div id="encounter"></div>
             <div id="initiative-window"></div>

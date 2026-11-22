@@ -1,0 +1,58 @@
+{{define "title"}}{{t .Lang "site.account.export.title"}}{{end}}
+{{define "main"}}
+{{- /* The export of the user's data (internal/webapp/data_export.go): plain HTML with forms and no
+     JS. While the archive is queued or being built, base.html reloads the page (Head.Refresh). */}}
+<div class="account-page">
+<h2>{{t .Lang "site.account.export.title"}}</h2>
+{{with .Export}}
+<section class="account-section account-export" data-state="{{.State}}">
+    {{if eq .State "queued"}}
+    <p>{{if .Ahead}}{{t $.Lang "site.account.export.queued" "count" .Ahead}}{{else}}{{t $.Lang "site.account.export.queuedNext"}}{{end}}</p>
+    <p>{{t $.Lang "site.account.export.waitHint"}}</p>
+    {{else if eq .State "building"}}
+    <p>{{t $.Lang "site.account.export.building"}}</p>
+    <p>{{t $.Lang "site.account.export.waitHint"}}</p>
+    {{else if eq .State "ready"}}
+    <div class="delete-actions">
+        <a class="button" href='{{reverseRev "AccountExportDownload"}}'>{{t $.Lang "site.account.export.downloadArchive" "size" .Size}}</a>
+    </div>
+    <p>{{t $.Lang "site.account.export.availableUntil" "date" (humanDate $.Lang .AvailableUntil $.TimeZone)}}</p>
+    {{if .NextAt.IsZero}}
+    <form method="POST" action='{{reverseRev "AccountExport"}}'>
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        <div class="delete-actions">
+            <input type='submit' class="secondary" value='{{t $.Lang "site.account.export.rebuild"}}'>
+        </div>
+    </form>
+    {{else}}
+    <p>{{t $.Lang "site.account.export.nextAt" "date" (humanDate $.Lang .NextAt $.TimeZone)}}</p>
+    {{end}}
+    {{else}}
+    {{if eq .State "failed"}}
+    <p class="error">{{t $.Lang "site.account.export.failed"}}</p>
+    {{else}}
+    <p>{{t $.Lang "site.account.export.contents"}}</p>
+    <ul>
+        <li>{{t $.Lang "site.account.export.contentsAccount"}}</li>
+        <li>{{t $.Lang "site.account.export.contentsSheets"}}</li>
+        <li>{{t $.Lang "site.account.export.contentsBestiary"}}</li>
+        <li>{{t $.Lang "site.account.export.contentsChat"}}</li>
+        <li>{{t $.Lang "site.account.export.contentsForum"}}</li>
+    </ul>
+    <p>{{t $.Lang "site.account.export.contentsNot"}}</p>
+    {{end}}
+    <form method="POST" action='{{reverseRev "AccountExport"}}'>
+        <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+        <div class="delete-actions">
+            <input type='submit' value='{{if eq .State "failed"}}{{t $.Lang "site.account.export.retry"}}{{else}}{{t $.Lang "site.account.export.prepare"}}{{end}}'>
+        </div>
+    </form>
+    {{end}}
+    <p class="export-back">
+        {{if $.IsAuthenticated}}<a href='{{reverseRev "AccountView"}}'>{{t $.Lang "site.account.export.backAccount"}}</a>
+        {{else}}<a href='{{reverseRev "AccountDeletion"}}'>{{t $.Lang "site.account.export.backDeletion"}}</a>{{end}}
+    </p>
+</section>
+{{end}}
+</div>
+{{end}}

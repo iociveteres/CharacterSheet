@@ -37,7 +37,7 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "name", i18n.T(lang, "server.errors.form.blank"))
+	form.Name = checkName(&form.Validator, lang, form.Name)
 	form.Check(validator.NotBlank(form.Email), "email", i18n.T(lang, "server.errors.form.blank"))
 	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", i18n.T(lang, "server.errors.form.email"))
 	form.Check(validator.NotBlank(form.Password), "password", i18n.T(lang, "server.errors.form.blank"))
@@ -52,14 +52,18 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := app.Models.Users.Insert(r.Context(), form.Name, form.Email, form.Password, lang)
 	if err != nil {
-		if errors.Is(err, models.ErrDuplicateEmail) {
+		switch {
+		case errors.Is(err, models.ErrDuplicateEmail):
 			form.AddError("email", i18n.T(lang, "server.errors.form.emailInUse"))
-			data := app.newTemplateData(r)
-			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
-		} else {
+		case errors.Is(err, models.ErrDuplicateName):
+			nameTaken(&form.Validator, lang)
+		default:
 			app.serverError(w, err)
+			return
 		}
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
 		return
 	}
 
@@ -143,8 +147,15 @@ func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
+// resendVerificationForm is a button only; the form carries an error when the
+// resend is refused.
+type resendVerificationForm struct {
+	validator.Validator `form:"-"`
+}
+
 func (app *Application) userResendVerification(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
+	data.Form = resendVerificationForm{}
 
 	app.render(w, http.StatusOK, "resend_verification.html", "base", data)
 }
@@ -161,9 +172,8 @@ func (app *Application) userResendVerificationPost(w http.ResponseWriter, r *htt
 	err := app.Models.Tokens.DeleteAllForUser(r.Context(), models.ScopeVerification, userID)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
-
-	app.Models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 
 	token, err := app.Models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
@@ -243,11 +253,10 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 
 	user, err := app.Models.Users.GetByEmail(r.Context(), form.Email)
 	if err != nil {
-		// early exit if no such user
-		// do not disclose it doesn't exist
+		// No such user: answered as if the link went out, so the page does
+		// not tell which emails have an account.
 		if errors.Is(err, models.ErrNoRecord) {
-			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkSent"))
-			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+			app.passwordResetRequested(w, r)
 		} else {
 			app.serverError(w, err)
 		}
@@ -257,6 +266,7 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 	err = app.Models.Tokens.DeleteAllForUser(r.Context(), models.ScopeChangePassword, user.ID)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
 
 	token, err := app.Models.Tokens.New(r.Context(), user.ID, 4*time.Hour, models.ScopeChangePassword)
@@ -277,13 +287,16 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		}
 	})
 
+	app.passwordResetRequested(w, r)
+}
+
+func (app *Application) passwordResetRequested(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkSent"))
-	userAuthenticated := app.SessionManager.Exists(r.Context(), "authenticatedUserID")
-	if userAuthenticated {
+	if app.SessionManager.Exists(r.Context(), "authenticatedUserID") {
 		http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
 		return
 	}
-
 	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
@@ -340,26 +353,35 @@ func (app *Application) accountPasswordResetPost(w http.ResponseWriter, r *http.
 	}
 
 	userID, err := app.Models.Users.PasswordReset(r.Context(), form.Token, form.NewPassword)
-	if err != nil {
-		switch {
-		case errors.Is(err, models.ErrNoRecord):
-			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkInvalid"))
-			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
-		default:
-			app.serverError(w, err)
-		}
+	if errors.Is(err, models.ErrNoRecord) {
+		app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordLinkInvalid"))
+		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		return
 	}
-
-	err = app.SessionManager.RenewToken(r.Context())
-	if err != nil {
+	if err != nil && !errors.Is(err, models.ErrDeletionScheduled) && !errors.Is(err, models.ErrUserNotActivated) {
 		app.serverError(w, err)
 		return
 	}
-	app.SessionManager.Put(r.Context(), "authenticatedUserID", userID)
-	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordReset"))
 
-	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
+	if err := app.SessionManager.RenewToken(r.Context()); err != nil {
+		app.serverError(w, err)
+		return
+	}
+	// The password is changed whatever the status; only a confirmed account signs in, the others
+	// get the page a login with the new password would bring them to.
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.passwordReset"))
+	switch {
+	case errors.Is(err, models.ErrDeletionScheduled):
+		app.SessionManager.Put(r.Context(), deletionPendingKey, userID)
+		http.Redirect(w, r, reverse.Rev("AccountDeletion"), http.StatusSeeOther)
+	case errors.Is(err, models.ErrUserNotActivated):
+		app.SessionManager.Put(r.Context(), "resendUserID", userID)
+		http.Redirect(w, r, reverse.Rev("UserResendVerification"), http.StatusSeeOther)
+	default:
+		app.SessionManager.Remove(r.Context(), deletionPendingKey)
+		app.SessionManager.Put(r.Context(), "authenticatedUserID", userID)
+		http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
+	}
 }
 
 type userLoginForm struct {
@@ -412,6 +434,17 @@ func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			app.SessionManager.Put(r.Context(), "resendUserID", id)
 
 			http.Redirect(w, r, reverse.Rev("UserResendVerification"), http.StatusSeeOther)
+		} else if errors.Is(err, models.ErrDeletionScheduled) {
+			// The right password of an account in its grace period: the grace page, not a
+			// sign-in (plan _prd/account_deletion, section 5.1, step 4).
+			err = app.SessionManager.RenewToken(r.Context())
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			app.SessionManager.Remove(r.Context(), "authenticatedUserID")
+			app.SessionManager.Put(r.Context(), deletionPendingKey, id)
+			http.Redirect(w, r, reverse.Rev("AccountDeletion"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -428,6 +461,7 @@ func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// Add the ID of the current user to the session, so that they are now
 	// 'logged in'.
 	app.SessionManager.Put(r.Context(), "authenticatedUserID", id)
+	app.SessionManager.Remove(r.Context(), deletionPendingKey)
 
 	path := app.SessionManager.PopString(r.Context(), "redirectPathAfterLogin")
 	if path != "" {

@@ -9,12 +9,14 @@ import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
 import { editRights, listCharacters, type Folder, type Player, type Sheet } from "./characters";
 import { readPanelVisible } from "./panel";
 import { setCsrfToken } from "../bestiary/api";
+import type { ConnectionLostReason } from "../socket";
 
 export interface Modals {
     invite: boolean;
     import: boolean;
     kicked: boolean;
-    connectionLost: boolean;
+    /** Why socket.ts stopped reconnecting; false while it has not. */
+    connectionLost: false | ConnectionLostReason;
 }
 
 export interface Chat {

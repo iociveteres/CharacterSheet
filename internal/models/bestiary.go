@@ -560,7 +560,7 @@ func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, cr
                 VALUES ($1, `+fileAuthor+`, $3, $4, jsonb_set($5::jsonb, '`+lastInitiativePath+`', '0'), now(), now())`,
 				userID, c.author, collectionID, c.kind, c.content)
 			if err != nil {
-				return err
+				return sheetTooLarge(err)
 			}
 		}
 		if err := checkQuota(ctx, tx, userID, before); err != nil {

@@ -6,7 +6,7 @@ import { SheetContext, type SheetEnv } from "./components/context";
 import type { SheetInstance } from "./instance";
 import type { Autocomplete } from "./autocomplete";
 import type { SheetUiState } from "./core/ui";
-import { online } from "./connection";
+import { writable } from "./connection";
 import { t } from "../i18n";
 
 // Items whose inputs Enter walks through.
@@ -58,7 +58,7 @@ export function Sheet({ env, Layout, Controls }: SheetProps) {
             <div ref={container} class="container" onKeyDown={e => focusNextField(env.ui, e)}>
                 <div class="wrapper">
                     <div class="controls-block">
-                        {env.editable.value && online.value && (
+                        {env.editable.value && writable.value && (
                             <button class="toggle-delete-mode" id="toggle-delete-mode" title={t("sheet.view.deleteModeTitle")}
                                 onClick={toggleDeletionMode}>
                                 {t("sheet.view.deleteMode")}

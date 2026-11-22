@@ -1,11 +1,13 @@
 package roomws
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -16,8 +18,15 @@ import (
 // roomServer serves room 1 over WebSocket; each dial joins it as a new client.
 func roomServer(t *testing.T) (*Server, func() *websocket.Conn) {
 	t.Helper()
+	return roomServerWith(t, Dependencies{})
+}
+
+// roomServerWith is roomServer with deps, quiet logs added.
+func roomServerWith(t *testing.T, deps Dependencies) (*Server, func() *websocket.Conn) {
+	t.Helper()
 	quiet := log.New(io.Discard, "", 0)
-	server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet})
+	deps.InfoLog, deps.ErrorLog = quiet, quiet
+	server := NewServer(&deps)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.SheetWs(1, 1, w, r)
 	}))
@@ -72,7 +81,7 @@ func TestReadPumpDoesNotRelayUnknownTypes(t *testing.T) {
 	server, dial := roomServer(t)
 	sender, other := dial(), dial()
 
-	hub := server.GetOrInitHub(1)
+	hub := server.RoomHub(1)
 	for deadline := time.Now().Add(5 * time.Second); hub.OnlineCount() < 2; time.Sleep(10 * time.Millisecond) {
 		if time.Now().After(deadline) {
 			t.Fatalf("clients registered: %d, want 2", hub.OnlineCount())
@@ -101,4 +110,248 @@ func TestReadPumpDoesNotRelayUnknownTypes(t *testing.T) {
 	if string(got) != marker {
 		t.Fatalf("other client got %s, want only the marker", got)
 	}
+}
+
+// A handler that panics must not take the server down: the sender gets an
+// internal error for that message and the connection serves the next one.
+func TestReadPumpSurvivesPanickingHandler(t *testing.T) {
+	server, dial := roomServer(t)
+	hub := server.acquireRoomHub(1)
+	t.Cleanup(func() { server.release(hub) })
+	// Under the lock SheetWs takes before readPump reads the map.
+	server.mu.Lock()
+	hub.handlers = map[string]wsHandler{
+		"boom": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			var m map[string]int
+			m["x"] = 1
+		},
+		"ping": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			hub.ReplyToClient(client, server.wsOK("e2", -1))
+		},
+	}
+	server.mu.Unlock()
+	conn := dial()
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"boom","eventID":"e1"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if resp := readResponse(t, conn); resp.OK || resp.EventID != "e1" || resp.Code != "internal" {
+		t.Fatalf("got %+v, want an internal error for e1", resp)
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"ping","eventID":"e2"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if resp := readResponse(t, conn); !resp.OK || resp.EventID != "e2" {
+		t.Fatalf("got %+v, want OK for e2", resp)
+	}
+}
+
+// Messages past the burst are refused one by one with rateLimited, without
+// reaching their handler or closing the connection; after a pause they pass.
+func TestReadPumpRefusesMessagesPastTheLimit(t *testing.T) {
+	server, dial := roomServerWith(t, Dependencies{MessageLimit: MessageLimit{PerSecond: 5, Burst: 3}})
+	hub := server.acquireRoomHub(1)
+	t.Cleanup(func() { server.release(hub) })
+	handled := 0
+	server.mu.Lock()
+	hub.handlers = map[string]wsHandler{
+		"ping": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			handled++
+			var msg struct{ EventID string }
+			json.Unmarshal(raw, &msg)
+			hub.ReplyToClient(client, server.wsOK(msg.EventID, -1))
+		},
+	}
+	server.mu.Unlock()
+	conn := dial()
+
+	// writePump joins replies queued together into one frame, a line each.
+	var queued []string
+	next := func() WSResponse {
+		t.Helper()
+		for len(queued) == 0 {
+			conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+			_, frame, err := conn.ReadMessage()
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			queued = strings.Split(string(frame), "\n")
+		}
+		var resp WSResponse
+		if err := json.Unmarshal([]byte(queued[0]), &resp); err != nil {
+			t.Fatalf("unmarshal %q: %v", queued[0], err)
+		}
+		queued = queued[1:]
+		return resp
+	}
+	ping := func(eventID string) {
+		t.Helper()
+		if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"ping","eventID":"`+eventID+`"}`)); err != nil {
+			t.Fatalf("write: %v", err)
+		}
+	}
+
+	// Written at once, so no token comes back in between.
+	for _, id := range []string{"e1", "e2", "e3", "e4", "e5"} {
+		ping(id)
+	}
+	for _, want := range []struct {
+		id string
+		ok bool
+	}{{"e1", true}, {"e2", true}, {"e3", true}, {"e4", false}, {"e5", false}} {
+		resp := next()
+		if resp.EventID != want.id || resp.OK != want.ok || (!want.ok && resp.Code != "rateLimited") {
+			t.Fatalf("got %+v, want %s answered OK=%v (rateLimited if not)", resp, want.id, want.ok)
+		}
+	}
+
+	// A token every 200 ms.
+	time.Sleep(250 * time.Millisecond)
+	ping("e6")
+	if resp := next(); !resp.OK || resp.EventID != "e6" {
+		t.Fatalf("after a pause got %+v, want OK for e6", resp)
+	}
+	// Read after the replies, which come once readPump has called the handler.
+	if handled != 4 {
+		t.Fatalf("handler called %d times, want 4: refused messages must not reach it", handled)
+	}
+}
+
+func waitFor(t *testing.T, what string, done func() bool) {
+	t.Helper()
+	for deadline := time.Now().Add(5 * time.Second); !done(); time.Sleep(5 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting until %s", what)
+		}
+	}
+}
+
+// The hub of a room no one is in stops with its goroutine and leaves the map.
+func TestHubStopsWithItsLastClient(t *testing.T) {
+	server, dial := roomServer(t)
+	before := runtime.NumGoroutine()
+
+	conn := dial()
+	waitFor(t, "the client registers", func() bool {
+		hub := server.RoomHub(1)
+		return hub != nil && hub.OnlineCount() == 1
+	})
+	conn.Close()
+
+	waitFor(t, "the hub is gone", func() bool { return server.RoomHub(1) == nil })
+	waitFor(t, "the goroutines end", func() bool { return runtime.NumGoroutine() <= before })
+}
+
+// The tabs of a user's bestiary share one hub, released the same way.
+func TestBestiaryHubStopsWithItsLastTab(t *testing.T) {
+	quiet := log.New(io.Discard, "", 0)
+	server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.BestiaryWs(7, w, r)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("BASE_URL", srv.URL)
+
+	conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {srv.URL}})
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	if server.bestiaryHub(7) == nil {
+		t.Fatal("no hub for the open tab")
+	}
+	conn.Close()
+	waitFor(t, "the hub is gone", func() bool { return server.bestiaryHub(7) == nil })
+}
+
+// One client leaving does not stop the hub the other one is still in.
+func TestHubOutlivesAClientThatLeaves(t *testing.T) {
+	server, dial := roomServer(t)
+	leaving, staying := dial(), dial()
+	hub := server.RoomHub(1)
+	waitOnline(t, hub, 2)
+
+	leaving.Close()
+	waitOnline(t, hub, 1)
+	if got := server.RoomHub(1); got != hub {
+		t.Fatalf("room hub is %p, want %p", got, hub)
+	}
+
+	marker := `{"type":"marker"}`
+	hub.BroadcastAll([]byte(marker))
+	staying.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if _, got, err := staying.ReadMessage(); err != nil || string(got) != marker {
+		t.Fatalf("staying client got %s, %v; want the marker", got, err)
+	}
+}
+
+// A refused connection gives back the hub it took.
+func TestRefusedConnectionLeavesNoHub(t *testing.T) {
+	server, _ := roomServer(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.SheetWs(2, 1, w, r)
+	}))
+	t.Cleanup(srv.Close)
+
+	if _, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {"https://elsewhere"}}); err == nil {
+		t.Fatal("dial from another origin succeeded")
+	}
+	// The refusal reaches the dialer before SheetWs returns.
+	waitFor(t, "the hub is gone", func() bool { return server.RoomHub(2) == nil })
+}
+
+// firstMessage is the first message the server sends conn after the hub
+// broadcasts a marker: the hello when there is one, else the marker.
+func firstMessage(t *testing.T, hub *Hub, conn *websocket.Conn) string {
+	t.Helper()
+	waitOnline(t, hub, 1)
+	hub.BroadcastAll([]byte(`{"type":"marker"}`))
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, got, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	// writePump joins the messages it has queued with newlines.
+	first, _, _ := strings.Cut(string(got), "\n")
+	return first
+}
+
+// A tab learns from the first message which bundle the server's pages carry.
+func TestSocketSaysHelloWithTheBuildOfItsPage(t *testing.T) {
+	builds := Builds{Room: "r00m0001", Bestiary: "b0001ary"}
+
+	t.Run("room", func(t *testing.T) {
+		server, dial := roomServerWith(t, Dependencies{Builds: builds})
+		conn := dial()
+		if got, want := firstMessage(t, server.RoomHub(1), conn), `{"type":"hello","build":"r00m0001"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
+
+	t.Run("bestiary", func(t *testing.T) {
+		quiet := log.New(io.Discard, "", 0)
+		server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet, Builds: builds})
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server.BestiaryWs(7, w, r)
+		}))
+		t.Cleanup(srv.Close)
+		t.Setenv("BASE_URL", srv.URL)
+		conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {srv.URL}})
+		if err != nil {
+			t.Fatalf("dial: %v", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+		if got, want := firstMessage(t, server.bestiaryHub(7), conn), `{"type":"hello","build":"b0001ary"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
+
+	// Under -dev main.go passes no builds: the bundles change on disk.
+	t.Run("no builds", func(t *testing.T) {
+		server, dial := roomServer(t)
+		conn := dial()
+		if got, want := firstMessage(t, server.RoomHub(1), conn), `{"type":"marker"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
 }

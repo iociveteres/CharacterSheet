@@ -9,7 +9,7 @@
   "sheet.view.connectionRestored": { "en": "Connection restored", "ru": "Связь восстановлена" },
   "sheet.view.editFailed.permission": { "en": "Your change was not saved: you can no longer edit this sheet", "ru": "Изменение не сохранено: вы больше не можете редактировать этот лист" },
   "sheet.view.editFailed.destinationGone": { "en": "Your change was not saved: the item it was moved into was deleted", "ru": "Изменение не сохранено: элемент, в который его перенесли, удалён" },
-  "sheet.view.editFailed.tooLarge": { "en": "Your change was not saved: it is larger than 32 KB", "ru": "Изменение не сохранено: оно больше 32 КБ" },
+  "sheet.view.editFailed.tooLarge": { "en": "Your change was not saved: the sheet has grown too large", "ru": "Изменение не сохранено: лист стал слишком большим" },
   "sheet.view.editFailed.offline": { "en": "Your change was not saved: there is no connection to the server", "ru": "Изменение не сохранено: нет связи с сервером" },
   "sheet.view.editFailed.rejected": { "en": "Your change was not saved: the server rejected it", "ru": "Изменение не сохранено: сервер его отклонил" },
   "sheet.view.portrait.badImage": { "en": "Not a 360×480 WebP or JPEG image", "ru": "Нужно изображение WebP или JPEG размером 360×480" },
@@ -17,5 +17,7 @@
   "sheet.view.portrait.gone": { "en": "The sheet is gone", "ru": "Лист удалён" },
   "sheet.view.portrait.tooLarge": { "en": "The image is larger than 128 KB", "ru": "Изображение больше 128 КБ" },
   "sheet.view.portrait.offline": { "en": "There is no connection to the server", "ru": "Нет связи с сервером" },
-  "sheet.view.portrait.refused": { "en": "The server refused the portrait: {status}", "ru": "Сервер не принял портрет: {status}" }
+  "sheet.view.portrait.refused": { "en": "The server refused the portrait: {status}", "ru": "Сервер не принял портрет: {status}" },
+  "sheet.view.editFailed.messageTooLarge": { "en": "Your change was not saved: it is larger than 32 KB", "ru": "Изменение не сохранено: оно больше 32 КБ" },
+  "sheet.view.editFailed.rateLimited": { "en": "Your change was not saved: too many changes were sent at once", "ru": "Изменение не сохранено: слишком много изменений отправлено сразу" }
 }

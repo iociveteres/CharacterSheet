@@ -1,15 +1,101 @@
 package webapp
 
 import (
+	"context"
 	"mime"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
+	"charactersheet.iociveteres.net/internal/ratelimit"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
+
+// limiters hold back what costs the server: bcrypt on login, a mail sent, a
+// whole sheet written. Each counts by client address, the email in the form or
+// the user.
+type limiters struct {
+	loginPerAddress  *ratelimit.Limiter
+	loginPerEmail    *ratelimit.Limiter
+	signupPerAddress *ratelimit.Limiter
+	resendPerAddress *ratelimit.Limiter
+	resendPerUser    *ratelimit.Limiter
+	resetPerAddress  *ratelimit.Limiter
+	resetPerEmail    *ratelimit.Limiter
+	// Sheet import and the bestiary and encounter uploads share it.
+	uploadsPerUser *ratelimit.Limiter
+	// The email with the link of the account's deletion page.
+	deleteLinkPerUser *ratelimit.Limiter
+	// Renames of the Account page: the name history is not swollen by a script.
+	renamePerUser *ratelimit.Limiter
+	// The email with the link of an email change: three at once leave room for a wrong password.
+	emailChangePerUser *ratelimit.Limiter
+
+	all []*ratelimit.Limiter
+}
+
+func newLimiters() *limiters {
+	ls := &limiters{}
+	// n requests per period, burst of them at once.
+	add := func(n int, per time.Duration, burst int) *ratelimit.Limiter {
+		l := ratelimit.New(ratelimit.Every(n, per), burst)
+		ls.all = append(ls.all, l)
+		return l
+	}
+	ls.loginPerAddress = add(10, time.Minute, 5)
+	ls.loginPerEmail = add(5, time.Minute, 5)
+	ls.signupPerAddress = add(5, time.Hour, 5)
+	ls.resendPerAddress = add(3, time.Hour, 3)
+	ls.resendPerUser = add(3, time.Hour, 3)
+	ls.resetPerAddress = add(3, time.Hour, 3)
+	ls.resetPerEmail = add(3, time.Hour, 3)
+	ls.uploadsPerUser = add(20, time.Minute, 20)
+	ls.deleteLinkPerUser = add(1, 10*time.Minute, 1)
+	ls.renamePerUser = add(10, time.Hour, 10)
+	ls.emailChangePerUser = add(1, 10*time.Minute, 3)
+	return ls
+}
+
+// StartLimitSweeper forgets, once a minute, the clients that have their
+// requests back in full, until ctx is done.
+func (app *Application) StartLimitSweeper(ctx context.Context) {
+	ratelimit.StartSweeper(ctx, &app.wg, time.Minute, app.limits.all...)
+}
+
+// devLimitsReset gives every client of every limiter its burst back, for e2e: a scenario run
+// again within minutes would meet the limits of the run before. Only under -dev.
+func (app *Application) devLimitsReset(w http.ResponseWriter, r *http.Request) {
+	for _, l := range app.limits.all {
+		l.Reset()
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// formEmail counts every email alike, whether or not someone has it: a
+// refusal must not tell which do.
+func formEmail(r *http.Request) string {
+	return strings.ToLower(strings.TrimSpace(r.PostFormValue("email")))
+}
+
+func (app *Application) resendUser(r *http.Request) string {
+	if id := app.SessionManager.GetInt(r.Context(), "resendUserID"); id != 0 {
+		return strconv.Itoa(id)
+	}
+	return ""
+}
+
+// signedInUser counts by the signed-in user.
+func (app *Application) signedInUser(r *http.Request) string {
+	return strconv.Itoa(app.userID(r))
+}
+
+// maxFormBody bounds the forms of the auth pages, which nosurf reads whole for
+// the CSRF token before the handler runs.
+const maxFormBody = 64 * 1024
 
 func (app *Application) Routes() http.Handler {
 	router := httprouter.New()
@@ -27,34 +113,98 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness)
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 	router.HandlerFunc(http.MethodGet, "/stats/online", app.onlineUsersHandler)
+	if app.Dev {
+		// e2e runs the account jobs at once (account_jobs.go); production has no such route.
+		router.HandlerFunc(http.MethodPost, "/dev/account-jobs/run", app.devAccountJobsRun)
+		// e2e sends the email change form more often than emailChangePerUser lets a person.
+		router.HandlerFunc(http.MethodPost, "/dev/limits/reset", app.devLimitsReset)
+	}
 
 	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate, app.language)
+	// The body is bounded ahead of noSurf and the rate limited after it: a
+	// refused form is shown again with a CSRF token.
+	form := alice.New(app.limitBody(maxFormBody)).Extend(dynamic)
+	limits := app.limits
 
 	router.Handler(http.MethodGet, routeAdd("Home", "/"), dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, routeAdd("UserSignup", "/user/signup"), dynamic.ThenFunc(app.userSignup))
-	router.Handler(http.MethodPost, reverse.Get("UserSignup"), dynamic.ThenFunc(app.userSignupPost))
+	router.Handler(http.MethodPost, reverse.Get("UserSignup"), form.Append(
+		app.rateLimit(limits.signupPerAddress, clientAddress, refuseForm[userSignupForm](app, "signup.html")),
+	).ThenFunc(app.userSignupPost))
 
 	router.Handler(http.MethodGet, routeAdd("UserVerify", "/user/verify/token/:token", ":token"), dynamic.ThenFunc(app.userVerify))
-	router.Handler(http.MethodPost, reverse.Get("UserVerify"), dynamic.ThenFunc(app.userVerifyPost))
+	router.Handler(http.MethodPost, reverse.Get("UserVerify"), form.ThenFunc(app.userVerifyPost))
 
 	router.Handler(http.MethodGet, routeAdd("UserResendVerification", "/user/verify/resend"), dynamic.ThenFunc(app.userResendVerification))
-	router.Handler(http.MethodPost, reverse.Get("UserResendVerification"), dynamic.ThenFunc(app.userResendVerificationPost))
+	refuseResend := refuseForm[resendVerificationForm](app, "resend_verification.html")
+	router.Handler(http.MethodPost, reverse.Get("UserResendVerification"), form.Append(
+		app.rateLimit(limits.resendPerAddress, clientAddress, refuseResend),
+		app.rateLimit(limits.resendPerUser, app.resendUser, refuseResend),
+	).ThenFunc(app.userResendVerificationPost))
 
 	router.Handler(http.MethodGet, routeAdd("UserLogin", "/user/login"), dynamic.ThenFunc(app.userLogin))
-	router.Handler(http.MethodPost, reverse.Get("UserLogin"), dynamic.ThenFunc(app.userLoginPost))
+	refuseLogin := refuseForm[userLoginForm](app, "login.html")
+	router.Handler(http.MethodPost, reverse.Get("UserLogin"), form.Append(
+		app.rateLimit(limits.loginPerAddress, clientAddress, refuseLogin),
+		app.rateLimit(limits.loginPerEmail, formEmail, refuseLogin),
+	).ThenFunc(app.userLoginPost))
 
 	router.Handler(http.MethodGet, routeAdd("PasswordRequestReset", "/user/password/request-reset"), dynamic.ThenFunc(app.userPasswordRequestReset))
-	router.Handler(http.MethodPost, reverse.Get("PasswordRequestReset"), dynamic.ThenFunc(app.userPasswordRequestResetPost))
+	refuseReset := refuseForm[userPasswordRequesRestForm](app, "password_request_reset.html")
+	router.Handler(http.MethodPost, reverse.Get("PasswordRequestReset"), form.Append(
+		app.rateLimit(limits.resetPerAddress, clientAddress, refuseReset),
+		app.rateLimit(limits.resetPerEmail, formEmail, refuseReset),
+	).ThenFunc(app.userPasswordRequestResetPost))
 
 	router.Handler(http.MethodGet, routeAdd("About", "/about"), dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, routeAdd("Donate", "/donate"), dynamic.ThenFunc(app.donate))
+	router.Handler(http.MethodGet, routeAdd("Privacy", "/privacy"), dynamic.ThenFunc(app.privacy))
 	router.Handler(http.MethodPost, routeAdd("Language", "/language"), dynamic.ThenFunc(app.languagePost))
 
 	protected := dynamic.Append(app.requireAuthentication)
+	uploads := protected.Append(app.rateLimit(limits.uploadsPerUser, app.signedInUser, nil))
 	router.Handler(http.MethodGet, routeAdd("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodPut, "/account/name", protected.Append(
+		app.rateLimit(limits.renamePerUser, app.signedInUser, app.refuseRename),
+	).ThenFunc(app.accountNamePut))
+	router.Handler(http.MethodPut, "/account/avatar", protected.ThenFunc(app.avatarPut))
+	router.Handler(http.MethodDelete, "/account/avatar", protected.ThenFunc(app.avatarDelete))
+	router.Handler(http.MethodPost, routeAdd("AvatarDelete", "/account/avatar/delete"), protected.ThenFunc(app.avatarDeletePost))
+	// Public: no session, no CSRF; anyone may see an avatar (internal/webapp/avatars.go).
+	router.HandlerFunc(http.MethodGet, "/avatar/:hash", app.avatarGet)
+
+	// The email change (email_change.go): the form, its cancel on the Account page, and the pages of
+	// the links of the emails, which need no sign-in. The form counts its limit itself.
+	router.Handler(http.MethodGet, routeAdd("AccountEmail", "/account/email"), protected.ThenFunc(app.accountEmail))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmail"), alice.New(app.limitBody(maxFormBody)).Extend(protected).ThenFunc(app.accountEmailPost))
+	router.Handler(http.MethodPost, routeAdd("AccountEmailCancel", "/account/email/cancel"), protected.ThenFunc(app.accountEmailCancelPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailOld", "/account/email/old/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailOld))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailOld"), form.ThenFunc(app.accountEmailOldPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailNew", "/account/email/new/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailNew))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailNew"), form.ThenFunc(app.accountEmailNewPost))
+	router.Handler(http.MethodGet, routeAdd("AccountEmailRevert", "/account/email/revert/token/:token", ":token"), dynamic.ThenFunc(app.accountEmailRevert))
+	router.Handler(http.MethodPost, reverse.Get("AccountEmailRevert"), form.ThenFunc(app.accountEmailRevertPost))
+
+	// The deletion of the account (account_deletion.go): the email with the link, the deletion
+	// page of the link, the grace page and the cancel link of the email.
+	router.Handler(http.MethodPost, routeAdd("AccountDelete", "/account/delete"), protected.Append(
+		app.rateLimit(limits.deleteLinkPerUser, app.signedInUser, app.refuseDeleteLink),
+	).ThenFunc(app.accountDeletePost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeleteConfirm", "/account/delete/token/:token", ":token"), protected.ThenFunc(app.accountDeleteConfirm))
+	router.Handler(http.MethodPost, reverse.Get("AccountDeleteConfirm"), alice.New(app.limitBody(maxFormBody)).Extend(protected).ThenFunc(app.accountDeleteConfirmPost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeletion", "/account/deletion"), dynamic.ThenFunc(app.accountDeletion))
+	router.Handler(http.MethodPost, routeAdd("AccountDeletionCancel", "/account/deletion/cancel"), form.ThenFunc(app.accountDeletionCancelPost))
+	router.Handler(http.MethodGet, routeAdd("AccountDeletionCancelLink", "/account/deletion/cancel/token/:token", ":token"), dynamic.ThenFunc(app.accountDeletionCancelLink))
+	router.Handler(http.MethodPost, reverse.Get("AccountDeletionCancelLink"), form.ThenFunc(app.accountDeletionCancelLinkPost))
+
+	// The export of the user's data (data_export.go): for the signed-in user and for one in the
+	// grace period of a deletion, so the routes are not protected and check the user themselves.
+	router.Handler(http.MethodGet, routeAdd("AccountExport", "/account/export"), dynamic.ThenFunc(app.accountExport))
+	router.Handler(http.MethodPost, reverse.Get("AccountExport"), form.ThenFunc(app.accountExportPost))
+	router.Handler(http.MethodGet, routeAdd("AccountExportDownload", "/account/export/download"), dynamic.ThenFunc(app.accountExportDownload))
 
 	router.Handler(http.MethodGet, routeAdd("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
-	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), dynamic.ThenFunc(app.accountPasswordResetPost))
+	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), form.ThenFunc(app.accountPasswordResetPost))
 
 	router.Handler(http.MethodPost, routeAdd("UserLogout", "/user/logout"), protected.ThenFunc(app.userLogoutPost))
 
@@ -73,7 +223,7 @@ func (app *Application) Routes() http.Handler {
 
 	router.Handler(http.MethodGet, routeAdd("SheetView", "/sheet/view/:id"), protected.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, routeAdd("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
-	router.Handler(http.MethodPost, routeAdd("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
+	router.Handler(http.MethodPost, routeAdd("importSheet", "/sheet/import"), alice.New(app.limitBody(maxSheetBody)).Extend(uploads).ThenFunc(app.sheetImport))
 	router.Handler(http.MethodPut, "/sheet/portrait/:id", protected.ThenFunc(app.portraitPut))
 	router.Handler(http.MethodDelete, "/sheet/portrait/:id", protected.ThenFunc(app.portraitDelete))
 	router.Handler(http.MethodGet, "/portrait/:hash", protected.ThenFunc(app.portraitGet))
@@ -81,8 +231,8 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, routeAdd("EncounterView", "/encounter/:id", ":id"), protected.ThenFunc(app.encounterView))
 	// httprouter takes no static segment beside a parameter: /encounters/load, not /encounter/load.
 	router.Handler(http.MethodGet, "/encounter/:id/export", protected.ThenFunc(app.encounterExport))
-	router.Handler(http.MethodPost, "/encounter/:id/npcs", protected.ThenFunc(app.encounterReplaceNpcs))
-	router.Handler(http.MethodPost, "/encounters/load", protected.ThenFunc(app.encountersLoad))
+	router.Handler(http.MethodPost, "/encounter/:id/npcs", uploads.ThenFunc(app.encounterReplaceNpcs))
+	router.Handler(http.MethodPost, "/encounters/load", uploads.ThenFunc(app.encountersLoad))
 
 	router.Handler(http.MethodGet, routeAdd("Bestiary", "/bestiary"), protected.ThenFunc(app.bestiaryPage))
 	router.Handler(http.MethodGet, "/bestiary/collections", protected.ThenFunc(app.bestiaryGet))
@@ -95,7 +245,7 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodPut, "/bestiary/subscriptions/:id", protected.ThenFunc(app.subscriptionPut))
 	router.Handler(http.MethodDelete, "/bestiary/subscriptions/:id", protected.ThenFunc(app.subscriptionDelete))
 	router.Handler(http.MethodGet, "/bestiary/catalog", protected.ThenFunc(app.catalog))
-	router.Handler(http.MethodPost, "/bestiary/collections/:id/upload", protected.ThenFunc(app.collectionUpload))
+	router.Handler(http.MethodPost, "/bestiary/collections/:id/upload", uploads.ThenFunc(app.collectionUpload))
 	router.Handler(http.MethodGet, "/bestiary/creatures", protected.ThenFunc(app.creatureList))
 	router.Handler(http.MethodDelete, "/bestiary/creatures/:id", protected.ThenFunc(app.creatureDelete))
 	router.Handler(http.MethodPost, "/bestiary/creatures/:id/copy", protected.ThenFunc(app.creatureCopy))
@@ -105,6 +255,11 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, "/bestiary/ws", protected.ThenFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.WSServer.BestiaryWs(app.userID(r), w, r)
 	}))
+
+	// The forum routes inside its own ServeMux; its route names stay out of reverse.
+	forumHandler := dynamic.Then(app.Forum.Handler())
+	router.Handler(http.MethodGet, "/forum/*path", forumHandler)
+	router.Handler(http.MethodPost, "/forum/*path", forumHandler)
 
 	router.Handler(http.MethodGet, routeAdd("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 
@@ -140,6 +295,10 @@ func (app *Application) Routes() http.Handler {
 }
 
 
+// routeAdd names a route for reverse.Rev. The names live in a global of the
+// reverse package, and the tests call Routes() once per test server in one
+// process: Add panics on a name it already has, the only error it reports, so
+// the second call takes the pattern stored by the first.
 func routeAdd(name, pattern string, params ...string) (result string) {
     defer func() {
         if recover() != nil {

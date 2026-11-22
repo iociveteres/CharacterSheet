@@ -31,7 +31,7 @@ type folderCreatedMsg struct {
 func (app *Server) createFolderHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg createFolderMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal createFolder message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -42,7 +42,7 @@ func (app *Server) createFolderHandler(ctx context.Context, client *Client, hub 
 
 	visibility := models.SheetVisibility(msg.Visibility)
 	if !visibility.IsValid() {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid visibility value %q", msg.Visibility), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -84,7 +84,7 @@ type updateFolderMsg struct {
 func (app *Server) updateFolderHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg updateFolderMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal updateFolder message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -95,7 +95,7 @@ func (app *Server) updateFolderHandler(ctx context.Context, client *Client, hub 
 
 	visibility := models.SheetVisibility(msg.Visibility)
 	if !visibility.IsValid() {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid visibility value %q", msg.Visibility), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -117,7 +117,7 @@ type deleteFolderMsg struct {
 func (app *Server) deleteFolderHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg deleteFolderMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal deleteFolder message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -139,7 +139,7 @@ type reorderFoldersMsg struct {
 func (app *Server) reorderFoldersHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg reorderFoldersMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal reorderFolders message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -163,7 +163,7 @@ type moveSheetToFolderMsg struct {
 func (app *Server) moveSheetToFolderHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg moveSheetToFolderMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal moveSheetToFolder message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 

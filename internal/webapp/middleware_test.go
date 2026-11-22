@@ -38,8 +38,8 @@ func TestSecureHeaders(t *testing.T) {
 	csp := rs.Header.Get("Content-Security-Policy")
 	assert.StringContains(t, csp, "default-src 'self';")
 	assert.StringContains(t, csp, "img-src 'self' blob:;")
-	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
-	assert.StringContains(t, csp, "font-src fonts.gstatic.com;")
+	assert.StringContains(t, csp, "style-src 'self';")
+	assert.StringContains(t, csp, "font-src 'self';")
 	assert.StringContains(t, csp, "script-src 'self' cloud.umami.is")
 	if strings.Contains(csp, "cdn.jsdelivr.net") {
 		t.Errorf("CSP allows scripts from the CDN, the room bundles them now: %s", csp)

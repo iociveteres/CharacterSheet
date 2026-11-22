@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"bytes"
+	"context"
 	"html"
 	"io"
 	"log"
@@ -11,9 +12,11 @@ import (
 	"net/url"
 	"regexp"
 	"sync"
+	"strings"
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/forum"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
@@ -52,10 +55,12 @@ func newTestApplication(t *testing.T) *Application {
 		Encounters:      &mocks.EncounterModel{},
 		Bestiary:        &mocks.BestiaryModel{},
 		Portraits:       &mocks.PortraitModel{},
+		Avatars:         &mocks.AvatarModel{},
+		DataExports:     &mocks.DataExportModel{},
 	}
 
 	quiet := log.New(io.Discard, "", 0)
-	return NewApplication(&Dependencies{
+	app := NewApplication(&Dependencies{
 		ErrorLog:       quiet,
 		InfoLog:        quiet,
 		Models:         models,
@@ -64,18 +69,37 @@ func newTestApplication(t *testing.T) *Application {
 		FormDecoder:    formDecoder,
 		SessionManager: sessionManager,
 		Mailer:         &testMailer{},
+		ExportDir:      t.TempDir(),
 	})
+	// No pool: a test that opens a forum page makes its own forum on forumtest.NewDB, the
+	// schema and migrations cost every test that gets one.
+	f, err := forum.New(nil, "https://example.com", app.ForumHost())
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Forum = noNotifications{f}
+	return app
 }
+
+// noNotifications is the forum without a pool whose nav counter is zero: every page of a signed-in
+// user asks for it.
+type noNotifications struct{ *forum.Forum }
+
+func (noNotifications) UnreadNotifications(context.Context, int) (int, error) { return 0, nil }
 
 type sentMail struct {
 	Recipient string
+	// Template is the name of the email's template.
+	Template string
 	mailer.Message
 }
 
-// testMailer renders emails as mailer.Mailer does and keeps them instead of sending.
+// testMailer renders emails as mailer.Mailer does and keeps them instead of sending; with fail
+// set it sends nothing and returns it, as an SMTP server that is down.
 type testMailer struct {
 	mu   sync.Mutex
 	sent []sentMail
+	fail error
 }
 
 func (m *testMailer) Send(recipient, lang, name string, data any) error {
@@ -85,8 +109,19 @@ func (m *testMailer) Send(recipient, lang, name string, data any) error {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.sent = append(m.sent, sentMail{recipient, msg})
+	if m.fail != nil {
+		return m.fail
+	}
+	m.sent = append(m.sent, sentMail{Recipient: recipient, Template: name, Message: msg})
 	return nil
+}
+
+// failMails makes the emails fail with err from now on; nil sends them again.
+func (app *Application) failMails(err error) {
+	m := app.Mailer.(*testMailer)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.fail = err
 }
 
 // sentMails waits for the emails that handlers send in the background.
@@ -194,7 +229,21 @@ func extractCSRFToken(t *testing.T, body string) string {
 // final parameter to this method is a url.Values object which can contain any
 // form data that you want to send in the request body.
 func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (int, http.Header, string) {
-	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
+	return ts.postFormFrom(t, urlPath, "", form)
+}
+
+// postFormFrom posts form as a client at address addr, as nginx tells it in
+// X-Real-IP; "" is the test client's own address.
+func (ts *testServer) postFormFrom(t *testing.T, urlPath, addr string, form url.Values) (int, http.Header, string) {
+	req, err := http.NewRequest(http.MethodPost, ts.URL+urlPath, strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if addr != "" {
+		req.Header.Set("X-Real-IP", addr)
+	}
+	rs, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

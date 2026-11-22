@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { lang, t, type Dictionary } from "./index";
+import { formatCount, lang, t, type Dictionary } from "./index";
 import { installDictionary } from "./testDictionary";
 import { DiceRoller } from "../room/components/DiceRoller";
 import { initRoomState } from "../room/state";
@@ -50,6 +50,14 @@ describe("t", () => {
         expect(tr("test.successes", { count: 1.5 })).toBe("1.5 успеха");
     });
 
+    it("sets the thousands of count apart by a narrow no-break space, and of no other param", () => {
+        use("ru");
+        const nb = String.fromCharCode(0x202f);
+        expect(tr("test.successes", { count: 4522 })).toBe(`4${nb}522 успеха`);
+        expect(tr("test.greeting", { name: "Ann", n: 2026 })).toBe("Привет, Ann! У Ann 2026 очков");
+        expect(tr("test.successes", { count: 1500.5 })).toBe("1500.5 успеха");
+    });
+
     it("falls back to another form when the language lacks one", () => {
         use("ru");
         expect(tr("test.enForms", { count: 5 })).toBe("5 items");
@@ -68,6 +76,15 @@ describe("t", () => {
     it("reads the language of the installed dictionary", () => {
         use("ru");
         expect(lang()).toBe("ru");
+    });
+});
+
+describe("formatCount", () => {
+    it("groups the thousands of an integer from 1000 on, as the server does", () => {
+        const nb = String.fromCharCode(0x202f);
+        expect([0, 999, 1000, 1024, -4512, 123456, 1234567].map(formatCount)).toEqual(
+            ["0", "999", `1${nb}000`, `1${nb}024`, `-4${nb}512`, `123${nb}456`, `1${nb}234${nb}567`]);
+        expect(formatCount(1234.5)).toBe("1234.5");
     });
 });
 

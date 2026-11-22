@@ -112,12 +112,12 @@ try {
                 bypassCSP: true,
             });
             // The page reads the theme from localStorage, the server from the cookie (base.html).
-            // The showcase user has no language of their own, so the cookie picks it. The incident
+            // The showcase user has no language of their own, so the cookie picks it. The site
             // notice of base.html would cover the bestiary.
             await context.addCookies([
                 { name: 'theme', value: theme, url: base },
                 { name: 'lang', value: opts.lang, url: base },
-                { name: 'incident_notice_closed', value: '1', url: base },
+                { name: 'forum_notice_closed', value: '1', url: base },
             ]);
             await context.addInitScript(t => {
                 try {

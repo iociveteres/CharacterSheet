@@ -1,11 +1,14 @@
 package webapp
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/models/mocks"
 )
 
 func TestUserSignup(t *testing.T) {
@@ -90,6 +93,33 @@ func TestUserSignup(t *testing.T) {
 			wantFormTag:  formTag,
 		},
 		{
+			name:         "Blank name",
+			userName:     "   ",
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Long name",
+			userName:     strings.Repeat("я", maxNameChars+1),
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Duplicate name",
+			userName:     mocks.TakenName,
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
 			name:         "Duplicate email",
 			userName:     validName,
 			userEmail:    "dupe@example.com",
@@ -99,7 +129,7 @@ func TestUserSignup(t *testing.T) {
 			wantFormTag:  formTag,
 		},
 	}
-	for _, tt := range tests {
+	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
 
@@ -107,7 +137,8 @@ func TestUserSignup(t *testing.T) {
 			form.Add("email", tt.userEmail)
 			form.Add("password", tt.userPassword)
 			form.Add("csrf_token", tt.csrfToken)
-			code, _, body := ts.postForm(t, "/user/signup", form)
+			// Each from its own address, under the limit of signups per address.
+			code, _, body := ts.postFormFrom(t, "/user/signup", fmt.Sprintf("10.0.0.%d", i+1), form)
 			assert.Equal(t, code, tt.wantCode)
 			if tt.wantFormTag != "" {
 				assert.StringContains(t, body, tt.wantFormTag)

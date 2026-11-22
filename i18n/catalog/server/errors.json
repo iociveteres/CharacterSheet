@@ -2,9 +2,11 @@
   "server.errors.form.blank": { "en": "This field cannot be blank", "ru": "Поле не может быть пустым" },
   "server.errors.form.email": { "en": "This field must be a valid email address", "ru": "Введите правильный адрес электронной почты" },
   "server.errors.form.minChars": { "en": {"one": "This field must be at least {count} character long", "other": "This field must be at least {count} characters long"}, "ru": {"one": "Не короче {count} символа", "few": "Не короче {count} символов", "many": "Не короче {count} символов"} },
+  "server.errors.form.maxChars": { "en": {"one": "This field must be at most {count} character long", "other": "This field must be at most {count} characters long"}, "ru": {"one": "Не длиннее {count} символа", "few": "Не длиннее {count} символов", "many": "Не длиннее {count} символов"} },
   "server.errors.form.passwordsMismatch": { "en": "Passwords do not match", "ru": "Пароли не совпадают" },
   "server.errors.form.currentPasswordIncorrect": { "en": "Current password is incorrect", "ru": "Текущий пароль указан неверно" },
   "server.errors.form.emailInUse": { "en": "Email address is already in use", "ru": "Этот адрес электронной почты уже занят" },
+  "server.errors.form.nameInUse": { "en": "This name is already taken", "ru": "Это имя уже занято", "note": "имена сравниваются без учёта регистра" },
   "server.errors.form.credentialsIncorrect": { "en": "Email or password is incorrect", "ru": "Неверный адрес почты или пароль" },
   "server.errors.form.emailNotVerified": { "en": "Email is not verified", "ru": "Адрес почты не подтверждён" },
   "server.errors.form.roomID": { "en": "Invalid room ID", "ru": "Неверный номер комнаты" },
@@ -20,5 +22,6 @@
   "server.errors.flash.roomCreated": { "en": "Room successfully created!", "ru": "Комната создана!" },
   "server.errors.flash.roomDeleted": { "en": "Room successfully deleted!", "ru": "Комната удалена!" },
   "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" },
-  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more", "ru": "NPC и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ", "note": "квота бестиария и столкновений; числа в мегабайтах" }
+  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more", "ru": "NPC и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ", "note": "квота бестиария и столкновений; числа в мегабайтах" },
+  "server.errors.tooManyAttempts": { "en": {"one": "Too many attempts. Try again in a minute.", "other": "Too many attempts. Try again in {count} minutes." }, "ru": {"one": "Слишком много попыток. Повторите через {count} минуту.", "few": "Слишком много попыток. Повторите через {count} минуты.", "many": "Слишком много попыток. Повторите через {count} минут." }, "note": "count — минуты до следующей попытки, не меньше 1" }
 }

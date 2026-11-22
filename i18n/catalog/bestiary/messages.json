@@ -4,7 +4,6 @@
   "bestiary.messages.creatureUnread": { "en": "The creature could not be read: {message}", "ru": "Не удалось прочитать существо: {message}", "note": "message — текст ошибки" },
   "bestiary.messages.copied": { "en": "\"{name}\" copied to \"{collection}\"", "ru": "Существо «{name}» скопировано в коллекцию «{collection}»" },
   "bestiary.messages.moved": { "en": "\"{name}\" moved to \"{collection}\"", "ru": "Существо «{name}» перемещено в коллекцию «{collection}»" },
-  "bestiary.messages.connectionLost": { "en": "Connection lost. Reload the page.", "ru": "Связь потеряна. Перезагрузите страницу." },
   "bestiary.messages.uploadAdded": { "en": {"one": "{file}: {count} creature", "other": "{file}: {count} creatures"}, "ru": {"one": "{file}: {count} существо", "few": "{file}: {count} существа", "many": "{file}: {count} существ"}, "note": "строка итога загрузки: сколько существ добавил файл" },
   "bestiary.messages.uploadInvalid": { "en": "{file}: not a sheet or a collection", "ru": "{file}: не лист и не коллекция" },
   "bestiary.messages.overQuota": { "en": "over the quota", "ru": "не хватает места", "note": "запасной текст, если сервер не прислал свой" },
@@ -12,5 +11,8 @@
   "bestiary.messages.status400": { "en": "The request could not be carried out: reload the page and try again", "ru": "Не удалось выполнить запрос: перезагрузите страницу и попробуйте снова", "note": "запасной текст, когда сервер не назвал причину" },
   "bestiary.messages.status403": { "en": "You have no access to this", "ru": "У вас нет доступа к этому", "note": "запасной текст, когда сервер не назвал причину" },
   "bestiary.messages.status404": { "en": "Not found, it may have been deleted\nReload the page", "ru": "Не найдено, возможно, это удалили\nПерезагрузите страницу", "note": "запасной текст, когда сервер не назвал причину" },
-  "bestiary.messages.requestFailed": { "en": "The request failed: {status}", "ru": "Запрос не выполнен: {status}", "note": "status — код ответа HTTP" }
+  "bestiary.messages.requestFailed": { "en": "The request failed: {status}", "ru": "Запрос не выполнен: {status}", "note": "status — код ответа HTTP" },
+  "bestiary.messages.signedOut": { "en": "You have been signed out. Reload the page to sign in again.", "ru": "Вы вышли из аккаунта. Перезагрузите страницу, чтобы войти снова.", "note": "сокет закрыт, потому что сессия кончилась" },
+  "bestiary.messages.status413": { "en": "The sheet would be too large", "ru": "Лист получился бы слишком большим", "note": "запасной текст, когда сервер не назвал причину" },
+  "bestiary.messages.status429": { "en": "Too many uploads: try again in a minute", "ru": "Слишком много загрузок: повторите через минуту", "note": "не больше 20 загрузок в минуту" }
 }

@@ -83,14 +83,18 @@ export class Player {
     }
 
     /**
-     * A player signed in with `auth`, or as the seeded user of `role` (config.seed),
-     * whose pages are in `lang`.
+     * A player signed in with `auth` (none for "": a guest), or as the seeded user of `role` (config.seed),
+     * whose pages are in `lang`, in a window of `viewport`. `phone` is a touch phone
+     * that lays a page out by its viewport meta; `javaScript: false` a browser without scripts.
      */
-    static async create(browser: Browser, name: string, { base = config.base, auth = config.auth, role, lang = "en" }: {
+    static async create(browser: Browser, name: string, {
+        base = config.base, auth = config.auth, role, lang = "en", viewport = { width: 1280, height: 1000 }, phone = false, javaScript = true,
+    }: {
         base?: string; auth?: string; role?: SeedRole; lang?: "en" | "ru";
+        viewport?: { width: number; height: number }; phone?: boolean; javaScript?: boolean;
     } = {}): Promise<Player> {
         if (role) auth = seedUser(role).auth;
-        const context = await browser.newContext({ storageState: auth, viewport: { width: 1280, height: 1000 } });
+        const context = await browser.newContext({ storageState: auth || undefined, viewport, isMobile: phone, hasTouch: phone, javaScriptEnabled: javaScript });
         // Scenarios read English text; a user's saved language (users.locale) would still win over it.
         await context.addCookies([{ name: "lang", value: lang, url: base }]);
         await context.addInitScript(installProbes);

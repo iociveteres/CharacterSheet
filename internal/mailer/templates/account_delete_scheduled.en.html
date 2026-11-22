@@ -1,0 +1,18 @@
+{{define "subject"}}Your Charactersheet account will be deleted on {{.DeleteAt}}{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+Your account will be deleted on {{.DeleteAt}}. Until then you can cancel the deletion by the following link:
+{{.CancelLink}}
+
+On deletion your account, sheets, private collections and avatar go. Your rooms with other players go to the members you picked, your sheets in rooms of others to their gamemasters. Chat messages and forum posts you did not choose to delete stay, without your name.
+The deletion cannot be undone afterwards.
+{{end}}
+
+{{define "htmlBody"}}
+<p>Hi, {{.Name}}.</p>
+<p>Your account will be deleted on {{.DeleteAt}}. Until then you can cancel the deletion by the following link:</p>
+<p><a href="{{.CancelLink}}">{{.CancelLink}}</a></p>
+<p>On deletion your account, sheets, private collections and avatar go. Your rooms with other players go to the members you picked, your sheets in rooms of others to their gamemasters. Chat messages and forum posts you did not choose to delete stay, without your name.</p>
+<p>The deletion cannot be undone afterwards.</p>
+{{end}}

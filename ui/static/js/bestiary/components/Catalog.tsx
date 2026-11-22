@@ -3,7 +3,7 @@
 import type { CatalogRow } from "../types.gen";
 import { catalogNext, catalogQuery, catalogRows, catalogSort, subscribedCollections } from "../state";
 import { loadCatalog, openFromCatalog, setCatalogSearch, subscribe, unsubscribe } from "../actions";
-import { lang, t } from "../../i18n";
+import { lang, t, userName } from "../../i18n";
 
 export function Catalog() {
     const rows = catalogRows.value;
@@ -64,7 +64,7 @@ function CatalogTable({ rows }: { rows: CatalogRow[] }) {
                             {/* One line of it, all on hover; still a line without one: the rows are of one height. */}
                             <div class="bestiary-muted bestiary-catalog-description" title={c.description || undefined}>{c.description}</div>
                         </td>
-                        <td class="bestiary-muted">{c.owner}</td>
+                        <td class="bestiary-muted">{userName(c.owner)}</td>
                         <td>{c.creatures}</td>
                         {/* English keeps the browser's format it had before the translation. */}
                         <td class="bestiary-muted">{new Date(c.publishedAt).toLocaleDateString(lang() === "en" ? undefined : lang())}</td>

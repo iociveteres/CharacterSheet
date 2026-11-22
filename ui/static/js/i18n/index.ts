@@ -55,5 +55,26 @@ export function t<K extends I18nKey>(key: K, ...[params]: ParamsArg<K>): string 
     if (message === undefined) return key;
     const values = (params ?? {}) as Record<string, string | number>;
     const text = typeof message === "string" ? message : pluralForm(message, Number(values.count ?? 0));
-    return text.replace(/\{(\w+)\}/g, (match, name: string) => (values[name] === undefined ? match : String(values[name])));
+    return text.replace(/\{(\w+)\}/g, (match, name: string) => {
+        const value = values[name];
+        if (value === undefined) return match;
+        // Only count is a quantity for sure; a year, an id or a roll in another param stays as is.
+        return name === "count" && Number.isInteger(value) ? formatCount(value as number) : String(value);
+    });
+}
+
+/**
+ * A user's name as the reader sees it: a deleted account keeps its id with an
+ * empty name (_prd/account_deletion/plan.md, 3), worded here.
+ */
+export function userName(name: string): string {
+    return name || t("common.deletedUser");
+}
+
+/**
+ * A quantity as the server writes it (i18n.FormatCount): from 1000 on, the
+ * thousands set apart by a narrow no-break space, "1 024", in every language.
+ */
+export function formatCount(n: number): string {
+    return Number.isInteger(n) ? String(n).replace(/\B(?=(\d{3})+$)/g, "\u202f") : String(n);
 }

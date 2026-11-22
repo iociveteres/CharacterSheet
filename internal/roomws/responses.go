@@ -26,7 +26,7 @@ func (app *Server) wsServerError(err error, eventID, code string) json.RawMessag
 	app.ErrorLog.Output(2, trace)
 
 	msg := http.StatusText(http.StatusInternalServerError)
-	if app.debug && trace != "" {
+	if app.Debug {
 		msg = trace
 	}
 
@@ -109,6 +109,10 @@ func (app *Server) wsModelError(hub *Hub, client *Client, err error, eventID, co
 	// stays where it was: only a reload shows it there again.
 	if err == models.ErrDestinationGone {
 		hub.ReplyToClient(client, app.wsClientError(eventID, "destinationGone", http.StatusGone))
+		return true
+	}
+	if errors.Is(err, models.ErrSheetTooLarge) {
+		hub.ReplyToClient(client, app.wsClientError(eventID, "tooLarge", http.StatusRequestEntityTooLarge))
 		return true
 	}
 	hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("%s: %w", context, err), eventID, "internal"))

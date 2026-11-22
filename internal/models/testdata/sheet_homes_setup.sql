@@ -23,9 +23,11 @@ CREATE TABLE character_sheet_folders (
     folder_visibility sheet_visibility NOT NULL DEFAULT 'everyone_can_view'
 );
 
+-- owner_id without ON DELETE CASCADE, as in production (000003): deleting a
+-- user who still owns sheets fails.
 CREATE TABLE character_sheets (
     id               INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    owner_id         INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id         INT NOT NULL REFERENCES users(id),
     room_id          INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     content          JSONB NOT NULL DEFAULT '{"characterInfo": {"characterName": ""}}',
     sheet_visibility sheet_visibility NOT NULL DEFAULT 'everyone_can_view',
@@ -45,4 +47,12 @@ CREATE TABLE room_messages (
     command_result TEXT,
     character_name TEXT,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tokens as they are before migration 000063, which adds their email column.
+CREATE TABLE tokens (
+    hash    BYTEA PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expiry  TIMESTAMPTZ NOT NULL,
+    scope   token_scope NOT NULL
 );

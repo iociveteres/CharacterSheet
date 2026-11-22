@@ -1,0 +1,78 @@
+<div id="forum"{{with .DensityClass}} class="{{.}}"{{end}}>
+    {{- template "forum-mod-mode-strip" .}}
+    {{- template "forum-ban-notice" .}}
+    <nav class="forum-breadcrumbs"><a href="/forum/">{{t .Lang "forum.sections.title"}}</a>{{template "forum-parent-crumb" .Topic.Section}}<span class="sep">›</span><a href="{{.Topic.Section.URL}}">{{.Topic.Section.Name}}</a></nav>
+
+    <div class="forum-head forum-topic-head">
+        <div class="forum-head-text">
+            {{with .Topic}}
+            <h2>{{$.TitleOf .Title}}
+                {{- if or .Pinned .Closed}}<span class="forum-marks forum-topic-title-marks">{{if .Pinned}}{{template "forum-pin" $.Lang}}{{end}}{{if .Closed}}{{template "forum-lock" $.Lang}}{{end}}</span>{{end}}
+                {{- if .Deleted}} <span class="forum-label deleted">{{t $.Lang "forum.topics.deleted"}}</span>{{end}}</h2>
+            <div class="forum-topic-meta">
+                <span>{{$.UserLink "forum-author-name" .AuthorID .AuthorName}} · {{$.Time .CreatedAt}} · {{t $.Lang "forum.topics.replyCount" "count" .ReplyCount}}</span>
+            </div>
+            {{end}}
+        </div>
+        {{- $subscribe := .Viewer.CanSubscribe .Topic.Topic}}
+        {{- if or $subscribe .Shown.CanModerate}}
+        <div class="forum-actions">
+            {{- /* A toggle before the moderation menu: a bell, filled while on; on a phone the bell
+                 alone, its label kept for a screen reader (extras/decisions.md, 10). */}}
+            {{- if $subscribe}}
+            <form action="{{.Topic.URL}}/{{if .Topic.Subscribed}}unsubscribe{{else}}subscribe{{end}}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="page" value="{{.Pagination.Current}}">
+                <button type="submit" class="f-btn f-secondary forum-subscribe{{if .Topic.Subscribed}} on{{end}}" aria-pressed="{{.Topic.Subscribed}}" title="{{t .Lang "forum.notifications.subscribeHint"}}">
+                    {{- template "forum-bell"}}<span class="forum-subscribe-label">{{if .Topic.Subscribed}}{{t .Lang "forum.notifications.subscribed"}}{{else}}{{t .Lang "forum.notifications.subscribe"}}{{end}}</span>
+                </button>
+            </form>
+            {{- end}}
+            {{- if .Shown.CanModerate}}{{template "forum-topic-mod-menu" .}}{{end}}
+        </div>
+        {{- end}}
+    </div>
+
+    {{- /* Only a moderator reads a deleted topic: who deleted it, when, why (design/decisions.md, 20). */}}
+    {{with .Topic}}{{if .Deleted}}
+    <div class="forum-notice forum-deleted-notice"><strong>{{t $.Lang "forum.topics.deleted"}}:</strong> {{$.UserLink "forum-author-name" .DeletedByID .DeletedByName}}, {{$.Time .DeletedAt}}{{with .DeleteReason}} — {{.}}{{end}}</div>
+    {{end}}{{end}}
+
+    {{template "forum-pagination" .Pagination}}
+
+    <div class="forum-posts">
+        {{range .Posts}}{{template "forum-post" ($.Card $.Topic.Topic . true)}}{{end}}
+    </div>
+
+    {{template "forum-pagination" .Pagination}}
+
+    {{if eq .Pagination.Current .Pagination.Total}}
+    {{if .Topic.Closed}}
+    <div class="forum-notice">{{template "forum-lock-icon"}} {{t .Lang "forum.topics.closedNotice"}}</div>
+    {{end}}
+    {{if .Shown.CanReply .Topic.Topic}}
+    {{- /* The reply form looks like a post: the writer on the left (design/decisions.md, 19). */}}
+    {{- /* #reply in the action: the page that comes back (a tab, an error) opens at the form. */}}
+    <form class="forum-post reply" id="reply" action="{{.Topic.URL}}/reply#reply" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="forum-post-author">
+            {{- template "forum-avatar" .ReplyAvatar}}
+            <span class="name">{{.Viewer.Name}}</span>
+            <span>{{t .Lang "forum.posts.yourReply"}}</span>
+        </div>
+        <div class="forum-post-main forum-form">
+            {{if .Topic.Closed}}<span class="meta">{{t .Lang "forum.posts.closedButModerator"}}</span>{{end}}
+            {{- template "forum-editor" ($.Editor "forum-reply-body" 6 (t .Lang "forum.posts.yourReply") .Form)}}
+            {{- /* What is not about one field: the limit of how often one writes. */}}
+            {{range .Form.NonFieldErrors}}<span class="error forum-form-error">{{.}}</span>{{end}}
+            <div class="forum-form-buttons">
+                {{- template "forum-markup-hint" .Lang}}
+                <button type="submit" class="f-btn f-primary">{{t .Lang "forum.posts.reply"}}</button>
+            </div>
+        </div>
+    </form>
+    {{else if .Viewer.SignInToReply .Topic.Topic}}
+    <div class="forum-notice plain forum-sign-in"><a href="{{.Topic.URL}}/reply" rel="nofollow">{{t .Lang "forum.posts.signInToReply"}}</a></div>
+    {{end}}
+    {{end}}
+</div>

@@ -136,6 +136,11 @@ nav a.live:hover {
     text-decoration: none;
 }
 
+/* Current on every page under its path (main.js), where it still leads to the section's start. */
+nav a.live[data-live-prefix] {
+    cursor: pointer;
+}
+
 nav a.live:after {
     content: '';
     width: 14px;
@@ -150,6 +155,356 @@ nav a.live:after {
     top: 100%;
     margin-top: 9px;
     pointer-events: none;
+}
+
+/* Pages laid out by levels (DESIGN.md, «Backgrounds»): for now the forum and the Account page; the
+   rest of the site still lies on bg with bg-light tables (_prd/forum/extras/layers.md). The page is
+   bg-light; the header with the site's name is a panel, bg, painted out to the page's edges by the
+   border image, as on the bestiary (bestiary.css); the row of links one level deeper, bg-item, with
+   the arrow under the current link; the footer bg. */
+body:has(#forum),
+body:has(.account-page) {
+    background-color: var(--bg-light);
+}
+
+body:has(#forum) > header,
+body:has(.account-page) > header {
+    border-image-source: conic-gradient(var(--bg) 0 0);
+    border-image-slice: 0 fill;
+    border-image-outset: 0 100vmax;
+}
+
+body:has(#forum) > nav,
+body:has(.account-page) > nav,
+body:has(#forum) > nav a.live:after,
+body:has(.account-page) > nav a.live:after {
+    background: var(--bg-item);
+}
+
+body:has(#forum) > nav,
+body:has(.account-page) > nav {
+    border-top: 1px solid var(--border-light);
+}
+
+body:has(#forum) > footer,
+body:has(.account-page) > footer {
+    background: var(--bg);
+}
+
+/* The letter that stands for a user without an avatar, on the user's own tint (util.AvatarHue: ten
+   hues 36° apart), the same on the forum and the Account page. Text against background is at least
+   5:1 in both themes. */
+.avatar-hue {
+    background: hsl(var(--avatar-hue) 40% 84%);
+    color: hsl(var(--avatar-hue) 35% 28%);
+}
+
+html[data-theme="dark"] .avatar-hue {
+    background: hsl(var(--avatar-hue) 25% 27%);
+    color: hsl(var(--avatar-hue) 40% 82%);
+}
+
+.avatar-hue-0 { --avatar-hue: 0; }
+.avatar-hue-1 { --avatar-hue: 36; }
+.avatar-hue-2 { --avatar-hue: 72; }
+.avatar-hue-3 { --avatar-hue: 108; }
+.avatar-hue-4 { --avatar-hue: 144; }
+.avatar-hue-5 { --avatar-hue: 180; }
+.avatar-hue-6 { --avatar-hue: 216; }
+.avatar-hue-7 { --avatar-hue: 252; }
+.avatar-hue-8 { --avatar-hue: 288; }
+.avatar-hue-9 { --avatar-hue: 324; }
+
+/* ▾ after a user's name and the panel of the former names under it (_prd/account_name_email,
+   plan.md §3), on the Account page and the forum's user page: a <details>, so it opens without a
+   script; the scripts close it on a click elsewhere and on Esc. The panel lies over the page, as a
+   menu, one level above it; the pages place it (account.css, forum.css). */
+.former-names {
+    display: inline-block;
+    position: relative;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+/* An icon (DESIGN.md): no border, faint until hovered or open. */
+.former-names-toggle {
+    list-style: none;
+    padding: 0 4px;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    cursor: pointer;
+    user-select: none;
+}
+
+.former-names-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.former-names-toggle:hover,
+.former-names[open] > .former-names-toggle {
+    opacity: 1;
+}
+
+.former-names-panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    box-sizing: border-box;
+    width: max-content;
+    min-width: 200px;
+    max-width: min(22rem, calc(100vw - 32px));
+    padding: 6px 12px 8px;
+    color: var(--text);
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.former-names-title {
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.former-names-panel ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* A name a line, the date of leaving it muted on the right; a long name wraps. */
+.former-names-panel li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 2px 0;
+    line-height: 1.35;
+}
+
+.former-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.former-date {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* The Account page: its table, the avatar's block (account.css) and the theme's are panels on the page. */
+.account-page > table,
+.account-page .avatar-settings,
+.account-page .theme-settings,
+.account-page .account-section {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.account-page .avatar-settings,
+.account-page .theme-settings,
+.account-page .account-section {
+    padding: 10px 14px 14px;
+}
+
+/* The deletion of the account: its block on the Account page and the pages of the deletion
+   (ui/html/pages/delete_account.html, account_deletion.html, cancel_deletion.html); the export of
+   the user's data shares its paragraphs and buttons (data_export.html). */
+.account-page .theme-settings + .account-section,
+.account-page .account-section + .account-section {
+    margin-top: 28px;
+}
+
+.account-delete p,
+.account-export p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.account-delete ul,
+.account-export ul {
+    margin: 0 0 10px;
+}
+
+.account-delete .delete-heir,
+.account-delete .delete-box {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.account-delete .delete-heir select {
+    min-width: 0;
+}
+
+.account-delete .hint {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.account-delete .delete-warning {
+    font-weight: bold;
+}
+
+.account-delete .delete-actions,
+.account-export .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+}
+
+/* form div:last-child draws a dashed rule over the buttons of the site's forms; the panel has its own edge. */
+.account-delete div.delete-actions:last-child,
+.account-export div.delete-actions:last-child {
+    border-top: none;
+    margin-bottom: 0;
+}
+
+/* The email change: its form (ui/html/pages/account_email.html) and the pages of the links of its
+   emails (email_link.html) share the paragraphs and buttons of the deletion. */
+.account-email-form p,
+.account-email-link p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.account-email-form .delete-actions,
+.account-email-link .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.account-email-link div.delete-actions:last-child {
+    border-top: none;
+    margin-bottom: 0;
+}
+
+.account-email-form .email-field {
+    margin-bottom: 12px;
+}
+
+.account-email-form input[type="email"],
+.account-email-form input[type="password"] {
+    background: var(--bg-input);
+    border-color: var(--border-medium);
+}
+
+.account-email-form .email-no-access {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* The way back from the export page, under its buttons. */
+.account-export .export-back {
+    margin: 14px 0 0;
+}
+
+/* A secondary button beside the primary one of the area (DESIGN.md, «Buttons by role»). */
+.account-page a.button.secondary,
+.account-page input[type="submit"].secondary {
+    background-color: var(--button-bg-subtle);
+    border-color: var(--border-medium);
+    color: var(--text);
+}
+
+.account-page a.button.secondary:hover,
+.account-page input[type="submit"].secondary:hover {
+    background-color: var(--button-bg-subtle-hover);
+    color: var(--text);
+}
+
+/* tr:nth-child(2n) is bg-light, a level above the panel. */
+.account-page > table tr:nth-child(2n) {
+    background: transparent;
+}
+
+/* The counter of unread forum notifications next to the forum link (and on the button of the forum
+   home): a pill in the user's accent colour that grows with its text, "3", "9+". */
+.nav-badge {
+    display: inline-block;
+    margin-left: 5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: var(--bg-light);
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* Header and nav at phone width. Only pages with a viewport meta (the forum's) get this narrow:
+   without it a phone lays the page out about 980px wide (_prd/forum/plan.md, amendment 5). */
+@media (max-width: 600px) {
+    .site-inner {
+        padding: 2px 8px;
+    }
+
+    header .recolor {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    h1,
+    h1 a {
+        font-size: 20px;
+        line-height: 1.2;
+    }
+
+    nav {
+        height: auto;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .site-wide .site-inner,
+    nav div {
+        flex-wrap: wrap;
+        gap: 4px 1em;
+    }
+
+    /* The marker under the current link points at the nav's bottom edge from its own row. */
+    nav a.live:after {
+        display: none;
+    }
+
+    /* Finger-sized links of the header, nav and footer: the padding widens what a finger hits
+       without moving the rows apart. */
+    nav.site-wide a,
+    nav.site-wide .button-linklike,
+    footer.site-wide a {
+        padding: 8px 0;
+        margin: -4px 0;
+    }
+
+    #language-form select {
+        min-height: 36px;
+        font-size: 16px;
+    }
+
+    .site-notice .close {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    main {
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
 }
 
 button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):not(.close) {
@@ -275,7 +630,7 @@ div.flash {
     text-align: center;
 }
 
-.incident-notice {
+.site-notice {
     position: fixed;
     bottom: 16px;
     left: 50%;
@@ -290,11 +645,11 @@ div.flash {
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
 }
 
-.incident-notice p {
+.site-notice p {
     margin: 6px 0;
 }
 
-.incident-notice .close {
+.site-notice .close {
     position: absolute;
     top: 6px;
     right: 8px;
@@ -308,7 +663,7 @@ div.flash {
     cursor: pointer;
 }
 
-.incident-notice .close:hover {
+.site-notice .close:hover {
     opacity: 1;
     color: var(--text);
 }

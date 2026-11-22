@@ -38,9 +38,9 @@ describe("the room's socket", () => {
         expect(socket.url).toBe(`ws://${location.host}/room/ws/5`);
     });
 
-    it("asks for a page refresh once it gives up", () => {
-        window.dispatchEvent(new CustomEvent("ws:connectionLost"));
-        expect(modals.value.connectionLost).toBe(true);
+    it("asks for a page refresh once the user is signed out", () => {
+        window.dispatchEvent(new CustomEvent("ws:connectionLost", { detail: { reason: "signedOut" } }));
+        expect(modals.value.connectionLost).toBe("signedOut");
     });
 });
 

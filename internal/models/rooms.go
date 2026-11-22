@@ -130,6 +130,46 @@ RETURNING id;
 	return nil
 }
 
+// Transfer makes toUserID, a member of the room, its owner and a gamemaster; whether they became a
+// gamemaster by it. ErrNoRecord when they are not a member.
+func (m *RoomModel) Transfer(ctx context.Context, tx pgx.Tx, roomID, toUserID int) (promoted bool, err error) {
+	var role RoomRole
+	err = tx.QueryRow(ctx, `
+SELECT role FROM room_members WHERE room_id = $1 AND user_id = $2 FOR UPDATE`, roomID, toUserID).Scan(&role)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, ErrNoRecord
+	}
+	if err != nil {
+		return false, err
+	}
+	if role != RoleGamemaster {
+		if _, err := tx.Exec(ctx, `
+UPDATE room_members SET role = 'gamemaster' WHERE room_id = $1 AND user_id = $2`, roomID, toUserID); err != nil {
+			return false, err
+		}
+	}
+	_, err = tx.Exec(ctx, `UPDATE rooms SET owner_id = $2 WHERE id = $1`, roomID, toUserID)
+	return role != RoleGamemaster, err
+}
+
+// chiefGamemaster is the member of the room who takes over from leaverID (plan
+// _prd/account_deletion, section 4.2): the owner if they are a gamemaster, else the earliest
+// gamemaster; with no gamemaster but leaverID, the owner, else the earliest member, whom the caller
+// makes a gamemaster. ErrNoRecord when leaverID is the only member or there is none.
+func chiefGamemaster(ctx context.Context, q querier, roomID, leaverID int) (userID int, gamemaster bool, err error) {
+	err = q.QueryRow(ctx, `
+SELECT rm.user_id, rm.role = 'gamemaster'
+FROM room_members rm
+JOIN rooms r ON r.id = rm.room_id
+WHERE rm.room_id = $1 AND rm.user_id <> $2
+ORDER BY rm.role = 'gamemaster' DESC, rm.user_id = r.owner_id DESC, rm.joined_at, rm.user_id
+LIMIT 1`, roomID, leaverID).Scan(&userID, &gamemaster)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, ErrNoRecord
+	}
+	return userID, gamemaster, err
+}
+
 func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 	const stmt = `
 	SELECT r.id, 

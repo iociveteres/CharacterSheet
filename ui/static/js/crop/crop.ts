@@ -1,0 +1,132 @@
+// The crop of the crop window (crop/CropEditor.tsx): the image lies on a
+// square stage under a frame centred on it, moved and zoomed so that it always
+// covers the frame. What the frame shows is drawn at the output size, which
+// the server checks exactly (croppedImageMime in internal/webapp/images.go).
+// The sheet's portrait and the site's avatar each pass their own geometry.
+import { t } from "../i18n";
+
+export interface CropGeometry {
+    /** The side of the square stage, in CSS pixels. */
+    stage: number;
+    /** The frame on the stage, centred on it. */
+    frame: { w: number; h: number };
+    /** The size of the image that comes out, with the frame's proportions. */
+    output: { w: number; h: number };
+    /** The largest file the server takes: a crop above it is encoded again at a lower quality. */
+    maxBytes?: number;
+}
+
+export const MAX_ZOOM = 4;
+
+export interface Size {
+    width: number;
+    height: number;
+}
+
+/** Where the image lies on the stage: its top left corner, and the zoom over the scale that just covers the frame. */
+export interface Crop {
+    x: number;
+    y: number;
+    zoom: number;
+}
+
+/** The part of the image the frame shows, in the image's own pixels, as drawImage takes it. */
+export interface SourceRect {
+    sx: number;
+    sy: number;
+    sw: number;
+    sh: number;
+}
+
+/** The frame's place on the stage. */
+export function frameRect({ stage, frame }: CropGeometry) {
+    return { x: (stage - frame.w) / 2, y: (stage - frame.h) / 2, w: frame.w, h: frame.h };
+}
+
+/** The scale at zoom 1: the image covers the frame and no more. */
+const coverScale = ({ frame }: CropGeometry, image: Size) => Math.max(frame.w / image.width, frame.h / image.height);
+
+/** Stage pixels per image pixel. */
+export const scaleOf = (g: CropGeometry, image: Size, zoom: number) => coverScale(g, image) * zoom;
+
+const between = (min: number, value: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** `crop` with its zoom in 1…MAX_ZOOM and moved so that the image covers the frame. */
+export function clampCrop(g: CropGeometry, image: Size, crop: Crop): Crop {
+    const zoom = between(1, crop.zoom, MAX_ZOOM);
+    const s = scaleOf(g, image, zoom);
+    const f = frameRect(g);
+    return {
+        zoom,
+        x: between(f.x + f.w - image.width * s, crop.x, f.x),
+        y: between(f.y + f.h - image.height * s, crop.y, f.y),
+    };
+}
+
+/** The image at zoom 1, centred in the frame. */
+export function initialCrop(g: CropGeometry, image: Size): Crop {
+    const s = scaleOf(g, image, 1);
+    const f = frameRect(g);
+    return { zoom: 1, x: f.x + (f.w - image.width * s) / 2, y: f.y + (f.h - image.height * s) / 2 };
+}
+
+/** `crop` dragged by (dx, dy) stage pixels. */
+export const moveCrop = (g: CropGeometry, image: Size, crop: Crop, dx: number, dy: number): Crop =>
+    clampCrop(g, image, { ...crop, x: crop.x + dx, y: crop.y + dy });
+
+/** `crop` zoomed to `zoom` with the stage point (px, py) staying where it is: the cursor of the wheel, or the stage's centre, which is the frame's. */
+export function zoomCrop(g: CropGeometry, image: Size, crop: Crop, zoom: number, px = g.stage / 2, py = g.stage / 2): Crop {
+    const next = between(1, zoom, MAX_ZOOM);
+    const k = scaleOf(g, image, next) / scaleOf(g, image, crop.zoom);
+    return clampCrop(g, image, { zoom: next, x: px - (px - crop.x) * k, y: py - (py - crop.y) * k });
+}
+
+/** What the frame shows of the image. */
+export function sourceRect(g: CropGeometry, image: Size, crop: Crop): SourceRect {
+    const s = scaleOf(g, image, crop.zoom);
+    const f = frameRect(g);
+    return { sx: (f.x - crop.x) / s, sy: (f.y - crop.y) / s, sw: f.w / s, sh: f.h / s };
+}
+
+/** Whether two crops show the same part of the image. */
+export const sameCrop = (a: Crop, b: Crop) =>
+    Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.zoom - b.zoom) < 0.0001;
+
+/**
+ * Draws what the frame shows of `image`, whose natural size is `size`, over
+ * the whole of `canvas`.
+ */
+export function drawCrop(canvas: HTMLCanvasElement, g: CropGeometry, image: CanvasImageSource, size: Size, crop: Crop): void {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const { sx, sy, sw, sh } = sourceRect(g, size, crop);
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+}
+
+const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
+    new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
+
+/**
+ * The crop as the server takes it: WebP 0.8, or JPEG 0.85 where the canvas
+ * cannot make WebP (Safari); at 0.6 when that is over the geometry's maxBytes.
+ * One still over it goes as it is, for the server to refuse.
+ */
+export async function encodeCrop(g: CropGeometry, image: CanvasImageSource, size: Size, crop: Crop): Promise<Blob> {
+    const canvas = document.createElement("canvas");
+    canvas.width = g.output.w;
+    canvas.height = g.output.h;
+    drawCrop(canvas, g, image, size, crop);
+    const webp = await toBlob(canvas, "image/webp", 0.8);
+    const blob = webp?.type === "image/webp" ? webp : await toBlob(canvas, "image/jpeg", 0.85);
+    if (!blob) throw new Error(t("common.crop.encodeFailed"));
+    if (g.maxBytes === undefined || blob.size <= g.maxBytes) return blob;
+    return (await toBlob(canvas, blob.type, 0.6)) ?? blob;
+}
+
+/** The files the file pickers offer. */
+export const ACCEPT = "image/png,image/jpeg,image/webp";
+
+/** Whether `file` may be an image the browser can open; the window says so when it cannot. */
+export const isImageFile = (file: File) => file.type.startsWith("image/");

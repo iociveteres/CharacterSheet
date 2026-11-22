@@ -6,6 +6,7 @@ import { listenRemote } from "./remote";
 import { mountIslands } from "./islands";
 import { initEncounter } from "./encounter/actions";
 import { listenEncounter } from "./encounter/remote";
+import { listenConnection } from "../connectionBar";
 import "../sheet/main";
 
 // A panel the player hid does not slide away on load.
@@ -15,6 +16,7 @@ try {
     const payload = readRoomPayload();
     initRoomState(payload);
     listenRemote();
+    listenConnection();
     listenEncounter();
     initEncounter(payload);
     mountIslands();

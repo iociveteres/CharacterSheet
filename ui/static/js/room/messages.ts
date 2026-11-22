@@ -17,6 +17,19 @@ export interface KickPlayerMessage {
     userID: number;
 }
 
+/**
+ * A player whose account was deleted: their sheets and folders are the heir's now (0 when they
+ * had none here), and their chat messages are gone if `messagesDeleted`. Whoever became a
+ * gamemaster by it comes as a changePlayerRole.
+ */
+export interface PlayerDeletedMessage {
+    type: "playerDeleted";
+    eventID: string;
+    userID: number;
+    heirID: number;
+    messagesDeleted: boolean;
+}
+
 export interface ChangePlayerRoleMessage {
     type: "changePlayerRole";
     eventID: string;

@@ -21,16 +21,22 @@ export const config = {
     fullSheets: env("E2E_FULL_SHEETS", "59,51").split(",").map(Number),
     /** Shows the browser; drags need it only if the headless run misbehaves. */
     headed: !!process.env.E2E_HEADED,
+    /**
+     * Whether the server was built with the rulebook data (internal/gamedata/assets). CI builds it with
+     * a placeholder and sets E2E_NO_GAMEDATA: scenarios that pick from its suggestions skip.
+     */
+    gamedata: !process.env.E2E_NO_GAMEDATA,
 };
 
 /** A role of the seeded room: its users by key (cmd/seedtest). */
-export type SeedRole = "gm" | "moderator" | "player" | "player2" | "outsider";
+export type SeedRole = "gm" | "moderator" | "player" | "player2" | "outsider" | "leaver" | "renamer" | "mover";
 
 export interface SeedUser {
     key: SeedRole;
     name: string;
+    email: string;
     id: number;
-    /** Empty for the outsider, who is not in the room. */
+    /** Empty for the outsider, the renamer and the mover, who are not in the room. */
     role: string;
     /** The user's own sheet in the room; none for the moderator and the outsider. */
     sheetId?: number;
@@ -41,9 +47,22 @@ export interface SeedUser {
 export interface Seed {
     base: string;
     roomId: number;
+    /** The password of every seeded user. */
+    password: string;
     users: SeedUser[];
     /** The gm's sheets of the kinds other than Black Crusade, made anew by every seed. */
     kindSheets: { pathfinder_crusade: number };
+    /** The forum sections of the forum scenarios, emptied by every seed, and a topic on two pages in the first. */
+    forum: { section: number; movedTo: number; longTopic: number };
+    /**
+     * The leaver's delete_account token (the link of the email) and their folder; the links of the mover's
+     * email change from `email` to `newEmail` and of the revert to `email`. Made anew by every seed.
+     */
+    account: {
+        deleteToken: string;
+        leaverFolder: number;
+        mover: { oldToken: string; newToken: string; revertToken: string; email: string; newEmail: string };
+    };
 }
 
 const SEED_FILE = env("E2E_SEED", "scripts/perf/.seed.json");

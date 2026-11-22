@@ -4,12 +4,17 @@
 //   npm run seed [-- --base URL]
 //
 // Writes, next to the perf session (all gitignored):
-//   scripts/perf/.auth-<key>.json  session of a user: gm, moderator, player, player2, outsider
+//   scripts/perf/.auth-<key>.json  session of a user: gm, moderator, player, player2, outsider, leaver,
+//                                  renamer, mover
 //   scripts/perf/.seed.json        the room id, the users with their sheets and session files,
 //                                  the stress sheets of scripts/perf/stress.mjs, the gm's sheets of
 //                                  the other kinds (kindSheets.pathfinder_crusade), the gm's
-//                                  encounter of the stress test (stressEncounter)
-// Run it again after a test that kicked someone or changed roles.
+//                                  encounter of the stress test (stressEncounter), the forum
+//                                  scenarios' sections and long topic (forum), the leaver's
+//                                  deletion token and folder, the links of the mover's email
+//                                  change (account)
+// Run it again after a test that kicked someone or changed roles, deleted the leaver, renamed
+// someone or changed the mover's email.
 
 import { chromium } from 'playwright-core';
 import { parseArgs } from 'node:util';
@@ -41,10 +46,15 @@ try {
         const auth = `${opts.dir}/.auth-${user.key}.json`;
         const context = await browser.newContext();
         const page = await context.newPage();
-        await page.goto(`${base}/user/login`);
-        await page.fill('input[name=email]', user.email);
-        await page.fill('input[name=password]', seed.password);
-        await Promise.all([page.waitForNavigation(), page.click('input[type=submit]')]);
+        // The server lets an address sign in 5 times at once, then once in 6 seconds (loginPerAddress).
+        for (let attempt = 0; ; attempt++) {
+            await page.goto(`${base}/user/login`);
+            await page.fill('input[name=email]', user.email);
+            await page.fill('input[name=password]', seed.password);
+            const [res] = await Promise.all([page.waitForNavigation(), page.click('input[type=submit]')]);
+            if (res?.status() !== 429 || attempt === 3) break;
+            await new Promise(r => setTimeout(r, 7000));
+        }
         if (new URL(page.url()).pathname.startsWith('/user/login')) {
             throw new Error(`${user.email} could not sign in at ${base}`);
         }
@@ -57,4 +67,4 @@ try {
     await browser.close();
 }
 
-writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets, stressEncounter: seed.stressEncounter }, null, 2) + '\n');
+writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, password: seed.password, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets, stressEncounter: seed.stressEncounter, forum: seed.forum, account: seed.account }, null, 2) + '\n');

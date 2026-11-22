@@ -6,6 +6,10 @@ toolchain go1.24.4
 
 require github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 
+require github.com/yuin/goldmark v1.8.7
+
+require golang.org/x/time v0.14.0
+
 require (
 	github.com/alehano/reverse v0.0.0-20170809190552-bf1a1f8f8b82 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect

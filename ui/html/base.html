@@ -6,7 +6,18 @@
     <meta charset='utf-8'>
     <title>{{template "title" .}} - Character Sheet</title>
 
+    {{- /* Conditions, not a block action: the cache parses every page into one set, so a define
+         of one page would reach all of them (_prd/forum/plan.md). */}}
+    {{with .Embedded}}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content='{{.Description}}'>
+    {{with .Canonical}}<link rel="canonical" href='{{.}}'>{{end}}
+    {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
+    {{else}}
+    {{if and .Head .Head.Viewport}}<meta name="viewport" content="width=device-width, initial-scale=1">{{end}}
+    {{if and .Head .Head.Refresh}}<meta http-equiv="refresh" content="{{.Head.Refresh}}">{{end}}
     <meta name="description" content='{{t .Lang "site.layout.description"}}'>
+    {{end}}
 
     <script>(function () {
             const THEME_KEY = 'theme';
@@ -58,10 +69,13 @@
     {{else}}
     <link rel='stylesheet' href='/static/css/room.css?v={{version "css/room.css"}}'>
     {{end}}
+    {{with .Embedded}}{{range .Styles}}
+    <link rel='stylesheet' href='/static/{{.}}?v={{version .}}'>
+    {{end}}{{end}}
+    {{with .Head}}{{range .Styles}}
+    <link rel='stylesheet' href='/static/{{.}}?v={{version .}}'>
+    {{end}}{{end}}
     <link rel='shortcut icon' href='/static/img/favicon.png?v={{version "img/favicon.png"}}' type='image/x-icon'>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&display=swap'>
     <!-- tracking -->
     <script defer src="https://cloud.umami.is/script.js"
         data-website-id="91857ab8-3dfe-4c75-b9c0-2b246685bb4a"></script>
@@ -78,7 +92,7 @@
     </header>
     {{template "nav" .}}
     {{end}}
-    <main class="site-inner">
+    <main class="site-inner{{with .Embedded}}{{with .MainClass}} {{.}}{{end}}{{end}}">
         <div class="main-content">
             {{with .Flash}}
             <div class='flash'>{{.}}</div>
@@ -93,6 +107,7 @@
                 <div class="layout-row">
                     <a href='/about'>{{t .Lang "site.nav.about"}}</a>
                     <a href='/donate'>{{t .Lang "site.nav.donate"}}</a>
+                    <a href='/privacy'>{{t .Lang "site.nav.privacy"}}</a>
                 </div>
 
                 <span>
@@ -101,14 +116,20 @@
             </div>
     </footer>
     {{end}}
-    {{if and .ShowIncidentNotice (not .HideLayout)}}
-    <div class="incident-notice" id="incident-notice" role="status">
-        <button type="button" class="close" id="incident-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
-        {{template "content/incident" .}}
+    {{if and .ShowSiteNotice (not .HideLayout)}}
+    <div class="site-notice" id="site-notice" role="status">
+        <button type="button" class="close" id="site-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
+        {{template "content/notice" .}}
     </div>
     {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>
     <script defer src='/static/js/theme-init.js?v={{version "js/theme-init.js"}}' type="module"></script>
+    {{with .Embedded}}{{range .Scripts}}
+    <script defer src='/static/{{.}}?v={{version .}}' type="module"></script>
+    {{end}}{{end}}
+    {{with .Head}}{{range .Scripts}}
+    <script defer src='/static/{{.}}?v={{version .}}' type="module"></script>
+    {{end}}{{end}}
 </body>
 
 </html>

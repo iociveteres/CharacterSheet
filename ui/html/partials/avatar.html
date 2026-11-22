@@ -1,0 +1,38 @@
+{{- /* The avatar block of the Account page. The server draws it as a browser without the script
+     shows it: the picture, Delete as a form, the lock. account.js (ui/static/js/account) draws
+     .avatar-row anew with the crop window, from data-avatar, unless a lock holds. */}}
+{{define "account_avatar"}}
+{{with .Avatar}}
+<section class="avatar-settings" id="avatar" data-avatar="{{.URL}}" data-csrf="{{$.CSRFToken}}"{{if .Lock}} data-locked{{end}}>
+    <h2>{{t $.Lang "account.avatar.title"}}</h2>
+    {{with .Lock}}
+    <div class="avatar-lock">
+        {{if .Until}}{{t $.Lang "site.account.avatar.lockedUntil" "removed" (humanDate $.Lang .CreatedAt $.TimeZone) "until" (humanDate $.Lang .Until $.TimeZone)}}{{else}}{{t $.Lang "site.account.avatar.lockedForever"}}{{end}}
+        <span class="reason">{{t $.Lang "site.account.avatar.reason" "reason" .Reason}}</span>
+    </div>
+    {{end}}
+    <div class="avatar-row">
+        <div class="crop-cell avatar-cell">
+            {{if or .Lock (not .URL)}}
+            {{- /* What the forum shows in place of an avatar, not a frame that invites a click. */}}
+            <div class="avatar-letter avatar-hue avatar-hue-{{.Hue}}" aria-hidden="true">{{.Initial}}</div>
+            {{else}}
+            <div class="crop-box avatar"><img src="{{.URL}}" alt="{{t $.Lang "account.avatar.title"}}"></div>
+            {{end}}
+        </div>
+        <div class="avatar-side">
+            {{if and .URL (not .Lock)}}
+            <p>{{t $.Lang "account.avatar.publicNoScript"}}</p>
+            <form method="post" action="{{reverseRev "AvatarDelete"}}">
+                <input type='hidden' name='csrf_token' value='{{$.CSRFToken}}'>
+                <button type="submit" class="danger">{{t $.Lang "common.delete"}}</button>
+            </form>
+            {{else}}
+            <p>{{t $.Lang "account.avatar.noneNoClick"}}</p>
+            {{end}}
+            {{if not .Lock}}<p class="hint">{{t $.Lang "account.avatar.needsScript"}}</p>{{end}}
+        </div>
+    </div>
+</section>
+{{end}}
+{{end}}

@@ -6,11 +6,18 @@ import (
 
 	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
+	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 )
 
 func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
+	app.renderAccount(w, r, http.StatusOK, accountDeleteLinkForm{})
+}
+
+// renderAccount draws the Account page; deleteForm carries the error of its deletion block.
+func (app *Application) renderAccount(w http.ResponseWriter, r *http.Request, status int, deleteForm accountDeleteLinkForm) {
 	userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 	user, err := app.Models.Users.Get(r.Context(), userID)
 	if err != nil {
@@ -22,10 +29,53 @@ func (app *Application) accountView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	avatar, err := app.accountAvatar(r, user)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	former, err := app.formerNames(r, user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	pendingEmail, err := app.Models.Users.PendingEmailChange(r.Context(), user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.User = user
+	data.Avatar = avatar
+	data.FormerNames = former
+	data.PendingEmail = pendingEmail
+	data.Form = deleteForm
+	// Laid out for phones, as the forum; crop.css goes before account.css, which sizes the frame.
+	data.Head = &templates.PageHead{
+		Viewport: true,
+		Styles:   []string{"css/crop.css", "css/account.css"},
+		Scripts:  []string{"dist/account.js"},
+	}
 
-	app.render(w, http.StatusOK, "account.html", "base", data)
+	app.render(w, status, "account.html", "base", data)
+}
+
+func (app *Application) accountAvatar(r *http.Request, user *models.User) (*templates.AccountAvatar, error) {
+	hashes, err := app.Models.Avatars.Hashes(r.Context(), []int{user.ID})
+	if err != nil {
+		return nil, err
+	}
+	lock, err := app.Models.Avatars.LockOf(r.Context(), user.ID)
+	if err != nil {
+		return nil, err
+	}
+	a := &templates.AccountAvatar{Lock: lock, Hue: util.AvatarHue(user.ID)}
+	if hash, ok := hashes[user.ID]; ok {
+		a.URL = avatarURL(hash)
+	}
+	a.Initial = nameInitial(user.Name)
+	return a, nil
 }
 
 type accountPasswordUpdateForm struct {

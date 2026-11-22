@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -255,6 +254,7 @@ type InitiativeData struct {
 	FBonus         bool   `json:"fBonus"`
 	CorBonus       bool   `json:"corBonus"`
 	InfBonus       bool   `json:"infBonus"`
+	FaBonus        bool   `json:"faBonus,omitempty"` // Fate is of Pathfinder Crusade only
 	FlatBonus      int    `json:"flatBonus"`
 	LastInitiative int    `json:"lastInitiative"`
 }
@@ -963,7 +963,7 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1027,7 +1027,7 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1060,7 +1060,7 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID in
 		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1108,7 +1108,7 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1210,7 +1210,7 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, nil, fmt.Errorf("create in destination: %w", err)
+		return 0, nil, fmt.Errorf("create in destination: %w", sheetTooLarge(err))
 	}
 
 	// Commit transaction
@@ -1247,42 +1247,16 @@ func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID in
 		return 0, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
 
-// parseJSONBPath parses a dot-separated path into a []string for use as
-// a PostgreSQL text[] parameter
+// ParseJSONBPath splits a dot-separated path into its segments, for a
+// PostgreSQL text[] parameter; an empty path has none.
 func ParseJSONBPath(dotPath string) []string {
 	if dotPath == "" {
 		return []string{}
 	}
-
-	parts := strings.Split(dotPath, ".")
-
-	var buf bytes.Buffer
-	buf.WriteByte('{')
-	for i, p := range parts {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-
-		// Escape backslashes and double quotes for safe array-literal usage
-		escaped := strings.ReplaceAll(p, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-
-		// If element contains any characters that require quoting in PG array literal,
-		// wrap it in double quotes. These include comma, braces, whitespace, backslash, quote.
-		if strings.ContainsAny(escaped, ",{} \t\n\"\\") {
-			buf.WriteByte('"')
-			buf.WriteString(escaped)
-			buf.WriteByte('"')
-		} else {
-			buf.WriteString(escaped)
-		}
-	}
-	buf.WriteByte('}')
-
-	return parts
+	return strings.Split(dotPath, ".")
 }

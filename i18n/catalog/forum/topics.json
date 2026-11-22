@@ -1,0 +1,20 @@
+{
+  "forum.topics.replyCount": { "en": {"one": "{count} reply", "other": "{count} replies"}, "ru": {"one": "{count} ответ", "few": "{count} ответа", "many": "{count} ответов"}, "note": "число ответов в теме, в списке тем раздела" },
+  "forum.topics.pinned": { "en": "Pinned", "ru": "Закреплена", "note": "подсказка к значку булавки у темы, которая стоит в разделе сверху" },
+  "forum.topics.closed": { "en": "Closed", "ru": "Закрыта", "note": "подсказка к значку замка у темы, в которой отвечают только модераторы" },
+  "forum.topics.deleted": { "en": "Deleted", "ru": "Удалена", "note": "метка удалённой темы; её видят только модераторы" },
+  "forum.topics.erasedTitle": { "en": "Title erased with the account", "ru": "Заголовок стёрт вместе с аккаунтом", "note": "вместо заголовка темы, которую автор стёр целиком, удаляя аккаунт; видят только модераторы и уведомления" },
+  "forum.topics.empty": { "en": "No topics in this section yet.", "ru": "В этом разделе пока нет тем." },
+  "forum.topics.pages": { "en": "Pages", "ru": "Страницы", "note": "для экранного диктора: номера страниц раздела или темы" },
+  "forum.topics.previousPage": { "en": "Previous page", "ru": "Предыдущая страница", "note": "для экранного диктора: стрелка ←" },
+  "forum.topics.nextPage": { "en": "Next page", "ru": "Следующая страница", "note": "для экранного диктора: стрелка →" },
+  "forum.topics.pageNumber": { "en": "page {n}", "ru": "страница {n}", "note": "в заголовке вкладки браузера после названия темы или раздела, со второй страницы: «Название — страница 2 - Character Sheet»" },
+  "forum.topics.new": { "en": "New topic", "ru": "Новая тема", "note": "ссылка в разделе, заголовок страницы и формы новой темы" },
+  "forum.topics.title": { "en": "Title", "ru": "Заголовок", "note": "поле формы новой темы: заголовок темы" },
+  "forum.topics.signInToStart": { "en": "Log in to start a topic", "ru": "Войдите, чтобы создать тему", "note": "ссылка на вход для гостя вместо ссылки «Новая тема»" },
+  "forum.topics.topic": { "en": "Topic", "ru": "Тема", "note": "шапка столбца списка тем раздела" },
+  "forum.topics.replies": { "en": "Replies", "ru": "Ответы", "note": "шапка столбца с числом ответов в списке тем раздела; также вид уведомления о новых ответах в теме («Ответы · 5 минут назад»)" },
+  "forum.topics.closedNotice": { "en": "The topic is closed: only moderators can reply.", "ru": "Тема закрыта: отвечать могут только модераторы.", "note": "плашка под последней страницей закрытой темы" },
+  "forum.topics.markRead": { "en": "Mark as read", "ru": "Отметить прочитанным", "note": "кнопка в шапке раздела рядом с «+ Новая тема»: все темы этого раздела становятся прочитанными" },
+  "forum.topics.unread": { "en": "There are unread posts", "ru": "Есть непрочитанное", "note": "подсказка к синей точке слева от темы или раздела, где есть сообщения, которых человек ещё не видел" }
+}

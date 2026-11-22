@@ -1,0 +1,68 @@
+{{- /* The menu "Moderation ▾" of a topic's head, for moderators only (design/decisions.md, 16):
+     links to the page of each action, whose form has the reason. A deleted topic only comes back.
+     Dot is topicData. */}}
+{{define "forum-topic-mod-menu"}}
+{{- $t := .Topic}}
+{{- if or (.Shown.CanModerateTopic $t.Topic) (.Shown.CanRestoreTopic $t.Topic)}}
+<details class="forum-menu forum-mod-menu">
+    {{- /* "⋯" on a phone, its words kept for a screen reader (extras/decisions.md, 10). */}}
+    <summary class="f-btn f-secondary" title="{{t .Lang "forum.moderation.menu"}}"><span class="forum-menu-long">{{t .Lang "forum.moderation.menu"}} ▾</span><span class="forum-menu-short" aria-hidden="true">⋯</span></summary>
+    <div class="forum-menu-panel">
+        {{- if .Shown.CanModerateTopic $t.Topic}}
+        <a href="{{$t.URL}}/mod/rename">✎ {{t .Lang "common.rename"}}</a>
+        {{- if $t.Pinned}}
+        <a href="{{$t.URL}}/mod/unpin">{{t .Lang "forum.moderation.unpin"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/pin">{{t .Lang "forum.moderation.pin"}}</a>
+        {{- end}}
+        {{- if $t.Closed}}
+        <a href="{{$t.URL}}/mod/open">{{t .Lang "forum.moderation.open"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/close">{{t .Lang "forum.moderation.close"}}</a>
+        {{- end}}
+        <a href="{{$t.URL}}/mod/move">{{t .Lang "forum.moderation.move"}}</a>
+        <hr>
+        <a class="danger" href="{{$t.URL}}/mod/delete">{{t .Lang "forum.moderation.deleteTopic"}}</a>
+        {{- else}}
+        <a href="{{$t.URL}}/mod/restore">↺ {{t .Lang "forum.moderation.restoreTopic"}}</a>
+        {{- end}}
+    </div>
+</details>
+{{- end}}
+{{- end}}
+
+{{- /* The reason of a moderator's action, which goes to the log. Dot is reasonField
+     (view.ReasonField). */}}
+{{define "forum-mod-reason"}}
+        <label class="field-label" for="forum-mod-reason">{{t .Lang "forum.moderation.reason"}}</label>
+        <textarea class="forum-reason" id="forum-mod-reason" name="reason" rows="3"{{if .Required}} required{{end}}
+            {{- if .Form.Errors.reason}} aria-invalid="true" aria-describedby="forum-mod-reason-error"{{end}}>{{.Form.Reason}}</textarea>
+        {{with .Form.Errors.reason}}<span class="error field-error" id="forum-mod-reason-error">{{.}}</span>{{end}}
+{{- end}}
+
+{{- /* The moderator mode at the top of every forum page while it is on
+     (_prd/forum/moderator-mode/plan.md): a band unlike every notice of the forum, and «Turn off»,
+     which comes back to the same page. Dot is the page's data, which embeds view. */}}
+{{define "forum-mod-mode-strip"}}
+{{- if .Viewer.ModMode}}
+    <div class="forum-mod-mode" role="status">{{template "forum-shield"}}<strong>{{t .Lang "forum.moderation.mode"}}</strong><span class="forum-mod-mode-note">{{t .Lang "forum.moderation.modeNote"}}</span>
+        <form method="post" action="/forum/view/mod-mode">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <input type="hidden" name="redirect" value="{{.Here}}">
+            <button type="submit" name="mode" value="off" class="forum-mod-mode-off">{{t .Lang "forum.moderation.modeOff"}}</button>
+        </form>
+    </div>
+{{- end}}
+{{- end}}
+
+{{- /* The ban of the viewer at the top of every forum page they read (design/decisions.md, 20): why
+     and until when. Dot is the page's data, which embeds view. */}}
+{{define "forum-ban-notice"}}
+{{- if .Viewer.Banned}}{{with .Viewer.Ban}}
+    <div class="forum-notice forum-ban-notice">
+        {{- with .ExpiresAt}}{{t $.Lang "forum.moderation.bannedUntil" "date" ($.Date .)}}
+        {{- else}}{{t $.Lang "forum.moderation.bannedForever"}}{{end}}
+        <span class="meta">{{t $.Lang "forum.moderation.reason"}}: {{.Reason}}</span>
+    </div>
+{{- end}}{{end}}
+{{- end}}
