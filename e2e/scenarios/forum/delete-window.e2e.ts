@@ -9,7 +9,7 @@ import type { Browser, Locator } from "playwright-core";
 import { seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
-import { closeIncidentNotice, createTopic, expectFits, follow, forumSeed, liftBans, openForum, openModItem, openNotifications, openSection, openTopic, post, readAllNotifications, reply, setModMode, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, expectFits, follow, forumSeed, liftBans, openForum, openModItem, openNotifications, openSection, openTopic, post, readAllNotifications, reply, setModMode, uniqueTitle } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
 const REASON = "Flooding the section.";
@@ -43,7 +43,7 @@ describe("forum: delete, ban and the author's day", () => {
         gmPhone = await Player.create(browser, "gm phone", { role: "gm", ...PHONE });
         moderator = await Player.create(browser, "moderator", { role: "moderator" });
         modPhone = await Player.create(browser, "moderator phone", { role: "moderator", ...PHONE });
-        await closeIncidentNotice(gm, gmPhone, moderator, modPhone);
+        await closeSiteNotice(gm, gmPhone, moderator, modPhone);
         await setModMode(moderator, true);
         await setModMode(modPhone, true);
         await liftBans(moderator, name());

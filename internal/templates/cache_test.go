@@ -68,7 +68,7 @@ func TestPagesRenderInEveryLanguage(t *testing.T) {
 			RoomsWithRole:           []*models.RoomWithRole{{Room: models.Room{ID: 1, CreatedAt: created}, UserRole: models.RoleGamemaster}},
 			CharacterSheetSummaries: []*models.CharacterSheetSummary{{CharacterSheet: sheet, RoomID: 1, RoomName: "room"}},
 			IsAuthenticated:         true,
-			ShowIncidentNotice:      true,
+			ShowSiteNotice:          true,
 			OnlineUsers:             2,
 			Embedded:                &EmbeddedPage{Title: "title", Body: "<p>body</p>"},
 		}

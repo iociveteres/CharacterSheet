@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
-import { closeIncidentNotice, createTopic, expectFits, follow, forumSeed, openForum, openNotifications, openSection, openTopic, post, setModMode, uniqueTitle } from "../../lib/forum";
+import { closeSiteNotice, createTopic, expectFits, follow, forumSeed, openForum, openNotifications, openSection, openTopic, post, setModMode, uniqueTitle } from "../../lib/forum";
 
 const PHONE = { viewport: { width: 375, height: 812 }, phone: true };
 
@@ -34,7 +34,7 @@ describe("forum on a phone", () => {
         browser = await launch();
         moderator = await Player.create(browser, "moderator", { role: "moderator", ...PHONE });
         guest = await Player.create(browser, "guest", { auth: "", ...PHONE });
-        await closeIncidentNotice(moderator, guest);
+        await closeSiteNotice(moderator, guest);
         await setModMode(moderator, true);
         await openSection(moderator, forumSeed().section);
         // A title with no space to break at; a moderator is not held by the posting limits.

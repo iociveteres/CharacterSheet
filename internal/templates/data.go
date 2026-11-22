@@ -37,7 +37,7 @@ type Data struct {
 	User                    *models.User
 	TimeZone                *time.Location
 	HideLayout              bool
-	ShowIncidentNotice      bool
+	ShowSiteNotice          bool
 	Token                   string
 	OnlineUsers             int
 	Embedded                *EmbeddedPage           // set only for embedded.html

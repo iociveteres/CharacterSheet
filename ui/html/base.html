@@ -116,10 +116,10 @@
             </div>
     </footer>
     {{end}}
-    {{if and .ShowIncidentNotice (not .HideLayout)}}
-    <div class="incident-notice" id="incident-notice" role="status">
-        <button type="button" class="close" id="incident-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
-        {{template "content/incident" .}}
+    {{if and .ShowSiteNotice (not .HideLayout)}}
+    <div class="site-notice" id="site-notice" role="status">
+        <button type="button" class="close" id="site-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
+        {{template "content/notice" .}}
     </div>
     {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>
