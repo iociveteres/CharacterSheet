@@ -1,24 +1,9 @@
 /* The /bestiary page (ui/static/js/bestiary). The overlay, modals and toasts
    it shares with the room are in common.css. */
 
-/* Three panels need more than the site's 800px. */
+/* Three panels need more than the site's 800px (main.css, .site-inner). */
 main.site-inner:has(.bestiary) {
-  max-width: 1600px;
-}
-
-/* The levels of the sheet: the page under the panels is bg-light, as in the room,
-   a panel is bg, what lies on it bg-item and one level deeper bg-item2. */
-body:has(.bestiary) {
-  background-color: var(--bg-light);
-}
-
-/* The site header keeps the bg of the other pages. It is .site-inner, 800px wide:
-   the border image paints its background out to the edges of the page. Longhands: the editor's
-   validator does not know the shorthand's empty width, "fill 0 / / 0 100vmax". */
-body:has(.bestiary) > header {
-  border-image-source: conic-gradient(var(--bg) 0 0);
-  border-image-slice: 0 fill;
-  border-image-outset: 0 100vmax;
+  --inner-max: 1600px;
 }
 
 .bestiary-grid {
@@ -353,7 +338,7 @@ body:has(.bestiary) > header {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  /* main.css gives tables and their even rows bg-light. */
+  /* main.css makes every table a bg panel; this one lies on a panel already. */
   background: transparent;
 }
 
@@ -428,7 +413,7 @@ body:has(.bestiary) > header {
   text-align: right;
 }
 
-/* A row is an item on the panel; main.css would give the even ones bg-light. */
+/* A row is an item on the panel. */
 .bestiary-table tbody tr {
   background: var(--bg-item);
   cursor: pointer;

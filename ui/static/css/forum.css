@@ -8,7 +8,7 @@
 /* Wider than the site's 800px frame, aimed at 1280px screens; header and nav keep theirs. The class
    comes from forumHost.Render (EmbeddedPage.MainClass). */
 main.forum-wide {
-    max-width: 1240px;
+    --inner-max: 1240px;
     padding-left: 20px;
     padding-right: 20px;
 }

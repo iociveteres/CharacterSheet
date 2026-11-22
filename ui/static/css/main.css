@@ -4,24 +4,27 @@
     padding: 0;
 }
 
-html,
-body {
-    scrollbar-gutter: stable;
-}
-
+/* Pages laid out by levels (DESIGN.md, «Backgrounds»): the page is bg-light, and the header with the
+   site's name lies on it, the logo's background too (common.css, .recolor); the row of links and the
+   footer are panels, bg, across the page; what a page shows lies on bg panels. */
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     line-height: 1.5;
-    background-color: var(--bg);
+    background-color: var(--bg-light);
     color: var(--text);
 }
 
+/* Centred on the window with its scrollbar (100vw), so that a page with a scrollbar and one without
+   keep it in place. Not scrollbar-gutter: stable: the reserved column takes the page's colour and
+   cuts the bars of the nav and the footer short. Never past the right edge of a narrow window. */
 .site-inner {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
+    --inner-max: 800px;
+    --inner-width: min(var(--inner-max), 100%);
+    width: var(--inner-width);
+    margin: 0;
+    margin-left: clamp(0px, 50vw - var(--inner-width) / 2, 100% - var(--inner-width));
     padding: 2px;
 }
 
@@ -93,10 +96,11 @@ nav {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    border-top: 1px solid var(--border-light);
     border-bottom: 1px solid var(--border-light);
     padding-top: 17px;
     padding-bottom: 15px;
-    background: var(--bg-light);
+    background: var(--bg);
     height: 60px;
     color: var(--text);
 }
@@ -145,7 +149,7 @@ nav a.live:after {
     content: '';
     width: 14px;
     height: 14px;
-    background: var(--bg-light);
+    background: var(--bg);
     border-left: 1px solid var(--border-light);
     border-bottom: 1px solid var(--border-light);
 
@@ -155,40 +159,6 @@ nav a.live:after {
     top: 100%;
     margin-top: 9px;
     pointer-events: none;
-}
-
-/* Pages laid out by levels (DESIGN.md, «Backgrounds»): for now the forum and the Account page; the
-   rest of the site still lies on bg with bg-light tables (_prd/forum/extras/layers.md). The page is
-   bg-light; the header with the site's name is a panel, bg, painted out to the page's edges by the
-   border image, as on the bestiary (bestiary.css); the row of links one level deeper, bg-item, with
-   the arrow under the current link; the footer bg. */
-body:has(#forum),
-body:has(.account-page) {
-    background-color: var(--bg-light);
-}
-
-body:has(#forum) > header,
-body:has(.account-page) > header {
-    border-image-source: conic-gradient(var(--bg) 0 0);
-    border-image-slice: 0 fill;
-    border-image-outset: 0 100vmax;
-}
-
-body:has(#forum) > nav,
-body:has(.account-page) > nav,
-body:has(#forum) > nav a.live:after,
-body:has(.account-page) > nav a.live:after {
-    background: var(--bg-item);
-}
-
-body:has(#forum) > nav,
-body:has(.account-page) > nav {
-    border-top: 1px solid var(--border-light);
-}
-
-body:has(#forum) > footer,
-body:has(.account-page) > footer {
-    background: var(--bg);
 }
 
 /* The letter that stands for a user without an avatar, on the user's own tint (util.AvatarHue: ten
@@ -424,11 +394,6 @@ html[data-theme="dark"] .avatar-hue {
     color: var(--text);
 }
 
-/* tr:nth-child(2n) is bg-light, a level above the panel. */
-.account-page > table tr:nth-child(2n) {
-    background: transparent;
-}
-
 /* The counter of unread forum notifications next to the forum link (and on the button of the forum
    home): a pill in the user's accent colour that grows with its text, "3", "9+". */
 .nav-badge {
@@ -555,8 +520,8 @@ form input[type="email"],
 textarea {
     width: 100%;
     color: var(--text);
-    background: var(--bg-light);
-    border: 1px solid var(--border-light);
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
     border-radius: 3px;
 }
 
@@ -677,8 +642,9 @@ div.error {
     text-align: center;
 }
 
+/* A panel; its rows are told apart by their lines. */
 table {
-    background: var(--bg-light);
+    background: var(--bg);
     border: 1px solid var(--border-light);
     border-collapse: collapse;
     width: 100%;
@@ -700,14 +666,10 @@ tr {
     border-bottom: 1px solid var(--border-light);
 }
 
-tr:nth-child(2n) {
-    background-color: var(--bg-light);
-}
-
 footer {
     border-top: 1px solid var(--border-light);
     padding-top: 10px;
-    background: var(--bg-light);
+    background: var(--bg);
     color: var(--text-secondary);
     text-align: center;
 
